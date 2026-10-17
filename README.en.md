@@ -1070,7 +1070,7 @@ FormWind is in preview (0.x): minor versions may contain breaking changes; they 
 dotnet pack FormWind.sln -c Release
 ```
 
-Packages are written to `artifacts/packages` (`FormWind`, `FormWind.Krypton` and `.snupkg` symbol packages). The `FormWind` package includes the FW001 analyzer under `analyzers/dotnet/cs`. Packages include SourceLink information, so the debugger can step into FormWind's source from GitHub. For local use, add this folder to Package Sources in Visual Studio.
+Packages are written to `artifacts/packages` (`FormWind`, `FormWind.Krypton` and `.snupkg` symbol packages). The `FormWind` package includes the FW001 analyzer under `analyzers/dotnet/cs`. Packages include SourceLink information, so the debugger can step into FormWind's source from GitHub. The assemblies are strong-named (`PublicKeyToken=1cea47bdc82de2bf`, key `FormWind.snk` in the repository), so strong-named .NET Framework applications can reference them. The NuGet pages use the short READMEs in `docs/nuget/`. For local use, add this folder to Package Sources in Visual Studio. Pushing a `v*` tag runs `.github/workflows/release.yml`, which publishes the packages to nuget.org and creates the GitHub Release (see [CONTRIBUTING](CONTRIBUTING.md#releasing)).
 
 ## Known limitations and roadmap
 

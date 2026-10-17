@@ -1070,7 +1070,7 @@ FormWind ön sürümdedir (0.x): minor sürümler kırıcı değişiklik içereb
 dotnet pack FormWind.sln -c Release
 ```
 
-Paketler `artifacts/packages` klasörüne yazılır (`FormWind`, `FormWind.Krypton` ve `.snupkg` sembol paketleri). `FormWind` paketi FW001 çözümleyicisini `analyzers/dotnet/cs` altında içerir. Paketler SourceLink bilgisi taşır; hata ayıklayıcı FormWind'in kaynağına GitHub'dan girebilir. NuGet paketlerinde İngilizce README (`README.en.md`) kullanılır. Yerel kullanım için bu klasörü Visual Studio'da Package Sources'a ekleyin.
+Paketler `artifacts/packages` klasörüne yazılır (`FormWind`, `FormWind.Krypton` ve `.snupkg` sembol paketleri). `FormWind` paketi FW001 çözümleyicisini `analyzers/dotnet/cs` altında içerir. Paketler SourceLink bilgisi taşır; hata ayıklayıcı FormWind'in kaynağına GitHub'dan girebilir. Derlemeler strong-name ile imzalıdır (`PublicKeyToken=1cea47bdc82de2bf`, anahtar depodaki `FormWind.snk`); imzalı .NET Framework uygulamaları da paketlere başvurabilir. NuGet sayfalarında `docs/nuget/` altındaki kısa İngilizce README'ler kullanılır. Yerel kullanım için bu klasörü Visual Studio'da Package Sources'a ekleyin. `v*` etiketi itildiğinde `.github/workflows/release.yml` paketleri nuget.org'a gönderir ve GitHub Release oluşturur (bkz. [CONTRIBUTING](CONTRIBUTING.md#releasing)).
 
 ## Bilinen sınırlamalar ve yapılacaklar
 

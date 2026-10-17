@@ -19,8 +19,8 @@
   <ItemGroup>
     <PackageReference Include="Krypton.Toolkit" Version="$(KryptonVersion)" />
     <ProjectReference Include="..\FormWind\FormWind.csproj" />
-    <!-- NuGet okuyucuları için İngilizce README, paket içinde README.md adıyla. -->
-    <None Include="..\..\README.en.md" Pack="true" PackagePath="\README.md" />
+    <!-- NuGet okuyucuları için kısa İngilizce README (görseller ve bağlantılar mutlak URL), paket içinde README.md adıyla. -->
+    <None Include="..\..\docs\nuget\FormWind.Krypton.md" Pack="true" PackagePath="\README.md" />
   </ItemGroup>
 
   <!-- Public API değişiklikleri PublicAPI.*.txt dosyalarında izlenir (RS0016/RS0017). -->

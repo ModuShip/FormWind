@@ -5,7 +5,7 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
-## [0.1.0-preview.1] - Unreleased
+## [0.1.0-preview.1] - 2026-10-17
 
 First public preview.
 
@@ -66,6 +66,8 @@ First public preview.
 - Compatibility with .NET 9+ `Application.SetColorMode`.
 - Targets .NET Framework 4.7.2 and .NET 8; tested on .NET Framework, .NET 8, 9 and 10.
 - MIT License; `THIRD-PARTY-NOTICES.md` is included in the packages.
+- Strong-named assemblies (`PublicKeyToken=1cea47bdc82de2bf`), so strong-named .NET Framework applications can reference
+  the packages.
 - **API stability:** the extension points tied to System.Drawing and WinForms types (`IStyleApplier`, `TwApplyContext`,
   `TwAppliers`, `WinFormsApplier`, `TwStyle`, `TwParsed`, `TwOriginal`, `TwTheme.Parse` and the helpers that take a
   `TwStyle`) are experimental: using them reports FW9001 until it is suppressed. `"version"` in the theme file

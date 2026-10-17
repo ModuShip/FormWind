@@ -14,6 +14,8 @@
     <ServerGarbageCollector>false</ServerGarbageCollector>
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <!-- MaterialSkin.2 strong-name imzalı değil; imzalı bir derleme ona başvuramaz. -->
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>

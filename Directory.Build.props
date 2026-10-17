@@ -19,6 +19,15 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Deterministic>true</Deterministic>
     <!--
+      Strong-name imzası: imzalı .NET Framework uygulamaları yalnızca imzalı derlemelere başvurabilir. Anahtar açık kaynak
+      projelerde olağan şekilde depodadır; amacı kimliktir, güvenlik değil. Anahtar değişirse derleme kimliği değişir (kırıcı
+      değişiklik). Testler FormWind'e InternalsVisibleTo ile eriştiğinden onlara başvuran projeler de imzalanır; imzasız bir
+      pakete başvuran projeler SignAssembly'yi false yapar. PublicKey, anahtar verilmemiş InternalsVisibleTo öğelerine eklenir.
+    -->
+    <SignAssembly Condition="'$(SignAssembly)' == ''">true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)FormWind.snk</AssemblyOriginatorKeyFile>
+    <PublicKey>002400000480000094000000060200000024000052534131000400000100010021c07f74b203a6d883c7555a2409843c024b0d7b921aa13c3a75cf9fa8dc4800af3c43274d5034b50feffa31b4b379c9fc95dfb28dd8be96bf17822b5cb2aa89a00d232f73d9a6098ee1896a7cf313ee08a7f274845e6dc375a15cb4e9318bf74ca5b2091841c1f29a51e63b34b4de7504855b4cb4ac9a67780ae062c975d4be</PublicKey>
+    <!--
       FormWind.Krypton bu Krypton Toolkit sürümüyle derlenir; paketin bağımlılığı "en az bu sürüm" olur. CI testleri ayrıca
       en yeni desteklenen sürümle çalıştırır (-p:KryptonTestVersion=…, tests/FormWind.Tests); desteklenen aralık README'nin Krypton bölümündedir.
     -->

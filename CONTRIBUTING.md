@@ -91,4 +91,24 @@ checks binary compatibility against the previous version.
 1. Move the *Unreleased* changelog entries under the new version with the date.
 2. Move `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt` and the analyzer rules into `AnalyzerReleases.Shipped.md`.
 3. Update `<Version>` in `Directory.Build.props` (and `PackageValidationBaselineVersion` after the first release).
-4. Tag the commit (`v1.2.3`); CI builds, tests and packs it.
+4. Tag the commit (`v1.2.3`) and push the tag. The release workflow (`.github/workflows/release.yml`) checks that the
+   tag matches `<Version>` and that the changelog entry has a date, runs `build.ps1`, pushes the packages to nuget.org
+   with Trusted Publishing and creates the GitHub Release with the changelog entry as notes (versions with a `-` suffix
+   are marked as prereleases). Publishing waits for the `nuget` environment's approval if one is configured.
+5. After the first release, set `PackageValidationBaselineVersion` in `FormWind.csproj` and `FormWind.Krypton.csproj`
+   to the released version, so package validation checks binary compatibility against it.
+
+One-time setup for publishing: on nuget.org add a Trusted Publishing policy for the `ModuShip/FormWind` repository,
+the `release.yml` workflow and the `nuget` environment; on GitHub create the `nuget` environment and add the
+`NUGET_USER` secret (the nuget.org profile name). Reserving the `FormWind` ID prefix on nuget.org is recommended.
+
+The assemblies are strong-named with `FormWind.snk`. The key is public on purpose (strong names are an identity, not a
+security feature) and must never change: a new key changes the assembly identity and breaks every application compiled
+against FormWind. `AssemblyVersion` follows `<Version>`, so .NET Framework applications that update the package rely on
+the binding redirects that SDK-style projects generate. A test or tool project that uses `InternalsVisibleTo` gets the key
+automatically (`PublicKey` in `Directory.Build.props`); a project that references an unsigned package sets
+`<SignAssembly>false</SignAssembly>`.
+
+The packages' NuGet pages use the short READMEs in `docs/nuget/` (images and links are absolute URLs, because
+nuget.org does not resolve repository-relative paths); update them when the README's quick start or the package
+features change.

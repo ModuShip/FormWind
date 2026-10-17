@@ -8,6 +8,7 @@
     <Title>FormWind templates</Title>
     <Description>dotnet new templates for FormWind: a WinForms app with sign-in, list-detail and settings screens styled with Tailwind-style classes; choose a ready-made look (--Preset) and add Krypton Toolkit support (--Krypton).</Description>
     <PackageTags>dotnet-new;templates;winforms;tailwind;formwind;krypton</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsPackable>true</IsPackable>
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -21,6 +22,7 @@
   <ItemGroup>
     <!-- content\formwind-app\… paket içinde de content\formwind-app\… olur (NuGet klasör yolunu ekler). -->
     <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" PackagePath="content" />
+    <None Include="..\docs\nuget\FormWind.Templates.md" Pack="true" PackagePath="\README.md" />
   </ItemGroup>
 
   <!--

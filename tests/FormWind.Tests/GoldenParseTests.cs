@@ -227,9 +227,11 @@ public class GoldenParseTests
         TwLength length => length.IsAuto ? "auto"
             : length.IsPixels ? length.Value.ToString("0.####", CultureInfo.InvariantCulture) + "px"
             : (length.Value * 100).ToString("0.##", CultureInfo.InvariantCulture) + "%",
-        // Cursor.ToString() .NET Framework'te imlecin adını vermez; Cursors'taki adıyla yazılır.
+        // Cursor.ToString() .NET Framework'te imlecin adını vermez; Cursors'taki adıyla yazılır. .NET Framework'te Cursors
+        // özellikleri iş parçacığı güvenli olmadan önbelleğe alınır ve paralel testlerde aynı imleç için iki nesne oluşabilir;
+        // sistem imleçlerinin tanıtıcısı ortak olduğundan tanıtıcıyla karşılaştırılır.
         Cursor cursor => typeof(Cursors).GetProperties(BindingFlags.Public | BindingFlags.Static)
-            .FirstOrDefault(p => ReferenceEquals(p.GetValue(null), cursor))?.Name ?? "custom",
+            .FirstOrDefault(p => p.GetValue(null) is Cursor known && known.Handle == cursor.Handle)?.Name ?? "custom",
         bool flag => flag ? "true" : "false",
         float number => number.ToString("0.####", CultureInfo.InvariantCulture),
         double number => number.ToString("0.####", CultureInfo.InvariantCulture),

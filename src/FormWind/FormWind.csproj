@@ -36,8 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- NuGet okuyucuları için İngilizce README, paket içinde README.md adıyla. -->
-    <None Include="..\..\README.en.md" Pack="true" PackagePath="\README.md" />
+    <!-- NuGet okuyucuları için kısa İngilizce README (görseller ve bağlantılar mutlak URL), paket içinde README.md adıyla. -->
+    <None Include="..\..\docs\nuget\FormWind.md" Pack="true" PackagePath="\README.md" />
     <InternalsVisibleTo Include="FormWind.Tests" />
   </ItemGroup>
 

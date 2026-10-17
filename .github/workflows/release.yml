@@ -1,0 +1,111 @@
+name: Release
+
+# v* etiketi (örn. v0.1.0-preview.1) itildiğinde: etiketin Directory.Build.props'taki <Version> ile aynı olduğu denetlenir,
+# CI'daki adımlar build.ps1 ile çalıştırılır (derleme, testler, kapsam, paketleme), paketler nuget.org'a gönderilir ve
+# GitHub Release oluşturulur. Ön sürümler (sürümde "-" varsa) GitHub'da prerelease olarak işaretlenir.
+#
+# Bir kerelik kurulum:
+#   1. nuget.org → Trusted Publishing: ModuShip/FormWind deposu, release.yml iş akışı ve "nuget" ortamı için bir ilke ekleyin.
+#   2. GitHub → Settings → Environments: "nuget" ortamını oluşturun (isteğe bağlı: onaylayıcı ve yalnızca v* etiketleri).
+#   3. "nuget" ortamına NUGET_USER gizli değişkenini (nuget.org kullanıcı adı; profil adı, e-posta değil) ekleyin.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Görsel referanslar Windows sürümüne bağlı; ci.yml ile aynı ortam.
+    runs-on: windows-2022
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Check version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (dotnet msbuild src/FormWind/FormWind.csproj -getProperty:Version).Trim()
+          $tag = "${{ github.ref_name }}"
+          if ($tag -ne "v$version") {
+            Write-Output "::error::Etiket ($tag) Directory.Build.props sürümüyle (v$version) aynı değil."
+            exit 1
+          }
+          if (-not (Select-String -Path CHANGELOG.md -SimpleMatch "## [$version] - " -Quiet)) {
+            Write-Output "::error::CHANGELOG.md'de '## [$version] - <tarih>' başlığı yok."
+            exit 1
+          }
+          if (Select-String -Path CHANGELOG.md -SimpleMatch "## [$version] - Unreleased" -Quiet) {
+            Write-Output "::error::CHANGELOG.md'de $version sürümünün tarihi girilmemiş."
+            exit 1
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      # ci.yml ile aynı adımlar: derleme, tüm hedeflerde testler, ayrı süreçteki kategoriler, Krypton matrisi, kapsam, paketleme.
+      - name: Build, test and pack
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/packages
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: write   # GitHub Release
+      id-token: write   # nuget.org Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Kısa ömürlü bir API anahtarı alır; depoda kalıcı anahtar tutulmaz.
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # .snupkg sembol paketleri aynı klasörde olduğundan .nupkg ile birlikte gönderilir.
+      - name: Push to nuget.org
+        run: dotnet nuget push "packages/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      # Sürüm notları CHANGELOG.md'deki ilgili bölümdür.
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          awk -v header="## [$VERSION] - " 'index($0, header) == 1 { found = 1; next } found && /^## \[/ { exit } found && /^\[[^]]+\]: / { exit } found { print }' CHANGELOG.md > notes.md
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "${{ github.ref_name }}" packages/* --title "FormWind $VERSION" --notes-file notes.md "${flags[@]}"
