@@ -1,0 +1,50 @@
+<!--
+title: Versioning and API stability
+description: What FormWind keeps stable during the preview: the public API, the meaning of the classes and the theme file format, and which extension points are experimental (FW9001).
+-->
+<h1>Versioning and API stability</h1>
+<p class="lead">FormWind is in preview (0.x). Minor versions may still contain breaking changes, and each one is listed under <em>Changed</em> or <em>Removed</em> in the <a href="https://github.com/ModuShip/FormWind/blob/main/CHANGELOG.md" rel="noopener">changelog</a>. Three contracts are tracked separately, so you can tell what an upgrade may touch.</p>
+
+<h2 id="public-api">Public API</h2>
+<p><code>TailwindProvider</code>, the controls, <code>TwTheme</code>, the presets, the events and the classes form the public API. Every public member of both packages is listed in <code>PublicAPI.Shipped.txt</code> and <code>PublicAPI.Unshipped.txt</code>, and the build warns when a member is added or removed without updating them. Helpers used only by the library, including the Designer types, are internal.</p>
+<p>From 1.0, changes follow <a href="https://semver.org/" rel="noopener">Semantic Versioning</a>:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Version</th><th>May contain</th></tr></thead>
+  <tbody>
+    <tr><td>Major (<code>2.0.0</code>)</td><td>Removed or changed public members, class meanings that change the look of existing forms, a dropped target framework.</td></tr>
+    <tr><td>Minor (<code>1.1.0</code>)</td><td>New classes, controls, members or options; existing code and forms keep working the same.</td></tr>
+    <tr><td>Patch (<code>1.0.1</code>)</td><td>Bug fixes without API changes. Rendering changes only where the previous rendering was clearly wrong.</td></tr>
+  </tbody>
+</table></div>
+<p>After the first stable release, package validation checks binary compatibility against the previous version.</p>
+
+<h2 id="class-syntax">Class syntax</h2>
+<p>What a class means is pinned by tests that do not compile against it. <code>tests/FormWind.Tests/Golden/parse.txt</code> holds the resolved style of about 70 sample class strings, with their variants, parts, presets and the v4 palette:</p>
+<pre><code class="language-shell">"bg-red-600/50 text-gray-900/75"
+  BackColor = #80DC2626
+  ForeColor = #BF111827</code></pre>
+<p><code>GoldenParseTests</code> fails when one of them changes. An intended change is recorded with <code>FORMWIND_UPDATE_BASELINES=1</code> and listed in the changelog, so <code>bg-blue-500</code> on your form does not change color by accident.</p>
+
+<h2 id="theme-file">Theme file</h2>
+<p><code>"version"</code> in <code>tw.config.json</code> is the file format version: <code>TwTheme.FileVersion</code>, currently 1. A file without it is version 1. A file written for a newer format is rejected with <code>NotSupportedException</code> instead of being read wrongly.</p>
+<pre><code class="language-json">{ "version": 1, "preset": "fluent" }</code></pre>
+
+<h2 id="experimental-extension-points">Experimental extension points (FW9001)</h2>
+<p>Some extension points are tied to System.Drawing and WinForms types and may change when the platform-neutral core is extracted:</p>
+<ul>
+  <li><code>IStyleApplier</code>, <code>TwApplyContext</code>, <code>TwAppliers</code>, <code>WinFormsApplier</code></li>
+  <li><code>TwStyle</code>, <code>TwParsed</code>, <code>TwOriginal</code>, <code>TwTheme.Parse</code></li>
+  <li>Helpers that take a <code>TwStyle</code>: <code>TwFonts.Create</code>, <code>TwChrome.FromStyle</code>, <code>TwGradient.FromStyle</code>, <code>TwLayout.Apply</code>, <code>TwToolTip.ResolveStyle</code></li>
+</ul>
+<p>They are marked <code>[Experimental]</code>: using them is a compile error (FW9001) until you suppress it, which records that you accept they may change.</p>
+<pre><code class="language-xml">&lt;PropertyGroup&gt;
+  &lt;NoWarn&gt;$(NoWarn);FW9001&lt;/NoWarn&gt;
+&lt;/PropertyGroup&gt;</code></pre>
+<p>Applications that only use classes, presets, the theme file and the controls never see FW9001. You need it when you write your own applier for another control library (see <a href="krypton.html#other-control-libraries">other control libraries</a>).</p>
+
+<h2 id="known-limitations">Known limitations</h2>
+<ul>
+  <li>Controls that draw their own cells (for example owner-drawn grids) ignore cell styles and may stay light in dark mode; <code>TwGrid.EnableDarkInversion</code> helps for some of them.</li>
+  <li>The multi-line <code>Classes</code> editor window is only available in the .NET Framework Designer; the .NET 8+ Designer has the drop-down and the class builder.</li>
+  <li>Some owner-drawn controls are not mirrored for right-to-left yet (see <a href="forms.html#right-to-left">Right-to-left</a>).</li>
+</ul>

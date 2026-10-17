@@ -49,6 +49,8 @@ $docs = @(
     @{ Group = "groupIntegration"; File = "dpi.html" }
     @{ Group = "groupIntegration"; File = "accessibility.html" }
     @{ Group = "groupTools"; File = "tools.html" }
+    @{ Group = "groupTools"; File = "performance.html" }
+    @{ Group = "groupTools"; File = "stability.html" }
 )
 $external = @(
     @{ Group = "groupReference"; Title = "extReference"; Href = "{{root}}reference/" }

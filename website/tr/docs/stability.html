@@ -1,0 +1,50 @@
+<!--
+title: Sürümleme ve API kararlılığı
+description: FormWind'in önizleme süresince neyi kararlı tuttuğu: public API, class'ların anlamı ve tema dosyası biçimi; hangi genişletme noktalarının deneysel olduğu (FW9001).
+-->
+<h1>Sürümleme ve API kararlılığı</h1>
+<p class="lead">FormWind önizleme aşamasındadır (0.x). Minor sürümler hâlâ geriye uyumsuz değişiklik içerebilir; her biri <a href="https://github.com/ModuShip/FormWind/blob/main/CHANGELOG.md" rel="noopener">değişiklik günlüğünde</a> <em>Changed</em> ya da <em>Removed</em> altında listelenir. Bir yükseltmenin neye dokunabileceğini görebilmeniz için üç sözleşme ayrı ayrı izlenir.</p>
+
+<h2 id="public-api">Public API</h2>
+<p><code>TailwindProvider</code>, kontroller, <code>TwTheme</code>, hazır görünümler, olaylar ve class'lar public API'dir. İki paketin her public üyesi <code>PublicAPI.Shipped.txt</code> ve <code>PublicAPI.Unshipped.txt</code> dosyalarında listelenir; bu dosyalar güncellenmeden bir üye eklenir ya da kaldırılırsa derleme uyarır. Yalnızca kütüphanenin kullandığı yardımcılar (Designer tipleri dahil) internal'dır.</p>
+<p>1.0'dan itibaren değişiklikler <a href="https://semver.org/" rel="noopener">Semantic Versioning</a>'i izler:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Sürüm</th><th>Neler içerebilir</th></tr></thead>
+  <tbody>
+    <tr><td>Major (<code>2.0.0</code>)</td><td>Kaldırılan ya da değişen public üyeler, mevcut formların görünümünü değiştiren class anlamları, bırakılan bir hedef framework.</td></tr>
+    <tr><td>Minor (<code>1.1.0</code>)</td><td>Yeni class, kontrol, üye ya da seçenekler; mevcut kod ve formlar aynı çalışmaya devam eder.</td></tr>
+    <tr><td>Patch (<code>1.0.1</code>)</td><td>API değişmeden hata düzeltmeleri. Çizim yalnızca önceki çizimin açıkça yanlış olduğu yerde değişir.</td></tr>
+  </tbody>
+</table></div>
+<p>İlk kararlı sürümden sonra paket doğrulaması ikili uyumluluğu önceki sürüme karşı denetler.</p>
+
+<h2 id="class-syntax">Class sözdizimi</h2>
+<p>Bir class'ın anlamı, ona karşı derlenmeyen testlerle sabitlenir. <code>tests/FormWind.Tests/Golden/parse.txt</code> yaklaşık 70 örnek class metninin çözülmüş stilini (varyantları, parçaları, hazır görünümleri ve v4 paletiyle) tutar:</p>
+<pre><code class="language-shell">"bg-red-600/50 text-gray-900/75"
+  BackColor = #80DC2626
+  ForeColor = #BF111827</code></pre>
+<p>Biri değişirse <code>GoldenParseTests</code> başarısız olur. Bilinçli bir değişiklik <code>FORMWIND_UPDATE_BASELINES=1</code> ile kaydedilir ve değişiklik günlüğüne yazılır; böylece formunuzdaki <code>bg-blue-500</code> kazara renk değiştirmez.</p>
+
+<h2 id="theme-file">Tema dosyası</h2>
+<p><code>tw.config.json</code>'daki <code>"version"</code> dosya biçiminin sürümüdür: <code>TwTheme.FileVersion</code>, şu an 1. Bu alanı olmayan dosya sürüm 1 sayılır. Daha yeni bir biçim için yazılmış dosya yanlış okunmak yerine <code>NotSupportedException</code> ile reddedilir.</p>
+<pre><code class="language-json">{ "version": 1, "preset": "fluent" }</code></pre>
+
+<h2 id="experimental-extension-points">Deneysel genişletme noktaları (FW9001)</h2>
+<p>Bazı genişletme noktaları System.Drawing ve WinForms tiplerine bağlıdır ve platformdan bağımsız çekirdek ayrıldığında değişebilir:</p>
+<ul>
+  <li><code>IStyleApplier</code>, <code>TwApplyContext</code>, <code>TwAppliers</code>, <code>WinFormsApplier</code></li>
+  <li><code>TwStyle</code>, <code>TwParsed</code>, <code>TwOriginal</code>, <code>TwTheme.Parse</code></li>
+  <li><code>TwStyle</code> alan yardımcılar: <code>TwFonts.Create</code>, <code>TwChrome.FromStyle</code>, <code>TwGradient.FromStyle</code>, <code>TwLayout.Apply</code>, <code>TwToolTip.ResolveStyle</code></li>
+</ul>
+<p>Bunlar <code>[Experimental]</code> olarak işaretlidir: FW9001'i bastırana kadar kullanmak derleme hatası verir; bastırmak, değişebileceklerini kabul ettiğinizi kaydeder.</p>
+<pre><code class="language-xml">&lt;PropertyGroup&gt;
+  &lt;NoWarn&gt;$(NoWarn);FW9001&lt;/NoWarn&gt;
+&lt;/PropertyGroup&gt;</code></pre>
+<p>Yalnızca class'ları, hazır görünümleri, tema dosyasını ve kontrolleri kullanan uygulamalar FW9001'le hiç karşılaşmaz. Başka bir kontrol kütüphanesi için kendi uygulayıcınızı yazarken gerekir (bkz. <a href="krypton.html#other-control-libraries">diğer kontrol kütüphaneleri</a>).</p>
+
+<h2 id="known-limitations">Bilinen sınırlamalar</h2>
+<ul>
+  <li>Hücrelerini kendisi çizen kontroller (örn. owner-draw grid'ler) hücre stillerini yok sayar ve koyu temada açık kalabilir; bazıları için <code>TwGrid.EnableDarkInversion</code> yardımcı olur.</li>
+  <li>Çok satırlı <code>Classes</code> düzenleyici penceresi yalnızca .NET Framework Designer'ındadır; .NET 8+ Designer'da açılır liste ve class oluşturucu vardır.</li>
+  <li>Bazı owner-draw kontroller henüz sağdan sola yansıtılmaz (bkz. <a href="forms.html#right-to-left">Sağdan sola</a>).</li>
+</ul>

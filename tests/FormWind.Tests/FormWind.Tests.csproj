@@ -56,6 +56,8 @@
   <ItemGroup>
     <!-- Outfit (SIL OFL 1.1): kurulu olmayan bir fontla kayıt testleri için -->
     <None Update="Fonts\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- GoldenParseTests: CI'da kaynak yolu /_/ olarak eşlendiğinden dosya çıktıdan okunur. -->
+    <None Update="Golden\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -51,10 +51,14 @@ description: The Designer-file converter, the harness for trying real applicatio
 <div class="table-wrap"><table>
   <thead><tr><th>Sample</th><th>Shows</th></tr></thead>
   <tbody>
-    <tr><td><code>samples/FormWind.Showcase</code></td><td>The main showcase; <code>--controls</code> for the controls form, <code>--presets</code> for the preset switcher, <code>--snapshot out.png</code> for a screenshot.</td></tr>
+    <tr><td><code>samples/FormWind.Showcase</code></td><td>The main showcase; <code>--controls</code> for the controls form, <code>--presets</code> for the preset switcher, <code>--grid</code> for the DataGridView features, <code>--charts</code> for the chart dashboard, <code>--downtime</code> for the analytics dashboard, <code>--snapshot out.png</code> for a screenshot.</td></tr>
+    <tr><td><code>samples/FormWind.DurusMerkezi</code></td><td>Duruş Merkezi, a complete production-downtime application with five screens, built in code with FormWind (<a href="{{base}}index.html#built-with-formwind">screenshots</a>). Its texts are in Turkish. <code>--light</code>; <code>--snapshot out.png --page 0-4</code>.</td></tr>
     <tr><td><code>samples/FormWind.Krypton.Showcase</code></td><td>A Krypton Toolkit form with a preset picker; <code>--preset material</code>, <code>--dark</code>.</td></tr>
   </tbody>
 </table></div>
+
+<h2>Benchmarks</h2>
+<p><code>tools/FormWind.Benchmarks</code> builds the same form with plain WinForms, FormWind, Krypton Toolkit and MaterialSkin.2 and measures time, memory and GDI/USER objects. The results are on the <a href="performance.html">Performance</a> page.</p>
 
 <h2>Building from source</h2>
 <p><code>build.ps1</code> runs the same steps as CI — build, tests on four targets, coverage, packing. <code>-Quick</code> builds and tests on .NET 8 only.</p>

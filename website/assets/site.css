@@ -398,3 +398,38 @@ td { color: var(--fg-soft); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Bar lists (performance page): one measure per chart, FormWind rows in the accent color, others neutral. */
+.bars { margin: 20px 0 8px; display: grid; gap: 6px; }
+.bars-title { font-weight: 600; color: var(--fg); margin: 28px 0 0; }
+.bars-note { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) 4.5rem; gap: 12px; align-items: center; font-size: 14px; }
+.bar-label { color: var(--fg-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 14px; }
+.bar { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--line-strong); }
+.bar-row.fw .bar { background: var(--accent); }
+.bar-row.fw .bar-label { color: var(--fg); font-weight: 600; }
+.bar-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-soft); }
+@media (max-width: 640px) {
+  .bar-row { grid-template-columns: minmax(0, 1fr) 4rem; row-gap: 2px; }
+  .bar-label { grid-column: 1 / -1; }
+}
+
+/* Screenshots that follow the site theme (light/dark pairs). */
+.themed .shot-dark { display: none; }
+[data-theme="dark"] .themed .shot-dark { display: block; }
+[data-theme="dark"] .themed .shot-light { display: none; }
+.shots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.shots figure { margin: 0; }
+.shot-caption { margin: 10px 2px 0; font-size: 14px; color: var(--muted); }
+.uses { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 28px auto 0; max-width: 900px; padding: 0; list-style: none; }
+.uses li { font: 13px/1.4 var(--mono); padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--fg-soft); }
+
+/* Headline numbers. */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.stat-tile { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.stat-value { display: block; font: 700 clamp(30px, 3.4vw, 40px)/1.1 var(--font-display); letter-spacing: -0.02em; color: var(--fg); font-variant-numeric: tabular-nums; }
+.stat-label { display: block; margin-top: 8px; color: var(--fg-soft); }
+.stat-compare { display: block; margin-top: 6px; font-size: 14px; color: var(--muted); }
+.section-foot { text-align: center; margin: 28px 0 0; }
+@media (max-width: 960px) { .shots, .stats { grid-template-columns: minmax(0, 1fr); } }

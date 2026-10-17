@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Windows.Forms;
 using Xunit;
 
 namespace FormWind.Tests;
@@ -129,12 +130,16 @@ public class GoldenParseTests
     public void Class_syntax_resolves_as_in_the_golden_file()
     {
         var actual = Render();
-        var path = GoldenPath();
+        var path = Path.Combine(AppContext.BaseDirectory, "Golden", "parse.txt");
 
         if (UpdateMode || !File.Exists(path))
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, actual, new UTF8Encoding(false));
+            // Kaynak klasöre yazılır (bir sonraki derleme çıktıya kopyalar); CI'da kaynak yolu /_/ olarak eşlendiğinden çıktıya.
+            var source = SourceGoldenPath();
+            if (!Directory.Exists(Path.GetDirectoryName(Path.GetDirectoryName(source)!))) source = path;
+            Directory.CreateDirectory(Path.GetDirectoryName(source)!);
+            File.WriteAllText(source, actual, new UTF8Encoding(false));
+            path = source;
             if (!UpdateMode)
                 Assert.Fail($"{path} was missing and has been written; review and commit it.");
             return;
@@ -155,7 +160,8 @@ public class GoldenParseTests
             $"If the change is intended, run the tests with {UpdateVariable}=1 and list it in CHANGELOG.md.");
     }
 
-    private static string GoldenPath([CallerFilePath] string source = "") =>
+    // ContinuousIntegrationBuild (CI) yolları /_/ olarak eşler; okuma bu yüzden çıktıya kopyalanan dosyadan yapılır.
+    private static string SourceGoldenPath([CallerFilePath] string source = "") =>
         Path.Combine(Path.GetDirectoryName(source)!, "Golden", "parse.txt");
 
     internal static string Render()
@@ -221,6 +227,9 @@ public class GoldenParseTests
         TwLength length => length.IsAuto ? "auto"
             : length.IsPixels ? length.Value.ToString("0.####", CultureInfo.InvariantCulture) + "px"
             : (length.Value * 100).ToString("0.##", CultureInfo.InvariantCulture) + "%",
+        // Cursor.ToString() .NET Framework'te imlecin adını vermez; Cursors'taki adıyla yazılır.
+        Cursor cursor => typeof(Cursors).GetProperties(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(p => ReferenceEquals(p.GetValue(null), cursor))?.Name ?? "custom",
         bool flag => flag ? "true" : "false",
         float number => number.ToString("0.####", CultureInfo.InvariantCulture),
         double number => number.ToString("0.####", CultureInfo.InvariantCulture),

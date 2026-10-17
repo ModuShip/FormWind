@@ -496,6 +496,7 @@ Kontrol devre dışıyken `focus`, `hover` ve `active` uygulanmaz.
 
 ```jsonc
 {
+  "version": 1,                                          // dosya biçiminin sürümü (isteğe bağlı)
   "preset": "fluent",                                     // hazır görünüm; dosyanın geri kalanı üzerine uygulanır
   "fontFamily": "Segoe UI",
   "spacingUnit": 4,
@@ -513,7 +514,7 @@ Kontrol devre dışıyken `focus`, `hover` ve `active` uygulanmaz.
 
 **Tailwind v4 paleti.** `"palette": "v4"` (kodda `new TwTheme(TwPaletteVersion.V4)` ya da `theme.UsePalette(...)`) aynı 22 rengin v4 tonlarını kullanır. v4 renkleri OKLCH olarak tanımlıdır (`TwPaletteV4`); sRGB'ye sığmayanlar tarayıcıların yaptığı gibi CSS Color 4 gamut eşlemesiyle yaklaştırılır, böylece `blue-500` Tailwind sitesindeki gibi `#2b7fff` olur. Tema dosyasındaki renkler `oklch(62.3% 0.214 259.8)` biçiminde de yazılabilir; kodda `TwOklch.TryParse`. Varsayılan bileşenler iki paletle de kontrast denetiminden geçer.
 
-Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünümün) üzerine eklenir. Bileşenlerin listesi için bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle) ve `TwTheme.DefaultComponents`; `autoStyle` anahtarı AutoStyle eşlemesini değiştirir. Designer önizlemesi ve listeleri de projenin tema dosyasını kullanır (bkz. [Designer](#designer)).
+Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünümün) üzerine eklenir. Bileşenlerin listesi için bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle) ve `TwTheme.DefaultComponents`; `autoStyle` anahtarı AutoStyle eşlemesini değiştirir. Designer önizlemesi ve listeleri de projenin tema dosyasını kullanır (bkz. [Designer](#designer)). `version` dosya biçiminin sürümüdür (bkz. [API kararlılığı](#api-kararlılığı)).
 
 ## Kontroller
 
@@ -785,7 +786,7 @@ Palet, temanın bileşenlerinden kurulur: `page` → form ve panel zemini, form 
 Kendi skin ya da tema motoru olan kontrol kütüphaneleri (ticari kontrol süitleri dahil) kontrollerini kendileri çizer. FormWind tanımadığı kontrollere standart WinForms uygulayıcısını uygular: boyut, boşluk ve yerleşim genellikle çalışır; renkler, durum varyantları (`hover:`, `focus:` …) ve köşeler ise kütüphanenin çizimiyle çakışabilir ya da yok sayılabilir. Bu kütüphanelerle FormWind üç şekilde kullanılabilir:
 
 - **Karma kullanım:** Kütüphanenin güçlü olduğu bileşenler (gelişmiş grid'ler, ribbon, zamanlayıcı …) kendi motorunda kalır; FormWind standart kontrollerde, yeni ekranlarda ve form iskeletinde kullanılır. Kütüphanenin kontrolleri de bir `TwPanel` flex/grid yerleşiminin öğesi olabilir.
-- **Uygulayıcı yazmak:** `IStyleApplier` uygulayan ve `TwAppliers.Register` ile kaydedilen bir sınıf, class'ları kütüphanenin kendi görünüm nesnelerine aktarır; temel stil ve her varyant kütüphanedeki karşılığına (normal, üzerinde, basılı, odaklı, devre dışı) eşlenir. [Krypton Toolkit](#krypton-toolkit) entegrasyonu bu yolun örneğidir. Çoğu skin motorunda renklerin birebir uygulanması için ilgili kontrolde skin'in kapatılması (düz stile geçilmesi) gerekir; yoksa renkler skin tarafından ezilir ya da yalnızca ton olarak kullanılır. `DataGridView`'den türeyen grid'lerde yapısal stil `TwAppliers.FindBuiltIn` ile FormWind'e bırakılabilir; kendi grid'i olan kütüphanelerde eşlemenin tümü uygulayıcıda yapılır.
+- **Uygulayıcı yazmak:** `IStyleApplier` uygulayan ve `TwAppliers.Register` ile kaydedilen bir sınıf, class'ları kütüphanenin kendi görünüm nesnelerine aktarır; temel stil ve her varyant kütüphanedeki karşılığına (normal, üzerinde, basılı, odaklı, devre dışı) eşlenir. [Krypton Toolkit](#krypton-toolkit) entegrasyonu bu yolun örneğidir. Çoğu skin motorunda renklerin birebir uygulanması için ilgili kontrolde skin'in kapatılması (düz stile geçilmesi) gerekir; yoksa renkler skin tarafından ezilir ya da yalnızca ton olarak kullanılır. `DataGridView`'den türeyen grid'lerde yapısal stil `TwAppliers.FindBuiltIn` ile FormWind'e bırakılabilir; kendi grid'i olan kütüphanelerde eşlemenin tümü uygulayıcıda yapılır. Uygulayıcı türleri deneyseldir (FW9001, bkz. [API kararlılığı](#api-kararlılığı)).
 - **Yalnızca tema senkronu:** Kütüphanenin kontrollerine class verilmez; `DarkMode` değişince kütüphanenin açık/koyu skin'ine de geçilir ve istenirse `tw.config.json` renkleri kütüphanenin paletine aktarılır. Her kontrol kendi motoruyla çizilir, iki taraf aynı renkleri kullanır.
 
 Lisanslı kütüphanelere yönelik uygulayıcılar bu repoda yer almaz; uygulamanın kendi projesinde tutulmaları önerilir. FormWind'in mevcut bir uygulamadaki standart kontrollere etkisi kaynak koduna dokunmadan [harness](#gerçek-uygulamalarla-deneme-harness) ile görülebilir.
@@ -910,7 +911,7 @@ Visual Studio Test Explorer'da çalıştırmak için değişkeni Visual Studio'y
 dotnet format analyzers src/FormWind/FormWind.csproj --diagnostics RS0016 --severity warn
 ```
 
-Yalnızca kütüphanenin kendi kullandığı yardımcılar (çizim, parser, iç uygulayıcılar) `internal`'dır; genişletme noktaları (`IStyleApplier`, `TwApplyContext`, `TwStyle`, `ITwChrome`) public'tir.
+`src/FormWind.Krypton`'ın kendi dosya çifti vardır. Yalnızca kütüphanenin kendi kullandığı yardımcılar (çizim, parser, iç uygulayıcılar, Designer türleri) `internal`'dır; genişletme noktaları (`IStyleApplier`, `TwApplyContext`, `TwStyle`, `ITwChrome`) public'tir, henüz değişebilecek olanlar deneysel olarak işaretlidir (bkz. [API kararlılığı](#api-kararlılığı)).
 
 ### Kod kapsamı
 
@@ -997,7 +998,7 @@ $env:FORMWIND_UPDATE_BASELINES = "1"; dotnet test tests/FormWind.Tests -f net472
 
 ### Web sitesi ve belge sitesi
 
-`website/` tanıtım sayfasını ve belgeleri (başlangıç, hazır görünümler, class'lar, yerleşim, kontroller, DataGridView, grafikler, Krypton, Designer, DPI, erişilebilirlik, araçlar) içerir. Statik HTML'dir, derleme aracı gerekmez; `website/build.ps1` sayfaları ortak şablona yerleştirip `docs/` altındaki ekran görüntüleriyle birlikte `artifacts/website`'a yazar. `-Reference` ile aşağıdaki class referansını da `reference/` altına üretir. Site İngilizce (kök) ve Türkçedir (`tr/`): her sayfanın `website/en/` ve `website/tr/` altında aynı adlı bir karşılığı vardır, başlıktaki düğme sayfanın diğer dildeki karşılığına gider; ortak metinler `website/strings.json`'dadır. README'deki bir davranış değiştiğinde iki dildeki ilgili sayfa da güncellenmelidir.
+`website/` tanıtım sayfasını ve belgeleri (başlangıç, hazır görünümler, class'lar, yerleşim, kontroller, DataGridView, grafikler, Krypton, Designer, DPI, erişilebilirlik, araçlar, performans, API kararlılığı) içerir. Statik HTML'dir, derleme aracı gerekmez; `website/build.ps1` sayfaları ortak şablona yerleştirip `docs/` altındaki ekran görüntüleriyle birlikte `artifacts/website`'a yazar. `-Reference` ile aşağıdaki class referansını da `reference/` altına üretir. Site İngilizce (kök) ve Türkçedir (`tr/`): her sayfanın `website/en/` ve `website/tr/` altında aynı adlı bir karşılığı vardır, başlıktaki düğme sayfanın diğer dildeki karşılığına gider; ortak metinler `website/strings.json`'dadır. README'deki bir davranış değiştiğinde iki dildeki ilgili sayfa da güncellenmelidir.
 
 ```powershell
 .\website\build.ps1 -Reference
@@ -1045,6 +1046,22 @@ Vitrin formunun ekran görüntüsü (`--controls` kontroller formunu açar):
 
 ```bash
 samples/FormWind.Showcase/bin/Debug/net472/FormWind.Showcase.exe --snapshot light.png
+```
+
+## API kararlılığı
+
+FormWind ön sürümdedir (0.x): minor sürümler kırıcı değişiklik içerebilir; bunlar [değişiklik günlüğünde](CHANGELOG.md) *Changed* ya da *Removed* altında listelenir. Üç sözleşme ayrı tutulur:
+
+- **Public API:** `TailwindProvider`, kontroller, `TwTheme`, hazır görünümler, olaylar ve class'lar. Her public üye izlenir (bkz. [Public API](#public-api)); 1.0'dan sonra değişiklikler [Semantic Versioning](CONTRIBUTING.md#versioning) kurallarına uyar.
+- **Class söz dizimi:** bir class'ın anlamı derleyicinin yakalayamadığı bir sözleşmedir ve testlerle sabitlenir: `tests/FormWind.Tests/Golden/parse.txt` yaklaşık 70 örnek class dizisinin çözümlenmiş stilini (varyantları, parçaları, hazır görünümleri ve v4 paletiyle) tutar; biri değişirse `GoldenParseTests` düşer. Bilinçli bir değişiklik `FORMWIND_UPDATE_BASELINES=1` ile yazılır ve değişiklik günlüğüne eklenir.
+- **Tema dosyası:** `tw.config.json` içindeki `"version"` dosya biçiminin sürümüdür (`TwTheme.FileVersion`, şu an 1; alan yoksa 1 sayılır). Daha yeni bir biçim için yazılmış dosya yanlış okunmak yerine `NotSupportedException` ile reddedilir.
+
+**Deneysel genişletme noktaları (FW9001).** `IStyleApplier`, `TwApplyContext`, `TwAppliers`, `WinFormsApplier`, `TwStyle`, `TwParsed`, `TwOriginal`, `TwTheme.Parse` ve `TwStyle` alan yardımcılar (`TwFonts.Create`, `TwChrome.FromStyle`, `TwGradient.FromStyle`, `TwLayout.Apply`, `TwToolTip.ResolveStyle`) System.Drawing ve WinForms türlerine bağlıdır; platformdan bağımsız çekirdek ayrıldığında değişebilirler. Kullanımları, tanılama gizlenene kadar derleme hatasıdır (FW9001):
+
+```xml
+<PropertyGroup>
+  <NoWarn>$(NoWarn);FW9001</NoWarn>
+</PropertyGroup>
 ```
 
 ## Paketleme

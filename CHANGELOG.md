@@ -66,6 +66,12 @@ First public preview.
 - Compatibility with .NET 9+ `Application.SetColorMode`.
 - Targets .NET Framework 4.7.2 and .NET 8; tested on .NET Framework, .NET 8, 9 and 10.
 - MIT License; `THIRD-PARTY-NOTICES.md` is included in the packages.
+- **API stability:** the extension points tied to System.Drawing and WinForms types (`IStyleApplier`, `TwApplyContext`,
+  `TwAppliers`, `WinFormsApplier`, `TwStyle`, `TwParsed`, `TwOriginal`, `TwTheme.Parse` and the helpers that take a
+  `TwStyle`) are experimental: using them reports FW9001 until it is suppressed. `"version"` in the theme file
+  (`TwTheme.FileVersion`, currently 1) rejects files written for a newer format. The meaning of the class syntax is
+  pinned by golden tests (`tests/FormWind.Tests/Golden/parse.txt`). The public API of both packages is tracked.
+  Only FormWind itself creates `TwApplyContext`, and the Designer types (`FormWind.Design`) are internal.
 
 ### Known limitations
 

@@ -51,10 +51,14 @@ description: Designer dosyası dönüştürücüsü, gerçek uygulamaları deği
 <div class="table-wrap"><table>
   <thead><tr><th>Örnek</th><th>Gösterdiği</th></tr></thead>
   <tbody>
-    <tr><td><code>samples/FormWind.Showcase</code></td><td>Ana vitrin; kontroller formu için <code>--controls</code>, görünüm değiştirici için <code>--presets</code>, ekran görüntüsü için <code>--snapshot out.png</code>.</td></tr>
+    <tr><td><code>samples/FormWind.Showcase</code></td><td>Ana vitrin; kontroller formu için <code>--controls</code>, görünüm değiştirici için <code>--presets</code>, DataGridView özellikleri için <code>--grid</code>, grafik panosu için <code>--charts</code>, analitik pano için <code>--downtime</code>, ekran görüntüsü için <code>--snapshot out.png</code>.</td></tr>
+    <tr><td><code>samples/FormWind.DurusMerkezi</code></td><td>Duruş Merkezi: beş ekranlı, kodla kurulmuş eksiksiz bir üretim duruşu uygulaması (<a href="{{base}}index.html#built-with-formwind">ekran görüntüleri</a>). <code>--light</code>; <code>--snapshot out.png --page 0-4</code>.</td></tr>
     <tr><td><code>samples/FormWind.Krypton.Showcase</code></td><td>Görünüm seçicili bir Krypton Toolkit formu; <code>--preset material</code>, <code>--dark</code>.</td></tr>
   </tbody>
 </table></div>
+
+<h2 id="benchmarks">Performans ölçümü</h2>
+<p><code>tools/FormWind.Benchmarks</code> aynı formu düz WinForms, FormWind, Krypton Toolkit ve MaterialSkin.2 ile kurup süreyi, belleği ve GDI/USER nesnelerini ölçer. Sonuçlar <a href="performance.html">Performans</a> sayfasındadır.</p>
 
 <h2 id="building-from-source">Kaynaktan derleme</h2>
 <p><code>build.ps1</code>, CI ile aynı adımları çalıştırır: derleme, dört hedefte testler, kapsam, paketleme. <code>-Quick</code> yalnızca .NET 8'de derler ve test eder.</p>

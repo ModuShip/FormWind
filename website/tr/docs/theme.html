@@ -6,6 +6,7 @@ description: tw.config.json — renkler, bileşenler, fontlar, Tailwind v4 palet
 <p class="lead"><code>tw.config.json</code> paletinizi, bileşenlerinizi, fontlarınızı ve ikonlarınızı tutar. Varsayılan temanın (ya da adını verdiği hazır görünümün) üzerine uygulanır; bu yüzden yalnızca farklı olanı içermesi yeterlidir.</p>
 
 <pre><code class="language-jsonc">{
+  "version": 1,                                         // dosya biçiminin sürümü (isteğe bağlı)
   "preset": "fluent",                                   // önce uygulanır; dosyanın geri kalanı üzerine gelir
   "fontFamily": "Segoe UI",
   "spacingUnit": 4,
@@ -26,6 +27,7 @@ description: tw.config.json — renkler, bileşenler, fontlar, Tailwind v4 palet
 <div class="table-wrap"><table>
   <thead><tr><th>Anahtar</th><th>Anlamı</th></tr></thead>
   <tbody>
+    <tr><td><code>version</code></td><td>Dosya biçiminin sürümü (<code>TwTheme.FileVersion</code>, şu an 1; olmayan dosya sürüm 1 sayılır). Daha yeni bir biçim için yazılmış dosya yanlış okunmak yerine reddedilir (bkz. <a href="stability.html#theme-file">API kararlılığı</a>).</td></tr>
     <tr><td><code>preset</code></td><td><code>tailwind</code>, <code>fluent</code>, <code>antd</code>, <code>material</code>. Diğer anahtarlardan önce uygulanır.</td></tr>
     <tr><td><code>palette</code></td><td><code>v3</code> (varsayılan) ya da <code>v4</code>.</td></tr>
     <tr><td><code>colors</code></td><td>Yeni renkler (tek değer ya da ton rampası) ve <code>primary</code>, <code>surface</code>, <code>danger</code>, <code>success</code>, <code>warning</code> anlamsal rampaları.</td></tr>

@@ -187,8 +187,8 @@ var palette = TwKryptonTheme.Follow(tailwindProvider1);</code></pre>
         </div>
         <div class="feature">
           <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v5"/></svg></div>
-          <h3>Owner-drawn controls</h3>
-          <p><code>TwButton</code>, <code>TwTextBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code>, <code>TwDataList</code>, <code>TwTreeView</code>, <code>TwSwitch</code> and more, with anti-aliased corners.</p>
+          <h3>Controls and charts</h3>
+          <p><code>TwSelect</code>, <code>TwDatePicker</code>, <code>TwDataList</code>, <code>TwTreeView</code> and more, plus line, bar and donut charts, heatmaps, progress rings, timelines and steppers. No extra dependency.</p>
         </div>
         <div class="feature">
           <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div>
@@ -262,6 +262,54 @@ this.btnSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(2
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="built-with-formwind">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">Built with FormWind</p>
+        <h2>A complete desktop application, in plain WinForms.</h2>
+        <p>Duruş Merkezi is a production-downtime platform: shift closing, downtime entry, root-cause analysis, chronic failure tracking and reports, on five screens. It ships as a sample, built in code with FormWind, with no other UI library.</p>
+      </div>
+      <div class="shots">
+        <figure class="themed">
+          <div class="window">
+            <img class="shot-light" src="{{root}}img/durus-dashboard-light.png" width="1440" height="900" alt="Shift closing screen: KPI cards for OEE, downtime, MTBF and MTTR, data entry status per line, downtimes waiting for a root cause and line scorecards with sparklines" loading="lazy">
+            <img class="shot-dark" src="{{root}}img/durus-dashboard-dark.png" width="1440" height="900" alt="The shift closing screen in dark mode" loading="lazy">
+          </div>
+          <figcaption class="shot-caption">Shift closing: KPI cards, entry status per line, line scorecards.</figcaption>
+        </figure>
+        <figure class="themed">
+          <div class="window">
+            <img class="shot-light" src="{{root}}img/durus-records-light.png" width="1440" height="1000" alt="Downtime records screen: a list of downtime records with status badges and a detail pane with a five-whys analysis, approval flow and classification" loading="lazy">
+            <img class="shot-dark" src="{{root}}img/durus-records-dark.png" width="1440" height="1000" alt="The downtime records screen in dark mode" loading="lazy">
+          </div>
+          <figcaption class="shot-caption">Downtime records: list, five-whys analysis, approval flow.</figcaption>
+        </figure>
+      </div>
+      <ul class="uses" aria-label="FormWind features used in Duruş Merkezi">
+        <li>AutoStyle</li><li>TwChart</li><li>TwHeatmap</li><li>TwRingChart</li><li>TwTimeline</li><li>TwStepper</li>
+        <li>TwSparkline</li><li>TwStat</li><li>TwDataList</li><li>TwSelect</li><li>TwTabStrip</li><li>DataGridView + TwBadgeColumn</li>
+        <li>flex / grid</li><li>dark:</li>
+      </ul>
+      <p class="section-foot"><a href="{{base}}docs/tools.html#samples">Run the samples →</a> <span class="stat-compare">The sample's texts are in Turkish.</span></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">Performance</p>
+        <h2>Modern looks without a slower app.</h2>
+        <p>Measured against plain WinForms, Krypton Toolkit and MaterialSkin.2 on a form with 200 controls.</p>
+      </div>
+      <div class="stats">
+        <div class="stat-tile"><span class="stat-value">185–228 ms</span><span class="stat-label">to open and paint the form</span><span class="stat-compare">plain WinForms 236 ms · Krypton 346 ms</span></div>
+        <div class="stat-tile"><span class="stat-value">16–29 ms</span><span class="stat-label">to switch between light and dark</span><span class="stat-compare">Krypton 556 ms · MaterialSkin 61 ms</span></div>
+        <div class="stat-tile"><span class="stat-value">+0</span><span class="stat-label">GDI objects compared with plain WinForms</span><span class="stat-compare">constant over 500 open/close cycles</span></div>
+      </div>
+      <p class="section-foot"><a href="{{base}}docs/performance.html">Method and all measurements →</a></p>
     </div>
   </section>
 

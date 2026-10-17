@@ -6,6 +6,7 @@ description: tw.config.json — colors, components, fonts, the Tailwind v4 palet
 <p class="lead"><code>tw.config.json</code> holds your palette, components, fonts and icons. It is applied on top of the default theme — or on top of the preset it names — so it only needs what is different.</p>
 
 <pre><code class="language-jsonc">{
+  "version": 1,                                         // file format version (optional)
   "preset": "fluent",                                   // applied first; the rest goes on top
   "fontFamily": "Segoe UI",
   "spacingUnit": 4,
@@ -26,6 +27,7 @@ description: tw.config.json — colors, components, fonts, the Tailwind v4 palet
 <div class="table-wrap"><table>
   <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
   <tbody>
+    <tr><td><code>version</code></td><td>File format version (<code>TwTheme.FileVersion</code>, currently 1; a file without it is version 1). A file written for a newer format is rejected instead of being read wrongly (see <a href="stability.html#theme-file">API stability</a>).</td></tr>
     <tr><td><code>preset</code></td><td><code>tailwind</code>, <code>fluent</code>, <code>antd</code>, <code>material</code>. Applied before the other keys.</td></tr>
     <tr><td><code>palette</code></td><td><code>v3</code> (default) or <code>v4</code>.</td></tr>
     <tr><td><code>colors</code></td><td>New colors (a single value or a ramp of shades) and the semantic ramps <code>primary</code>, <code>surface</code>, <code>danger</code>, <code>success</code>, <code>warning</code>.</td></tr>

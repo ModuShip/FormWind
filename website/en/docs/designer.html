@@ -39,6 +39,9 @@ btnSave.BackColor = Color.Red;   // FW001: 'btnSave' has classes; assigning 'Bac
 
 <h2 id="fw002">FW002: forms that won't scale</h2>
 <p>In .NET Framework projects, warns when an <code>InitializeComponent</code> that uses <code>SetClasses</code> sets <code>AutoScaleMode.Font</code> and assigns the form's <code>Font</code> after <code>AutoScaleDimensions</code>. Under PerMonitorV2 such a form doesn't scale; the fix is <code>AutoScaleMode.Dpi</code> (see <a href="dpi.html">DPI</a>).</p>
+<h2 id="fw9001">FW9001: experimental API</h2>
+<p>Extension points tied to System.Drawing and WinForms types (<code>IStyleApplier</code>, <code>TwStyle</code>, <code>TwTheme.Parse</code> …) may still change. Using them is an error until you suppress FW9001; see <a href="stability.html#experimental-extension-points">API stability</a>.</p>
+<p>To turn the FW001 and FW002 warnings off:</p>
 <pre><code class="language-ini"># .editorconfig
 dotnet_diagnostic.FW001.severity = none
 dotnet_diagnostic.FW002.severity = none</code></pre>

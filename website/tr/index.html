@@ -187,8 +187,8 @@ var palette = TwKryptonTheme.Follow(tailwindProvider1);</code></pre>
         </div>
         <div class="feature">
           <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v5"/></svg></div>
-          <h3>Owner-draw kontroller</h3>
-          <p><code>TwButton</code>, <code>TwTextBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code>, <code>TwDataList</code>, <code>TwTreeView</code>, <code>TwSwitch</code> ve daha fazlası; antialias köşelerle.</p>
+          <h3>Kontroller ve grafikler</h3>
+          <p><code>TwSelect</code>, <code>TwDatePicker</code>, <code>TwDataList</code>, <code>TwTreeView</code> ve daha fazlası; ayrıca çizgi, çubuk ve halka grafikler, ısı haritaları, ilerleme halkaları, zaman çizelgeleri ve adım göstergeleri. Ek bağımlılık yok.</p>
         </div>
         <div class="feature">
           <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div>
@@ -262,6 +262,54 @@ this.btnSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(2
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="built-with-formwind">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">FormWind ile yapıldı</p>
+        <h2>Düz WinForms ile eksiksiz bir masaüstü uygulaması.</h2>
+        <p>Duruş Merkezi bir üretim duruşu platformudur: vardiya kapanışı, duruş girişi, kök neden analizi, kronik arıza takibi ve raporlar, beş ekranda. Örnek olarak gelir; FormWind ile kodla kurulmuştur, başka bir arayüz kütüphanesi kullanmaz.</p>
+      </div>
+      <div class="shots">
+        <figure class="themed">
+          <div class="window">
+            <img class="shot-light" src="{{root}}img/durus-dashboard-light.png" width="1440" height="900" alt="Vardiya kapanışı ekranı: OEE, duruş, MTBF ve MTTR kartları, hat bazında veri giriş durumu, kök neden bekleyen duruşlar ve sparkline'lı hat karneleri" loading="lazy">
+            <img class="shot-dark" src="{{root}}img/durus-dashboard-dark.png" width="1440" height="900" alt="Vardiya kapanışı ekranı koyu temada" loading="lazy">
+          </div>
+          <figcaption class="shot-caption">Vardiya kapanışı: KPI kartları, hat bazında giriş durumu, hat karneleri.</figcaption>
+        </figure>
+        <figure class="themed">
+          <div class="window">
+            <img class="shot-light" src="{{root}}img/durus-records-light.png" width="1440" height="1000" alt="Duruş kayıtları ekranı: durum rozetli kayıt listesi ve 5 Neden analizi, onay akışı ve sınıflandırma içeren ayrıntı bölmesi" loading="lazy">
+            <img class="shot-dark" src="{{root}}img/durus-records-dark.png" width="1440" height="1000" alt="Duruş kayıtları ekranı koyu temada" loading="lazy">
+          </div>
+          <figcaption class="shot-caption">Duruş kayıtları: liste, 5 Neden analizi, onay akışı.</figcaption>
+        </figure>
+      </div>
+      <ul class="uses" aria-label="Duruş Merkezi'nin kullandığı FormWind özellikleri">
+        <li>AutoStyle</li><li>TwChart</li><li>TwHeatmap</li><li>TwRingChart</li><li>TwTimeline</li><li>TwStepper</li>
+        <li>TwSparkline</li><li>TwStat</li><li>TwDataList</li><li>TwSelect</li><li>TwTabStrip</li><li>DataGridView + TwBadgeColumn</li>
+        <li>flex / grid</li><li>dark:</li>
+      </ul>
+      <p class="section-foot"><a href="{{base}}docs/tools.html#samples">Örnekleri çalıştırın →</a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">Performans</p>
+        <h2>Modern görünüm, yavaşlamadan.</h2>
+        <p>200 kontrollü bir formda düz WinForms, Krypton Toolkit ve MaterialSkin.2 ile karşılaştırmalı ölçüldü.</p>
+      </div>
+      <div class="stats">
+        <div class="stat-tile"><span class="stat-value">185–228 ms</span><span class="stat-label">formu açıp çizmek için</span><span class="stat-compare">düz WinForms 236 ms · Krypton 346 ms</span></div>
+        <div class="stat-tile"><span class="stat-value">16–29 ms</span><span class="stat-label">açık ↔ koyu tema geçişi için</span><span class="stat-compare">Krypton 556 ms · MaterialSkin 61 ms</span></div>
+        <div class="stat-tile"><span class="stat-value">+0</span><span class="stat-label">düz WinForms'a göre ek GDI nesnesi</span><span class="stat-compare">500 aç/kapat boyunca sabit</span></div>
+      </div>
+      <p class="section-foot"><a href="{{base}}docs/performance.html">Yöntem ve bütün ölçümler →</a></p>
     </div>
   </section>
 

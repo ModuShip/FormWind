@@ -1,0 +1,640 @@
+# Resolved TwStyle values of sample class strings (GoldenParseTests).
+# Only states whose result differs from the base state are listed.
+
+## default
+
+"bg-blue-500 text-white"
+  BackColor = #FF3B82F6
+  ForeColor = #FFFFFFFF
+
+"bg-red-600/50 text-gray-900/75"
+  BackColor = #80DC2626
+  ForeColor = #BF111827
+
+"bg-[#1e3f6e] text-[#fff] border-[rgb(10,20,30)]"
+  unknown: border-[rgb(10,20,30)]
+  BackColor = #FF1E3F6E
+  ForeColor = #FFFFFFFF
+
+"bg-transparent text-black border-current"
+  unknown: border-current
+  BackColor = #00FFFFFF
+  ForeColor = #FF000000
+
+"accent-pink-500 fill-emerald-400"
+  AccentColor = #FFEC4899
+  FillColor = #FF34D399
+
+"p-4"
+  Padding = 16,16,16,16
+
+"px-3 py-1.5"
+  Padding = 12,6,12,6
+
+"pt-1 pr-2 pb-3 pl-4"
+  Padding = 16,4,8,12
+
+"m-2 mx-auto"
+  unknown: mx-auto
+  Margin = 8,8,8,8
+
+"ms-2 me-4"
+  unknown: ms-2 me-4
+
+"p-[13px] m-[7px]"
+  Margin = 7,7,7,7
+  Padding = 13,13,13,13
+
+"w-64 h-10"
+  Height = 40px
+  Width = 256px
+
+"w-1/2 h-full"
+  Height = 100%
+  Width = 50%
+
+"w-auto min-w-32 max-w-96 min-h-8 max-h-64"
+  unknown: w-auto
+  MaxHeight = 256
+  MaxWidth = 384
+  MinHeight = 32
+  MinWidth = 128
+
+"w-[250px] h-[3rem]"
+  unknown: h-[3rem]
+  Width = 250px
+
+"text-sm font-medium"
+  FontSizePx = 14
+  FontWeight = 500
+
+"text-2xl font-bold italic underline"
+  FontSizePx = 24
+  FontWeight = 700
+  Italic = true
+  Underline = true
+
+"text-[15px] font-[650]"
+  unknown: font-[650]
+  FontSizePx = 15
+
+"font-sans font-mono"
+  FontFamily = Consolas
+
+"text-center truncate"
+  NoWrap = true
+  TextAlign = Center
+  Truncate = true
+
+"text-right whitespace-nowrap"
+  NoWrap = true
+  TextAlign = Right
+
+"border border-gray-300 rounded-md"
+  BorderColor = #FFD1D5DB
+  BorderWidth = 1
+  Radius = 6
+
+"border-2 border-t-4 border-x-0"
+  BorderSides = 0,4,0,-
+  BorderWidth = 2
+
+"rounded-full rounded-lg rounded-none"
+  Radius = 0
+
+"rounded-[10px] border-[3px]"
+  unknown: border-[3px]
+  Radius = 10
+
+"divide-y divide-gray-200"
+  DivideColor = #FFE5E7EB
+  DivideY = true
+
+"shadow-md shadow-blue-500/30"
+  Shadow = Md
+  ShadowColor = #4C3B82F6
+
+"shadow-none"
+  Shadow = None
+
+"ring-2 ring-blue-500 ring-offset-2 ring-offset-white"
+  RingColor = #FF3B82F6
+  RingOffset = 2
+  RingOffsetColor = #FFFFFFFF
+  RingWidth = 2
+
+"bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+  GradientDirection = ToRight
+  GradientFrom = #FF6366F1
+  GradientTo = #FFEC4899
+  GradientVia = #FFA855F7
+
+"bg-gradient-to-b from-white to-gray-100"
+  GradientDirection = ToBottom
+  GradientFrom = #FFFFFFFF
+  GradientTo = #FFF3F4F6
+
+"cursor-pointer hidden"
+  Cursor = Hand
+  Hidden = true
+
+"transition duration-300"
+  DurationMs = 300
+  Transition = true
+
+"object-cover"
+  ObjectFit = Cover
+
+"flex flex-row gap-4 items-center justify-between"
+  AlignItems = Center
+  Display = Flex
+  FlexDirection = Row
+  GapX = 16
+  GapY = 16
+  JustifyContent = Between
+
+"flex flex-col flex-wrap gap-x-2 gap-y-6"
+  Display = Flex
+  FlexDirection = Column
+  FlexWrap = true
+  GapX = 8
+  GapY = 24
+
+"grow shrink-0 basis-1/3"
+  FlexBasis = 33.33%
+  FlexGrow = 1
+  FlexShrink = 0
+
+"self-end"
+  AlignSelf = End
+
+"grid grid-cols-3 grid-rows-2 col-span-2 row-span-2"
+  ColumnSpan = 2
+  Display = Grid
+  GridColumns = 3
+  GridRows = 2
+  RowSpan = 2
+
+"block"
+  Display = Block
+
+"group"
+  IsGroup = true
+
+"bg-white hover:bg-gray-100 active:bg-gray-200"
+  BackColor = #FFFFFFFF
+  [Hover]
+    BackColor = #FFF3F4F6
+  [Active]
+    BackColor = #FFE5E7EB
+  [Dark|Hover]
+    BackColor = #FFF3F4F6
+
+"focus:ring-2 focus-visible:ring-4 focus:ring-blue-500"
+  [Focus]
+    RingColor = #FF3B82F6
+    RingWidth = 2
+  [FocusVisible]
+    RingWidth = 4
+
+"disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400"
+  unknown: disabled:opacity-50
+  [Disabled]
+    BackColor = #FFE5E7EB
+    ForeColor = #FF9CA3AF
+
+"checked:bg-blue-600 invalid:border-red-500"
+  [Checked]
+    BackColor = #FF2563EB
+  [Invalid]
+    BorderColor = #FFEF4444
+
+"group-hover:text-blue-600"
+  [GroupHover]
+    ForeColor = #FF2563EB
+
+"dark:bg-gray-900 dark:text-white dark:hover:bg-gray-800"
+  [Dark]
+    BackColor = #FF111827
+    ForeColor = #FFFFFFFF
+  [Dark|Hover]
+    BackColor = #FF1F2937
+    ForeColor = #FFFFFFFF
+
+"p-2 md:p-4 lg:p-8"
+  Padding = 8,8,8,8
+  [Md]
+    Padding = 16,16,16,16
+  [Lg]
+    Padding = 32,32,32,32
+
+"ml-2 rtl:mr-2 rtl:ml-0 ltr:text-left"
+  Margin = 8,-,-,-
+  [Rtl]
+    Margin = 0,-,8,-
+  [Ltr]
+    TextAlign = Left
+
+"bg-blue-500 forced-colors:bg-white"
+  BackColor = #FF3B82F6
+  [HighContrast]
+    AccentColor = Highlight
+    BackColor = #FFFFFFFF
+    FillColor = ControlDark
+    RingColor = Highlight
+    RingOffsetColor = Window
+
+"p-2 p-4"
+  Padding = 16,16,16,16
+
+"bg-red-500 bg-blue-500"
+  BackColor = #FF3B82F6
+
+"btn"
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  Padding = 16,8,16,8
+  Radius = 6
+  Transition = true
+
+"btn-primary"
+  BackColor = #FF2563EB
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  ForeColor = #FFFFFFFF
+  Padding = 16,8,16,8
+  Radius = 6
+  Transition = true
+  [Hover]
+    BackColor = #FF1D4ED8
+  [Active]
+    BackColor = #FF1E40AF
+  [Disabled]
+    BackColor = #FFD1D5DB
+    ForeColor = #FF6B7280
+  [Dark|Hover]
+    BackColor = #FF1D4ED8
+
+"btn-secondary px-6"
+  BackColor = #FFF3F4F6
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  ForeColor = #FF111827
+  Padding = 24,8,24,8
+  Radius = 6
+  Transition = true
+  [Hover]
+    BackColor = #FFE5E7EB
+  [Active]
+    BackColor = #FFD1D5DB
+  [Disabled]
+    BackColor = #FFF9FAFB
+    ForeColor = #FF6B7280
+  [Dark]
+    BackColor = #FF374151
+    ForeColor = #FFF3F4F6
+  [Dark|Hover]
+    BackColor = #FF4B5563
+    ForeColor = #FFF3F4F6
+
+"btn-danger"
+  BackColor = #FFDC2626
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  ForeColor = #FFFFFFFF
+  Padding = 16,8,16,8
+  Radius = 6
+  Transition = true
+  [Hover]
+    BackColor = #FFB91C1C
+  [Active]
+    BackColor = #FF991B1B
+  [Disabled]
+    BackColor = #FFD1D5DB
+    ForeColor = #FF6B7280
+  [Dark|Hover]
+    BackColor = #FFB91C1C
+
+"card"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFE5E7EB
+  BorderWidth = 1
+  Padding = 16,16,16,16
+  Radius = 8
+  Shadow = Sm
+  [Dark]
+    BackColor = #FF1F2937
+    BorderColor = #FF374151
+  [Dark|Hover]
+    BackColor = #FF1F2937
+    BorderColor = #FF374151
+
+"input"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFD1D5DB
+  BorderWidth = 1
+  ForeColor = #FF111827
+  Padding = 12,8,12,8
+  Radius = 6
+  [Focus]
+    BorderColor = #FF3B82F6
+    RingColor = #4C3B82F6
+    RingWidth = 2
+  [Invalid]
+    BorderColor = #FFEF4444
+    RingColor = #33EF4444
+    RingWidth = 2
+  [Dark]
+    BackColor = #FF111827
+    BorderColor = #FF4B5563
+    ForeColor = #FFF3F4F6
+  [Dark|Hover]
+    BackColor = #FF111827
+    BorderColor = #FF4B5563
+    ForeColor = #FFF3F4F6
+
+"badge"
+  BackColor = #FFDBEAFE
+  FontSizePx = 12
+  FontWeight = 600
+  ForeColor = #FF1E40AF
+  Padding = 8,-,8,-
+  Radius = 9999
+  TextAlign = Center
+  [Dark]
+    BackColor = #FF1E3A8A
+    ForeColor = #FFDBEAFE
+  [Dark|Hover]
+    BackColor = #FF1E3A8A
+    ForeColor = #FFDBEAFE
+
+"alert-warning"
+  BackColor = #FFFFFBEB
+  BorderColor = #FFFDE68A
+  BorderWidth = 1
+  FontSizePx = 14
+  ForeColor = #FF92400E
+  Padding = 12,12,12,12
+  Radius = 6
+  [Dark]
+    BackColor = #FF451A03
+    BorderColor = #FF92400E
+    ForeColor = #FFFEF3C7
+  [Dark|Hover]
+    BackColor = #FF451A03
+    BorderColor = #FF92400E
+    ForeColor = #FFFEF3C7
+
+"link"
+  Cursor = Hand
+  ForeColor = #FF2563EB
+  Underline = true
+  [Hover]
+    ForeColor = #FF1E40AF
+  [Dark]
+    ForeColor = #FF60A5FA
+  [Dark|Hover]
+    ForeColor = #FF93C5FD
+
+"title"
+  FontSizePx = 24
+  FontWeight = 600
+  ForeColor = #FF111827
+  [Dark]
+    ForeColor = #FFFFFFFF
+  [Dark|Hover]
+    ForeColor = #FFFFFFFF
+
+"muted"
+  FontSizePx = 14
+  ForeColor = #FF6B7280
+  [Dark]
+    ForeColor = #FF9CA3AF
+  [Dark|Hover]
+    ForeColor = #FF9CA3AF
+
+"not-a-class bg-blue-500 p-unknown"
+  unknown: not-a-class p-unknown
+  BackColor = #FF3B82F6
+
+""
+
+"header:bg-gray-100 header:font-semibold cell:px-3" (part header)
+  BackColor = #FFF3F4F6
+  FontWeight = 600
+
+"header:bg-gray-100 cell:px-3 cell:hover:bg-blue-50" (part cell)
+  Padding = 12,-,12,-
+  [Hover]
+    BackColor = #FFEFF6FF
+  [Dark|Hover]
+    BackColor = #FFEFF6FF
+
+"item:py-2 selected:bg-blue-600 selected:text-white" (part selected)
+  BackColor = #FF2563EB
+  ForeColor = #FFFFFFFF
+
+## palette v4
+
+"bg-blue-500 text-gray-900 border-red-600"
+  BackColor = #FF2B7FFF
+  BorderColor = #FFE7000B
+  ForeColor = #FF101828
+
+"btn-primary"
+  BackColor = #FF155DFC
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  ForeColor = #FFFFFFFF
+  Padding = 16,8,16,8
+  Radius = 6
+  Transition = true
+  [Hover]
+    BackColor = #FF1447E6
+  [Active]
+    BackColor = #FF193CB8
+  [Disabled]
+    BackColor = #FFD1D5DC
+    ForeColor = #FF6A7282
+  [Dark|Hover]
+    BackColor = #FF1447E6
+
+## preset fluent
+
+"btn-primary"
+  BackColor = #FF0F6CBD
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 600
+  ForeColor = #FFFFFFFF
+  Padding = 12,6,12,6
+  Radius = 4
+  Transition = true
+  [Hover]
+    BackColor = #FF115EA3
+  [Active]
+    BackColor = #FF0F548C
+  [Disabled]
+    BackColor = #FFE0E0E0
+    ForeColor = #FF707070
+  [Dark|Hover]
+    BackColor = #FF115EA3
+
+"input"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFD1D1D1
+  BorderWidth = 1
+  ForeColor = #FF1F1F1F
+  Padding = 12,6,12,6
+  Radius = 4
+  [Hover]
+    BorderColor = #FFADADAD
+  [Focus]
+    BorderColor = #FF0F6CBD
+  [Invalid]
+    BorderColor = #FFDC2626
+  [Dark]
+    BackColor = #FF292929
+    BorderColor = #FF616161
+    ForeColor = #FFF5F5F5
+  [Dark|Hover]
+    BackColor = #FF292929
+    BorderColor = #FFADADAD
+    ForeColor = #FFF5F5F5
+
+"card"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFE0E0E0
+  BorderWidth = 1
+  Padding = 16,16,16,16
+  Radius = 8
+  Shadow = Base
+  [Dark]
+    BackColor = #FF292929
+    BorderColor = #FF424242
+  [Dark|Hover]
+    BackColor = #FF292929
+    BorderColor = #FF424242
+
+## preset antd
+
+"btn-primary"
+  BackColor = #FF0958D9
+  Cursor = Hand
+  FontSizePx = 14
+  ForeColor = #FFFFFFFF
+  Padding = 16,4,16,4
+  Radius = 6
+  Transition = true
+  [Hover]
+    BackColor = #FF003EB3
+  [Active]
+    BackColor = #FF002C8C
+  [Disabled]
+    BackColor = #FFF5F5F5
+    ForeColor = #FF595959
+  [Dark|Hover]
+    BackColor = #FF003EB3
+
+"input"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFD9D9D9
+  BorderWidth = 1
+  ForeColor = #FF141414
+  Padding = 12,6,12,6
+  Radius = 6
+  [Hover]
+    BorderColor = #FF1677FF
+  [Focus]
+    BorderColor = #FF1677FF
+    RingColor = #331677FF
+    RingWidth = 2
+  [Invalid]
+    BorderColor = #FFEF4444
+    RingColor = #33EF4444
+    RingWidth = 2
+  [Dark]
+    BackColor = #FF1F1F1F
+    BorderColor = #FF434343
+    ForeColor = #FFF5F5F5
+  [Dark|Hover]
+    BackColor = #FF1F1F1F
+    BorderColor = #FF4096FF
+    ForeColor = #FFF5F5F5
+
+"card"
+  BackColor = #FFFFFFFF
+  BorderColor = #FFF0F0F0
+  BorderWidth = 1
+  Padding = 24,24,24,24
+  Radius = 8
+  [Dark]
+    BackColor = #FF1F1F1F
+    BorderColor = #FF434343
+  [Dark|Hover]
+    BackColor = #FF1F1F1F
+    BorderColor = #FF434343
+
+## preset material
+
+"btn-primary"
+  BackColor = #FF6750A4
+  Cursor = Hand
+  FontSizePx = 14
+  FontWeight = 500
+  ForeColor = #FFFFFFFF
+  Padding = 24,8,24,8
+  Radius = 9999
+  Transition = true
+  [Hover]
+    BackColor = #FF4F378B
+  [Active]
+    BackColor = #FF381E72
+  [Disabled]
+    BackColor = #FFE6E0E9
+    ForeColor = #FF605D66
+  [Dark]
+    BackColor = #FFD0BCFF
+    ForeColor = #FF381E72
+  [Dark|Hover]
+    BackColor = #FFB69DF8
+    ForeColor = #FF381E72
+
+"input"
+  BackColor = #FFFEF7FF
+  BorderColor = #FF79747E
+  BorderWidth = 1
+  ForeColor = #FF1D1B20
+  Padding = 16,8,16,8
+  Radius = 4
+  [Hover]
+    BorderColor = #FF1D1B20
+  [Focus]
+    BorderColor = #FF6750A4
+    RingColor = #FF6750A4
+    RingWidth = 1
+  [Invalid]
+    BorderColor = #FFB91C1C
+  [Dark]
+    BackColor = #FF141218
+    BorderColor = #FF938F99
+    ForeColor = #FFF3EDF7
+  [Dark|Hover]
+    BackColor = #FF141218
+    BorderColor = #FFE6E0E9
+    ForeColor = #FFF3EDF7
+
+"card"
+  BackColor = #FFF3EDF7
+  Padding = 16,16,16,16
+  Radius = 12
+  Shadow = Sm
+  [Dark]
+    BackColor = #FF1D1B20
+  [Dark|Hover]
+    BackColor = #FF1D1B20

@@ -1,9 +1,9 @@
 <!--
 title: Charts
-description: Line, area, bar and donut charts, sparklines and KPI cards drawn by FormWind, with the theme, dark mode, keyboard and screen reader support.
+description: Line, area, bar and donut charts, sparklines, KPI cards, heatmaps, progress rings, timelines and steppers drawn by FormWind, with the theme, dark mode, keyboard and screen reader support.
 -->
 <h1>Charts</h1>
-<p class="lead">Lightweight charts with no extra dependency: <code>TwChart</code> (line, area, bar), <code>TwDonutChart</code>, <code>TwSparkline</code> and the KPI card <code>TwStat</code>. They follow the theme, dark mode and DPI like the other controls; with <code>AutoStyle</code> they get the <code>chart</code> and <code>stat</code> components.</p>
+<p class="lead">Lightweight charts with no extra dependency: <code>TwChart</code> (line, area, bar), <code>TwDonutChart</code>, <code>TwSparkline</code> the KPI card <code>TwStat</code>, and the analytics controls <code>TwHeatmap</code>, <code>TwRingChart</code>, <code>TwTimeline</code> and <code>TwStepper</code>. They follow the theme, dark mode and DPI like the other controls; with <code>AutoStyle</code> they get the <code>chart</code> and <code>stat</code> components.</p>
 
 <div class="figure-pair">
   <figure><img src="{{root}}img/charts-light.png" alt="A dashboard with three KPI cards, a line chart with a tooltip, grouped bars with a target line, stacked bars and a donut chart" loading="lazy"><figcaption>Light</figcaption></figure>
@@ -23,6 +23,20 @@ chart.ValueFormat = "C0";                        // tooltip; axis ticks are comp
   <li>A legend is shown for two or more series (<code>ShowLegend</code>); its key has the series' mark.</li>
 </ul>
 
+<h3 id="secondary-axis-targets-and-markers">Secondary axis, targets and markers</h3>
+<p>A series on <code>TwChartAxis.Secondary</code> gets its own scale on the right: a Pareto chart shows counts as bars and the cumulative share as a line. <code>ReferenceLines</code> mark targets and thresholds, <code>Markers</code> mark a category such as "Today", and dashed series show projections.</p>
+<pre><code class="language-csharp">var pareto = new TwChart { Kind = TwChartKind.Bar, MaxBarWidth = 48, SecondaryAxisFormat = "0'%'" };
+pareto.SetData(causes,
+    new TwChartSeries("Minutes", minutes) { ShowValues = true },
+    new TwChartSeries("Cumulative %", cumulative) { Kind = TwChartKind.Line, Axis = TwChartAxis.Secondary });
+pareto.ReferenceLines.Add(new TwChartReferenceLine(80, "80%") { Axis = TwChartAxis.Secondary });
+
+projection.SetData(weeks,
+    new TwChartSeries("Actual", actual),
+    new TwChartSeries("Without action", forecast) { Dashed = true, ShowValues = true });
+projection.Markers.Add(new TwChartMarker(3, "Today"));</code></pre>
+<p>The secondary axis has its own <code>SecondaryAxisMinimum</code>, <code>SecondaryAxisMaximum</code> and <code>SecondaryAxisInterval</code>.</p>
+
 <h2>Donut</h2>
 <pre><code class="language-csharp">donut.SetData(new[] { "Web", "Store", "Phone" }, new[] { 52.0, 28, 20 });
 donut.CenterLabel = "Orders";                    // the total is shown in the middle by default</code></pre>
@@ -35,6 +49,44 @@ stat.Title = "Revenue"; stat.Value = "$1.24M"; stat.Delta = 0.124; stat.Caption 
 stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
 stat.PositiveIsGood = false;                     // costs, error rates: a rise is red</code></pre>
 <p>The change uses the theme's <code>success</code> and <code>danger</code> colors and always carries an arrow and a sign.</p>
+
+<h2 id="analytics-controls">Analytics controls</h2>
+<div class="figure-pair">
+  <figure><img src="{{root}}img/downtime-light.png" alt="A downtime dashboard with a Pareto chart, OEE rings, a heatmap of downtime per line and shift, an event timeline, a completion ring and a correlation matrix" loading="lazy"><figcaption>Light</figcaption></figure>
+  <figure><img src="{{root}}img/downtime-dark.png" alt="The same downtime dashboard in dark mode" loading="lazy"><figcaption>Dark</figcaption></figure>
+</div>
+<p>The downtime dashboard in the sample uses all of them: <code>FormWind.Showcase --downtime</code>.</p>
+
+<h3 id="heatmap">Heatmap</h3>
+<p><code>TwHeatmap</code> shades a grid of cells (lines against days, machines against hours) from <code>LowColor</code> to <code>HighColor</code>, by default from one step off the surface to <code>accent-*</code>. When the values cross zero, as in a correlation matrix, the scale diverges toward <code>NegativeColor</code>. <code>double.NaN</code> leaves a cell empty.</p>
+<pre><code class="language-csharp">heat.Maximum = 120; heat.LegendMinText = "0"; heat.LegendMaxText = "120+ min";
+heat.SetData(new[] { "Line 1", "Line 2" }, new[] { "Mon", "Tue", "Wed" },
+    new double[,] { { 12, 40, 8 }, { 0, 95, 30 } });
+heat.CellClick += (s, e) => status.Text = heat.GetItemText(e.Row, e.Column);
+
+corr.ShowValues = true; corr.ValueFormat = "0.00"; corr.Minimum = -1; corr.Maximum = 1;   // correlation matrix</code></pre>
+
+<h3 id="progress-rings">Progress rings</h3>
+<p><code>TwRingChart</code> draws concentric rings, outermost first, around a large center text: a single completion ring ("6/9"), or the parts of a product such as OEE = availability × performance × quality. Each ring fills clockwise over a <code>divide-*</code> track; with two or more rings a legend lists the values.</p>
+<pre><code class="language-csharp">rings.CenterText = "71.4"; rings.CenterLabel = "OEE %";
+rings.SetData(("Availability", 82.1), ("Performance", 91.3), ("Quality", 95.2));   // out of 100; TwChartRing sets another maximum</code></pre>
+
+<h3 id="timeline">Timeline</h3>
+<p><code>TwTimeline</code> places events on a time axis, each dot sized by its value, with the date above and the value below. It shows how often something recurs and whether the gaps shrink.</p>
+<pre><code class="language-csharp">timeline.ValueFormat = "0 'min'";
+timeline.Items.Add(new TwTimelineEvent(new DateTime(2026, 9, 17), 22, "DR-24410"));
+timeline.Items.Add(new TwTimelineEvent(new DateTime(2026, 9, 26), 31, "DR-24533"));</code></pre>
+
+<h3 id="stepper">Stepper</h3>
+<p><code>TwStepper</code> shows a flow such as an approval chain: <code>Vertical</code> (with descriptions and badges), <code>Horizontal</code> (compact chips) or <code>Segments</code>. Each <code>TwStep</code> is <code>Pending</code>, <code>Current</code>, <code>Completed</code> or <code>Error</code>.</p>
+<pre><code class="language-csharp">flow.Steps.Add(new TwStep("Operator entry", description: "draft 00:05") { Badge = "In progress" });
+flow.Steps.Add(new TwStep("Supervisor approval"));
+flow.Steps.Add(new TwStep("Maintenance sign-off"));
+flow.SetCurrent(0);
+
+chips.Variant = TwStepperVariant.Horizontal;
+chips.Steps.Add(new TwStep("Entered", TwStepStatus.Completed, "18:55"));</code></pre>
+<p>Like the charts, these controls highlight an item on hover or with the arrow keys, and expose one item per cell, ring, event or step to screen readers.</p>
 
 <h2>Classes</h2>
 <div class="table-wrap"><table>

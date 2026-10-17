@@ -39,6 +39,9 @@ btnSave.BackColor = Color.Red;   // FW001: 'btnSave' has classes; assigning 'Bac
 
 <h2 id="fw002">FW002: ölçeklenmeyen formlar</h2>
 <p>.NET Framework projelerinde, <code>SetClasses</code> kullanan bir <code>InitializeComponent</code> <code>AutoScaleMode.Font</code> ayarlayıp formun <code>Font</code>'unu <code>AutoScaleDimensions</code>'tan sonra atadığında uyarır. PerMonitorV2 altında böyle bir form ölçeklenmez; çözüm <code>AutoScaleMode.Dpi</code>'dır (bkz. <a href="dpi.html">DPI</a>).</p>
+<h2 id="fw9001">FW9001: deneysel API</h2>
+<p>System.Drawing ve WinForms tiplerine bağlı genişletme noktaları (<code>IStyleApplier</code>, <code>TwStyle</code>, <code>TwTheme.Parse</code> …) henüz değişebilir. FW9001 bastırılana kadar bunları kullanmak hata verir; bkz. <a href="stability.html#experimental-extension-points">API kararlılığı</a>.</p>
+<p>FW001 ve FW002 uyarılarını kapatmak için:</p>
 <pre><code class="language-ini"># .editorconfig
 dotnet_diagnostic.FW001.severity = none
 dotnet_diagnostic.FW002.severity = none</code></pre>

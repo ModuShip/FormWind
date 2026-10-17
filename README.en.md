@@ -496,6 +496,7 @@ Later overrides earlier: base → `dark:` → `checked:` → `focus:` → `focus
 
 ```jsonc
 {
+  "version": 1,                                          // file format version (optional)
   "preset": "fluent",                                     // ready-made look; the rest of the file is applied on top
   "fontFamily": "Segoe UI",
   "spacingUnit": 4,
@@ -513,7 +514,7 @@ Later overrides earlier: base → `dark:` → `checked:` → `focus:` → `focus
 
 **Tailwind v4 palette.** `"palette": "v4"` (in code `new TwTheme(TwPaletteVersion.V4)` or `theme.UsePalette(...)`) uses the v4 shades of the same 22 colors. v4 colors are defined in OKLCH (`TwPaletteV4`); those outside sRGB are approximated with CSS Color 4 gamut mapping, as browsers do, so `blue-500` becomes `#2b7fff` just like on the Tailwind site. Colors in the theme file can also be written as `oklch(62.3% 0.214 259.8)`; in code, `TwOklch.TryParse`. The default components pass the contrast audit with both palettes.
 
-The file is added on top of the default palette and components (or the preset chosen with `preset`). For the list of components see [Presets](#presets-and-autostyle) and `TwTheme.DefaultComponents`; the `autoStyle` key changes the AutoStyle mapping. The Designer's preview and lists use the project's theme file too (see [Designer](#designer)).
+The file is added on top of the default palette and components (or the preset chosen with `preset`). For the list of components see [Presets](#presets-and-autostyle) and `TwTheme.DefaultComponents`; the `autoStyle` key changes the AutoStyle mapping. The Designer's preview and lists use the project's theme file too (see [Designer](#designer)). `version` is the file format version (see [API stability](#api-stability)).
 
 ## Controls
 
@@ -785,7 +786,7 @@ The palette is built from the theme's components: `page` → form and panel back
 Control libraries with their own skin or theme engine (including commercial control suites) paint their controls themselves. FormWind applies its standard WinForms applier to controls it does not recognize: size, spacing and layout usually work, while colors, state variants (`hover:`, `focus:` …) and corners may conflict with the library's painting or be ignored. FormWind can be used alongside such libraries in three ways:
 
 - **Mixed use:** The components the library is strong at (advanced grids, ribbons, schedulers …) stay on its engine; FormWind is used for standard controls, new screens and the form skeleton. The library's controls can also be items of a `TwPanel` flex/grid layout.
-- **Writing an applier:** A class that implements `IStyleApplier` and is registered with `TwAppliers.Register` passes the classes to the library's own appearance objects; the base style and each variant map to the library's counterpart (normal, hovered, pressed, focused, disabled). The [Krypton Toolkit](#krypton-toolkit) integration is an example of this approach. In most skin engines, colors are applied exactly only when the skin is turned off for that control (a flat style); otherwise the skin overrides them or uses them only as a tint. For grids derived from `DataGridView`, structural styling can be left to FormWind through `TwAppliers.FindBuiltIn`; for libraries with their own grid, the applier does all of the mapping.
+- **Writing an applier:** A class that implements `IStyleApplier` and is registered with `TwAppliers.Register` passes the classes to the library's own appearance objects; the base style and each variant map to the library's counterpart (normal, hovered, pressed, focused, disabled). The [Krypton Toolkit](#krypton-toolkit) integration is an example of this approach. In most skin engines, colors are applied exactly only when the skin is turned off for that control (a flat style); otherwise the skin overrides them or uses them only as a tint. For grids derived from `DataGridView`, structural styling can be left to FormWind through `TwAppliers.FindBuiltIn`; for libraries with their own grid, the applier does all of the mapping. The applier types are experimental (FW9001, see [API stability](#api-stability)).
 - **Theme sync only:** No classes are given to the library's controls; when `DarkMode` changes, the library's light/dark skin is switched too, and the `tw.config.json` colors can optionally be carried into the library's palette. Each control is painted by its own engine, and both sides use the same colors.
 
 Appliers for licensed libraries are not part of this repository; keeping them in the application's own project is recommended. The effect of FormWind on the standard controls of an existing application can be seen without touching its source code with the [harness](#trying-real-applications-harness).
@@ -910,7 +911,7 @@ To run them from the Visual Studio Test Explorer, define the variable system-wid
 dotnet format analyzers src/FormWind/FormWind.csproj --diagnostics RS0016 --severity warn
 ```
 
-Only helpers used by the library itself (drawing, parser, internal appliers) are `internal`; extension points (`IStyleApplier`, `TwApplyContext`, `TwStyle`, `ITwChrome`) are public.
+`src/FormWind.Krypton` has its own pair of files. Only helpers used by the library itself (drawing, parser, internal appliers, Designer types) are `internal`; extension points (`IStyleApplier`, `TwApplyContext`, `TwStyle`, `ITwChrome`) are public, and those that may still change are marked experimental (see [API stability](#api-stability)).
 
 ### Code coverage
 
@@ -997,7 +998,7 @@ $env:FORMWIND_UPDATE_BASELINES = "1"; dotnet test tests/FormWind.Tests -f net472
 
 ### Website and documentation site
 
-`website/` holds the landing page and the documentation (getting started, presets, classes, layout, controls, DataGridView, charts, Krypton, Designer, DPI, accessibility, tools). It is static HTML with no build tools; `website/build.ps1` wraps the pages in the shared layout and writes them, with the screenshots from `docs/`, to `artifacts/website`. With `-Reference` it also generates the class reference below into `reference/`. The site is in English (at the root) and Turkish (`tr/`): every page has a counterpart with the same name under `website/en/` and `website/tr/`, the header button links to the other language's page, and shared texts are in `website/strings.json`. When a behavior described in this README changes, update the matching page in both languages too.
+`website/` holds the landing page and the documentation (getting started, presets, classes, layout, controls, DataGridView, charts, Krypton, Designer, DPI, accessibility, tools, performance, API stability). It is static HTML with no build tools; `website/build.ps1` wraps the pages in the shared layout and writes them, with the screenshots from `docs/`, to `artifacts/website`. With `-Reference` it also generates the class reference below into `reference/`. The site is in English (at the root) and Turkish (`tr/`): every page has a counterpart with the same name under `website/en/` and `website/tr/`, the header button links to the other language's page, and shared texts are in `website/strings.json`. When a behavior described in this README changes, update the matching page in both languages too.
 
 ```powershell
 .\website\build.ps1 -Reference
@@ -1045,6 +1046,22 @@ Screenshot of the showcase form (`--controls` opens the controls form):
 
 ```bash
 samples/FormWind.Showcase/bin/Debug/net472/FormWind.Showcase.exe --snapshot light.png
+```
+
+## API stability
+
+FormWind is in preview (0.x): minor versions may contain breaking changes; they are listed under *Changed* or *Removed* in the [changelog](CHANGELOG.md). Three contracts are kept apart:
+
+- **Public API:** `TailwindProvider`, the controls, `TwTheme`, presets, events and the classes. Every public member is tracked (see [Public API](#public-api)); from 1.0 changes follow [Semantic Versioning](CONTRIBUTING.md#versioning).
+- **Class syntax:** what a class means is pinned by tests that do not compile against it: `tests/FormWind.Tests/Golden/parse.txt` holds the resolved style of about 70 sample class strings (with their variants, parts, presets and the v4 palette), and `GoldenParseTests` fails when one changes. An intended change is written with `FORMWIND_UPDATE_BASELINES=1` and listed in the changelog.
+- **Theme file:** `"version"` in `tw.config.json` is the file format version (`TwTheme.FileVersion`, currently 1; a file without it is version 1). A file written for a newer format is rejected with `NotSupportedException` instead of being read wrongly.
+
+**Experimental extension points (FW9001).** `IStyleApplier`, `TwApplyContext`, `TwAppliers`, `WinFormsApplier`, `TwStyle`, `TwParsed`, `TwOriginal`, `TwTheme.Parse` and the helpers that take a `TwStyle` (`TwFonts.Create`, `TwChrome.FromStyle`, `TwGradient.FromStyle`, `TwLayout.Apply`, `TwToolTip.ResolveStyle`) are tied to System.Drawing and WinForms types and may change when the platform-neutral core is extracted. Using them is a compile error (FW9001) until it is suppressed:
+
+```xml
+<PropertyGroup>
+  <NoWarn>$(NoWarn);FW9001</NoWarn>
+</PropertyGroup>
 ```
 
 ## Packaging

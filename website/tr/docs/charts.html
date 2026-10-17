@@ -1,9 +1,9 @@
 <!--
 title: Grafikler
-description: FormWind'in çizdiği çizgi, alan, çubuk ve halka grafikler, sparkline'lar ve KPI kartları; tema, koyu tema, klavye ve ekran okuyucu desteğiyle.
+description: FormWind'in çizdiği çizgi, alan, çubuk ve halka grafikler, sparkline'lar, KPI kartları, ısı haritaları, ilerleme halkaları, zaman çizelgeleri ve adım göstergeleri; tema, koyu tema, klavye ve ekran okuyucu desteğiyle.
 -->
 <h1>Grafikler</h1>
-<p class="lead">Ek bağımlılığı olmayan hafif grafikler: <code>TwChart</code> (çizgi, alan, çubuk), <code>TwDonutChart</code>, <code>TwSparkline</code> ve KPI kartı <code>TwStat</code>. Diğer kontroller gibi temayı, koyu temayı ve DPI'ı izler; <code>AutoStyle</code> ile <code>chart</code> ve <code>stat</code> bileşenlerini alır.</p>
+<p class="lead">Ek bağımlılığı olmayan hafif grafikler: <code>TwChart</code> (çizgi, alan, çubuk), <code>TwDonutChart</code>, <code>TwSparkline</code> KPI kartı <code>TwStat</code> ve analitik kontroller <code>TwHeatmap</code>, <code>TwRingChart</code>, <code>TwTimeline</code>, <code>TwStepper</code>. Diğer kontroller gibi temayı, koyu temayı ve DPI'ı izler; <code>AutoStyle</code> ile <code>chart</code> ve <code>stat</code> bileşenlerini alır.</p>
 
 <div class="figure-pair">
   <figure><img src="{{root}}img/charts-light.png" alt="Üç KPI kartı, ipuçlu bir çizgi grafik, hedef çizgili gruplu çubuklar, yığılmış çubuklar ve bir halka grafikten oluşan pano" loading="lazy"><figcaption>Açık</figcaption></figure>
@@ -23,6 +23,20 @@ chart.ValueFormat = "C0";                        // ipucu; eksen kısa sayılarl
   <li>Gösterge iki ve daha çok seride görünür (<code>ShowLegend</code>); anahtarı serinin işaretini taşır.</li>
 </ul>
 
+<h3 id="secondary-axis-targets-and-markers">İkincil eksen, hedefler ve işaretçiler</h3>
+<p><code>TwChartAxis.Secondary</code> üzerindeki bir seri sağda kendi ölçeğini alır: Pareto grafiği adetleri çubuk, kümülatif payı çizgi olarak gösterir. <code>ReferenceLines</code> hedefleri ve eşikleri, <code>Markers</code> "Bugün" gibi bir kategoriyi işaretler; kesikli seriler projeksiyonları gösterir.</p>
+<pre><code class="language-csharp">var pareto = new TwChart { Kind = TwChartKind.Bar, MaxBarWidth = 48, SecondaryAxisFormat = "'%'0" };
+pareto.SetData(causes,
+    new TwChartSeries("Dakika", minutes) { ShowValues = true },
+    new TwChartSeries("Kümülatif %", cumulative) { Kind = TwChartKind.Line, Axis = TwChartAxis.Secondary });
+pareto.ReferenceLines.Add(new TwChartReferenceLine(80, "%80") { Axis = TwChartAxis.Secondary });
+
+projection.SetData(weeks,
+    new TwChartSeries("Gerçekleşen", actual),
+    new TwChartSeries("Aksiyonsuz", forecast) { Dashed = true, ShowValues = true });
+projection.Markers.Add(new TwChartMarker(3, "Bugün"));</code></pre>
+<p>İkincil eksenin kendi <code>SecondaryAxisMinimum</code>, <code>SecondaryAxisMaximum</code> ve <code>SecondaryAxisInterval</code> ayarları vardır.</p>
+
 <h2 id="donut">Halka grafik</h2>
 <pre><code class="language-csharp">donut.SetData(new[] { "Web", "Mağaza", "Telefon" }, new[] { 52.0, 28, 20 });
 donut.CenterLabel = "Sipariş";                   // ortada varsayılan olarak toplam görünür</code></pre>
@@ -35,6 +49,44 @@ stat.Title = "Gelir"; stat.Value = "₺1,24 Mn"; stat.Delta = 0.124; stat.Captio
 stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
 stat.PositiveIsGood = false;                     // maliyet, hata oranı: artış kırmızı</code></pre>
 <p>Değişim temanın <code>success</code> ve <code>danger</code> renklerini kullanır ve her zaman ok ve işaretle verilir.</p>
+
+<h2 id="analytics-controls">Analitik kontroller</h2>
+<div class="figure-pair">
+  <figure><img src="{{root}}img/downtime-light.png" alt="Pareto grafiği, OEE halkaları, hat ve vardiyaya göre duruş ısı haritası, olay zaman çizelgesi, tamamlanma halkası ve korelasyon matrisinden oluşan duruş panosu" loading="lazy"><figcaption>Açık</figcaption></figure>
+  <figure><img src="{{root}}img/downtime-dark.png" alt="Aynı duruş panosu koyu temada" loading="lazy"><figcaption>Koyu</figcaption></figure>
+</div>
+<p>Örnekteki duruş panosu hepsini kullanır: <code>FormWind.Showcase --downtime</code>.</p>
+
+<h3 id="heatmap">Isı haritası</h3>
+<p><code>TwHeatmap</code> bir hücre ızgarasını (hatlar × günler, makineler × saatler) <code>LowColor</code>'dan <code>HighColor</code>'a, varsayılan olarak zeminin bir ton yanından <code>accent-*</code>'e doğru boyar. Değerler sıfırı geçtiğinde (korelasyon matrisi gibi) ölçek ikiye ayrılır ve negatifler <code>NegativeColor</code>'a doğru boyanır. <code>double.NaN</code> hücreyi boş bırakır.</p>
+<pre><code class="language-csharp">heat.Maximum = 120; heat.LegendMinText = "0"; heat.LegendMaxText = "120+ dk";
+heat.SetData(new[] { "Hat 1", "Hat 2" }, new[] { "Pzt", "Sal", "Çar" },
+    new double[,] { { 12, 40, 8 }, { 0, 95, 30 } });
+heat.CellClick += (s, e) => status.Text = heat.GetItemText(e.Row, e.Column);
+
+corr.ShowValues = true; corr.ValueFormat = "0.00"; corr.Minimum = -1; corr.Maximum = 1;   // korelasyon matrisi</code></pre>
+
+<h3 id="progress-rings">İlerleme halkaları</h3>
+<p><code>TwRingChart</code>, ortada büyük bir metnin çevresinde dıştan içe iç içe halkalar çizer: tek bir tamamlanma halkası ("6/9") ya da OEE = kullanılabilirlik × performans × kalite gibi bir çarpımın parçaları. Her halka <code>divide-*</code> izinin üzerinde saat yönünde dolar; iki ve daha çok halkada değerler bir göstergede listelenir.</p>
+<pre><code class="language-csharp">rings.CenterText = "71,4"; rings.CenterLabel = "OEE %";
+rings.SetData(("Kullanılabilirlik", 82.1), ("Performans", 91.3), ("Kalite", 95.2));   // 100 üzerinden; başka bir üst sınır için TwChartRing</code></pre>
+
+<h3 id="timeline">Zaman çizelgesi</h3>
+<p><code>TwTimeline</code> olayları bir zaman ekseninde gösterir: her nokta değerine göre büyür, üstünde tarih, altında değer yazar. Bir şeyin ne sıklıkla tekrarladığını ve aralıkların kısalıp kısalmadığını gösterir.</p>
+<pre><code class="language-csharp">timeline.ValueFormat = "0 'dk'";
+timeline.Items.Add(new TwTimelineEvent(new DateTime(2026, 9, 17), 22, "DR-24410"));
+timeline.Items.Add(new TwTimelineEvent(new DateTime(2026, 9, 26), 31, "DR-24533"));</code></pre>
+
+<h3 id="stepper">Adım göstergesi</h3>
+<p><code>TwStepper</code> bir onay zinciri gibi akışları gösterir: <code>Vertical</code> (açıklama ve rozetlerle), <code>Horizontal</code> (kompakt etiketler) ya da <code>Segments</code>. Her <code>TwStep</code> <code>Pending</code>, <code>Current</code>, <code>Completed</code> ya da <code>Error</code> durumundadır.</p>
+<pre><code class="language-csharp">flow.Steps.Add(new TwStep("Operatör girişi", description: "taslak 00:05") { Badge = "Devam ediyor" });
+flow.Steps.Add(new TwStep("Vardiya amiri onayı"));
+flow.Steps.Add(new TwStep("Bakım şefi kapanışı"));
+flow.SetCurrent(0);
+
+chips.Variant = TwStepperVariant.Horizontal;
+chips.Steps.Add(new TwStep("Operatör girdi", TwStepStatus.Completed, "18:55"));</code></pre>
+<p>Grafikler gibi bu kontroller de fareyle ya da ok tuşlarıyla bir öğeyi vurgular ve her hücreyi, halkayı, olayı ya da adımı ekran okuyuculara ayrı bir öğe olarak sunar.</p>
 
 <h2 id="classes">Class'lar</h2>
 <div class="table-wrap"><table>

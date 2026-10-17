@@ -54,4 +54,37 @@ public class ThemeJsonTests
     {
         Assert.Throws<ArgumentException>(() => new TwTheme().SetColor("light-blue", Color.Blue));
     }
+
+    [Fact]
+    public void Accepts_the_current_file_version_and_files_without_one()
+    {
+        var theme = TwTheme.FromJson(@"{ ""version"": 1, ""colors"": { ""brand"": ""#2b579a"" } }");
+
+        Assert.Empty(theme.Parse("bg-brand").Unknown);
+        Assert.Empty(TwTheme.FromJson(@"{ ""colors"": { ""brand"": ""#2b579a"" } }").Parse("bg-brand").Unknown);
+    }
+
+    [Fact]
+    public void Rejects_a_newer_file_version()
+    {
+        var error = Assert.Throws<NotSupportedException>(() => TwTheme.FromJson($@"{{ ""version"": {TwTheme.FileVersion + 1} }}"));
+
+        Assert.Contains("update the FormWind package", error.Message);
+    }
+
+    [Theory]
+    [InlineData(@"""1""")]
+    [InlineData("0")]
+    [InlineData("1.5")]
+    public void Rejects_an_invalid_file_version(string value)
+    {
+        Assert.Throws<FormatException>(() => TwTheme.FromJson(@"{ ""version"": " + value + " }"));
+    }
+
+    [Fact]
+    public void Preset_files_declare_the_current_file_version()
+    {
+        foreach (var preset in new[] { TwPreset.Fluent, TwPreset.Antd, TwPreset.Material })
+            Assert.Contains(@"""version"": " + TwTheme.FileVersion, TwPresets.Json(preset));
+    }
 }

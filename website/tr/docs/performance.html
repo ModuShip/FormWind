@@ -1,0 +1,100 @@
+<!--
+title: Performans
+description: FormWind'in bir formu açma, yeniden çizme ve tema değiştirme süresi, bellek ve GDI kullanımı; düz WinForms, Krypton Toolkit ve MaterialSkin.2 ile karşılaştırmalı.
+-->
+<h1>Performans</h1>
+<p class="lead">Bir stil katmanı uygulamayı yavaşlatmamalı. <code>tools/FormWind.Benchmarks</code> aynı formu düz WinForms, FormWind, Krypton Toolkit ve MaterialSkin.2 ile kurar; süreyi, belleği ve GDI/USER nesnelerini ölçer.</p>
+
+<div class="callout">
+  <p class="callout-title">Kısaca (200 kontrol, ana ekran)</p>
+  <p>Formu açma: FormWind 185–228 ms, düz WinForms 236 ms, Krypton 346 ms, MaterialSkin 365 ms. Açık ↔ koyu tema geçişi: FormWind 16–29 ms. FormWind düz WinForms kadar GDI/USER nesnesi kullanır ve bu sayılar 500 aç/kapat boyunca sabit kalır.</p>
+</div>
+
+<h2 id="results">Sonuçlar</h2>
+<p>200 kontrollü bir formda ısınmış ölçümlerin medyanı. FormWind satırları vurgulanmıştır.</p>
+
+<p class="bars-title">Formu açma: kurma, stillendirme ve ilk çizim (ms)</p>
+<div class="bars" role="img" aria-label="200 kontrollü formu açma, milisaniye: düz WinForms 235,5; FormWind standart kontroller 228,0; FormWind Tw kontrolleri 185,0; FormWind AutoStyle ve Fluent 205,1; Krypton Toolkit 346,4; Krypton ve FormWind.Krypton 449,3; MaterialSkin.2 364,5.">
+  <div class="bar-row"><span class="bar-label">Düz WinForms</span><span class="bar-track"><span class="bar" style="width:52.4%"></span></span><span class="bar-value">235,5</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standart kontroller</span><span class="bar-track"><span class="bar" style="width:50.7%"></span></span><span class="bar-value">228,0</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* kontrolleri</span><span class="bar-track"><span class="bar" style="width:41.2%"></span></span><span class="bar-value">185,0</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:45.6%"></span></span><span class="bar-value">205,1</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:77.1%"></span></span><span class="bar-value">346,4</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">449,3</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:81.1%"></span></span><span class="bar-value">364,5</span></div>
+</div>
+<p class="bars-note">Düz WinForms'un burada yavaş açılması WinForms'un kendisinden: <code>FixedSingle</code> metin kutusunun handle'ı oluşurken yüksekliği değişir ve <code>FlowLayoutPanel</code> bütün kontrolleri yeniden ölçer. FormWind'in <code>input</code> class'ı bu yolu kullanmaz; bu, FormWind'in genel olarak WinForms'tan hızlı olduğu anlamına gelmez.</p>
+
+<p class="bars-title">Açık ↔ koyu tema geçişi ve yeniden çizim (ms)</p>
+<div class="bars" role="img" aria-label="200 kontrolde tema geçişi, milisaniye: düz WinForms 7,4; FormWind standart kontroller 29,4; FormWind Tw kontrolleri 16,1; FormWind AutoStyle ve Fluent 15,7; Krypton Toolkit 556,0; Krypton ve FormWind.Krypton 588,1; MaterialSkin.2 61,2.">
+  <div class="bar-row"><span class="bar-label">Düz WinForms</span><span class="bar-track"><span class="bar" style="width:1.3%"></span></span><span class="bar-value">7,4</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standart kontroller</span><span class="bar-track"><span class="bar" style="width:5%"></span></span><span class="bar-value">29,4</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* kontrolleri</span><span class="bar-track"><span class="bar" style="width:2.7%"></span></span><span class="bar-value">16,1</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:2.7%"></span></span><span class="bar-value">15,7</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:94.5%"></span></span><span class="bar-value">556,0</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">588,1</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:10.4%"></span></span><span class="bar-value">61,2</span></div>
+</div>
+<p class="bars-note">Düz WinForms senaryosu renkleri kontrolleri gezerek elle atar. Krypton'un palet değişimi her kontrolü yeniden düzenler; FormWind.Krypton ile de maliyetin çoğu Krypton'dadır.</p>
+
+<p class="bars-title">Form açıkken tutulan yönetilen bellek (KB)</p>
+<div class="bars" role="img" aria-label="200 kontrollü açık formun tuttuğu yönetilen bellek, kilobayt: düz WinForms 42; FormWind standart kontroller 229; FormWind Tw kontrolleri 232; FormWind AutoStyle ve Fluent 155; Krypton Toolkit 2229; Krypton ve FormWind.Krypton 2655; MaterialSkin.2 1318.">
+  <div class="bar-row"><span class="bar-label">Düz WinForms</span><span class="bar-track"><span class="bar" style="width:1.6%"></span></span><span class="bar-value">42</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standart kontroller</span><span class="bar-track"><span class="bar" style="width:8.6%"></span></span><span class="bar-value">229</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* kontrolleri</span><span class="bar-track"><span class="bar" style="width:8.7%"></span></span><span class="bar-value">232</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:5.8%"></span></span><span class="bar-value">155</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:84%"></span></span><span class="bar-value">2229</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">2655</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:49.6%"></span></span><span class="bar-value">1318</span></div>
+</div>
+
+<h3 id="all-measurements">Bütün ölçümler</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Senaryo (200 kontrol)</th><th>Açma (ms)</th><th>Çizim (ms)</th><th>Tema geçişi (ms)</th><th>Hover (µs)</th><th>Tutulan bellek (KB)</th><th>GDI / USER</th></tr></thead>
+  <tbody>
+    <tr><td>Düz WinForms</td><td>235,5</td><td>7,4</td><td>7,4</td><td>12,6</td><td>42</td><td>39 / 217</td></tr>
+    <tr><td><strong>FormWind, standart kontroller</strong></td><td>228,0</td><td>18,2</td><td>29,4</td><td>30,3</td><td>229</td><td>39 / 217</td></tr>
+    <tr><td><strong>FormWind, Tw* kontrolleri</strong></td><td>185,0</td><td>8,0</td><td>16,1</td><td>24,7</td><td>232</td><td>39 / 250</td></tr>
+    <tr><td><strong>FormWind AutoStyle + Fluent</strong></td><td>205,1</td><td>7,0</td><td>15,7</td><td>41,4</td><td>155</td><td>39 / 217</td></tr>
+    <tr><td>Krypton Toolkit 100.25</td><td>346,4</td><td>40,0</td><td>556,0</td><td>103,7</td><td>2229</td><td>53 / 244</td></tr>
+    <tr><td><strong>Krypton + FormWind.Krypton</strong></td><td>449,3</td><td>47,9</td><td>588,1</td><td>150,4</td><td>2655</td><td>88 / 256</td></tr>
+    <tr><td>MaterialSkin.2 2.3.1</td><td>364,5</td><td>54,9</td><td>61,2</td><td>8,4</td><td>1318</td><td>73 / 252</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Çizim</strong> <code>Form.Refresh()</code>'tir. <code>Tw*</code> kontrolleri ve AutoStyle düz WinForms kadar hızlı çizer; standart kontrollerde class'lar köşe <code>Region</code>'ları ve çizilen kenarlıklar yüzünden daha pahalıdır.</li>
+  <li><strong>Hover</strong>, bir <code>WM_MOUSEMOVE</code> ya da <code>WM_MOUSELEAVE</code> ve yol açtığı çizimlerdir. MaterialSkin hover işinin çoğunu sonradan bir animasyon zamanlayıcısında yaptığı için onun değeri bunu içermez.</li>
+  <li><strong>GDI / USER</strong> nesneleri form başınadır: FormWind GDI nesnesi eklemez; native bir kutuyu saran <code>Tw*</code> kontrollerinde kontrol başına bir pencere fazladır.</li>
+  <li>İlk formun çizilmesine kadar <strong>soğuk başlangıç</strong>: FormWind 423–498 ms, düz WinForms 323 ms, MaterialSkin 524 ms, Krypton 693 ms. FormWind 5 derleme ve ~6 MB özel bellek ekler.</li>
+</ul>
+
+<h2 id="bottlenecks-fixed">Düzeltilen darboğazlar</h2>
+<p><code>dotnet-trace</code> ile yapılan profil beş sorun buldu ve hepsi düzeltildi: gölge ve çerçeveler geçersiz bölgeye bakmadan çiziliyordu, iç boşluk her yenilemede iki kez değişiyordu, yazı her yenilemede yeniden ölçülüyordu ve form başka DPI'lı bir ekrana geçince fontlar iki kez ölçekleniyordu.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>FormWind</th><th>Önce</th><th>Sonra</th></tr></thead>
+  <tbody>
+    <tr><td>Hover, 500 standart kontrol</td><td>1970 µs</td><td>32 µs</td></tr>
+    <tr><td>Hover, AutoStyle'lı 500 kontrol</td><td>1901 µs</td><td>36 µs</td></tr>
+    <tr><td>Tema geçişi + çizim, 200 kontrol</td><td>61 ms</td><td>29 ms</td></tr>
+    <tr><td>Tam yeniden çizim, 200 kontrol</td><td>43 ms</td><td>18 ms</td></tr>
+    <tr><td>İkinci monitörde açılış, 500 kontrol (AutoStyle)</td><td>1622 ms</td><td>418 ms</td></tr>
+    <tr><td>İkinci monitörde soğuk başlangıç, 200 kontrol</td><td>1000 ms</td><td>496 ms</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="method">Yöntem</h2>
+<ul>
+  <li>Her senaryo aynı altı rolü (etiket, birincil buton, ikincil buton, metin kutusu, kart, onay kutusu) 1200 × 900 çerçevesiz bir formdaki <code>FlowLayoutPanel</code>'de 50, 200 ve 500 kontrolle tekrarlar.</li>
+  <li>Her senaryo ve boyut ayrı bir süreçte ölçülür; JIT, genel paletler ve süreç geneli GDI sayaçları karışmaz. Ilık ölçümlerden önce iki form açılıp kapatılır; değerler medyan ve p90'dır.</li>
+  <li>Hover gerçek fare mesajlarıyla yapılır; <code>--other-dpi</code> formu <code>WM_DPICHANGED</code> aldığı monitörde açar.</li>
+  <li>Ölçüm 2026-10-14'te, Intel Core i5-12450HX, Windows derleme 26200, .NET 8.0.11 ve 120 DPI ile yapıldı.</li>
+</ul>
+<div class="callout warn">
+  <p>Tek makine ve tek koşu: değerler ±%10–15 oynar, ama sıralama koşular arasında değişmedi. Senaryolar görünüm olarak birebir aynı değildir; her kütüphane kendi bileşenlerini kullanır (örn. <code>KryptonForm</code>, <code>MaterialForm</code>).</p>
+</div>
+
+<h2 id="run-it-yourself">Kendiniz çalıştırın</h2>
+<pre><code class="language-powershell">dotnet build tools/FormWind.Benchmarks -c Release
+tools/FormWind.Benchmarks/bin/Release/net8.0-windows/FormWind.Benchmarks.exe                 # tüm senaryolar, ~15 dk
+tools/FormWind.Benchmarks/bin/Release/net8.0-windows/FormWind.Benchmarks.exe --quick --only formwind,krypton --sizes 200</code></pre>
+<p>Sonuçlar <code>artifacts/benchmarks/results.json</code> ve <code>results.md</code> dosyalarına yazılır. Her boyutu ve ikinci monitör ölçümlerini içeren tam rapor <a href="https://github.com/ModuShip/FormWind/blob/main/docs/benchmarks.md" rel="noopener"><code>docs/benchmarks.md</code></a> dosyasındadır.</p>

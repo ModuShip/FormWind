@@ -1,0 +1,100 @@
+<!--
+title: Performance
+description: How long FormWind takes to open, repaint and restyle a form, and how much memory and GDI it uses, measured against plain WinForms, Krypton Toolkit and MaterialSkin.2.
+-->
+<h1>Performance</h1>
+<p class="lead">A styling layer must not make an application feel slower. <code>tools/FormWind.Benchmarks</code> builds the same form with plain WinForms, FormWind, Krypton Toolkit and MaterialSkin.2, then measures time, memory and GDI/USER objects.</p>
+
+<div class="callout">
+  <p class="callout-title">In short (200 controls, primary screen)</p>
+  <p>Opening a form: FormWind 185–228 ms, plain WinForms 236 ms, Krypton 346 ms, MaterialSkin 365 ms. Switching between light and dark: FormWind 16–29 ms. FormWind uses as many GDI/USER objects as plain WinForms, and its counts stay constant over 500 open/close cycles.</p>
+</div>
+
+<h2 id="results">Results</h2>
+<p>Median of the warmed-up runs for a form with 200 controls. FormWind rows are highlighted.</p>
+
+<p class="bars-title">Open a form: build, style and first paint (ms)</p>
+<div class="bars" role="img" aria-label="Opening a form with 200 controls, in milliseconds: plain WinForms 235.5, FormWind with standard controls 228.0, FormWind Tw controls 185.0, FormWind AutoStyle and Fluent 205.1, Krypton Toolkit 346.4, Krypton with FormWind.Krypton 449.3, MaterialSkin.2 364.5.">
+  <div class="bar-row"><span class="bar-label">Plain WinForms</span><span class="bar-track"><span class="bar" style="width:52.4%"></span></span><span class="bar-value">235.5</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standard controls</span><span class="bar-track"><span class="bar" style="width:50.7%"></span></span><span class="bar-value">228.0</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* controls</span><span class="bar-track"><span class="bar" style="width:41.2%"></span></span><span class="bar-value">185.0</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:45.6%"></span></span><span class="bar-value">205.1</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:77.1%"></span></span><span class="bar-value">346.4</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">449.3</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:81.1%"></span></span><span class="bar-value">364.5</span></div>
+</div>
+<p class="bars-note">Plain WinForms opens slower here because of WinForms itself: a <code>FixedSingle</code> text box changes height when its handle is created, and the <code>FlowLayoutPanel</code> measures every control again. FormWind's <code>input</code> class avoids that path; it does not make FormWind faster than WinForms in general.</p>
+
+<p class="bars-title">Switch between light and dark, and repaint (ms)</p>
+<div class="bars" role="img" aria-label="Switching the theme with 200 controls, in milliseconds: plain WinForms 7.4, FormWind with standard controls 29.4, FormWind Tw controls 16.1, FormWind AutoStyle and Fluent 15.7, Krypton Toolkit 556.0, Krypton with FormWind.Krypton 588.1, MaterialSkin.2 61.2.">
+  <div class="bar-row"><span class="bar-label">Plain WinForms</span><span class="bar-track"><span class="bar" style="width:1.3%"></span></span><span class="bar-value">7.4</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standard controls</span><span class="bar-track"><span class="bar" style="width:5%"></span></span><span class="bar-value">29.4</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* controls</span><span class="bar-track"><span class="bar" style="width:2.7%"></span></span><span class="bar-value">16.1</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:2.7%"></span></span><span class="bar-value">15.7</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:94.5%"></span></span><span class="bar-value">556.0</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">588.1</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:10.4%"></span></span><span class="bar-value">61.2</span></div>
+</div>
+<p class="bars-note">The plain WinForms scenario assigns its colors by hand while walking the controls. Krypton's palette change lays out every control again; with FormWind.Krypton most of the cost is still Krypton's.</p>
+
+<p class="bars-title">Managed memory kept while the form is open (KB)</p>
+<div class="bars" role="img" aria-label="Managed memory kept by an open form with 200 controls, in kilobytes: plain WinForms 42, FormWind with standard controls 229, FormWind Tw controls 232, FormWind AutoStyle and Fluent 155, Krypton Toolkit 2229, Krypton with FormWind.Krypton 2655, MaterialSkin.2 1318.">
+  <div class="bar-row"><span class="bar-label">Plain WinForms</span><span class="bar-track"><span class="bar" style="width:1.6%"></span></span><span class="bar-value">42</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, standard controls</span><span class="bar-track"><span class="bar" style="width:8.6%"></span></span><span class="bar-value">229</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind, Tw* controls</span><span class="bar-track"><span class="bar" style="width:8.7%"></span></span><span class="bar-value">232</span></div>
+  <div class="bar-row fw"><span class="bar-label">FormWind AutoStyle + Fluent</span><span class="bar-track"><span class="bar" style="width:5.8%"></span></span><span class="bar-value">155</span></div>
+  <div class="bar-row"><span class="bar-label">Krypton Toolkit 100.25</span><span class="bar-track"><span class="bar" style="width:84%"></span></span><span class="bar-value">2229</span></div>
+  <div class="bar-row fw"><span class="bar-label">Krypton + FormWind.Krypton</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="bar-value">2655</span></div>
+  <div class="bar-row"><span class="bar-label">MaterialSkin.2 2.3.1</span><span class="bar-track"><span class="bar" style="width:49.6%"></span></span><span class="bar-value">1318</span></div>
+</div>
+
+<h3 id="all-measurements">All measurements</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Scenario (200 controls)</th><th>Open (ms)</th><th>Repaint (ms)</th><th>Theme switch (ms)</th><th>Hover (µs)</th><th>Memory kept (KB)</th><th>GDI / USER</th></tr></thead>
+  <tbody>
+    <tr><td>Plain WinForms</td><td>235.5</td><td>7.4</td><td>7.4</td><td>12.6</td><td>42</td><td>39 / 217</td></tr>
+    <tr><td><strong>FormWind, standard controls</strong></td><td>228.0</td><td>18.2</td><td>29.4</td><td>30.3</td><td>229</td><td>39 / 217</td></tr>
+    <tr><td><strong>FormWind, Tw* controls</strong></td><td>185.0</td><td>8.0</td><td>16.1</td><td>24.7</td><td>232</td><td>39 / 250</td></tr>
+    <tr><td><strong>FormWind AutoStyle + Fluent</strong></td><td>205.1</td><td>7.0</td><td>15.7</td><td>41.4</td><td>155</td><td>39 / 217</td></tr>
+    <tr><td>Krypton Toolkit 100.25</td><td>346.4</td><td>40.0</td><td>556.0</td><td>103.7</td><td>2229</td><td>53 / 244</td></tr>
+    <tr><td><strong>Krypton + FormWind.Krypton</strong></td><td>449.3</td><td>47.9</td><td>588.1</td><td>150.4</td><td>2655</td><td>88 / 256</td></tr>
+    <tr><td>MaterialSkin.2 2.3.1</td><td>364.5</td><td>54.9</td><td>61.2</td><td>8.4</td><td>1318</td><td>73 / 252</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Repaint</strong> is <code>Form.Refresh()</code>. <code>Tw*</code> controls and AutoStyle repaint as fast as plain WinForms; classes on standard controls cost more because of corner <code>Region</code>s and painted borders.</li>
+  <li><strong>Hover</strong> is one <code>WM_MOUSEMOVE</code> or <code>WM_MOUSELEAVE</code> with the paints it causes. MaterialSkin does most of its hover work later, in an animation timer, so its number does not include it.</li>
+  <li><strong>GDI / USER</strong> objects per form: FormWind adds no GDI objects; <code>Tw*</code> controls that wrap a native box have one extra window each.</li>
+  <li><strong>Cold start</strong> to the first painted form: FormWind 423–498 ms, plain WinForms 323 ms, MaterialSkin 524 ms, Krypton 693 ms. FormWind adds five assemblies and about 6 MB of private memory.</li>
+</ul>
+
+<h2 id="bottlenecks-fixed">Bottlenecks fixed</h2>
+<p>Profiling with <code>dotnet-trace</code> found five problems, now fixed. Shadows and frames were repainted without checking the invalid region, padding changed twice on every refresh, text was measured again on every refresh, and fonts were scaled twice when a form moved to a screen with another DPI.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>FormWind</th><th>Before</th><th>After</th></tr></thead>
+  <tbody>
+    <tr><td>Hover, 500 standard controls</td><td>1970 µs</td><td>32 µs</td></tr>
+    <tr><td>Hover, 500 controls with AutoStyle</td><td>1901 µs</td><td>36 µs</td></tr>
+    <tr><td>Theme switch + repaint, 200 controls</td><td>61 ms</td><td>29 ms</td></tr>
+    <tr><td>Full repaint, 200 controls</td><td>43 ms</td><td>18 ms</td></tr>
+    <tr><td>Opening on a second monitor, 500 controls (AutoStyle)</td><td>1622 ms</td><td>418 ms</td></tr>
+    <tr><td>Cold start on a second monitor, 200 controls</td><td>1000 ms</td><td>496 ms</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="method">Method</h2>
+<ul>
+  <li>Each scenario repeats the same six roles (label, primary button, secondary button, text box, card, check box) in a <code>FlowLayoutPanel</code> on a 1200 × 900 borderless form, at 50, 200 and 500 controls.</li>
+  <li>Each scenario and size runs in its own process, so JIT, global palettes and process-wide GDI counters do not mix. Two forms are opened and closed before the warm measurements; values are medians with p90.</li>
+  <li>Hover uses real mouse messages; <code>--other-dpi</code> opens the form on a monitor where it receives <code>WM_DPICHANGED</code>.</li>
+  <li>Measured on 2026-10-14 on an Intel Core i5-12450HX, Windows build 26200, .NET 8.0.11, 120 DPI.</li>
+</ul>
+<div class="callout warn">
+  <p>One machine and one run: values vary by about ±10–15%, though the order did not change between runs. The scenarios do not look identical; each library uses its own components (for example <code>KryptonForm</code> and <code>MaterialForm</code>).</p>
+</div>
+
+<h2 id="run-it-yourself">Run it yourself</h2>
+<pre><code class="language-powershell">dotnet build tools/FormWind.Benchmarks -c Release
+tools/FormWind.Benchmarks/bin/Release/net8.0-windows/FormWind.Benchmarks.exe                 # all scenarios, ~15 min
+tools/FormWind.Benchmarks/bin/Release/net8.0-windows/FormWind.Benchmarks.exe --quick --only formwind,krypton --sizes 200</code></pre>
+<p>Results are written to <code>artifacts/benchmarks/results.json</code> and <code>results.md</code>. The full report, with every size and the other-monitor runs, is in <a href="https://github.com/ModuShip/FormWind/blob/main/docs/benchmarks.md" rel="noopener"><code>docs/benchmarks.md</code></a> (Turkish).</p>
