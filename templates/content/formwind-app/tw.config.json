@@ -1,0 +1,12 @@
+{
+  // FormWind theme (https://github.com/ModuShip/FormWind).
+  // "preset" picks a ready-made look (tailwind, fluent, antd, material); everything below is applied on top of it.
+  // Components such as btn-primary, input, card, page, title, muted, list and toggle come from the preset; add or override
+  // them under "components". The semantic colors (primary, surface, danger, success, warning) restyle all of them at once.
+  "version": 1,
+  "preset": "PRESET_NAME",
+  "palette": "PALETTE_VERSION",
+  "components": {
+    "panel": "card p-0 shadow-none"
+  }
+}

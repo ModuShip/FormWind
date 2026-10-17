@@ -1,0 +1,49 @@
+{
+  // FormWind preset inspired by Material Design 3 (baseline scheme). Copy this file into tw.config.json to customize it.
+  // Components not listed here are the defaults (TwTheme.DefaultComponents) drawn with the colors below.
+  // Roboto is used when installed (it is not bundled); otherwise Segoe UI.
+  "version": 1,
+  "fontFamily": "Roboto, Segoe UI",
+  "colors": {
+    // Primary tonal palette of the baseline scheme; 600 = #6750a4 (primary), 200 = #d0bcff (dark primary).
+    "primary": {
+      "50": "#f6edff", "100": "#eaddff", "200": "#d0bcff", "300": "#b69df8", "400": "#9a82db", "500": "#7f67be",
+      "600": "#6750a4", "700": "#4f378b", "800": "#381e72", "900": "#21005d", "950": "#160041"
+    },
+    // Surfaces and outlines: surface #fef7ff, containers, outline #79747e, on-surface-variant #49454f, on-surface #1d1b20.
+    "surface": {
+      "50": "#fef7ff", "100": "#f3edf7", "200": "#e6e0e9", "300": "#cac4d0", "400": "#938f99", "500": "#79747e",
+      "600": "#605d66", "700": "#49454f", "800": "#2b2930", "900": "#1d1b20", "950": "#141218"
+    }
+  },
+  "components": {
+    "btn": "px-6 py-2 rounded-full text-sm font-medium cursor-pointer transition",
+    "btn-primary": "btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 disabled:bg-surface-200 disabled:text-surface-600 dark:bg-primary-200 dark:text-primary-800 dark:hover:bg-primary-300 dark:active:bg-primary-300 dark:disabled:bg-surface-800 dark:disabled:text-surface-400",
+    "btn-secondary": "btn bg-primary-100 text-primary-900 hover:bg-primary-200 active:bg-primary-200 disabled:bg-surface-200 disabled:text-surface-600 dark:bg-primary-700 dark:text-primary-100 dark:hover:bg-primary-600 dark:active:bg-primary-600 dark:disabled:bg-surface-800 dark:disabled:text-surface-400",
+    "btn-ghost": "btn bg-surface-50 text-primary-600 border border-surface-500 hover:bg-primary-50 active:bg-primary-100 disabled:bg-surface-50 disabled:text-surface-600 disabled:border-surface-300 dark:bg-surface-950 dark:text-primary-200 dark:border-surface-400 dark:hover:bg-surface-900 dark:active:bg-surface-800 dark:disabled:bg-surface-900 dark:disabled:text-surface-400 dark:disabled:border-surface-800",
+    "btn-danger": "btn bg-danger-700 text-white hover:bg-danger-800 active:bg-danger-900 disabled:bg-surface-200 disabled:text-surface-600 dark:bg-danger-200 dark:text-danger-900 dark:hover:bg-danger-300 dark:active:bg-danger-300 dark:disabled:bg-surface-800 dark:disabled:text-surface-400",
+    "link": "text-primary-600 underline cursor-pointer hover:text-primary-800 dark:text-primary-200 dark:hover:text-primary-100",
+    "input": "bg-surface-50 text-surface-900 border border-surface-500 rounded px-4 py-2 placeholder:text-surface-700 hover:border-surface-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600 invalid:border-danger-700 dark:bg-surface-950 dark:text-surface-100 dark:border-surface-400 dark:placeholder:text-surface-300 dark:hover:border-surface-200 dark:focus:border-primary-200 dark:focus:ring-primary-200 dark:invalid:border-danger-300",
+    "select": "input menu:bg-surface-100 menu:border-surface-200 item:hover:bg-surface-200 selected:bg-primary-100 selected:text-primary-900 dark:menu:bg-surface-900 dark:menu:border-surface-800 dark:item:hover:bg-surface-800 dark:selected:bg-primary-700 dark:selected:text-primary-100",
+    "field": "label:text-sm label:font-medium label:text-surface-700 hint:text-xs hint:text-surface-700 error:text-xs error:text-danger-700 dark:label:text-surface-300 dark:hint:text-surface-300 dark:error:text-danger-300",
+    "toggle": "text-surface-900 accent-primary-600 dark:text-surface-100 dark:accent-primary-200 dark:fill-surface-800 dark:border-surface-400",
+    "range": "fill-primary-100 accent-primary-600 dark:fill-primary-800 dark:accent-primary-200 dark:item:bg-primary-200",
+    "page": "font-sans bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100",
+    "card": "bg-surface-100 rounded-xl p-4 shadow-sm dark:bg-surface-900",
+    "sidebar": "bg-surface-100 dark:bg-surface-900",
+    "nav-item": "px-4 py-3 rounded-full text-sm font-medium text-left cursor-pointer bg-surface-100 text-surface-700 hover:bg-surface-200 checked:bg-primary-100 checked:text-primary-900 dark:bg-surface-900 dark:text-surface-300 dark:hover:bg-surface-800 dark:checked:bg-primary-700 dark:checked:text-primary-100",
+    "title": "text-2xl text-surface-900 dark:text-surface-100",
+    "muted": "text-sm text-surface-700 dark:text-surface-300",
+    "badge": "text-xs font-medium rounded-full px-2 text-center bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-primary-100",
+    "alert-info": "p-3 rounded-xl text-sm bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-primary-100",
+    "alert-success": "p-3 rounded-xl text-sm bg-success-100 text-success-900 dark:bg-success-800 dark:text-success-100",
+    "alert-warning": "p-3 rounded-xl text-sm bg-warning-100 text-warning-900 dark:bg-warning-800 dark:text-warning-100",
+    "alert-danger": "p-3 rounded-xl text-sm bg-danger-100 text-danger-900 dark:bg-danger-800 dark:text-danger-100",
+    "table": "bg-surface-50 text-sm text-surface-900 border border-surface-300 divide-y divide-surface-300 header:bg-surface-100 header:text-surface-700 header:font-medium header:h-12 header:px-4 header:whitespace-nowrap cell:px-4 row:h-12 row:hover:bg-surface-100 selected:bg-primary-100 selected:text-primary-900 row-header:hidden dark:bg-surface-950 dark:text-surface-100 dark:border-surface-800 dark:divide-surface-800 dark:header:bg-surface-900 dark:header:text-surface-300 dark:row:hover:bg-surface-900 dark:selected:bg-primary-700 dark:selected:text-primary-100 group:bg-surface-50 group:text-surface-900 group:font-semibold footer:bg-surface-50 footer:text-surface-900 footer:font-semibold match:bg-warning-200 dark:group:bg-surface-900 dark:group:text-surface-100 dark:footer:bg-surface-900 dark:footer:text-surface-100 dark:match:bg-warning-800 dark:match:text-white",
+    "table-sm": "header:h-10 header:px-4 cell:px-4 row:h-9",
+    "table-lg": "header:h-14 header:px-4 cell:px-4 row:h-14",
+    "list": "p-1 bg-surface-50 text-surface-900 item:hover:bg-surface-100 selected:bg-primary-100 selected:text-primary-900 row:border-surface-200 fill-surface-400 dark:bg-surface-950 dark:text-surface-100 dark:item:hover:bg-surface-900 dark:selected:bg-primary-700 dark:selected:text-primary-100 dark:row:border-surface-800 dark:fill-surface-400",
+    "tabs": "text-surface-700 border-b border-surface-300 selected:text-primary-600 selected:border-primary-600 item:hover:text-surface-900 dark:text-surface-300 dark:border-surface-800 dark:selected:text-primary-200 dark:selected:border-primary-200 dark:item:hover:text-surface-100",
+    "menu": "bg-surface-100 text-surface-900 item:hover:bg-surface-200 dark:bg-surface-900 dark:text-surface-100 dark:item:hover:bg-surface-800"
+  }
+}

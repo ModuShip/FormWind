@@ -1,0 +1,91 @@
+<!--
+title: Presets and AutoStyle
+description: Ready-made looks (Tailwind, Fluent, Ant Design, Material), semantic colors and AutoStyle, which styles a form without writing classes.
+-->
+<h1>Presets and AutoStyle</h1>
+<p class="lead">Pick a preset and turn on <code>AutoStyle</code>: every control on the form gets the component that matches its type. No classes, no Designer changes.</p>
+
+<pre><code class="language-jsonc">// tw.config.json
+{ "preset": "fluent" }   // tailwind (default), fluent, antd, material</code></pre>
+<pre><code class="language-csharp">tailwindProvider1.AutoStyle = true;   // Designer: Properties → FormWind → AutoStyle</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/preset-tailwind.png" alt="Tailwind preset" loading="lazy"><figcaption>Tailwind</figcaption></figure>
+  <figure><img src="{{root}}img/preset-fluent.png" alt="Fluent preset" loading="lazy"><figcaption>Fluent</figcaption></figure>
+  <figure><img src="{{root}}img/preset-antd.png" alt="Ant Design preset" loading="lazy"><figcaption>Ant Design</figcaption></figure>
+  <figure><img src="{{root}}img/preset-material.png" alt="Material preset" loading="lazy"><figcaption>Material</figcaption></figure>
+</div>
+
+<h2>Presets</h2>
+<p>A preset (<code>TwPreset</code>; in code <code>new TwTheme(TwPreset.Fluent)</code>) sets the colors, the fonts and the shape of the components — corners, spacing, weight.</p>
+<ul>
+  <li>The looks are <strong>inspired by</strong> the named design systems. They are not those systems and contain no logos or assets.</li>
+  <li>Where an original color fails WCAG AA, it is darkened: Ant Design's <code>#1677ff</code> gives 4.1:1 with white text, so filled buttons use <code>primary-600</code> (<code>#0958d9</code>).</li>
+  <li>Fluent uses Segoe UI Variable on Windows 11; Material uses Roboto when installed. Both fall back to Segoe UI.</li>
+  <li>Every preset passes the contrast audit and the visual regression tests in light and dark mode.</li>
+</ul>
+
+<h2>Components</h2>
+<p>All presets define <strong>the same component names</strong>, so switching presets restyles the whole application without touching its classes or <code>Designer.cs</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Group</th><th>Components</th></tr></thead>
+  <tbody>
+    <tr><td>Buttons</td><td><code>btn</code>, <code>btn-primary</code>, <code>btn-secondary</code> (filled neutral), <code>btn-ghost</code> (outlined default), <code>btn-danger</code>, <code>link</code></td></tr>
+    <tr><td>Forms</td><td><code>input</code>, <code>select</code>, <code>field</code>, <code>toggle</code>, <code>range</code> (slider, progress)</td></tr>
+    <tr><td>Surfaces and text</td><td><code>page</code> (form background, text color and font), <code>card</code>, <code>sidebar</code>, <code>nav-item</code>, <code>title</code>, <code>muted</code>, <code>badge</code>, <code>alert-info</code>, <code>alert-success</code>, <code>alert-warning</code>, <code>alert-danger</code></td></tr>
+    <tr><td>Data and navigation</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>menu</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2>Semantic colors</h2>
+<p>Components use five semantic colors: <code>primary</code>, <code>surface</code> (neutral backgrounds and text), <code>danger</code>, <code>success</code> and <code>warning</code> — as in <code>bg-primary-600</code> or <code>text-surface-500</code>. In the default theme they copy <code>blue</code>, <code>gray</code>, <code>red</code>, <code>green</code> and <code>amber</code>.</p>
+<p>Defining a ramp in the theme file recolors every component at once. Use the semantic names in your own classes and they change with the preset too.</p>
+<pre><code class="language-json">{
+  "preset": "antd",
+  "colors": {
+    "primary": {
+      "50": "#eef2ff", "100": "#e0e7ff", "200": "#c7d2fe", "300": "#a5b4fc", "400": "#818cf8", "500": "#6366f1",
+      "600": "#4f46e5", "700": "#4338ca", "800": "#3730a3", "900": "#312e81", "950": "#1e1b4b"
+    }
+  }
+}</code></pre>
+
+<h2>Customizing a preset</h2>
+<p>The theme file is applied <strong>on top of</strong> the preset; write only what differs — a <code>primary</code> ramp, your own <code>btn</code> component. To change a preset throughout, copy its file from <a href="https://github.com/ModuShip/FormWind/tree/main/src/FormWind/Presets" rel="noopener"><code>src/FormWind/Presets/</code></a> as <code>tw.config.json</code>; the files use the same format. See <a href="theme.html">Theme file</a>.</p>
+
+<h2>AutoStyle</h2>
+<p>While <code>TailwindProvider.AutoStyle</code> is on, the controls of the <code>ContainerControl</code> form get the component mapped to their type — including controls added later. In the Designer, <code>ContainerControl</code> is set to the form itself (as with <code>ErrorProvider</code>); in code, write <code>provider.ContainerControl = this;</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Control</th><th>Component</th></tr></thead>
+  <tbody>
+    <tr><td><code>Form</code></td><td><code>page</code></td></tr>
+    <tr><td><code>Button</code>, <code>TwButton</code></td><td><code>btn-ghost</code></td></tr>
+    <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code></td><td><code>input</code></td></tr>
+    <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code></td><td><code>select</code></td></tr>
+    <tr><td><code>CheckBox</code>, <code>RadioButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td><code>toggle</code></td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td><code>range</code></td></tr>
+    <tr><td><code>TwField</code></td><td><code>field</code></td></tr>
+    <tr><td><code>DataGridView</code></td><td><code>table</code></td></tr>
+    <tr><td><code>ListBox</code>, <code>ListView</code>, <code>TreeView</code>, <code>TwDataList</code>, <code>TwListBox</code>, <code>TwTreeView</code></td><td><code>list</code></td></tr>
+    <tr><td><code>TwTabStrip</code> (and the strip of <code>TwTabControl</code>)</td><td><code>tabs</code></td></tr>
+    <tr><td><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code></td><td><code>menu</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Labels and panels are not listed: they take the form's text and background colors.</li>
+  <li>A control's own classes are added <strong>on top of</strong> the automatic component, so <code>flex-1</code>, <code>mt-2</code> or <code>bg-red-50</code> keep the look. When its own classes name a component (<code>btn-primary</code>, <code>card</code> …), the automatic one is not used.</li>
+  <li>Automatic classes are not written to <code>Designer.cs</code>. The smart tag shows them as <code>AutoStyle: input</code>.</li>
+  <li><code>LinkLabel</code> is not mapped (it draws links with <code>LinkColor</code>); use a <code>Label</code> with the <code>link</code> component.</li>
+  <li>Composite controls (the text box inside <code>TwTextBox</code>, <code>NumericUpDown</code>, <code>PropertyGrid</code>) are not entered.</li>
+</ul>
+
+<h3>Changing the mapping</h3>
+<p>The key is the short type name; base types are searched too (<code>TextBoxBase</code> covers every text box). An empty value leaves that type unstyled.</p>
+<pre><code class="language-json">{
+  "autoStyle": { "Button": "btn-primary", "Label": "muted", "KryptonButton": "btn-ghost", "ListView": "" }
+}</code></pre>
+<pre><code class="language-csharp">theme.SetAutoStyle("Button", "btn-primary");</code></pre>
+
+<div class="callout">
+  <p>The showcase has a form that switches between presets: <code>FormWind.Showcase.exe --presets</code> (add <code>--preset fluent</code> for the initial one).</p>
+</div>

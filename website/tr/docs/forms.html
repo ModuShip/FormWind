@@ -1,0 +1,62 @@
+<!--
+title: Formlar ve diyaloglar
+description: TwField ile doğrulamalı alanlar, maskeler, elle verilen hatalar, TwDialog ve TwToast, yerelleştirme ve sağdan sola yerleşim.
+-->
+<h1>Formlar ve diyaloglar</h1>
+<p class="lead"><code>TwField</code> ile etiket, ipucu ve hata metni; giriş maskeleri; temanızı izleyen mesaj kutuları ve bildirimler; kullanıcılarınızın dilinde metinler.</p>
+
+<h2 id="validation">Doğrulama</h2>
+<pre><code class="language-csharp">var field = new TwField { LabelText = "T.C. kimlik no", Required = true, Validator = TwValidators.TcKimlikNo };
+field.Controls.Add(new TwTextBox { Mask = TwMasks.TcKimlikNo });
+tw.SetClasses(field, "field");                 // label:, hint: ve error: parçaları
+
+// Kaydederken:
+if (!tw.Validate(this)) return;                // hataları gösterir ve ilk geçersiz alana odaklanır</code></pre>
+<ul>
+  <li><strong><code>TwField</code></strong> bir etiket (zorunluysa " *"), tek bir düzenleyici ve altında ipucu ya da hata metni içerir. Kurallar: <code>Required</code>, <code>Pattern</code> (düzenli ifade), <code>Validator</code> (özel) ve maskeli alanlarda tamlık.</li>
+  <li>Etiket düzenleyicinin <code>AccessibleName</code>'i, hata metni <code>AccessibleDescription</code>'ı olur.</li>
+  <li><strong>Elle hata:</strong> <code>tw.SetError(control, "Bu ad kullanılıyor")</code>; örneğin sunucudan gelen bir hata. Hata varken <code>invalid:</code> varyantı uygulanır (<code>input</code> bileşeni kırmızı kenarlık ve halka gösterir). Kullanıcı değeri değiştirince hata kendiliğinden temizlenir. <code>HasErrors</code>, <code>ClearErrors()</code>, <code>ErrorsChanged</code>.</li>
+  <li><strong>Yerleşik kurallar</strong> (<code>TwValidators</code>): <code>TcKimlikNo</code> (kontrol basamakları), <code>Iban</code> (mod 97), <code>Email</code>, <code>TurkishMobile</code>, <code>MinLength(n)</code>.</li>
+</ul>
+
+<h2 id="masks">Maskeler</h2>
+<p><code>TwTextBox.Mask</code>: <code>0</code> rakam, <code>9</code> isteğe bağlı rakam, <code>L</code> harf. Yalnızca uyan karakterler yazılabilir; yapıştırırken sabit karakterler atlanır.</p>
+<pre><code class="language-csharp">var iban = new TwTextBox { Mask = TwMasks.Iban };
+var phone = new TwTextBox { Mask = "(000) 000 00 00" };
+string digits = phone.UnmaskedText;            // MaskCompleted bütün yerlerin dolduğunu söyler</code></pre>
+<p>Yerleşik maskeler: <code>TwMasks.Phone</code>, <code>Iban</code>, <code>TcKimlikNo</code>, <code>Date</code>, <code>PostalCode</code>.</p>
+
+<h2 id="dialogs-and-toasts">Diyaloglar ve bildirimler</h2>
+<pre><code class="language-csharp">if (TwDialog.Show(this, "Bu sipariş silinsin mi?", "Silme onayı",
+        TwDialogKind.Warning, TwDialogButtons.YesNo, danger: true) == DialogResult.Yes)
+{
+    DeleteOrder();
+    TwToast.Show(this, "Sipariş silindi", TwDialogKind.Success);
+}</code></pre>
+<ul>
+  <li><strong><code>TwDialog</code></strong> <code>MessageBox</code>'ın yerini alır: ikon, başlık, mesaj ve sağa yaslı butonlar; Enter varsayılan, Esc iptaldir. Sahip formun koyu temasını izler. Buton metinleri <code>TwDialog.Texts[DialogResult.Yes] = "Sil"</code> ile tek tek değiştirilir; <code>TwDialog.Create(...)</code> göstermeden önce özelleştirmeye izin verir.</li>
+  <li><strong><code>TwToast</code></strong> sahip formun sağ alt köşesinde üst üste dizilir, odağı çalmaz, fare üzerindeyken bekler ve kendiliğinden kapanır (<code>DefaultDuration</code> 4 sn). Ekran okuyuculara uyarı olarak duyurulur.</li>
+</ul>
+
+<h2 id="localization">Yerelleştirme</h2>
+<p>Kullanıcıya görünen metinler (diyalog butonları, doğrulama mesajları, tablonun süzme menüsü, yükleniyor metni, ekran okuyucu adları) <code>TwTexts</code>'tedir. Varsayılan dil İngilizcedir; uygulamanın arayüz dili (<code>CultureInfo.CurrentUICulture</code>) Türkçeyse Türkçe metinler seçilir.</p>
+<pre><code class="language-csharp">TwTexts.Current = TwTexts.Turkish;                                                       // dili zorla
+TwTexts.Current = new TwTexts { Ok = "OK", Cancel = "Abbrechen", Required = "Pflichtfeld." }; // başka bir dil
+TwTexts.Current.Loading = "Veriler getiriliyor…";                                        // tek bir metin</code></pre>
+<ul>
+  <li>Bir kontrolün kendi metin özellikleri (<code>TwField.RequiredMessage</code>, <code>TwSelect.SearchPlaceholder</code> …) atanmışsa <code>TwTexts</code>'in önüne geçer.</li>
+  <li>Biçimli metinler <code>{0}</code> yer tutucularını kullanır.</li>
+  <li>Geliştiriciye yönelik metinler (istisnalar, Designer komutları, çözümleyici uyarıları) İngilizcedir.</li>
+</ul>
+
+<h2 id="right-to-left">Sağdan sola</h2>
+<p>Bir kontrolün kalıtılan <code>RightToLeft</code> değeri <code>Yes</code> olduğunda:</p>
+<ul>
+  <li><code>rtl:</code> ve <code>ltr:</code> varyantları Tailwind'deki gibi yöne göre uygulanır: <code>pl-4 rtl:pl-0 rtl:pr-4</code>.</li>
+  <li>Flex ve grid yerleşimleri yatayda yansıtılır, dış boşluklar da onlarla yer değiştirir.</li>
+  <li><code>TwButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code> ve <code>TwSelect</code> yansıtılır.</li>
+  <li>Formda <code>RightToLeftLayout = true</code> ise pencereyi Windows yansıtır, FormWind ikinci kez yansıtmaz.</li>
+</ul>
+<div class="callout warn">
+  <p>Henüz yansıtılmayanlar: <code>TwNumberBox</code>, <code>TwDatePicker</code>, <code>TwSlider</code>, <code>TwProgress</code>, <code>TwTabStrip</code>, <code>TwDataList</code>, <code>TwTreeView</code>, <code>TwCalendar</code> ve çizilen <code>DropDownList</code> açılır kutusu. Mantıksal <code>ps-*</code>/<code>pe-*</code> class'ları yoktur; <code>rtl:</code> kullanın.</p>
+</div>

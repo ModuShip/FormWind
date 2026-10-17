@@ -1,0 +1,94 @@
+<!--
+title: Theme file
+description: tw.config.json — colors, components, fonts, the Tailwind v4 palette, icons and SVG icons.
+-->
+<h1>Theme file</h1>
+<p class="lead"><code>tw.config.json</code> holds your palette, components, fonts and icons. It is applied on top of the default theme — or on top of the preset it names — so it only needs what is different.</p>
+
+<pre><code class="language-jsonc">{
+  "preset": "fluent",                                   // applied first; the rest goes on top
+  "fontFamily": "Segoe UI",
+  "spacingUnit": 4,
+  "colors": {
+    "brand": { "500": "#2b579a", "600": "#234a85" },   // bg-brand-500
+    "canvas": "#f3f6fb"                                 // bg-canvas
+  },
+  "components": {
+    "btn-primary": "btn bg-brand-500 text-white hover:bg-brand-600"
+  }
+}</code></pre>
+
+<p>Load it in <code>Program.Main</code> before any form is created:</p>
+<pre><code class="language-csharp">TwTheme.Current = TwTheme.LoadIfExists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tw.config.json"));</code></pre>
+<p>The Designer reads the same file: the package embeds <code>tw.config.json</code> from the project folder into the application's assembly, so the preview and the component and color lists use your theme (see <a href="designer.html">Designer</a>).</p>
+
+<h2>Keys</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>preset</code></td><td><code>tailwind</code>, <code>fluent</code>, <code>antd</code>, <code>material</code>. Applied before the other keys.</td></tr>
+    <tr><td><code>palette</code></td><td><code>v3</code> (default) or <code>v4</code>.</td></tr>
+    <tr><td><code>colors</code></td><td>New colors (a single value or a ramp of shades) and the semantic ramps <code>primary</code>, <code>surface</code>, <code>danger</code>, <code>success</code>, <code>warning</code>.</td></tr>
+    <tr><td><code>components</code></td><td>Component classes such as <code>btn-primary</code> or <code>card</code>. Components may use other components.</td></tr>
+    <tr><td><code>fontFamily</code></td><td>A family or a comma-separated stack; the first installed or registered family wins.</td></tr>
+    <tr><td><code>fonts</code></td><td>Font files to register without installing them.</td></tr>
+    <tr><td><code>fontWeights</code></td><td>Families for intermediate weights of a font.</td></tr>
+    <tr><td><code>spacingUnit</code></td><td>Pixels per spacing unit (default 4).</td></tr>
+    <tr><td><code>iconFont</code>, <code>icons</code></td><td>The icon font and extra icon names — glyphs or SVG.</td></tr>
+    <tr><td><code>autoStyle</code></td><td>Control type → component map used by <a href="presets.html#autostyle">AutoStyle</a>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Palette</h2>
+<p>The default palette is Tailwind v3: 22 colors × 11 shades (50–950), plus <code>white</code>, <code>black</code> and <code>transparent</code>. <code>"palette": "v4"</code> (in code <code>new TwTheme(TwPaletteVersion.V4)</code>) uses the v4 shades of the same colors.</p>
+<p>v4 colors are defined in OKLCH. Colors outside sRGB are approximated with CSS Color 4 gamut mapping, as browsers do, so <code>blue-500</code> is <code>#2b7fff</code> just like on the Tailwind site. Theme colors can be written in OKLCH as well:</p>
+<pre><code class="language-json">{ "colors": { "brand": "oklch(62.3% 0.214 259.8)" } }</code></pre>
+<p>The default components pass the contrast audit with both palettes. The <a href="{{root}}reference/#palette">class reference</a> shows every swatch.</p>
+
+<h2>Fonts</h2>
+<p><code>fontFamily</code> can be a stack: <code>"Inter, Segoe UI"</code>. Fonts shipped with the application are registered without installation; paths are relative to the theme file and missing files are skipped:</p>
+<pre><code class="language-json">{
+  "fontFamily": "Inter, Segoe UI",
+  "fonts": ["Assets/fonts/Inter-Regular.ttf", "Assets/fonts/Inter-SemiBold.ttf"]
+}</code></pre>
+<p>In code: <code>TwFonts.Register(path)</code>. Fonts are registered with both GDI+ and GDI (process-private), so they work in standard controls drawn with <code>TextRenderer</code> too. Distribute the font's license (e.g. SIL OFL) with your application.</p>
+
+<h3>Font weights</h3>
+<p>WinForms only knows regular and bold; intermediate weights are installed on Windows as <strong>separate families</strong>. FormWind resolves <code>font-thin</code> (100) … <code>font-black</code> (900) to these families with CSS's matching rules:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Used with Segoe UI</th></tr></thead>
+  <tbody>
+    <tr><td><code>font-thin</code>, <code>font-extralight</code>, <code>font-light</code></td><td>Segoe UI Light</td></tr>
+    <tr><td><code>font-normal</code>, <code>font-medium</code></td><td>Segoe UI</td></tr>
+    <tr><td><code>font-semibold</code></td><td>Segoe UI Semibold</td></tr>
+    <tr><td><code>font-bold</code></td><td>Segoe UI + bold style</td></tr>
+    <tr><td><code>font-extrabold</code>, <code>font-black</code></td><td>Segoe UI Black</td></tr>
+  </tbody>
+</table></div>
+<p>For another font, map its weight families; a family that is not installed is skipped and the closest installed weight is used:</p>
+<pre><code class="language-json">{ "fontWeights": { "Inter": { "300": "Inter Light", "600": "Inter SemiBold" } } }</code></pre>
+
+<h2>Icons</h2>
+<p>FormWind uses the icon font that ships with Windows: <strong>Segoe Fluent Icons</strong> on Windows 11, <strong>Segoe MDL2 Assets</strong> on Windows 10.</p>
+<ul>
+  <li><code>TwIcon</code> is a standalone icon. Pick <code>IconName</code> from a drop-down in the Designer; color with <code>text-*</code>, size with the font size (<code>text-xl</code> = 20 × 20 px).</li>
+  <li><code>TwButton.IconName</code> puts an icon next to the text, with <code>IconPosition</code> and <code>IconSpacing</code>.</li>
+</ul>
+<pre><code class="language-csharp">icoCustomer.IconName = "user";
+tw.SetClasses(icoCustomer, "text-xl text-blue-600 dark:text-blue-400");
+btnSave.IconName = "save";</code></pre>
+<p>About 80 names are built in — <code>save</code>, <code>search</code>, <code>settings</code>, <code>trash</code>, <code>user</code> … (the <a href="{{root}}reference/#icons">class reference</a> lists them all). Any glyph can be used by code point (<code>"#E8A5"</code>), and the theme file adds names or switches the font:</p>
+<pre><code class="language-json">{ "iconFont": "Segoe Fluent Icons", "icons": { "invoice": "E8A5" } }</code></pre>
+
+<h3>SVG icons</h3>
+<p>Single-color SVG sets such as Lucide, Heroicons or Tabler work too. An icon value can be a path to an <code>.svg</code> file (relative to the theme file) or inline <code>&lt;svg&gt;</code> markup; in code, <code>TwTheme.SetSvgIcon(name, svg)</code>.</p>
+<pre><code class="language-jsonc">"icons": {
+  "invoice": "E8A5",                                    // glyph from the icon font
+  "package": "Assets/icons/package.svg",                // file
+  "dot": "&lt;svg viewBox='0 0 24 24'&gt;&lt;circle cx='12' cy='12' r='4'/&gt;&lt;/svg&gt;"
+}</code></pre>
+<ul>
+  <li>An SVG icon overrides the glyph of the same name, so built-in icons (<code>check</code>, <code>chevron-down</code> …) can be replaced everywhere — in <code>TwButton</code>, <code>TwSelect</code>, the calendar and the grid.</li>
+  <li>The color is always the text color where it is drawn, like <code>currentColor</code>.</li>
+  <li>Supported: <code>path</code> (all commands, arcs included), <code>circle</code>, <code>ellipse</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>g</code>; <code>fill</code>, <code>stroke</code>, <code>stroke-width</code>, <code>stroke-linecap</code>, <code>stroke-linejoin</code>. Gradients, masks, text and CSS are not.</li>
+</ul>

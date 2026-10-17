@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <RootNamespace>FormWind.Showcase</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Ana form bilerek Designer'ın varsayılanıyla (AutoScaleMode.Font) kurulu: DPI testleri Font modundaki ekran değişimini
+         bununla dener. Vitrin PerMonitorV2 çalışmadığından FW002'nin anlattığı ölçeklenmeme sorunu burada görünmez. -->
+    <NoWarn>$(NoWarn);FW002</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" />
+    <!-- Paketle gelen FW001 çözümleyicisi, depo içinde proje referansıyla. -->
+    <ProjectReference Include="..\..\src\FormWind.Analyzers\FormWind.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tw.config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Paketle gelen hedef, depo içinde proje referansıyla: tw.config.json Designer önizlemesi için derlemeye gömülür. -->
+  <Import Project="..\..\src\FormWind\build\FormWind.targets" />
+
+</Project>

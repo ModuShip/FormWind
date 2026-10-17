@@ -1,0 +1,62 @@
+<!--
+title: Forms and dialogs
+description: Validated fields with TwField, masks, manual errors, TwDialog and TwToast, localization and right-to-left layouts.
+-->
+<h1>Forms and dialogs</h1>
+<p class="lead">Labels, hints and errors with <code>TwField</code>; input masks; message boxes and toasts that follow your theme; texts in your users' language.</p>
+
+<h2>Validation</h2>
+<pre><code class="language-csharp">var field = new TwField { LabelText = "Email", Required = true, Validator = TwValidators.Email };
+field.Controls.Add(new TwTextBox());
+tw.SetClasses(field, "field");                 // label:, hint: and error: parts
+
+// On save:
+if (!tw.Validate(this)) return;                // shows the errors and focuses the first invalid field</code></pre>
+<ul>
+  <li><strong><code>TwField</code></strong> holds a label (" *" when required), one editor and a hint or error below it. Rules: <code>Required</code>, <code>Pattern</code> (regular expression), <code>Validator</code> (custom), and completeness for masked fields.</li>
+  <li>The label becomes the editor's <code>AccessibleName</code> and the error its <code>AccessibleDescription</code>.</li>
+  <li><strong>Manual errors:</strong> <code>tw.SetError(control, "Already taken")</code> — from a server, say. While an error is set the <code>invalid:</code> variant applies (the <code>input</code> component shows a red border and ring). It clears when the user changes the value. <code>HasErrors</code>, <code>ClearErrors()</code>, <code>ErrorsChanged</code>.</li>
+  <li><strong>Built-in rules</strong> (<code>TwValidators</code>): <code>Email</code>, <code>Iban</code> (mod 97), <code>MinLength(n)</code>, <code>TcKimlikNo</code> (Turkish national ID), <code>TurkishMobile</code>.</li>
+</ul>
+
+<h2>Masks</h2>
+<p><code>TwTextBox.Mask</code>: <code>0</code> digit, <code>9</code> optional digit, <code>L</code> letter. Only matching characters can be typed; pasting skips literal characters.</p>
+<pre><code class="language-csharp">var iban = new TwTextBox { Mask = TwMasks.Iban };
+var phone = new TwTextBox { Mask = "(000) 000 00 00" };
+string digits = phone.UnmaskedText;            // MaskCompleted tells whether every slot is filled</code></pre>
+<p>Built-in masks: <code>TwMasks.Phone</code>, <code>Iban</code>, <code>TcKimlikNo</code>, <code>Date</code>, <code>PostalCode</code>.</p>
+
+<h2>Dialogs and toasts</h2>
+<pre><code class="language-csharp">if (TwDialog.Show(this, "Delete this order?", "Confirm delete",
+        TwDialogKind.Warning, TwDialogButtons.YesNo, danger: true) == DialogResult.Yes)
+{
+    DeleteOrder();
+    TwToast.Show(this, "Order deleted", TwDialogKind.Success);
+}</code></pre>
+<ul>
+  <li><strong><code>TwDialog</code></strong> replaces <code>MessageBox</code>: icon, title, message and right-aligned buttons; Enter is the default and Esc cancels. It follows the owner form's dark mode. Override button texts with <code>TwDialog.Texts[DialogResult.Yes] = "Delete"</code>, or customize with <code>TwDialog.Create(...)</code> before showing.</li>
+  <li><strong><code>TwToast</code></strong> stacks in the bottom-right corner of the owner form, doesn't steal focus, pauses while hovered and closes itself (<code>DefaultDuration</code> 4 s). Screen readers announce it as an alert.</li>
+</ul>
+
+<h2>Localization</h2>
+<p>User-facing texts — dialog buttons, validation messages, the grid's filter menu, loading text, screen reader names — live in <code>TwTexts</code>. English is the default; Turkish is chosen when <code>CultureInfo.CurrentUICulture</code> is Turkish.</p>
+<pre><code class="language-csharp">TwTexts.Current = TwTexts.Turkish;                                                       // force a language
+TwTexts.Current = new TwTexts { Ok = "OK", Cancel = "Abbrechen", Required = "Pflichtfeld." }; // another language
+TwTexts.Current.Loading = "Fetching data…";                                              // a single text</code></pre>
+<ul>
+  <li>A control's own text properties (<code>TwField.RequiredMessage</code>, <code>TwSelect.SearchPlaceholder</code> …) win over <code>TwTexts</code> when set.</li>
+  <li>Formatted texts use <code>{0}</code> placeholders.</li>
+  <li>Developer-facing texts — exceptions, Designer commands, analyzer warnings — are in English.</li>
+</ul>
+
+<h2>Right-to-left</h2>
+<p>When a control's inherited <code>RightToLeft</code> is <code>Yes</code>:</p>
+<ul>
+  <li><code>rtl:</code> and <code>ltr:</code> variants apply by direction, as in Tailwind: <code>pl-4 rtl:pl-0 rtl:pr-4</code>.</li>
+  <li>Flex and grid layouts mirror horizontally, and margins swap with them.</li>
+  <li><code>TwButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code> and <code>TwSelect</code> mirror.</li>
+  <li>With <code>RightToLeftLayout = true</code> Windows mirrors the window itself and FormWind does not mirror again.</li>
+</ul>
+<div class="callout warn">
+  <p>Not mirrored yet: <code>TwNumberBox</code>, <code>TwDatePicker</code>, <code>TwSlider</code>, <code>TwProgress</code>, <code>TwTabStrip</code>, <code>TwDataList</code>, <code>TwTreeView</code>, <code>TwCalendar</code> and the painted <code>DropDownList</code> combo box. There are no logical <code>ps-*</code>/<code>pe-*</code> classes; use <code>rtl:</code>.</p>
+</div>

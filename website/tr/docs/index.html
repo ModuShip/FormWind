@@ -1,0 +1,95 @@
+<!--
+title: Başlarken
+description: FormWind'i kurun, temayı yükleyin ve ilk WinForms formunuzu bir hazır görünüm, AutoStyle ya da class'larla stilleyin.
+-->
+<h1>Başlarken</h1>
+<p class="lead">FormWind elinizdeki WinForms kontrollerini stiller. Paketi ekleyin, temayı yükleyin, forma bir <code>TailwindProvider</code> bırakın; sonra işi <code>AutoStyle</code>'a bırakın ya da kontrol başına class yazın.</p>
+
+<h2 id="requirements">Gereksinimler</h2>
+<ul>
+  <li><strong>.NET Framework 4.7.2+</strong> ya da <strong>.NET 8+</strong> (<code>net472</code>, <code>net8.0-windows</code>). Testler .NET 9 ve 10'da da çalışır.</li>
+  <li>.NET dışında bağımlılık yoktur (<code>net472</code> için yalnızca <code>System.Text.Json</code>).</li>
+  <li>Koyu başlık çubukları ve native koyu kaydırma çubukları için Windows 10 ya da sonrası; sistem zeminleri ve Segoe Fluent Icons için Windows 11.</li>
+</ul>
+
+<div class="callout">
+  <p class="callout-title">Önizleme</p>
+  <p>FormWind 0.1 bir önizleme sürümüdür. Paketler NuGet'e çıkana kadar <code>dotnet pack FormWind.sln -c Release</code> ile üretip <code>artifacts/packages</code> klasörünü paket kaynağı olarak ekleyin.</p>
+</div>
+
+<h2 id="install">Kurulum</h2>
+<pre><code class="language-bash">dotnet add package FormWind --prerelease</code></pre>
+<p>Krypton Toolkit kullanan uygulamalara ayrıca <code>FormWind.Krypton</code> paketini ekleyin (bkz. <a href="krypton.html">Krypton Toolkit</a>).</p>
+
+<h2 id="style-your-first-form">İlk formunuzu stilleyin</h2>
+<ol class="steps">
+  <li>
+    <p><strong>Temayı yükleyin.</strong> <code>Program.Main</code> içinde, hiçbir form oluşturulmadan önce. Dosya yoksa varsayılan tema kullanılır.</p>
+<pre><code class="language-csharp">TwTheme.Current = TwTheme.LoadIfExists(
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tw.config.json"));</code></pre>
+  </li>
+  <li>
+    <p><strong>Bir <code>TailwindProvider</code> ekleyin.</strong> Toolbox'tan forma sürükleyin. Listede yoksa: Toolbox → sağ tık → <strong>Choose Items</strong> → <code>FormWind.dll</code>.</p>
+  </li>
+  <li>
+    <p><strong>Yolunuzu seçin.</strong> Her kontrolü tipine göre stillemek için <code>AutoStyle</code>'ı açın ya da bir kontrol seçip <em>Classes on tailwindProvider1</em> alanını doldurun. Designer şunu yazar:</p>
+<pre><code class="language-csharp">this.tailwindProvider1.SetClasses(this.btnSave, "btn-primary");</code></pre>
+  </li>
+  <li>
+    <p><strong>Koyu temayı açın.</strong> İstediğiniz an; bütün <code>dark:</code> varyantları birlikte uygulanır:</p>
+<pre><code class="language-csharp">tailwindProvider1.DarkMode = true;</code></pre>
+  </li>
+</ol>
+
+<h2 id="without-the-designer">Designer olmadan</h2>
+<p>Kodla kurulan formlar da aynı şekilde çalışır. <code>AutoStyle</code> kullanırken <code>ContainerControl</code>'ü kendiniz atayın:</p>
+<pre><code class="language-csharp">public sealed class MainForm : Form
+{
+    private readonly TailwindProvider _tw = new TailwindProvider();
+
+    public MainForm()
+    {
+        SuspendLayout();
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
+
+        var save = new TwButton { Text = "Kaydet", IconName = "save", Size = new Size(120, 36) };
+        var card = new TwPanel { Size = new Size(360, 200) };
+        card.Controls.Add(save);
+        Controls.Add(card);
+
+        _tw.ContainerControl = this;
+        _tw.AutoStyle = true;                       // her kontrol kendi bileşenini alır
+        _tw.SetClasses(card, "card flex flex-col gap-3 p-6");
+        _tw.SetClasses(save, "btn-primary");        // kendi bileşeni AutoStyle'ın önüne geçer
+        ResumeLayout();
+    }
+}</code></pre>
+
+<h2 id="project-template">Proje şablonu</h2>
+<p><code>FormWind.Templates</code> hazır ekranlarla bir uygulama oluşturur: doğrulamalı alanlarla giriş, aranabilir <code>TwDataList</code> ile liste–detay ve ayarlar. Açık/koyu tema anahtarı formlar arasında paylaşılır. Şablon metinleri İngilizcedir.</p>
+<pre><code class="language-bash">dotnet new install FormWind.Templates</code></pre>
+<pre><code class="language-bash">dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Seçenek</th><th>Değerler</th></tr></thead>
+  <tbody>
+    <tr><td><code>--Framework</code></td><td><code>net8.0-windows</code> (varsayılan), <code>net9.0-windows</code>, <code>net10.0-windows</code>, <code>net472</code></td></tr>
+    <tr><td><code>--Preset</code></td><td><code>tailwind</code> (varsayılan), <code>fluent</code>, <code>antd</code>, <code>material</code></td></tr>
+    <tr><td><code>--Palette</code></td><td><code>v3</code> (varsayılan), <code>v4</code></td></tr>
+    <tr><td><code>--Krypton</code></td><td><code>true</code>: <code>FormWind.Krypton</code> paketini ekler, <code>KryptonApplier</code>'ı kaydeder ve Krypton paletini ana formun temasına bağlar</td></tr>
+    <tr><td><code>--FormWindVersion</code></td><td>Paket sürümü (varsayılan: şablon paketinin sürümü)</td></tr>
+  </tbody>
+</table></div>
+<p>Şablondaki formlar kodla kurulur ve <code>AutoScaleMode.Dpi</code> kullanır.</p>
+
+<h2 id="try-it-on-an-existing-app-first">Önce mevcut bir uygulamada deneyin</h2>
+<p><a href="tools.html#harness">Harness</a>, bir .NET WinForms uygulamasını kaynak koduna dokunmadan her forma FormWind uygulanmış olarak çalıştırır; kontrast sorunlarını, donmaları ve tanınmayan kontrolleri raporlar.</p>
+<pre><code class="language-powershell">.\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -SelfTest -ExitAfter 60</code></pre>
+
+<h2 id="where-next">Sırada ne var?</h2>
+<div class="cards">
+  <a class="card-link" href="presets.html"><strong>Hazır görünümler ve AutoStyle</strong><span>Bütün uygulamayı class yazmadan stilleyin.</span></a>
+  <a class="card-link" href="classes.html"><strong>Class'lar</strong><span>Renkler, boşluklar, kenarlıklar, varyantlar.</span></a>
+  <a class="card-link" href="layout.html"><strong>Yerleşim</strong><span><code>TwPanel</code> üzerinde flex ve grid.</span></a>
+  <a class="card-link" href="datagridview.html"><strong>DataGridView</strong><span>Parçalar, hücre tipleri ve süzmeli tablolar.</span></a>
+</div>

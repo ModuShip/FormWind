@@ -1,0 +1,55 @@
+<!--
+title: Layout
+description: Flex and grid layout on TwPanel, with gap, justify, align, spans and responsive variants.
+-->
+<h1>Layout</h1>
+<p class="lead">A <code>TwPanel</code> with the <code>flex</code> or <code>grid</code> class lays out its children itself, with a subset of CSS flexbox and grid.</p>
+
+<pre><code class="language-csharp">// Card: vertical stack, items fill the width
+tw.SetClasses(pnlCard, "card flex flex-col gap-1");
+// Button row: right-aligned, 8 px apart
+tw.SetClasses(pnlActions, "flex justify-end gap-2");
+// Spacer: takes the remaining space and pushes the button row down
+tw.SetClasses(pnlSpacer, "flex-1");</code></pre>
+
+<p>Inside a flex or grid panel the children's <code>Location</code>, <code>Dock</code> and <code>Anchor</code> are ignored. The layout engine of the standard <code>Panel</code> and <code>Form</code> cannot be replaced, so flex and grid only work on <code>TwPanel</code> — or on a container that implements <code>ITwLayoutHost</code>.</p>
+
+<h2>Classes</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Container (TwPanel)</th><th>Item (child control)</th></tr></thead>
+  <tbody>
+    <tr><td><code>flex</code>, <code>grid</code>, <code>block</code></td><td><code>flex-1</code>, <code>flex-auto</code>, <code>flex-initial</code>, <code>flex-none</code></td></tr>
+    <tr><td><code>flex-row</code>, <code>flex-col</code>, <code>flex-wrap</code>, <code>flex-nowrap</code></td><td><code>grow</code>, <code>grow-0</code>, <code>shrink</code>, <code>shrink-0</code></td></tr>
+    <tr><td><code>gap-{n}</code>, <code>gap-x-{n}</code>, <code>gap-y-{n}</code></td><td><code>basis-{n}</code>, <code>basis-1/2</code>, <code>basis-full</code>, <code>basis-auto</code></td></tr>
+    <tr><td><code>justify-start</code> / <code>end</code> / <code>center</code> / <code>between</code> / <code>around</code> / <code>evenly</code></td><td><code>w-1/2</code>, <code>w-full</code>, <code>h-full</code> (relative to the container)</td></tr>
+    <tr><td><code>items-start</code> / <code>end</code> / <code>center</code> / <code>stretch</code></td><td><code>min-w-{n}</code>, <code>max-w-{n}</code>, <code>max-w-md</code> …, <code>min-h-{n}</code>, <code>max-h-{n}</code></td></tr>
+    <tr><td><code>grid-cols-{1–12}</code>, <code>grid-rows-{1–12}</code></td><td><code>self-*</code>, <code>col-span-{1–12}</code>, <code>col-span-full</code>, <code>row-span-{1–12}</code>, <code>row-span-full</code>, <code>m-*</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2>A form in grid</h2>
+<pre><code class="language-csharp">tw.SetClasses(pnlForm, "grid grid-cols-2 gap-x-4 gap-y-3 p-6");
+tw.SetClasses(fldName, "field col-span-2");
+tw.SetClasses(fldCity, "field");
+tw.SetClasses(fldDate, "field");
+tw.SetClasses(pnlActions, "col-span-2 flex justify-end gap-2");</code></pre>
+
+<h2>Differences from CSS</h2>
+<ul>
+  <li>An item's natural size is its <code>Size</code> from the Designer (the preferred size for <code>AutoSize</code> controls). Items without a size class do not shrink below it.</li>
+  <li>Spacing between items comes only from <code>m-*</code>; WinForms' default 3 px <code>Margin</code> is ignored.</li>
+  <li>The default is <code>items-stretch</code>: items in a row stretch to the container's height, items in a column to its width.</li>
+  <li>Grid items are placed in order with CSS's auto-placement; cells covered by <code>row-span-*</code> are skipped. <code>grid-rows-N</code> divides the height into N equal rows. There is no <code>col-start-*</code>, <code>row-start-*</code>, <code>grid-flow-*</code>, <code>margin: auto</code> or <code>order-*</code>.</li>
+  <li>Items do not overflow the row's cross size (WinForms would clip them); shrinking labels show "…" with <code>truncate</code>.</li>
+  <li>Content starts inside the panel's border, as in the CSS box model. With <code>AutoScroll</code>, room for the vertical scrollbar is reserved.</li>
+  <li>A flex <code>TwPanel</code> with <code>AutoSize = true</code> sizes to its content (not yet for grid).</li>
+  <li>In right-to-left forms layouts are mirrored, as with CSS <code>dir="rtl"</code>.</li>
+</ul>
+
+<h2>Responsive variants</h2>
+<p><code>sm:</code>, <code>md:</code>, <code>lg:</code>, <code>xl:</code> and <code>2xl:</code> apply by the form's client width — 640, 768, 1024, 1280 and 1536 px at 96 DPI, configurable through <code>TwBreakpoints</code>. When the form is resized across a threshold, only controls that use these variants are restyled.</p>
+<pre><code class="language-csharp">tw.SetClasses(pnlForm, "flex flex-col gap-4 md:flex-row lg:gap-8");
+tw.SetClasses(lblTitle, "text-lg lg:text-2xl");</code></pre>
+
+<h2>Animations</h2>
+<p>The tab indicator slides to the new tab, list row hovers fade in and skeleton rows pulse gently. <code>TwMotion.Enabled</code> follows Windows' "Show animations" setting and can be turned off in code. Nothing animates at design time or while invisible.</p>

@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Kütüphane net8.0-windows ile derlenir; testler .NET 9 ve 10 çalışma zamanlarında da çalışır. -->
+    <TargetFrameworks>net472;net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsTestProject>true</IsTestProject>
+    <!-- FW9001: testler deneysel genişletme noktalarını (TwStyle, IStyleApplier …) doğrudan kullanır. -->
+    <NoWarn>$(NoWarn);FW9001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" />
+    <ProjectReference Include="..\..\src\FormWind.Krypton\FormWind.Krypton.csproj" />
+  </ItemGroup>
+
+  <!--
+    Krypton sürüm matrisi: FormWind.Krypton en düşük desteklenen sürümle (KryptonVersion) derlenir; -p:KryptonTestVersion=…
+    testleri daha yeni bir Krypton ile çalıştırır (paketi yeni Krypton'la kullanan bir uygulamanın durumu).
+  -->
+  <ItemGroup Condition="'$(KryptonTestVersion)' != ''">
+    <PackageReference Include="Krypton.Toolkit" Version="$(KryptonTestVersion)" />
+  </ItemGroup>
+
+  <!-- Görsel regresyon testleri vitrin formlarını çizer (vitrin yalnızca net472). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <ProjectReference Include="..\..\samples\FormWind.Showcase\FormWind.Showcase.csproj" />
+    <!-- UI Automation istemcisi: ekran okuyucuların gördüğü ağacı dışarıdan doğrulamak için -->
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <!-- Designer testleri (DesignSurface) -->
+    <Reference Include="System.Design" />
+  </ItemGroup>
+
+  <!-- Dönüştürme aracı ve çözümleyici testleri .NET (Core) hedeflerinde. -->
+  <ItemGroup Condition="'$(TargetFramework)' != 'net472'">
+    <ProjectReference Include="..\..\tools\FormWind.Convert\FormWind.Convert.csproj" />
+    <!-- Harness'in ekran görüntüsü ölçümü (ScreenContrast). -->
+    <ProjectReference Include="..\..\tools\FormWind.Harness\FormWind.Harness.csproj" />
+    <!-- FW001 çözümleyicisi derlenen örnek kodla test edilir. -->
+    <ProjectReference Include="..\..\src\FormWind.Analyzers\FormWind.Analyzers.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Designer testleri: FormWind.targets'in uygulama derlemesine gömdüğü tema dosyasının yerine geçer. -->
+    <EmbeddedResource Include="Design/tw.config.json" LogicalName="FormWind.tw.config.json" WithCulture="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Outfit (SIL OFL 1.1): kurulu olmayan bir fontla kayıt testleri için -->
+    <None Update="Fonts\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

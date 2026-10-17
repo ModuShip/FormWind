@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind.Krypton</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>FormWind.Krypton</PackageId>
+    <Description>FormWind for Krypton Toolkit applications: classes on Krypton controls map to their state palettes (KryptonApplier), and a Krypton palette built from the FormWind theme makes the whole Krypton UI follow the chosen preset and dark mode (TwKryptonTheme). Krypton Toolkit 100.25 and later.</Description>
+    <PackageTags>winforms;krypton;krypton-toolkit;tailwind;theme;palette;dark-mode;styling</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Hedefler arası (net472 / net8.0-windows) API uyumu paketlenirken denetlenir; ilk yayından sonra PackageValidationBaselineVersion eklenmeli. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- FW9001: IStyleApplier/TwStyle gibi deneysel genişletme noktaları; bu paket FormWind ile aynı sürümde yayınlanır. -->
+    <NoWarn>$(NoWarn);CS1591;FW9001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Krypton.Toolkit" Version="$(KryptonVersion)" />
+    <ProjectReference Include="..\FormWind\FormWind.csproj" />
+    <!-- NuGet okuyucuları için İngilizce README, paket içinde README.md adıyla. -->
+    <None Include="..\..\README.en.md" Pack="true" PackagePath="\README.md" />
+  </ItemGroup>
+
+  <!-- Public API değişiklikleri PublicAPI.*.txt dosyalarında izlenir (RS0016/RS0017). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+</Project>

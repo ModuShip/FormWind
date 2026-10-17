@@ -1,0 +1,70 @@
+<!--
+title: Krypton and other libraries
+description: Use FormWind with Krypton Toolkit — a palette that follows the theme, classes on Krypton controls — and alongside other control suites.
+-->
+<h1>Krypton and other libraries</h1>
+<p class="lead"><code>FormWind.Krypton</code> works in Krypton Toolkit applications in two ways, which can be combined: a theme bridge that needs no classes, and classes on individual Krypton controls.</p>
+
+<pre><code class="language-bash">dotnet add package FormWind.Krypton --prerelease</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/krypton-fluent.png" alt="Krypton Toolkit form with the Fluent preset" loading="lazy"><figcaption>Krypton + Fluent</figcaption></figure>
+  <figure><img src="{{root}}img/krypton-material-dark.png" alt="Krypton Toolkit form with the Material preset in dark mode" loading="lazy"><figcaption>Krypton + Material, dark</figcaption></figure>
+</div>
+
+<h2>Theme bridge</h2>
+<p><code>TwKryptonTheme</code> builds a Krypton palette from the FormWind theme and makes it Krypton's global palette. Every Krypton control without classes follows the chosen preset and dark mode.</p>
+<pre><code class="language-csharp">using FormWind.Krypton;
+
+KryptonApplier.Register();                                  // in Program.Main
+var palette = TwKryptonTheme.Follow(tailwindProvider1);     // in the main form; Dispose() when it closes</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Theme component</th><th>Krypton parts</th></tr></thead>
+  <tbody>
+    <tr><td><code>page</code></td><td>Form and panel backgrounds, the form's title bar</td></tr>
+    <tr><td><code>card</code></td><td>Header groups and control backgrounds</td></tr>
+    <tr><td><code>btn-ghost</code>, <code>btn-primary</code></td><td>Buttons; checked <code>KryptonCheckButton</code></td></tr>
+    <tr><td><code>input</code></td><td>Text, combo, date and number boxes</td></tr>
+    <tr><td><code>list</code></td><td>List items</td></tr>
+    <tr><td><code>table</code></td><td><code>KryptonDataGridView</code></td></tr>
+  </tbody>
+</table></div>
+<p>The palette is rebuilt when the theme changes or <code>DarkMode</code> is toggled. It starts from Krypton's Microsoft 365 White (light) or Black (dark) palette; parts FormWind doesn't map — ribbon, navigator tabs, Krypton's menus — keep those colors. To manage a fixed palette yourself, <code>TwKryptonTheme.CreatePalette(theme, dark)</code> returns a <code>KryptonCustomPaletteBase</code>.</p>
+
+<h2>Classes on Krypton controls</h2>
+<p><code>KryptonApplier</code> writes classes to Krypton's state palettes: base → <code>StateCommon</code>, <code>hover:</code> → <code>StateTracking</code>, <code>active:</code> → <code>StatePressed</code>, <code>focus:</code> → <code>OverrideFocus</code> (<code>StateActive</code> for input controls), <code>disabled:</code> → <code>StateDisabled</code>, <code>checked:</code> → <code>StateChecked*</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Control</th><th>Parts</th></tr></thead>
+  <tbody>
+    <tr><td><code>KryptonButton</code>, <code>KryptonCheckButton</code></td><td><code>checked:</code></td></tr>
+    <tr><td><code>KryptonPanel</code>, <code>KryptonLabel</code>, <code>KryptonLinkLabel</code></td><td></td></tr>
+    <tr><td><code>KryptonCheckBox</code>, <code>KryptonRadioButton</code></td><td>Text color and font</td></tr>
+    <tr><td><code>KryptonTextBox</code>, <code>KryptonMaskedTextBox</code>, <code>KryptonRichTextBox</code>, <code>KryptonNumericUpDown</code>, <code>KryptonDateTimePicker</code></td><td>Focus and hover → <code>StateActive</code></td></tr>
+    <tr><td><code>KryptonComboBox</code></td><td><code>item:</code>, <code>item:hover:</code>, <code>menu:</code></td></tr>
+    <tr><td><code>KryptonGroupBox</code></td><td><code>caption:</code></td></tr>
+    <tr><td><code>KryptonHeaderGroup</code></td><td><code>header:</code></td></tr>
+    <tr><td><code>KryptonListBox</code>, <code>KryptonCheckedListBox</code></td><td><code>item:</code>, <code>item:hover:</code>, <code>selected:</code></td></tr>
+    <tr><td><code>KryptonForm</code></td><td><code>caption:</code> (title bar)</td></tr>
+    <tr><td><code>KryptonDataGridView</code></td><td>The <a href="datagridview.html">DataGridView</a> parts; colors are also written to its palette</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>On fixed-size buttons padding shrinks until the text fits, so Krypton doesn't cut it with "…"; <code>rounded-full</code> is limited to half the control's height.</li>
+  <li>AutoStyle doesn't map Krypton types by default — the bridge already styles them. Add them in the theme file if you want: <code>"autoStyle": { "KryptonButton": "btn-ghost" }</code>.</li>
+</ul>
+
+<h2>Versions</h2>
+<p><code>FormWind.Krypton</code> is built against Krypton Toolkit 100.25.11.328 (the package depends on that version or later), and CI tests it with 105.26.7.201 as well. .NET Framework applications that use a newer Krypton need binding redirects; SDK-style projects generate them.</p>
+<p>The sample <code>samples/FormWind.Krypton.Showcase</code> has a preset picker (<code>--preset material</code>, <code>--dark</code>). In the template: <code>dotnet new formwind-app --Krypton true</code>.</p>
+
+<h2>Other control libraries</h2>
+<p>Libraries with their own skin engine paint their controls themselves. FormWind's standard applier handles controls it doesn't recognize: size, spacing and layout usually work, while colors, state variants and corners may conflict with the library's painting. Three ways to combine them:</p>
+<ul>
+  <li><strong>Side by side.</strong> Keep the library's strengths — advanced grids, ribbons, schedulers — on its engine, and use FormWind for standard controls, new screens and the form skeleton. Library controls can be items in a <code>TwPanel</code> flex or grid layout.</li>
+  <li><strong>Write an applier.</strong> Implement <code>IStyleApplier</code>, register it with <code>TwAppliers.Register</code> and map the base style and each variant to the library's appearance objects. The Krypton integration is an example. For grids derived from <code>DataGridView</code>, <code>TwAppliers.FindBuiltIn</code> hands structural styling to FormWind.</li>
+  <li><strong>Theme sync only.</strong> Give the library's controls no classes; switch its light/dark skin when <code>DarkModeChanged</code> fires, and optionally carry your <code>tw.config.json</code> colors into its palette.</li>
+</ul>
+
+<h2>.NET 9+ color mode</h2>
+<p>On .NET 9 and later, <code>Application.SetColorMode(SystemColorMode.Dark)</code> darkens system colors and native controls. FormWind works with it: class colors take precedence, and removing classes returns a control to the dark system color. Bind <code>DarkMode</code> to the application's mode for <code>dark:</code> variants:</p>
+<pre><code class="language-csharp">tw.DarkMode = Application.IsDarkModeEnabled;</code></pre>

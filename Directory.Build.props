@@ -1,0 +1,37 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>İsmail Yücel Ölmez</Authors>
+    <IsPackable>false</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts\packages</PackageOutputPath>
+    <Copyright>© İsmail Yücel Ölmez</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ModuShip/FormWind</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ModuShip/FormWind</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
+    <!-- SourceLink (SDK'da yerleşik): hata ayıklayıcı kaynak dosyalarını GitHub'dan indirir. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <!--
+      FormWind.Krypton bu Krypton Toolkit sürümüyle derlenir; paketin bağımlılığı "en az bu sürüm" olur. CI testleri ayrıca
+      en yeni desteklenen sürümle çalıştırır (-p:KryptonTestVersion=…, tests/FormWind.Tests); desteklenen aralık README'nin Krypton bölümündedir.
+    -->
+    <KryptonVersion Condition="'$(KryptonVersion)' == ''">100.25.11.328</KryptonVersion>
+  </PropertyGroup>
+
+  <!-- CI'da yerel yollar pdb'ye yazılmaz (deterministik derleme). -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)docs\icon.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+</Project>

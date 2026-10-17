@@ -1,0 +1,59 @@
+name: Docs
+
+# Web sitesi (website/: tanıtım ve belgeler) ve class referansı (tools/FormWind.Docs: örnekler gerçek FormWind ile
+# Windows'ta çizilir, reference/ altına). Site her çalışmada "website" yapıtı olarak yüklenir. GitHub Pages'e yayım için depo ayarlarında
+# Pages kaynağını "GitHub Actions" yapıp DEPLOY_DOCS=true depo değişkenini tanımlayın.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build site
+        shell: pwsh
+        run: ./website/build.ps1 -Reference -Output artifacts/website
+
+      - name: Upload site
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: artifacts/website
+          include-hidden-files: true
+
+  deploy:
+    if: vars.DEPLOY_DOCS == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: website
+          path: site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

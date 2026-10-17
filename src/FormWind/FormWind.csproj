@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>FormWind</PackageId>
+    <Description>Modernize existing WinForms applications without rewriting them: a Tailwind-style styling layer for standard controls (and Krypton Toolkit with FormWind.Krypton). Utility classes with hover/focus/dark variants, ready-made looks (Fluent, Ant Design, Material) with AutoStyle, flex and grid layout, dark mode, DataGridView styling, lightweight charts and accessibility support. Known limitations: controls that paint themselves ignore FormWind's styles and may stay light in dark mode (owner-drawn grids can be inverted with TwGrid.EnableDarkInversion); the multi-line Classes editor window is available only in the .NET Framework Designer (the .NET 8+ Designer has the drop-down, smart tag and class builder).</Description>
+    <PackageTags>winforms;windows-forms;tailwind;theme;theming;styling;dark-mode;modernize;ui;fluent;material;krypton;charts;datagridview</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Hedefler arası (net472 / net8.0-windows) API uyumu paketlenirken denetlenir; ilk yayından sonra PackageValidationBaselineVersion eklenmeli. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- FW9001: deneysel genişletme noktaları (TwExperimental) kütüphanenin kendi içinde serbestçe kullanılır. -->
+    <NoWarn>$(NoWarn);CS1591;FW9001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing.Design" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <!-- FW001 çözümleyicisi pakete eklenir (analyzers/dotnet/cs); kütüphanenin kendisine referans olmaz. -->
+  <ItemGroup>
+    <ProjectReference Include="..\FormWind.Analyzers\FormWind.Analyzers.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="..\FormWind.Analyzers\bin\$(Configuration)\netstandard2.0\FormWind.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <!-- Public API değişiklikleri PublicAPI.*.txt dosyalarında izlenir (RS0016/RS0017). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- NuGet okuyucuları için İngilizce README, paket içinde README.md adıyla. -->
+    <None Include="..\..\README.en.md" Pack="true" PackagePath="\README.md" />
+    <InternalsVisibleTo Include="FormWind.Tests" />
+  </ItemGroup>
+
+  <!-- Hazır görünümler (TwPreset): tw.config.json biçiminde, kütüphaneye gömülü. -->
+  <ItemGroup>
+    <None Remove="Presets\*.json" />
+    <EmbeddedResource Include="Presets\*.json" LogicalName="FormWind.Presets.%(Filename).json" WithCulture="false" />
+  </ItemGroup>
+
+  <!-- Tema dosyasını uygulamanın derlemesine gömen hedef (Designer önizlemesi için); doğrudan ve dolaylı referanslarda içe aktarılır. -->
+  <ItemGroup>
+    <None Remove="build\FormWind.targets" />
+    <None Include="build\FormWind.targets" Pack="true" PackagePath="build\;buildTransitive\" />
+  </ItemGroup>
+
+</Project>

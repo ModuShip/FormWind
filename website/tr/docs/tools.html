@@ -1,0 +1,64 @@
+<!--
+title: Araçlar
+description: Designer dosyası dönüştürücüsü, gerçek uygulamaları değiştirmeden deneyen harness ve örnek uygulamalar.
+-->
+<h1>Araçlar</h1>
+<p class="lead">Mevcut bir uygulamayı class'lara taşıyın, FormWind'i kaynak koduna dokunmadan deneyin ve örnekleri inceleyin.</p>
+
+<h2 id="converter">Dönüştürücü</h2>
+<p><code>tools/FormWind.Convert</code>, Designer dosyalarındaki sabit stil atamalarını class'lara çevirir. Varsayılan kuru çalıştırmadır; neyin değişeceğini yazdırır:</p>
+<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --report conversion.md</code></pre>
+<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --write</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Designer satırı</th><th>Class</th></tr></thead>
+  <tbody>
+    <tr><td><code>BackColor</code> / <code>ForeColor</code></td><td><code>bg-*</code> / <code>text-*</code>: palet rengi, 10 birim içindeki en yakın renk (notla), yoksa <code>bg-[#hex]</code></td></tr>
+    <tr><td><code>Font</code></td><td><code>text-sm</code> … <code>text-4xl</code> ya da <code>text-[13px]</code>; Semibold/Bold → <code>font-semibold</code>/<code>font-bold</code>; <code>italic</code>, <code>underline</code></td></tr>
+    <tr><td><code>Padding</code></td><td><code>p-*</code>, <code>px-*</code>/<code>py-*</code> ya da kenar bazlı</td></tr>
+    <tr><td><code>FlatAppearance</code></td><td><code>border-0</code>/<code>border</code>, <code>border-*</code>, <code>hover:bg-*</code>, <code>active:bg-*</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Dönüştürülen satırlar bir <code>SetClasses</code> çağrısıyla değiştirilir; dosyada yoksa bir <code>TailwindProvider</code> eklenir (ve formla birlikte dispose edilir).</li>
+  <li>C# ve <strong>Visual Basic</strong> (<code>.Designer.vb</code>), eski ve yeni Designer biçimleri ve yerel değişken olarak üretilen kontroller desteklenir.</li>
+  <li>Sistem renkleri, kendi renk ifadeleriniz, türetilmiş fontlar ve başka font aileleri yerinde bırakılır ve raporda listelenir.</li>
+  <li><code>--config tw.config.json</code> kendi paletinizle eşler; <code>--tolerance</code> en yakın renk eşiğini değiştirir.</li>
+  <li>Git Extensions (74 Designer dosyası, 360 class) ve Greenshot (311 kontrol) üzerinde doğrulandı: dönüştürülen projeler uyarısız derlendi, renkler ve fontlar aynı çıktı.</li>
+</ul>
+<div class="callout warn"><p><code>--write</code> dosyaları yerinde günceller. Önce commit edin.</p></div>
+
+<h2 id="harness">Harness</h2>
+<p><code>tools/run-harness.ps1</code> bir .NET WinForms uygulamasını <strong>kaynak koduna dokunmadan</strong> her forma FormWind uygulanmış olarak çalıştırır ve olanları kaydeder:</p>
+<pre><code class="language-powershell">.\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -SelfTest -ExitAfter 60</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Seçenek</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>-Dark</code></td><td>Koyu temada başlatır. Çalışırken <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> temayı değiştirir.</td></tr>
+    <tr><td><code>-SelfTest</code></td><td>Açılan her formu açık ve koyu temada görüntüler; kontrastı hem class renklerinden hem görüntüden denetler.</td></tr>
+    <tr><td><code>-ExitAfter 60</code></td><td>Gözetimsiz çalışmalar için süreci 60 saniye sonra bitirir.</td></tr>
+    <tr><td><code>-Skip DataGridView,ToolStrip</code></td><td>Bir sorunu daraltmak için bu tipleri stillemez.</td></tr>
+    <tr><td><code>-Dump</code></td><td>Stil uygulamaz; her formun renk, font ve iç boşluk değerlerini yazar. Dönüştürücüden önce ve sonra karşılaştırın.</td></tr>
+    <tr><td><code>FORMWIND_DISABLE=1</code></td><td>Bir sorunu FormWind olmadan yeniden üretmek için harness'i kapatır.</td></tr>
+  </tbody>
+</table></div>
+<p><code>%TEMP%\FormWind-Harness\</code> altındaki günlük; stillenen formları, kontrast sorunlarını (<code>CONTRAST</code>, <code>SCREEN</code>), gözle kontrol edilecek owner-draw kontrolleri, 250 ms'yi aşan donmaları, çizim fırtınalarını, istisnaları ve tanınmayan class'ları listeler.</p>
+<ul>
+  <li>Harness bir .NET başlangıç kancasıdır. .NET Framework uygulamalarında <code>FormWindHarness.cs</code>'i projeye ekleyip <code>FormWindHarness.Install()</code> çağırın.</li>
+  <li>Git Extensions, Greenshot, mRemoteNG, Krypton Toolkit örnekleri, ScottPlot WinForms demosu ve bir MDI kabuğunda denendi.</li>
+</ul>
+
+<h2 id="samples">Örnekler</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Örnek</th><th>Gösterdiği</th></tr></thead>
+  <tbody>
+    <tr><td><code>samples/FormWind.Showcase</code></td><td>Ana vitrin; kontroller formu için <code>--controls</code>, görünüm değiştirici için <code>--presets</code>, ekran görüntüsü için <code>--snapshot out.png</code>.</td></tr>
+    <tr><td><code>samples/FormWind.Krypton.Showcase</code></td><td>Görünüm seçicili bir Krypton Toolkit formu; <code>--preset material</code>, <code>--dark</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="building-from-source">Kaynaktan derleme</h2>
+<p><code>build.ps1</code>, CI ile aynı adımları çalıştırır: derleme, dört hedefte testler, kapsam, paketleme. <code>-Quick</code> yalnızca .NET 8'de derler ve test eder.</p>
+<pre><code class="language-powershell">.\build.ps1</code></pre>
+<p>Bu site <code>website/build.ps1</code> ile derlenir; <code>-Reference</code> class referansını gerçek kontrollerle çizerek üretir.</p>
+<pre><code class="language-powershell">.\website\build.ps1 -Reference</code></pre>
+<p>Katkıda bulunmak için <a href="https://github.com/ModuShip/FormWind/blob/main/CONTRIBUTING.md" rel="noopener">CONTRIBUTING.md</a> ve <a href="https://github.com/ModuShip/FormWind/blob/main/ARCHITECTURE.md" rel="noopener">ARCHITECTURE.md</a> dosyalarına bakın (İngilizce).</p>

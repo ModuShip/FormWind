@@ -1,0 +1,114 @@
+<!--
+title: Class'lar
+description: Renkler, yazı, boşluklar, boyutlar, kenarlıklar, köşeler, gölgeler, halkalar, gradient ve durum varyantları; WinForms karşılıklarıyla.
+-->
+<h1>Class'lar</h1>
+<p class="lead">Class'lar Tailwind'in adlarını izler ve WinForms özelliklerine (özellik olmayan yerde çizime) karşılık gelir. <a href="{{root}}reference/">Class referansı</a> her birini gerçek bir kontrolde çizilmiş olarak gösterir.</p>
+
+<h2 id="overview">Genel bakış</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kategori</th><th>Kalıp</th><th>Örnek</th><th>WinForms</th></tr></thead>
+  <tbody>
+    <tr><td>Arka plan</td><td><code>bg-{renk}-{ton}</code>, <code>bg-[#hex]</code></td><td><code>bg-blue-600</code></td><td><code>BackColor</code></td></tr>
+    <tr><td>Yazı rengi</td><td><code>text-{renk}-{ton}</code></td><td><code>text-gray-900</code></td><td><code>ForeColor</code></td></tr>
+    <tr><td>Yazı boyutu</td><td><code>text-xs</code> … <code>text-4xl</code></td><td><code>text-sm</code> = 14 px</td><td><code>Font</code> (px × 0,75 = pt)</td></tr>
+    <tr><td>Yazı stili</td><td><code>font-thin</code> … <code>font-black</code>, <code>font-sans</code>, <code>font-mono</code>, <code>italic</code>, <code>underline</code></td><td><code>font-semibold</code></td><td><code>Font</code> (<a href="theme.html#font-weights">kalınlıklar</a>)</td></tr>
+    <tr><td>İç boşluk</td><td><code>p</code>, <code>px</code>, <code>py</code>, <code>pt</code>, <code>pr</code>, <code>pb</code>, <code>pl</code> + <code>-{n}</code> / <code>-px</code> / <code>-[12px]</code></td><td><code>px-4</code> = 16 px</td><td><code>Padding</code></td></tr>
+    <tr><td>Dış boşluk</td><td><code>m</code>, <code>mx</code>, <code>my</code>, <code>mt</code>, <code>mr</code>, <code>mb</code>, <code>ml</code> + <code>-{n}</code></td><td><code>mt-2</code> = 8 px</td><td><code>Margin</code> (yerleşimlerde)</td></tr>
+    <tr><td>Boyut</td><td><code>w-{n}</code>, <code>h-{n}</code></td><td><code>h-10</code> = 40 px</td><td><code>Width</code>, <code>Height</code></td></tr>
+    <tr><td>Kenarlık</td><td><code>border</code>, <code>border-{0,2,4,8}</code>, <code>border-{renk}-{ton}</code></td><td><code>border border-gray-300</code></td><td>Çizim</td></tr>
+    <tr><td>Köşe</td><td><code>rounded</code>, <code>rounded-{none,sm,md,lg,xl,2xl,3xl,full}</code>, <code>rounded-[10px]</code></td><td><code>rounded-md</code> = 6 px</td><td><code>Region</code> ya da owner-draw</td></tr>
+    <tr><td>Hizalama</td><td><code>text-left</code>, <code>text-center</code>, <code>text-right</code></td><td></td><td><code>TextAlign</code></td></tr>
+    <tr><td>Diğer</td><td><code>cursor-pointer</code>, <code>cursor-text</code>, <code>hidden</code>, <code>visible</code>, <code>truncate</code></td><td></td><td><code>Cursor</code>, <code>Visible</code>, <code>AutoEllipsis</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Boşluk birimi 4 px'tir (temada <code>spacingUnit</code>). Sayılar her kültürde nokta ile yazılır: <code>p-0.5</code>.</li>
+  <li>Bütün renk class'ları saydamlık alır: <code>bg-black/50</code>, <code>text-white/75</code>.</li>
+  <li>Aynı varyant içinde sonra gelen class kazanır: <code>p-2 px-4</code> → dikey 8 px, yatay 16 px.</li>
+  <li>Tanınmayan class'lar <code>TailwindProvider.UnknownClasses</code> olayına (dinleyici yoksa Debug çıktısına) bildirilir.</li>
+</ul>
+
+<h2 id="variants">Varyantlar</h2>
+<p>Bir önek, class'ı yalnızca bir durumda uygular. Önekler birleştirilebilir: <code>dark:hover:bg-gray-800</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Varyant</th><th>Ne zaman uygulanır</th></tr></thead>
+  <tbody>
+    <tr><td><code>hover:</code>, <code>active:</code></td><td>Fare kontrolün üzerindeyken / buton basılıyken.</td></tr>
+    <tr><td><code>focus:</code>, <code>focus-visible:</code></td><td>Kontrol odaktayken / odak tıklamayla değil klavyeyle (Tab, oklar) geldiğinde.</td></tr>
+    <tr><td><code>disabled:</code></td><td><code>Enabled</code> false iken. Bu durumda <code>focus</code>, <code>hover</code> ve <code>active</code> uygulanmaz.</td></tr>
+    <tr><td><code>checked:</code></td><td>Onay kutusu, radyo butonu, anahtar ya da check butonu işaretliyken.</td></tr>
+    <tr><td><code>invalid:</code></td><td>Kontrolde bir doğrulama hatası varken (<a href="forms.html">Formlar</a>).</td></tr>
+    <tr><td><code>group-hover:</code></td><td>Fare <code>group</code> class'lı bir konteynerin üzerindeyken.</td></tr>
+    <tr><td><code>dark:</code></td><td><code>TailwindProvider.DarkMode</code> açıkken.</td></tr>
+    <tr><td><code>sm:</code> … <code>2xl:</code></td><td>Form en az 640 / 768 / 1024 / 1280 / 1536 px genişlikteyken (<a href="layout.html#responsive-variants">responsive</a>).</td></tr>
+    <tr><td><code>rtl:</code>, <code>ltr:</code></td><td>Kontrolün kalıtılan <code>RightToLeft</code> yönüne göre.</td></tr>
+    <tr><td><code>forced-colors:</code></td><td>Windows Yüksek Karşıtlık açıkken (<a href="accessibility.html#high-contrast">erişilebilirlik</a>).</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="variant-order">Varyantların sırası</h3>
+<p>Sonraki, öncekini ezer:</p>
+<p>temel → <code>dark:</code> → <code>checked:</code> → <code>focus:</code> → <code>focus-visible:</code> → <code>group-hover:</code> → <code>hover:</code> → <code>dark:hover:</code> → <code>active:</code> → <code>disabled:</code> → <code>invalid:</code> → <code>sm:</code> → <code>md:</code> → <code>lg:</code> → <code>xl:</code> → <code>2xl:</code> → <code>forced-colors:</code></p>
+<div class="callout">
+  <p><code>disabled:</code>, <code>dark:</code>'tan önceliklidir. Kendi bileşenlerinizde koyu tema için <code>dark:disabled:</code> renklerini de verin; varsayılan <code>btn-primary</code>, <code>btn-ghost</code> ve <code>btn-danger</code> bunu yapar.</p>
+</div>
+
+<h2 id="borders-shadows-and-rings">Kenarlık, gölge ve halka</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>border-t</code>, <code>border-b-2</code>, <code>border-x</code>, <code>border-y</code></td><td>Kenar bazlı kenarlık (köşesiz çizilir)</td></tr>
+    <tr><td><code>shadow-sm</code> … <code>shadow-2xl</code>, <code>shadow-none</code></td><td>Tailwind v3 gölge katmanları, bulanık</td></tr>
+    <tr><td><code>shadow-{renk}</code>, <code>shadow-blue-500/50</code></td><td>Renkli gölge</td></tr>
+    <tr><td><code>ring</code>, <code>ring-{0,1,2,4,8}</code>, <code>ring-{renk}</code>, <code>ring-offset-2</code></td><td>Halka; genelde <code>focus:ring-2 focus:ring-blue-500/30</code></td></tr>
+  </tbody>
+</table></div>
+<p>Gölge ve halka kontrolün <strong>ebeveyninde</strong> çizilir (kontroller kendi sınırlarının dışına çizemez); <code>Form</code>, <code>Panel</code> ve <code>TwPanel</code> ebeveynlerinde çalışır. <code>TextBox</code> gibi native kontrollerin odak halkası da bu sayede olur.</p>
+
+<h2 id="gradients">Gradient</h2>
+<p><code>bg-gradient-to-{r,l,t,b,tr,tl,br,bl} from-{renk} via-{renk} to-{renk}</code>: <code>TwPanel</code>, <code>TwButton</code> ve standart <code>Panel</code>'de çizilir. Eksik uç, diğer ucun saydam halidir.</p>
+<pre><code class="language-csharp">tw.SetClasses(pnlHero, "bg-gradient-to-r from-sky-500 to-indigo-500 text-white rounded-xl p-6");</code></pre>
+
+<h2 id="interaction">Etkileşim</h2>
+<ul>
+  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) zemin, yazı ve gölge değişimlerini yumuşatır (ease-out, varsayılan 150 ms).</li>
+  <li><strong><code>hover:</code> / <code>active:</code></strong> yalnızca bu varyantları kullanan kontrolleri yeniden stiller; diğerleri fare hareketini yok sayar.</li>
+  <li><strong><code>group</code> / <code>group-hover:</code></strong> konteynerin üzerine gelindiğinde çocukları stiller; imleç bir çocuğun üzerinden girse de.</li>
+  <li><strong>Placeholder:</strong> <code>TwTextBox.PlaceholderText</code>; renk <code>placeholder:text-gray-400</code>.</li>
+  <li><strong><code>focus-visible:</code></strong> owner-draw kontrollerin odak halkalarını da yönetir. Son girişin türünü <code>TwFocusVisible.LastInputWasKeyboard</code> verir.</li>
+</ul>
+<pre><code class="language-csharp">tw.SetClasses(cardOrder, "group card transition hover:shadow-lg");
+tw.SetClasses(lblOrderTitle, "font-semibold group-hover:text-blue-600");
+tw.SetClasses(txtName, "input focus-visible:ring-2 focus-visible:ring-blue-500/40");</code></pre>
+
+<h2 id="colors-your-code-assigns">Kodunuzun atadığı renkler</h2>
+<p>Class'lar uygulandıktan sonra uygulama kodu bir kontrolün <code>BackColor</code> ya da <code>ForeColor</code> değerini değiştirirse (örneğin bir durum göstergesini yeşile boyamak), FormWind o renk kanalını uygulamaya bırakır. <code>hover:</code>, <code>dark:</code> ve diğer varyantlar onu artık ezmez; diğer kanal FormWind'de kalır.</p>
+<pre><code class="language-csharp">tw.SetClasses(lblStatus, "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200");
+lblStatus.BackColor = Color.LightGreen;            // koyu temada da yeşil kalır; yazı rengi class'lardan gelir
+tw.SetClasses(lblStatus, "bg-red-600 text-white"); // yeni class'lar: zemin yeniden FormWind'in</code></pre>
+<ul>
+  <li>Ebeveynden kalıtılan renk değişimleri (form koyu temaya geçti) uygulamanın ataması sayılmaz.</li>
+  <li>Kanalı geri almak için farklı class'lar atayın; <code>Refresh(control)</code> yetmez.</li>
+  <li>Bunun koyu temada yol açabileceği okunmaz renk çiftlerini <a href="accessibility.html#contrast-audit">kontrast denetimi</a> raporlar.</li>
+  <li><a href="designer.html#fw001">FW001 çözümleyicisi</a> bu atamaları derleme sırasında işaretler.</li>
+</ul>
+
+<h2 id="removing-classes">Class'ları kaldırma</h2>
+<p><code>SetClasses(control, "")</code>; renk, font, iç ve dış boşluk, imleç, görünürlük, köşe ve ToolStrip renderer'ını class'lardan önceki değerlerine döndürür. Boyutlar (<code>w-*</code>, <code>h-*</code>) geri alınmaz; yerleşim kontrolü o arada yeniden boyutlandırmış olabilir.</p>
+
+<h2 id="winforms-differences">WinForms farkları</h2>
+<ul>
+  <li><strong>Sabit boyutlu kontrollerde iç boşluk.</strong> CSS'te padding kutuyu büyütür; <code>AutoSize</code>'ı kapalı bir buton ya da etikette ise içeriği daraltır. FormWind iç boşluğu, yazı tek satıra sığacak kadar kısar ve yer açılınca geri verir. Fontu küçültemez; bu yüzden küçük kontrollere fontu büyüten class vermeyin.</li>
+  <li><strong>Standart kontrollerde köşeler</strong> <code>Region</code> ile kırpılır, antialias yoktur. Yumuşak köşeler için <code>TwButton</code>, <code>TwPanel</code> ve <code>TwTextBox</code> kullanın.</li>
+  <li><strong>Metin kutuları</strong> <code>border-*</code> ve <code>rounded-*</code>'ı ebeveynde, kontrolün 3 px dışında çizilen bir çerçeve olarak alır. Yerleşimde pay bırakın.</li>
+  <li><strong>Devre dışı native metin kutuları</strong> yalnızca <code>disabled:</code> renklerini alır; Windows devre dışı metin kutusunun zeminine güvenilir biçimde uymadığından aksi halde kendi görünümü kalır.</li>
+  <li><strong>Devre dışı butonlar</strong>, koyu zeminde kaybolan Windows yazısı yerine <code>disabled:text-*</code> rengiyle (yoksa yazı renginin zemine doğru yarı yarıya karışmış tonuyla) yeniden çizilir.</li>
+  <li><strong>MDI:</strong> konteyner formun <code>bg-*</code> rengi çocuk pencerelerin arkasındaki alanı da boyar.</li>
+  <li><strong>Şeride gömülü kutular</strong> (<code>ToolStripTextBox</code>, <code>ToolStripComboBox</code>) şeritten türetilen renkleri alır; koyu araç çubuğunda beyaz kalmaz.</li>
+</ul>
+
+<h2 id="errors">Hatalar</h2>
+<p>Stil uygulama uygulamayı asla çökertmez. Stil uygulanırken oluşan bir istisna yakalanır, kontrol o ana kadar uygulanan stili korur ve hata <code>StyleError</code> olayına (ya da Debug çıktısına) bildirilir. Kontrol bir sonraki durum değişiminde yeniden denenir. Bellek yetersizliği gibi kritik istisnalar yakalanmaz.</p>
+<pre><code class="language-csharp">tw.StyleError += (s, e) => logger.LogWarning(e.Exception, "Could not style {Target}: {Classes}", e.Target, e.Classes);
+tw.UnknownClasses += (s, e) => Debug.WriteLine($"{e.Control.Name}: {string.Join(" ", e.Unknown)}");</code></pre>

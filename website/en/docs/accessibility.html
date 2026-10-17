@@ -1,0 +1,46 @@
+<!--
+title: Accessibility
+description: UI Automation for owner-drawn controls, Windows High Contrast support and the WCAG contrast audit.
+-->
+<h1>Accessibility</h1>
+<p class="lead">Owner-drawn controls expose their items to screen readers and automation tools, High Contrast mode is respected, and a contrast audit checks your light and dark themes against WCAG.</p>
+
+<h2>Screen readers and UI Automation</h2>
+<p>FormWind's owner-drawn controls work with Narrator, NVDA, FlaUI and Appium/WinAppDriver:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Control</th><th>Role</th><th>Items</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwDataList</code></td><td>List</td><td>Each row is a ListItem, named by <code>AccessibleItemText</code> or <code>ItemText</code>; created on demand.</td></tr>
+    <tr><td><code>TwTabStrip</code></td><td>PageTabList</td><td>Each tab is a PageTab with its selected state.</td></tr>
+    <tr><td><code>TwCalendar</code></td><td>Table</td><td>Previous/next month buttons and days ("15 October 2026 Thursday").</td></tr>
+    <tr><td><code>TwSelect</code></td><td>ComboBox</td><td>The value is the selected item; the default action opens the menu.</td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td>Slider, ProgressBar</td><td>Value.</td></tr>
+    <tr><td><code>TwTreeView</code></td><td>Outline</td><td>OutlineItems with expanded state and level.</td></tr>
+    <tr><td><code>TwPager</code>, <code>TwToast</code>, <code>TwDialog</code></td><td>ToolBar, Alert, Dialog</td><td>"Page 3 of 20".</td></tr>
+  </tbody>
+</table></div>
+<p>Selection and focus changes are announced. Give fields without a visible label an <code>AccessibleName</code>; inside a <code>TwField</code> the label is used automatically. All controls are fully keyboard-operable, and <code>focus-visible:</code> rings show only for keyboard focus.</p>
+
+<h2 id="high-contrast">High Contrast</h2>
+<p>When a Windows contrast theme is on, FormWind uses system colors instead of class colors:</p>
+<ul>
+  <li>Backgrounds and text return to their system values; selected and hovered parts get the highlight color.</li>
+  <li>Borders and separators are drawn in the text color; shadows, gradients and transitions are not drawn. Borderless <code>TwButton</code>s get a 1 px border.</li>
+  <li>Spacing, font size, corners and layout stay. Styles are reapplied when the mode changes.</li>
+  <li>Use <code>forced-colors:</code> for colors specific to this mode, as in Tailwind: <code>forced-colors:border-2</code>.</li>
+  <li>Opt out with <code>RespectHighContrast = false</code>; read the state from <code>HighContrastActive</code> in code that draws itself.</li>
+</ul>
+
+<h2>Contrast audit</h2>
+<p><code>TwContrast</code> checks a form's current colors against WCAG 2 ratios — 4.5:1 for normal text, 3:1 for large text. Run it in tests or during development, in both modes:</p>
+<pre><code class="language-csharp">tw.DarkMode = true;
+foreach (var issue in TwContrast.Audit(this, tw))
+    Debug.WriteLine(issue);   // TwButton 'btnSave' hover: 2.54:1 &lt; 4.5:1 (#FFFFFF on #60A5FA)</code></pre>
+<ul>
+  <li>Checks text controls, <code>hover:</code> variants (no mouse needed), strips and menus, and DataGridView cells, selection and headers.</li>
+  <li>Transparent backgrounds are blended with the parent's; hidden controls are skipped. <code>includeDisabled: true</code> also checks disabled controls.</li>
+  <li>Colors mid-<code>transition</code> are checked at their target, so the audit can run right after a theme change.</li>
+  <li><code>TwContrast.Ratio(foreground, background)</code> returns the ratio between two colors.</li>
+  <li><code>TwContrast.FindOwnerDrawn(root)</code> lists controls that paint their own colors, which the audit can't see — check those by eye.</li>
+</ul>
+<p>The default components and every preset pass this audit in light and dark mode, with both palettes.</p>

@@ -1,0 +1,55 @@
+<!--
+title: Yerleşim
+description: TwPanel üzerinde flex ve grid yerleşimi; gap, justify, align, span'ler ve responsive varyantlar.
+-->
+<h1>Yerleşim</h1>
+<p class="lead"><code>flex</code> ya da <code>grid</code> class'ı verilen bir <code>TwPanel</code> çocuklarını CSS flexbox ve grid'in bir alt kümesiyle kendisi yerleştirir.</p>
+
+<pre><code class="language-csharp">// Kart: dikey dizilim, öğeler genişliği doldurur
+tw.SetClasses(pnlCard, "card flex flex-col gap-1");
+// Buton satırı: sağa yaslı, 8 px aralıklı
+tw.SetClasses(pnlActions, "flex justify-end gap-2");
+// Boşluk doldurucu: kalan alanı kaplar ve buton satırını alta iter
+tw.SetClasses(pnlSpacer, "flex-1");</code></pre>
+
+<p>Flex ya da grid panelin içinde çocukların <code>Location</code>, <code>Dock</code> ve <code>Anchor</code> değerleri yok sayılır. Standart <code>Panel</code> ve <code>Form</code>'un yerleşim motoru değiştirilemediğinden flex ve grid yalnızca <code>TwPanel</code>'de (ya da <code>ITwLayoutHost</code> uygulayan bir konteynerde) çalışır.</p>
+
+<h2 id="classes">Class'lar</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Konteyner (TwPanel)</th><th>Öğe (çocuk kontrol)</th></tr></thead>
+  <tbody>
+    <tr><td><code>flex</code>, <code>grid</code>, <code>block</code></td><td><code>flex-1</code>, <code>flex-auto</code>, <code>flex-initial</code>, <code>flex-none</code></td></tr>
+    <tr><td><code>flex-row</code>, <code>flex-col</code>, <code>flex-wrap</code>, <code>flex-nowrap</code></td><td><code>grow</code>, <code>grow-0</code>, <code>shrink</code>, <code>shrink-0</code></td></tr>
+    <tr><td><code>gap-{n}</code>, <code>gap-x-{n}</code>, <code>gap-y-{n}</code></td><td><code>basis-{n}</code>, <code>basis-1/2</code>, <code>basis-full</code>, <code>basis-auto</code></td></tr>
+    <tr><td><code>justify-start</code> / <code>end</code> / <code>center</code> / <code>between</code> / <code>around</code> / <code>evenly</code></td><td><code>w-1/2</code>, <code>w-full</code>, <code>h-full</code> (konteynere göre)</td></tr>
+    <tr><td><code>items-start</code> / <code>end</code> / <code>center</code> / <code>stretch</code></td><td><code>min-w-{n}</code>, <code>max-w-{n}</code>, <code>max-w-md</code> …, <code>min-h-{n}</code>, <code>max-h-{n}</code></td></tr>
+    <tr><td><code>grid-cols-{1–12}</code>, <code>grid-rows-{1–12}</code></td><td><code>self-*</code>, <code>col-span-{1–12}</code>, <code>col-span-full</code>, <code>row-span-{1–12}</code>, <code>row-span-full</code>, <code>m-*</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="a-form-in-grid">Grid ile bir form</h2>
+<pre><code class="language-csharp">tw.SetClasses(pnlForm, "grid grid-cols-2 gap-x-4 gap-y-3 p-6");
+tw.SetClasses(fldName, "field col-span-2");
+tw.SetClasses(fldCity, "field");
+tw.SetClasses(fldDate, "field");
+tw.SetClasses(pnlActions, "col-span-2 flex justify-end gap-2");</code></pre>
+
+<h2 id="differences-from-css">CSS'ten farklar</h2>
+<ul>
+  <li>Bir öğenin doğal boyutu Designer'daki <code>Size</code>'ıdır (<code>AutoSize</code> kontrollerde tercih edilen boyut). Boyut class'ı olmayan öğeler bunun altına küçülmez.</li>
+  <li>Öğe aralığı yalnızca <code>m-*</code> class'larından gelir; WinForms'un varsayılan 3 px <code>Margin</code>'i yok sayılır.</li>
+  <li>Varsayılan <code>items-stretch</code>'tir: satırdaki öğeler konteynerin yüksekliğine, sütundaki öğeler genişliğine uzar.</li>
+  <li>Grid öğeleri CSS'in otomatik yerleştirmesiyle sırayla konur; <code>row-span-*</code>'ın kapladığı hücreler atlanır. <code>grid-rows-N</code> yüksekliği N eşit satıra böler. <code>col-start-*</code>, <code>row-start-*</code>, <code>grid-flow-*</code>, <code>margin: auto</code> ve <code>order-*</code> yoktur.</li>
+  <li>Öğeler satırın çapraz boyutunu aşmaz (WinForms taşan kısmı keserdi); daralan etiketler <code>truncate</code> ile "…" gösterir.</li>
+  <li>İçerik, CSS kutu modelindeki gibi panelin kenarlığının içinde başlar. <code>AutoScroll</code>'da dikey kaydırma çubuğunun yeri önceden ayrılır.</li>
+  <li><code>AutoSize = true</code> olan flex <code>TwPanel</code> içeriğine göre boyutlanır (grid için henüz yok).</li>
+  <li>Sağdan sola formlarda yerleşim CSS'teki <code>dir="rtl"</code> gibi yansıtılır.</li>
+</ul>
+
+<h2 id="responsive-variants">Responsive varyantlar</h2>
+<p><code>sm:</code>, <code>md:</code>, <code>lg:</code>, <code>xl:</code> ve <code>2xl:</code> formun istemci genişliğine göre uygulanır: 96 DPI'da 640, 768, 1024, 1280 ve 1536 px (<code>TwBreakpoints</code> ile değiştirilebilir). Form yeniden boyutlanıp bir eşik değiştiğinde yalnızca bu varyantları kullanan kontroller yeniden stillenir.</p>
+<pre><code class="language-csharp">tw.SetClasses(pnlForm, "flex flex-col gap-4 md:flex-row lg:gap-8");
+tw.SetClasses(lblTitle, "text-lg lg:text-2xl");</code></pre>
+
+<h2 id="animations">Animasyonlar</h2>
+<p>Sekme göstergesi yeni sekmeye kayar, liste satırlarının hover zemini belirerek gelir, iskelet satırlar hafifçe nabız atar. <code>TwMotion.Enabled</code> Windows'un "Animasyonları göster" ayarını izler ve kodla kapatılabilir. Tasarım zamanında ve görünmeyen kontrollerde animasyon yoktur.</p>

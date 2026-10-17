@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Embeds the project's theme file (tw.config.json) into the assembly, so that the Designer (also the out-of-process .NET 8+
+    Designer) previews the forms with the project's colors and components. The application keeps loading the file at run time
+    (TwTheme.LoadIfExists); the embedded copy is only read by the Designer.
+
+    FormWindThemeFile: path of the theme file (default: tw.config.json in the project folder).
+    FormWindEmbedTheme: false turns the embedding off.
+  -->
+  <PropertyGroup>
+    <FormWindEmbedTheme Condition="'$(FormWindEmbedTheme)' == ''">true</FormWindEmbedTheme>
+    <FormWindThemeFile Condition="'$(FormWindThemeFile)' == ''">$(MSBuildProjectDirectory)\tw.config.json</FormWindThemeFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(FormWindEmbedTheme)' == 'true' and Exists('$(FormWindThemeFile)')">
+    <EmbeddedResource Include="$(FormWindThemeFile)" LogicalName="FormWind.tw.config.json" WithCulture="false" Visible="false" />
+  </ItemGroup>
+
+</Project>

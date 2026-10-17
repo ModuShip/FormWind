@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Krypton Toolkit uygulamasında FormWind: tema köprüsü (TwKryptonTheme) ve Krypton kontrollerinde class'lar. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind.KryptonShowcase</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind.Krypton\FormWind.Krypton.csproj" />
+  </ItemGroup>
+
+</Project>

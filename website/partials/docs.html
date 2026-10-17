@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="{{t:lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · FormWind</title>
+<meta name="description" content="{{description}}">
+<meta property="og:title" content="{{title}} · FormWind">
+<meta property="og:description" content="{{description}}">
+<link rel="alternate" hreflang="{{t:langCode}}" href="{{alt}}">
+<link rel="icon" type="image/png" href="{{root}}img/icon.png">
+<link rel="stylesheet" href="{{root}}assets/site.css">
+<script src="{{root}}assets/theme.js"></script>
+</head>
+<body data-section="{{section}}">
+{{header}}
+<div class="docs-shell">
+  <aside class="sidebar" id="sidebar" aria-label="{{t:docsNav}}">
+    <nav>{{nav}}</nav>
+  </aside>
+  <main class="doc" id="content">
+    <article>
+{{content}}
+    </article>
+    <p class="edit-link"><a href="{{edit}}" rel="noopener">{{t:edit}}</a></p>
+    {{pager}}
+  </main>
+  <aside class="toc" aria-label="{{t:onThisPage}}"></aside>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+{{footer}}
+<script src="{{root}}assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!--
+title: Erişilebilirlik
+description: Owner-draw kontroller için UI Automation, Windows Yüksek Karşıtlık desteği ve WCAG kontrast denetimi.
+-->
+<h1>Erişilebilirlik</h1>
+<p class="lead">Owner-draw kontroller öğelerini ekran okuyuculara ve otomasyon araçlarına açar, Yüksek Karşıtlık moduna uyulur ve bir kontrast denetimi açık ve koyu temalarınızı WCAG'ye göre kontrol eder.</p>
+
+<h2 id="screen-readers-and-ui-automation">Ekran okuyucular ve UI Automation</h2>
+<p>FormWind'in owner-draw kontrolleri Narrator, NVDA, FlaUI ve Appium/WinAppDriver ile çalışır:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kontrol</th><th>Rol</th><th>Öğeler</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwDataList</code></td><td>List</td><td>Her satır bir ListItem; adı <code>AccessibleItemText</code> ya da <code>ItemText</code>'ten gelir, istendikçe oluşturulur.</td></tr>
+    <tr><td><code>TwTabStrip</code></td><td>PageTabList</td><td>Her sekme seçili durumuyla bir PageTab.</td></tr>
+    <tr><td><code>TwCalendar</code></td><td>Table</td><td>Önceki/sonraki ay düğmeleri ve günler ("15 Ekim 2026 Perşembe").</td></tr>
+    <tr><td><code>TwSelect</code></td><td>ComboBox</td><td>Değer seçili öğedir; varsayılan eylem menüyü açar.</td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td>Slider, ProgressBar</td><td>Değer.</td></tr>
+    <tr><td><code>TwTreeView</code></td><td>Outline</td><td>Açık/kapalı durumu ve düzeyiyle OutlineItem'lar.</td></tr>
+    <tr><td><code>TwPager</code>, <code>TwToast</code>, <code>TwDialog</code></td><td>ToolBar, Alert, Dialog</td><td>"Sayfa 3 / 20".</td></tr>
+  </tbody>
+</table></div>
+<p>Seçim ve odak değişimleri duyurulur. Görünür etiketi olmayan alanlara bir <code>AccessibleName</code> verin; <code>TwField</code> içinde etiket otomatik kullanılır. Bütün kontroller klavyeyle tam kullanılabilir; <code>focus-visible:</code> halkaları yalnızca klavye odağında görünür.</p>
+
+<h2 id="high-contrast">Yüksek Karşıtlık</h2>
+<p>Windows'ta bir karşıtlık teması açıkken FormWind class renkleri yerine sistem renklerini kullanır:</p>
+<ul>
+  <li>Zemin ve yazılar sistem değerlerine döner; seçili ve üzerine gelinen parçalar vurgu rengini alır.</li>
+  <li>Kenarlıklar ve ayırıcılar yazı rengiyle çizilir; gölge, gradient ve geçişler çizilmez. Kenarlıksız <code>TwButton</code>'lar 1 px kenarlık alır.</li>
+  <li>Boşluk, yazı boyutu, köşe ve yerleşim değişmez. Mod değişince stiller yeniden uygulanır.</li>
+  <li>Bu moda özgü renkler Tailwind'deki gibi <code>forced-colors:</code> ile verilir: <code>forced-colors:border-2</code>.</li>
+  <li>Kapatmak için <code>RespectHighContrast = false</code>; kendi çizen kodda durumu <code>HighContrastActive</code>'ten okuyun.</li>
+</ul>
+
+<h2 id="contrast-audit">Kontrast denetimi</h2>
+<p><code>TwContrast</code> bir formun güncel renklerini WCAG 2 oranlarına göre denetler: normal yazı için 4,5:1, büyük yazı için 3:1. Testlerde ya da geliştirme sırasında, iki modda da çalıştırın:</p>
+<pre><code class="language-csharp">tw.DarkMode = true;
+foreach (var issue in TwContrast.Audit(this, tw))
+    Debug.WriteLine(issue);   // TwButton 'btnSave' hover: 2.54:1 &lt; 4.5:1 (#FFFFFF on #60A5FA)</code></pre>
+<ul>
+  <li>Yazılı kontrolleri, <code>hover:</code> varyantlarını (fare gerekmez), şerit ve menüleri, DataGridView hücrelerini, seçimini ve başlıklarını denetler.</li>
+  <li>Saydam zeminler ebeveynin zeminiyle karıştırılır; gizli kontroller atlanır. <code>includeDisabled: true</code> devre dışı kontrolleri de denetler.</li>
+  <li><code>transition</code> ortasındaki renkler hedef değerleriyle denetlenir; denetim tema değişiminin hemen ardından çağrılabilir.</li>
+  <li><code>TwContrast.Ratio(foreground, background)</code> iki renk arasındaki oranı verir.</li>
+  <li><code>TwContrast.FindOwnerDrawn(root)</code> renklerini kendisi çizen, denetimin göremediği kontrolleri listeler; bunları gözle kontrol edin.</li>
+</ul>
+<p>Varsayılan bileşenler ve bütün hazır görünümler bu denetimden açık ve koyu temada, iki paletle de geçer.</p>

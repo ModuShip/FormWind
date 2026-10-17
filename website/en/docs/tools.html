@@ -1,0 +1,64 @@
+<!--
+title: Tools
+description: The Designer-file converter, the harness for trying real applications unchanged, and the showcase samples.
+-->
+<h1>Tools</h1>
+<p class="lead">Move an existing application to classes, try FormWind on it without touching its source, and explore the samples.</p>
+
+<h2 id="converter">Converter</h2>
+<p><code>tools/FormWind.Convert</code> turns hard-coded style assignments in Designer files into classes. The default is a dry run that prints what would change:</p>
+<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --report conversion.md</code></pre>
+<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --write</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Designer line</th><th>Class</th></tr></thead>
+  <tbody>
+    <tr><td><code>BackColor</code> / <code>ForeColor</code></td><td><code>bg-*</code> / <code>text-*</code>: the palette color, the nearest one within 10 units (with a note), otherwise <code>bg-[#hex]</code></td></tr>
+    <tr><td><code>Font</code></td><td><code>text-sm</code> … <code>text-4xl</code> or <code>text-[13px]</code>; Semibold/Bold → <code>font-semibold</code>/<code>font-bold</code>; <code>italic</code>, <code>underline</code></td></tr>
+    <tr><td><code>Padding</code></td><td><code>p-*</code>, <code>px-*</code>/<code>py-*</code> or per side</td></tr>
+    <tr><td><code>FlatAppearance</code></td><td><code>border-0</code>/<code>border</code>, <code>border-*</code>, <code>hover:bg-*</code>, <code>active:bg-*</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Converted lines are replaced by a <code>SetClasses</code> call; a <code>TailwindProvider</code> is added (and disposed with the form) if the file has none.</li>
+  <li>C# and <strong>Visual Basic</strong> (<code>.Designer.vb</code>), old and new Designer formats, and controls generated as local variables are supported.</li>
+  <li>System colors, your own color expressions, derived fonts and other font families are left in place and listed in the report.</li>
+  <li><code>--config tw.config.json</code> matches against your own palette; <code>--tolerance</code> changes the nearest-color threshold.</li>
+  <li>Verified on Git Extensions (74 Designer files, 360 classes) and Greenshot (311 controls): the converted projects built without warnings, with identical colors and fonts.</li>
+</ul>
+<div class="callout warn"><p><code>--write</code> updates files in place. Commit first.</p></div>
+
+<h2 id="harness">Harness</h2>
+<p><code>tools/run-harness.ps1</code> runs a .NET WinForms application with FormWind applied to every form — <strong>without changing its source code</strong> — and records what happens:</p>
+<pre><code class="language-powershell">.\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -SelfTest -ExitAfter 60</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Option</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>-Dark</code></td><td>Starts in dark mode. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> toggles the theme while running.</td></tr>
+    <tr><td><code>-SelfTest</code></td><td>Captures every new form in light and dark mode and audits its contrast from the class colors and from the image.</td></tr>
+    <tr><td><code>-ExitAfter 60</code></td><td>Ends the process after 60 seconds, for unattended runs.</td></tr>
+    <tr><td><code>-Skip DataGridView,ToolStrip</code></td><td>Leaves these types unstyled, to narrow a problem down.</td></tr>
+    <tr><td><code>-Dump</code></td><td>Applies nothing; writes each form's colors, fonts and padding — compare before and after the converter.</td></tr>
+    <tr><td><code>FORMWIND_DISABLE=1</code></td><td>Turns the harness off, to reproduce a problem without FormWind.</td></tr>
+  </tbody>
+</table></div>
+<p>The log in <code>%TEMP%\FormWind-Harness\</code> lists styled forms, contrast problems (<code>CONTRAST</code>, <code>SCREEN</code>), owner-drawn controls to check by eye, UI stalls over 250 ms, paint storms, exceptions and unknown classes.</p>
+<ul>
+  <li>The harness is a .NET startup hook. For .NET Framework applications, add <code>FormWindHarness.cs</code> to the project and call <code>FormWindHarness.Install()</code>.</li>
+  <li>Tried on Git Extensions, Greenshot, mRemoteNG, the Krypton Toolkit samples, the ScottPlot WinForms demo and an MDI shell.</li>
+</ul>
+
+<h2>Samples</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Sample</th><th>Shows</th></tr></thead>
+  <tbody>
+    <tr><td><code>samples/FormWind.Showcase</code></td><td>The main showcase; <code>--controls</code> for the controls form, <code>--presets</code> for the preset switcher, <code>--snapshot out.png</code> for a screenshot.</td></tr>
+    <tr><td><code>samples/FormWind.Krypton.Showcase</code></td><td>A Krypton Toolkit form with a preset picker; <code>--preset material</code>, <code>--dark</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Building from source</h2>
+<p><code>build.ps1</code> runs the same steps as CI — build, tests on four targets, coverage, packing. <code>-Quick</code> builds and tests on .NET 8 only.</p>
+<pre><code class="language-powershell">.\build.ps1</code></pre>
+<p>This website is built with <code>website/build.ps1</code>; <code>-Reference</code> also renders the class reference with real controls.</p>
+<pre><code class="language-powershell">.\website\build.ps1 -Reference</code></pre>
+<p>See <a href="https://github.com/ModuShip/FormWind/blob/main/CONTRIBUTING.md" rel="noopener">CONTRIBUTING.md</a> and <a href="https://github.com/ModuShip/FormWind/blob/main/ARCHITECTURE.md" rel="noopener">ARCHITECTURE.md</a> to contribute.</p>

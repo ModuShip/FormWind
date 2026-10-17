@@ -1,0 +1,91 @@
+<!--
+title: Hazır görünümler ve AutoStyle
+description: Hazır görünümler (Tailwind, Fluent, Ant Design, Material), anlamsal renkler ve formu class yazmadan stilleyen AutoStyle.
+-->
+<h1>Hazır görünümler ve AutoStyle</h1>
+<p class="lead">Bir hazır görünüm seçip <code>AutoStyle</code>'ı açın: formdaki her kontrol tipine uyan bileşeni alır. Class yazmak da Designer'ı değiştirmek de gerekmez.</p>
+
+<pre><code class="language-jsonc">// tw.config.json
+{ "preset": "fluent" }   // tailwind (varsayılan), fluent, antd, material</code></pre>
+<pre><code class="language-csharp">tailwindProvider1.AutoStyle = true;   // Designer: Properties → FormWind → AutoStyle</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/preset-tailwind.png" alt="Tailwind görünümü" loading="lazy"><figcaption>Tailwind</figcaption></figure>
+  <figure><img src="{{root}}img/preset-fluent.png" alt="Fluent görünümü" loading="lazy"><figcaption>Fluent</figcaption></figure>
+  <figure><img src="{{root}}img/preset-antd.png" alt="Ant Design görünümü" loading="lazy"><figcaption>Ant Design</figcaption></figure>
+  <figure><img src="{{root}}img/preset-material.png" alt="Material görünümü" loading="lazy"><figcaption>Material</figcaption></figure>
+</div>
+
+<h2 id="presets">Hazır görünümler</h2>
+<p>Bir hazır görünüm (<code>TwPreset</code>; kodda <code>new TwTheme(TwPreset.Fluent)</code>) renkleri, fontları ve bileşenlerin şeklini (köşe, boşluk, kalınlık) belirler.</p>
+<ul>
+  <li>Görünümler adı geçen tasarım sistemlerinden <strong>esinlenir</strong>; o sistemlerin kendisi değildir, logo ya da varlık içermez.</li>
+  <li>Orijinal bir renk WCAG AA'yı sağlamıyorsa koyulaştırılır: Ant Design'ın <code>#1677ff</code> mavisi beyaz yazıyla 4,1:1 olduğundan dolu butonlar <code>primary-600</code> (<code>#0958d9</code>) kullanır.</li>
+  <li>Fluent, Windows 11'de Segoe UI Variable ile; Material, kuruluysa Roboto ile çizilir. İkisi de yoksa Segoe UI kullanılır.</li>
+  <li>Her görünüm açık ve koyu temada kontrast denetiminden ve görsel regresyon testlerinden geçer.</li>
+</ul>
+
+<h2 id="components">Bileşenler</h2>
+<p>Bütün görünümler <strong>aynı bileşen adlarını</strong> tanımlar; görünüm değiştirmek class'lara ya da <code>Designer.cs</code>'e dokunmadan bütün uygulamayı yeniden giydirir.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Grup</th><th>Bileşenler</th></tr></thead>
+  <tbody>
+    <tr><td>Butonlar</td><td><code>btn</code>, <code>btn-primary</code>, <code>btn-secondary</code> (dolgulu nötr), <code>btn-ghost</code> (kenarlıklı varsayılan), <code>btn-danger</code>, <code>link</code></td></tr>
+    <tr><td>Form</td><td><code>input</code>, <code>select</code>, <code>field</code>, <code>toggle</code>, <code>range</code> (slider, ilerleme)</td></tr>
+    <tr><td>Yüzey ve yazı</td><td><code>page</code> (form zemini, yazı rengi ve font), <code>card</code>, <code>sidebar</code>, <code>nav-item</code>, <code>title</code>, <code>muted</code>, <code>badge</code>, <code>alert-info</code>, <code>alert-success</code>, <code>alert-warning</code>, <code>alert-danger</code></td></tr>
+    <tr><td>Veri ve gezinme</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>menu</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="semantic-colors">Anlamsal renkler</h2>
+<p>Bileşenler beş anlamsal renk kullanır: <code>primary</code>, <code>surface</code> (nötr zemin ve yazı), <code>danger</code>, <code>success</code> ve <code>warning</code>; örneğin <code>bg-primary-600</code> ya da <code>text-surface-500</code>. Varsayılan temada bunlar sırasıyla <code>blue</code>, <code>gray</code>, <code>red</code>, <code>green</code> ve <code>amber</code>'ın kopyasıdır.</p>
+<p>Tema dosyasında bir rampa tanımlamak bütün bileşenleri birlikte yeniden renklendirir. Kendi class'larınızda da anlamsal adları kullanırsanız onlar da görünümle değişir.</p>
+<pre><code class="language-json">{
+  "preset": "antd",
+  "colors": {
+    "primary": {
+      "50": "#eef2ff", "100": "#e0e7ff", "200": "#c7d2fe", "300": "#a5b4fc", "400": "#818cf8", "500": "#6366f1",
+      "600": "#4f46e5", "700": "#4338ca", "800": "#3730a3", "900": "#312e81", "950": "#1e1b4b"
+    }
+  }
+}</code></pre>
+
+<h2 id="customizing-a-preset">Görünümü özelleştirme</h2>
+<p>Tema dosyası görünümün <strong>üzerine</strong> uygulanır; yalnızca farklı olanı yazın: kendi <code>primary</code> rampanız ya da <code>btn</code> bileşeniniz gibi. Bir görünümü baştan sona değiştirmek için <a href="https://github.com/ModuShip/FormWind/tree/main/src/FormWind/Presets" rel="noopener"><code>src/FormWind/Presets/</code></a> klasöründeki dosyasını <code>tw.config.json</code> olarak kopyalayın; dosyalar aynı biçimdedir. Bkz. <a href="theme.html">Tema dosyası</a>.</p>
+
+<h2 id="autostyle">AutoStyle</h2>
+<p><code>TailwindProvider.AutoStyle</code> açıkken <code>ContainerControl</code> formundaki kontroller tipine eşlenen bileşeni alır; sonradan eklenenler de. Designer'da <code>ContainerControl</code> formun kendisine ayarlanır (<code>ErrorProvider</code>'daki gibi); kodla kurulan formlarda <code>provider.ContainerControl = this;</code> yazın.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kontrol</th><th>Bileşen</th></tr></thead>
+  <tbody>
+    <tr><td><code>Form</code></td><td><code>page</code></td></tr>
+    <tr><td><code>Button</code>, <code>TwButton</code></td><td><code>btn-ghost</code></td></tr>
+    <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code></td><td><code>input</code></td></tr>
+    <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code></td><td><code>select</code></td></tr>
+    <tr><td><code>CheckBox</code>, <code>RadioButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td><code>toggle</code></td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td><code>range</code></td></tr>
+    <tr><td><code>TwField</code></td><td><code>field</code></td></tr>
+    <tr><td><code>DataGridView</code></td><td><code>table</code></td></tr>
+    <tr><td><code>ListBox</code>, <code>ListView</code>, <code>TreeView</code>, <code>TwDataList</code>, <code>TwListBox</code>, <code>TwTreeView</code></td><td><code>list</code></td></tr>
+    <tr><td><code>TwTabStrip</code> (ve <code>TwTabControl</code>'ün şeridi)</td><td><code>tabs</code></td></tr>
+    <tr><td><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code></td><td><code>menu</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Etiketler ve paneller listede yoktur: formun yazı ve zemin rengini alırlar.</li>
+  <li>Kontrolün kendi class'ları otomatik bileşenin <strong>üzerine</strong> eklenir; <code>flex-1</code>, <code>mt-2</code> ya da <code>bg-red-50</code> görünümü korur. Kendi class'larında bir bileşen adı varsa (<code>btn-primary</code>, <code>card</code> …) otomatik bileşen kullanılmaz.</li>
+  <li>Otomatik class'lar <code>Designer.cs</code>'e yazılmaz; akıllı etikette <code>AutoStyle: input</code> olarak görünür.</li>
+  <li><code>LinkLabel</code> bağlantılarını <code>LinkColor</code> ile çizdiği için eşlenmez; bağlantı için <code>link</code> bileşenli bir <code>Label</code> kullanın.</li>
+  <li>İç kontrolleri olan bileşik kontrollerin (<code>TwTextBox</code>'ın metin kutusu, <code>NumericUpDown</code>, <code>PropertyGrid</code>) içine girilmez.</li>
+</ul>
+
+<h3 id="changing-the-mapping">Eşlemeyi değiştirme</h3>
+<p>Anahtar tipin kısa adıdır; temel tipler de aranır (<code>TextBoxBase</code> bütün metin kutularını kapsar). Boş değer o tipi stillemez.</p>
+<pre><code class="language-json">{
+  "autoStyle": { "Button": "btn-primary", "Label": "muted", "KryptonButton": "btn-ghost", "ListView": "" }
+}</code></pre>
+<pre><code class="language-csharp">theme.SetAutoStyle("Button", "btn-primary");</code></pre>
+
+<div class="callout">
+  <p>Vitrinde görünümler arasında geçiş yapan bir form vardır: <code>FormWind.Showcase.exe --presets</code> (ilk görünüm için <code>--preset fluent</code> ekleyin).</p>
+</div>

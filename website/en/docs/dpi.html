@@ -1,0 +1,45 @@
+<!--
+title: DPI
+description: Recommended DPI setup for FormWind, how class values scale, and the AutoScale pitfalls on .NET Framework.
+-->
+<h1>DPI</h1>
+<p class="lead">Class values are in 96-DPI pixels and scale with the control's <code>DeviceDpi</code>: <code>p-2</code> is 8 px at 100% and 10 px at 125%.</p>
+
+<h2>Recommended setup</h2>
+<ul>
+  <li>Forms: <code>AutoScaleMode = AutoScaleMode.Dpi</code> and <code>AutoScaleDimensions = new SizeF(96F, 96F)</code>. For forms built in code, wrap the constructor in <code>SuspendLayout</code>/<code>ResumeLayout</code>.</li>
+  <li>Process: <code>PerMonitorV2</code>.</li>
+</ul>
+<pre><code class="language-csharp">// .NET 8+, Program.Main
+Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Setup</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>DPI-unaware (the .NET Framework 4.7.2 default)</td><td>Windows scales the bitmap; the layout is right, the text blurry. No extra setup needed.</td></tr>
+    <tr><td>PerMonitorV2 + <code>AutoScaleMode.Dpi</code></td><td>Layout, fonts and FormWind spacing scale together.</td></tr>
+    <tr><td>PerMonitorV2 + <code>AutoScaleMode.Font</code></td><td>On .NET Framework, Designer forms whose <code>Font</code> is assigned after <code>AutoScaleDimensions</code> don't scale: spacing and fonts grow, controls don't.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>.NET Framework notes</h2>
+<ul>
+  <li>Enable PerMonitorV2 with <code>DpiAwareness</code> in the <code>System.Windows.Forms.ApplicationConfigurationSection</code> of <code>app.config</code>. Keep the build's <code>bindingRedirect</code>s when editing it, or <code>System.Text.Json</code> can't load.</li>
+  <li>PerMonitorV2 only takes effect when the application manifest declares Windows 10 compatibility (<code>supportedOS</code>).</li>
+  <li>If your code creates a <code>Font</code> in <code>Program.Main</code> before any form, call <code>new Control().Dispose()</code> first so GDI+ doesn't stay at 96 DPI.</li>
+  <li>The <code>AutoScaleMode.Font</code> problem above also happens without FormWind, cannot be fixed at run time, and is flagged by the <a href="designer.html#fw002">FW002 analyzer</a>.</li>
+</ul>
+
+<h2>Moving between screens</h2>
+<p>When a form moves to a screen with a different DPI, FormWind reapplies classes once after WinForms finishes scaling. With <code>AutoScaleMode.Dpi</code>, fonts, spacing, owner-drawn controls and DataGridView fonts and column widths scale correctly — verified at 150% and 200%.</p>
+
+<h2>Double scaling</h2>
+<p><code>SetClasses</code> in <code>InitializeComponent</code> assigns a scaled value, which the form's AutoScale would scale again (8 → 10 → 12 px at 125%). FormWind prevents this:</p>
+<ul>
+  <li>When the classes define padding or margin, FormWind's value is written back whenever it changes.</li>
+  <li>Classes are reapplied once when the control's handle is first created — after scaling, before <code>Load</code>.</li>
+</ul>
+<p>As a result, while classes manage padding or margin, run-time assignments to them are undone (FW001 warns). Remove padding and margin from the classes to keep your own values.</p>
+
+<div class="callout">
+  <p>If the application is DPI-aware but its forms' AutoScale doesn't enlarge the layout, spacing grows while controls don't. Fix AutoScale, or set <code>TailwindProvider.ScaleWithDpi = false</code>.</p>
+</div>

@@ -1,0 +1,94 @@
+<!--
+title: Tema dosyası
+description: tw.config.json — renkler, bileşenler, fontlar, Tailwind v4 paleti, ikonlar ve SVG ikonlar.
+-->
+<h1>Tema dosyası</h1>
+<p class="lead"><code>tw.config.json</code> paletinizi, bileşenlerinizi, fontlarınızı ve ikonlarınızı tutar. Varsayılan temanın (ya da adını verdiği hazır görünümün) üzerine uygulanır; bu yüzden yalnızca farklı olanı içermesi yeterlidir.</p>
+
+<pre><code class="language-jsonc">{
+  "preset": "fluent",                                   // önce uygulanır; dosyanın geri kalanı üzerine gelir
+  "fontFamily": "Segoe UI",
+  "spacingUnit": 4,
+  "colors": {
+    "brand": { "500": "#2b579a", "600": "#234a85" },   // bg-brand-500
+    "canvas": "#f3f6fb"                                 // bg-canvas
+  },
+  "components": {
+    "btn-primary": "btn bg-brand-500 text-white hover:bg-brand-600"
+  }
+}</code></pre>
+
+<p><code>Program.Main</code> içinde, hiçbir form oluşturulmadan önce yükleyin:</p>
+<pre><code class="language-csharp">TwTheme.Current = TwTheme.LoadIfExists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tw.config.json"));</code></pre>
+<p>Designer da aynı dosyayı okur: paket, proje klasöründeki <code>tw.config.json</code>'u uygulamanın derlemesine gömer; önizleme, bileşen ve renk listeleri temanızı kullanır (bkz. <a href="designer.html">Designer</a>).</p>
+
+<h2 id="keys">Anahtarlar</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Anahtar</th><th>Anlamı</th></tr></thead>
+  <tbody>
+    <tr><td><code>preset</code></td><td><code>tailwind</code>, <code>fluent</code>, <code>antd</code>, <code>material</code>. Diğer anahtarlardan önce uygulanır.</td></tr>
+    <tr><td><code>palette</code></td><td><code>v3</code> (varsayılan) ya da <code>v4</code>.</td></tr>
+    <tr><td><code>colors</code></td><td>Yeni renkler (tek değer ya da ton rampası) ve <code>primary</code>, <code>surface</code>, <code>danger</code>, <code>success</code>, <code>warning</code> anlamsal rampaları.</td></tr>
+    <tr><td><code>components</code></td><td><code>btn-primary</code> ya da <code>card</code> gibi bileşen class'ları. Bileşenler başka bileşenleri kullanabilir.</td></tr>
+    <tr><td><code>fontFamily</code></td><td>Bir aile ya da virgülle ayrılmış bir liste; kurulu ya da kayıtlı ilk aile kullanılır.</td></tr>
+    <tr><td><code>fonts</code></td><td>Kurulmadan kaydedilecek font dosyaları.</td></tr>
+    <tr><td><code>fontWeights</code></td><td>Bir fontun ara kalınlıklarının aileleri.</td></tr>
+    <tr><td><code>spacingUnit</code></td><td>Bir boşluk biriminin piksel değeri (varsayılan 4).</td></tr>
+    <tr><td><code>iconFont</code>, <code>icons</code></td><td>İkon fontu ve ek ikon adları (glif ya da SVG).</td></tr>
+    <tr><td><code>autoStyle</code></td><td><a href="presets.html#autostyle">AutoStyle</a>'ın kullandığı kontrol tipi → bileşen eşlemesi.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="palette">Palet</h2>
+<p>Varsayılan palet Tailwind v3'tür: 22 renk × 11 ton (50–950), ayrıca <code>white</code>, <code>black</code> ve <code>transparent</code>. <code>"palette": "v4"</code> (kodda <code>new TwTheme(TwPaletteVersion.V4)</code>) aynı renklerin v4 tonlarını kullanır.</p>
+<p>v4 renkleri OKLCH ile tanımlıdır. sRGB dışında kalanlar tarayıcılardaki gibi CSS Color 4 gamut eşlemesiyle yaklaştırılır; böylece <code>blue-500</code> Tailwind sitesindeki gibi <code>#2b7fff</code> olur. Tema renkleri de OKLCH ile yazılabilir:</p>
+<pre><code class="language-json">{ "colors": { "brand": "oklch(62.3% 0.214 259.8)" } }</code></pre>
+<p>Varsayılan bileşenler iki paletle de kontrast denetiminden geçer. <a href="{{root}}reference/#palette">Class referansı</a> her rengi gösterir.</p>
+
+<h2 id="fonts">Fontlar</h2>
+<p><code>fontFamily</code> bir liste olabilir: <code>"Inter, Segoe UI"</code>. Uygulamayla dağıtılan fontlar kurulmadan kaydedilir; yollar tema dosyasına göredir, eksik dosyalar atlanır:</p>
+<pre><code class="language-json">{
+  "fontFamily": "Inter, Segoe UI",
+  "fonts": ["Assets/fonts/Inter-Regular.ttf", "Assets/fonts/Inter-SemiBold.ttf"]
+}</code></pre>
+<p>Kodda: <code>TwFonts.Register(path)</code>. Fontlar hem GDI+ hem GDI'ya (sürece özel) kaydedilir; <code>TextRenderer</code> ile çizilen standart kontrollerde de çalışır. Fontun lisansını (örn. SIL OFL) uygulamanızla birlikte dağıtın.</p>
+
+<h3 id="font-weights">Font kalınlıkları</h3>
+<p>WinForms yalnızca normal ve kalın stilleri bilir; ara kalınlıklar Windows'ta <strong>ayrı font aileleri</strong> olarak kuruludur. FormWind <code>font-thin</code> (100) … <code>font-black</code> (900) class'larını CSS'in eşleme kuralıyla bu ailelere çözer:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Segoe UI'da kullanılan</th></tr></thead>
+  <tbody>
+    <tr><td><code>font-thin</code>, <code>font-extralight</code>, <code>font-light</code></td><td>Segoe UI Light</td></tr>
+    <tr><td><code>font-normal</code>, <code>font-medium</code></td><td>Segoe UI</td></tr>
+    <tr><td><code>font-semibold</code></td><td>Segoe UI Semibold</td></tr>
+    <tr><td><code>font-bold</code></td><td>Segoe UI + kalın stil</td></tr>
+    <tr><td><code>font-extrabold</code>, <code>font-black</code></td><td>Segoe UI Black</td></tr>
+  </tbody>
+</table></div>
+<p>Başka bir font için kalınlık ailelerini tanımlayın; kurulu olmayan aile atlanır ve en yakın kurulu kalınlık seçilir:</p>
+<pre><code class="language-json">{ "fontWeights": { "Inter": { "300": "Inter Light", "600": "Inter SemiBold" } } }</code></pre>
+
+<h2 id="icons">İkonlar</h2>
+<p>FormWind Windows'la gelen ikon fontunu kullanır: Windows 11'de <strong>Segoe Fluent Icons</strong>, Windows 10'da <strong>Segoe MDL2 Assets</strong>.</p>
+<ul>
+  <li><code>TwIcon</code> tek başına bir ikondur. <code>IconName</code> Designer'da açılır listeden seçilir; renk <code>text-*</code>, boyut font boyutuyla verilir (<code>text-xl</code> = 20 × 20 px).</li>
+  <li><code>TwButton.IconName</code> metnin yanına ikon koyar; <code>IconPosition</code> ve <code>IconSpacing</code> ayarlanabilir.</li>
+</ul>
+<pre><code class="language-csharp">icoCustomer.IconName = "user";
+tw.SetClasses(icoCustomer, "text-xl text-blue-600 dark:text-blue-400");
+btnSave.IconName = "save";</code></pre>
+<p>Yaklaşık 80 ad yerleşiktir: <code>save</code>, <code>search</code>, <code>settings</code>, <code>trash</code>, <code>user</code> … (tam liste <a href="{{root}}reference/#icons">class referansında</a>). Herhangi bir glif kod noktasıyla kullanılabilir (<code>"#E8A5"</code>); tema dosyası ad ekleyebilir ya da fontu değiştirebilir:</p>
+<pre><code class="language-json">{ "iconFont": "Segoe Fluent Icons", "icons": { "invoice": "E8A5" } }</code></pre>
+
+<h3 id="svg-icons">SVG ikonlar</h3>
+<p>Lucide, Heroicons ya da Tabler gibi tek renkli SVG setleri de kullanılabilir. İkon değeri bir <code>.svg</code> dosyasının yolu (tema dosyasına göre) ya da doğrudan <code>&lt;svg&gt;</code> metni olabilir; kodda <code>TwTheme.SetSvgIcon(ad, svg)</code>.</p>
+<pre><code class="language-jsonc">"icons": {
+  "invoice": "E8A5",                                    // ikon fontu glifi
+  "package": "Assets/icons/package.svg",                // dosya
+  "dot": "&lt;svg viewBox='0 0 24 24'&gt;&lt;circle cx='12' cy='12' r='4'/&gt;&lt;/svg&gt;"
+}</code></pre>
+<ul>
+  <li>SVG ikon aynı adlı glifi ezer; böylece yerleşik ikonlar (<code>check</code>, <code>chevron-down</code> …) <code>TwButton</code>, <code>TwSelect</code>, takvim ve grid dahil her yerde değiştirilebilir.</li>
+  <li>Renk her zaman çizildiği yerin yazı rengidir (<code>currentColor</code> gibi).</li>
+  <li>Desteklenenler: <code>path</code> (yaylar dahil bütün komutlar), <code>circle</code>, <code>ellipse</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>g</code>; <code>fill</code>, <code>stroke</code>, <code>stroke-width</code>, <code>stroke-linecap</code>, <code>stroke-linejoin</code>. Gradient, maske, metin ve CSS desteklenmez.</li>
+</ul>

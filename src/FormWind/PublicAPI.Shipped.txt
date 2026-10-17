@@ -1,0 +1,1257 @@
+#nullable enable
+const FormWind.TwContrast.LargeTextMinimum = 3 -> double
+const FormWind.TwContrast.TextMinimum = 4.5 -> double
+const FormWind.TwFonts.CacheWarningThreshold = 256 -> int
+const FormWind.TwMasks.Date = "00/00/0000" -> string!
+const FormWind.TwMasks.Iban = "TR00 0000 0000 0000 0000 0000 00" -> string!
+const FormWind.TwMasks.Phone = "(000) 000 00 00" -> string!
+const FormWind.TwMasks.PostalCode = "00000" -> string!
+const FormWind.TwMasks.TcKimlikNo = "00000000000" -> string!
+const FormWind.TwPager.Gap = 0 -> int
+const FormWind.TwPager.Next = -2 -> int
+const FormWind.TwPager.Previous = -1 -> int
+const FormWind.TwSortableBindingList<T>.EmptyValue = "(blank)" -> string!
+const FormWind.TwToolTip.DefaultClasses = "bg-gray-900 text-white text-xs px-2 py-1 border-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:border-gray-300" -> string!
+FormWind.IStyleApplier
+FormWind.IStyleApplier.Apply(System.Windows.Forms.Control! control, FormWind.TwStyle! style, FormWind.TwApplyContext! context) -> void
+FormWind.IStyleApplier.CanApply(System.Windows.Forms.Control! control) -> bool
+FormWind.ITwChrome
+FormWind.ITwChrome.SetChrome(FormWind.TwChrome chrome) -> void
+FormWind.ITwFilterableList
+FormWind.ITwFilterableList.ClearFilters() -> void
+FormWind.ITwFilterableList.DistinctValues(string! property) -> System.Collections.Generic.IReadOnlyList<string!>!
+FormWind.ITwFilterableList.GetColumnFilter(string! property) -> System.Collections.Generic.IReadOnlyCollection<string!>?
+FormWind.ITwFilterableList.HasFilters.get -> bool
+FormWind.ITwFilterableList.SetColumnFilter(string! property, System.Collections.Generic.IEnumerable<string!>? allowed) -> void
+FormWind.ITwLayoutHost
+FormWind.TailwindProvider
+FormWind.TailwindProvider.BeginInit() -> void
+FormWind.TailwindProvider.BreakpointChanged -> System.EventHandler?
+FormWind.TailwindProvider.CanExtend(object! extendee) -> bool
+FormWind.TailwindProvider.ClearErrors() -> void
+FormWind.TailwindProvider.DarkMode.get -> bool
+FormWind.TailwindProvider.DarkMode.set -> void
+FormWind.TailwindProvider.DarkScrollbars.get -> bool
+FormWind.TailwindProvider.DarkScrollbars.set -> void
+FormWind.TailwindProvider.DarkToolTips.get -> bool
+FormWind.TailwindProvider.DarkToolTips.set -> void
+FormWind.TailwindProvider.HighContrastActive.get -> bool
+FormWind.TailwindProvider.RespectHighContrast.get -> bool
+FormWind.TailwindProvider.RespectHighContrast.set -> void
+FormWind.TailwindProvider.DesignTimePreview.get -> bool
+FormWind.TailwindProvider.DesignTimePreview.set -> void
+FormWind.TailwindProvider.EndInit() -> void
+FormWind.TailwindProvider.ErrorsChanged -> System.EventHandler?
+FormWind.TailwindProvider.GetClasses(System.Windows.Forms.Control! control) -> string!
+FormWind.TailwindProvider.GetColumnClasses(System.Windows.Forms.DataGridViewColumn! column) -> string!
+FormWind.TailwindProvider.GetError(System.Windows.Forms.Control! control) -> string?
+FormWind.TailwindProvider.HasErrors.get -> bool
+FormWind.TailwindProvider.Refresh(System.Windows.Forms.Control! control) -> void
+FormWind.TailwindProvider.RefreshAll() -> void
+FormWind.TailwindProvider.ScaleWithDpi.get -> bool
+FormWind.TailwindProvider.ScaleWithDpi.set -> void
+FormWind.TailwindProvider.SetClasses(System.Windows.Forms.Control! control, string? value) -> void
+FormWind.TailwindProvider.SetColumnClasses(System.Windows.Forms.DataGridViewColumn! column, string? value) -> void
+FormWind.TailwindProvider.SetError(System.Windows.Forms.Control! control, string? message) -> void
+FormWind.TailwindProvider.SetRowClasses(System.Windows.Forms.DataGridView! grid, System.Func<System.Windows.Forms.DataGridViewRow!, string?>? rule) -> void
+FormWind.TailwindProvider.TailwindProvider() -> void
+FormWind.TailwindProvider.TailwindProvider(System.ComponentModel.IContainer! container) -> void
+FormWind.TailwindProvider.Theme.get -> FormWind.TwTheme!
+FormWind.TailwindProvider.Theme.set -> void
+FormWind.TailwindProvider.UnknownClasses -> System.EventHandler<FormWind.TwUnknownClassesEventArgs!>?
+FormWind.TailwindProvider.StyleError -> System.EventHandler<FormWind.TwStyleErrorEventArgs!>?
+FormWind.TailwindProvider.Validate(System.Windows.Forms.Control! container) -> bool
+FormWind.TwAlign
+FormWind.TwAlign.Center = 2 -> FormWind.TwAlign
+FormWind.TwAlign.End = 1 -> FormWind.TwAlign
+FormWind.TwAlign.Start = 0 -> FormWind.TwAlign
+FormWind.TwAlign.Stretch = 3 -> FormWind.TwAlign
+FormWind.TwAppliers
+FormWind.TwApplyContext
+FormWind.TwApplyContext.DarkScrollbars.get -> bool
+FormWind.TwApplyContext.DarkScrollbars.init -> void
+FormWind.TwApplyContext.DesignMode.get -> bool
+FormWind.TwApplyContext.Original.get -> FormWind.TwOriginal!
+FormWind.TwApplyContext.Parsed.get -> FormWind.TwParsed!
+FormWind.TwApplyContext.Scale.get -> float
+FormWind.TwApplyContext.State.get -> FormWind.TwState
+FormWind.TwApplyContext.Theme.get -> FormWind.TwTheme!
+FormWind.TwAvatarCell
+FormWind.TwAvatarCell.TwAvatarCell() -> void
+FormWind.TwAvatarColumn
+FormWind.TwAvatarColumn.AvatarSize.get -> int
+FormWind.TwAvatarColumn.AvatarSize.set -> void
+FormWind.TwAvatarColumn.Placeholder.get -> System.Drawing.Color
+FormWind.TwAvatarColumn.Placeholder.set -> void
+FormWind.TwAvatarColumn.Radius.get -> float
+FormWind.TwAvatarColumn.Radius.set -> void
+FormWind.TwAvatarColumn.TwAvatarColumn() -> void
+FormWind.TwBackdrop
+FormWind.TwBackdrop.Acrylic = 3 -> FormWind.TwBackdrop
+FormWind.TwBackdrop.Auto = 0 -> FormWind.TwBackdrop
+FormWind.TwBackdrop.Mica = 2 -> FormWind.TwBackdrop
+FormWind.TwBackdrop.None = 1 -> FormWind.TwBackdrop
+FormWind.TwBackdrop.Tabbed = 4 -> FormWind.TwBackdrop
+FormWind.TwBadgeCell
+FormWind.TwBadgeCell.TwBadgeCell() -> void
+FormWind.TwBadgeColumn
+FormWind.TwBadgeColumn.TwBadgeColumn() -> void
+FormWind.TwBadgeColumn.Variants.get -> string!
+FormWind.TwBadgeColumn.Variants.set -> void
+FormWind.TwBreakpoints
+FormWind.TwButton
+FormWind.TwButton.BorderColor.get -> System.Drawing.Color
+FormWind.TwButton.BorderColor.set -> void
+FormWind.TwButton.BorderWidth.get -> float
+FormWind.TwButton.BorderWidth.set -> void
+FormWind.TwButton.CornerRadius.get -> float
+FormWind.TwButton.CornerRadius.set -> void
+FormWind.TwButton.IconName.get -> string!
+FormWind.TwButton.IconName.set -> void
+FormWind.TwButton.IconPosition.get -> FormWind.TwIconPosition
+FormWind.TwButton.IconPosition.set -> void
+FormWind.TwButton.IconSpacing.get -> int
+FormWind.TwButton.IconSpacing.set -> void
+FormWind.TwButton.TwButton() -> void
+FormWind.TwButtonCell
+FormWind.TwButtonCell.TwButtonCell() -> void
+FormWind.TwButtonColumn
+FormWind.TwButtonColumn.Classes.get -> string!
+FormWind.TwButtonColumn.Classes.set -> void
+FormWind.TwButtonColumn.TwButtonColumn() -> void
+FormWind.TwCalendar
+FormWind.TwCalendar.Cancelled -> System.EventHandler?
+FormWind.TwCalendar.Culture.get -> System.Globalization.CultureInfo!
+FormWind.TwCalendar.Culture.set -> void
+FormWind.TwCalendar.DateSelected -> System.EventHandler?
+FormWind.TwCalendar.DisplayMonth.get -> System.DateTime
+FormWind.TwCalendar.DisplayMonth.set -> void
+FormWind.TwCalendar.FirstVisibleDate.get -> System.DateTime
+FormWind.TwCalendar.GetDayBounds(System.DateTime date) -> System.Drawing.Rectangle
+FormWind.TwCalendar.MaxDate.get -> System.DateTime
+FormWind.TwCalendar.MaxDate.set -> void
+FormWind.TwCalendar.MinDate.get -> System.DateTime
+FormWind.TwCalendar.MinDate.set -> void
+FormWind.TwCalendar.NextButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwCalendar.PreviousButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwCalendar.SelectedDate.get -> System.DateTime?
+FormWind.TwCalendar.SelectedDate.set -> void
+FormWind.TwCalendar.ShowNextMonth() -> void
+FormWind.TwCalendar.ShowPreviousMonth() -> void
+FormWind.TwCalendar.Title.get -> string!
+FormWind.TwCalendar.TwCalendar() -> void
+FormWind.TwCheckBox
+FormWind.TwCheckBox.TwCheckBox() -> void
+FormWind.TwCheckCell
+FormWind.TwCheckCell.TwCheckCell() -> void
+FormWind.TwCheckColumn
+FormWind.TwCheckColumn.AccentColor.get -> System.Drawing.Color
+FormWind.TwCheckColumn.AccentColor.set -> void
+FormWind.TwCheckColumn.BoxSize.get -> int
+FormWind.TwCheckColumn.BoxSize.set -> void
+FormWind.TwCheckColumn.TwCheckColumn() -> void
+FormWind.TwCheckedListBox
+FormWind.TwCheckedListBox.CheckColor.get -> System.Drawing.Color
+FormWind.TwCheckedListBox.CheckColor.set -> void
+FormWind.TwCheckedListBox.CheckedIndices.get -> System.Collections.Generic.IReadOnlyList<int>!
+FormWind.TwCheckedListBox.CheckedItems.get -> System.Collections.Generic.IReadOnlyList<object!>!
+FormWind.TwCheckedListBox.GetCheckBoxBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwCheckedListBox.GetItemChecked(int index) -> bool
+FormWind.TwCheckedListBox.ItemCheck -> System.EventHandler<System.Windows.Forms.ItemCheckEventArgs!>?
+FormWind.TwCheckedListBox.SetItemChecked(int index, bool value) -> void
+FormWind.TwCheckedListBox.TwCheckedListBox() -> void
+FormWind.TwChrome
+FormWind.TwChrome.BorderBottom.get -> float
+FormWind.TwChrome.BorderColor.get -> System.Drawing.Color
+FormWind.TwChrome.BorderLeft.get -> float
+FormWind.TwChrome.BorderRight.get -> float
+FormWind.TwChrome.BorderTop.get -> float
+FormWind.TwChrome.Equals(FormWind.TwChrome other) -> bool
+FormWind.TwChrome.Gradient.get -> FormWind.TwGradient?
+FormWind.TwChrome.HasBorder.get -> bool
+FormWind.TwChrome.IsUniformBorder.get -> bool
+FormWind.TwChrome.Radius.get -> float
+FormWind.TwChrome.TwChrome() -> void
+FormWind.TwChrome.TwChrome(float radius, float left, float top, float right, float bottom, System.Drawing.Color borderColor, FormWind.TwGradient? gradient = null) -> void
+FormWind.TwContrast
+FormWind.TwContrastIssue
+FormWind.TwOwnerDrawn
+FormWind.TwOwnerDrawn.Control.get -> System.Windows.Forms.Control!
+FormWind.TwOwnerDrawn.Reason.get -> string!
+FormWind.TwContrastIssue.Background.get -> System.Drawing.Color
+FormWind.TwContrastIssue.Control.get -> System.Windows.Forms.Control!
+FormWind.TwContrastIssue.Foreground.get -> System.Drawing.Color
+FormWind.TwContrastIssue.Part.get -> string!
+FormWind.TwContrastIssue.Ratio.get -> double
+FormWind.TwContrastIssue.Required.get -> double
+FormWind.TwDataList
+FormWind.TwDataList.AccessibleItemText.get -> System.Func<int, string!>?
+FormWind.TwDataList.AccessibleItemText.set -> void
+FormWind.TwDataList.ClearGroups() -> void
+FormWind.TwDataList.ClearSelection() -> void
+FormWind.TwDataList.DrawGroupHeader -> System.EventHandler<FormWind.TwDataListDrawEventArgs!>?
+FormWind.TwDataList.DrawItem -> System.EventHandler<FormWind.TwDataListDrawEventArgs!>?
+FormWind.TwDataList.EnsureVisible(int index, bool animate = true) -> void
+FormWind.TwDataList.GetGroupHeaderBounds(int group) -> System.Drawing.Rectangle
+FormWind.TwDataList.GetGroupTitle(int group) -> string!
+FormWind.TwDataList.GetItemBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwDataList.GroupCount.get -> int
+FormWind.TwDataList.GroupHeaderHeight.get -> int
+FormWind.TwDataList.GroupHeaderHeight.set -> void
+FormWind.TwDataList.GroupOf(int index) -> int
+FormWind.TwDataList.IndexFromPoint(System.Drawing.Point point) -> int
+FormWind.TwDataList.IsItemLoaded.get -> System.Func<int, bool>?
+FormWind.TwDataList.IsItemLoaded.set -> void
+FormWind.TwDataList.IsSelected(int index) -> bool
+FormWind.TwDataList.ItemActivate -> System.EventHandler?
+FormWind.TwDataList.ItemCount.get -> int
+FormWind.TwDataList.ItemCount.set -> void
+FormWind.TwDataList.InvalidateItemHeights() -> void
+FormWind.TwDataList.ItemHeights.get -> System.Func<int, int>?
+FormWind.TwDataList.ItemHeights.set -> void
+FormWind.TwDataList.ItemHeight.get -> int
+FormWind.TwDataList.ItemHeight.set -> void
+FormWind.TwDataList.ItemPadding.get -> System.Windows.Forms.Padding
+FormWind.TwDataList.ItemPadding.set -> void
+FormWind.TwDataList.ItemRadius.get -> int
+FormWind.TwDataList.ItemRadius.set -> void
+FormWind.TwDataList.ItemsNeeded -> System.EventHandler<FormWind.TwItemsNeededEventArgs!>?
+FormWind.TwDataList.ItemText.get -> System.Func<int, string!>?
+FormWind.TwDataList.ItemText.set -> void
+FormWind.TwDataList.MaxScrollOffset.get -> int
+FormWind.TwDataList.ScrollOffset.get -> int
+FormWind.TwDataList.ScrollTo(float offset, bool animate = true) -> void
+FormWind.TwDataList.SelectAll() -> void
+FormWind.TwDataList.SelectedCount.get -> int
+FormWind.TwDataList.SelectedIndex.get -> int
+FormWind.TwDataList.SelectedIndex.set -> void
+FormWind.TwDataList.SelectedIndexChanged -> System.EventHandler?
+FormWind.TwDataList.SelectedIndices.get -> System.Collections.Generic.IReadOnlyList<int>!
+FormWind.TwDataList.SelectionChanged -> System.EventHandler?
+FormWind.TwDataList.SelectionMode.get -> FormWind.TwListSelectionMode
+FormWind.TwDataList.SelectionMode.set -> void
+FormWind.TwDataList.SetGroups(System.Collections.Generic.IEnumerable<(int Start, string! Title)>! groups) -> void
+FormWind.TwDataList.SetSelected(int index, bool selected) -> void
+FormWind.TwDataList.SmoothScrolling.get -> bool
+FormWind.TwDataList.SmoothScrolling.set -> void
+FormWind.TwDataList.TopIndex.get -> int
+FormWind.TwDataList.TwDataList() -> void
+FormWind.TwDataListDrawEventArgs
+FormWind.TwDataListDrawEventArgs.BackColor.get -> System.Drawing.Color
+FormWind.TwDataListDrawEventArgs.Bounds.get -> System.Drawing.Rectangle
+FormWind.TwDataListDrawEventArgs.ContentBounds.get -> System.Drawing.Rectangle
+FormWind.TwDataListDrawEventArgs.DrawBadge(string! text, int right, System.Drawing.Color back, System.Drawing.Color fore) -> int
+FormWind.TwDataListDrawEventArgs.DrawIcon(string! name, System.Drawing.Rectangle bounds, System.Drawing.Color? color = null) -> void
+FormWind.TwDataListDrawEventArgs.DrawText(string? text, System.Drawing.Rectangle bounds, System.Drawing.Color? color = null, System.Drawing.Font? font = null, System.Drawing.ContentAlignment alignment = System.Drawing.ContentAlignment.MiddleLeft) -> void
+FormWind.TwDataListDrawEventArgs.Font.get -> System.Drawing.Font!
+FormWind.TwDataListDrawEventArgs.FontWithWeight(int weight) -> System.Drawing.Font!
+FormWind.TwDataListDrawEventArgs.ForeColor.get -> System.Drawing.Color
+FormWind.TwDataListDrawEventArgs.Graphics.get -> System.Drawing.Graphics!
+FormWind.TwDataListDrawEventArgs.Hovered.get -> bool
+FormWind.TwDataListDrawEventArgs.Index.get -> int
+FormWind.TwDataListDrawEventArgs.MutedColor.get -> System.Drawing.Color
+FormWind.TwDataListDrawEventArgs.Selected.get -> bool
+FormWind.TwDatePicker
+FormWind.TwDatePicker.Calendar.get -> FormWind.TwCalendar?
+FormWind.TwDatePicker.Commit() -> void
+FormWind.TwDatePicker.Culture.get -> System.Globalization.CultureInfo!
+FormWind.TwDatePicker.Culture.set -> void
+FormWind.TwDatePicker.DroppedDown.get -> bool
+FormWind.TwDatePicker.Format.get -> string!
+FormWind.TwDatePicker.Format.set -> void
+FormWind.TwDatePicker.MaxDate.get -> System.DateTime
+FormWind.TwDatePicker.MaxDate.set -> void
+FormWind.TwDatePicker.MinDate.get -> System.DateTime
+FormWind.TwDatePicker.MinDate.set -> void
+FormWind.TwDatePicker.ShowCalendar() -> void
+FormWind.TwDatePicker.TwDatePicker() -> void
+FormWind.TwDatePicker.Value.get -> System.DateTime?
+FormWind.TwDatePicker.Value.set -> void
+FormWind.TwDatePicker.ValueChanged -> System.EventHandler?
+FormWind.TwDialog
+FormWind.TwDialogButtons
+FormWind.TwDialogButtons.Ok = 0 -> FormWind.TwDialogButtons
+FormWind.TwDialogButtons.OkCancel = 1 -> FormWind.TwDialogButtons
+FormWind.TwDialogButtons.YesNo = 2 -> FormWind.TwDialogButtons
+FormWind.TwDialogButtons.YesNoCancel = 3 -> FormWind.TwDialogButtons
+FormWind.TwDialogForm
+FormWind.TwDialogForm.Buttons.get -> System.Collections.Generic.IReadOnlyList<FormWind.TwButton!>!
+FormWind.TwDialogForm.IconBadge.get -> FormWind.TwIcon!
+FormWind.TwDialogForm.MessageLabel.get -> System.Windows.Forms.Label!
+FormWind.TwDialogForm.Options.get -> FormWind.TwDialogOptions!
+FormWind.TwDialogForm.Provider.get -> FormWind.TailwindProvider!
+FormWind.TwDialogForm.TitleLabel.get -> System.Windows.Forms.Label!
+FormWind.TwDialogKind
+FormWind.TwDialogKind.Error = 3 -> FormWind.TwDialogKind
+FormWind.TwDialogKind.Info = 0 -> FormWind.TwDialogKind
+FormWind.TwDialogKind.Question = 4 -> FormWind.TwDialogKind
+FormWind.TwDialogKind.Success = 1 -> FormWind.TwDialogKind
+FormWind.TwDialogKind.Warning = 2 -> FormWind.TwDialogKind
+FormWind.TwDialogOptions
+FormWind.TwDialogOptions.Buttons.get -> FormWind.TwDialogButtons
+FormWind.TwDialogOptions.Buttons.set -> void
+FormWind.TwDialogOptions.Danger.get -> bool
+FormWind.TwDialogOptions.Danger.set -> void
+FormWind.TwDialogOptions.Dark.get -> bool?
+FormWind.TwDialogOptions.Dark.set -> void
+FormWind.TwDialogOptions.DefaultResult.get -> System.Windows.Forms.DialogResult?
+FormWind.TwDialogOptions.DefaultResult.set -> void
+FormWind.TwDialogOptions.Kind.get -> FormWind.TwDialogKind
+FormWind.TwDialogOptions.Kind.set -> void
+FormWind.TwDialogOptions.Message.get -> string!
+FormWind.TwDialogOptions.Message.set -> void
+FormWind.TwDialogOptions.Title.get -> string!
+FormWind.TwDialogOptions.Title.set -> void
+FormWind.TwDialogOptions.TwDialogOptions() -> void
+FormWind.TwDisplay
+FormWind.TwDisplay.Block = 0 -> FormWind.TwDisplay
+FormWind.TwDisplay.Flex = 1 -> FormWind.TwDisplay
+FormWind.TwDisplay.Grid = 2 -> FormWind.TwDisplay
+FormWind.TwField
+FormWind.TwField.CaptionLabel.get -> System.Windows.Forms.Label!
+FormWind.TwField.Editor.get -> System.Windows.Forms.Control?
+FormWind.TwField.EditorValue.get -> string!
+FormWind.TwField.ErrorChanged -> System.EventHandler?
+FormWind.TwField.ErrorText.get -> string?
+FormWind.TwField.ErrorText.set -> void
+FormWind.TwField.HintText.get -> string!
+FormWind.TwField.HintText.set -> void
+FormWind.TwField.IncompleteMessage.get -> string!
+FormWind.TwField.IncompleteMessage.set -> void
+FormWind.TwField.LabelText.get -> string!
+FormWind.TwField.LabelText.set -> void
+FormWind.TwField.MessageLabel.get -> System.Windows.Forms.Label!
+FormWind.TwField.Pattern.get -> string!
+FormWind.TwField.Pattern.set -> void
+FormWind.TwField.PatternMessage.get -> string!
+FormWind.TwField.PatternMessage.set -> void
+FormWind.TwField.Required.get -> bool
+FormWind.TwField.Required.set -> void
+FormWind.TwField.RequiredMessage.get -> string!
+FormWind.TwField.RequiredMessage.set -> void
+FormWind.TwField.TwField() -> void
+FormWind.TwField.Validate() -> string?
+FormWind.TwField.Validator.get -> System.Func<string!, string?>?
+FormWind.TwField.Validator.set -> void
+FormWind.TwFlexDirection
+FormWind.TwFlexDirection.Column = 1 -> FormWind.TwFlexDirection
+FormWind.TwFlexDirection.Row = 0 -> FormWind.TwFlexDirection
+FormWind.TwFocusVisible
+FormWind.TwFonts
+FormWind.TwGradient
+FormWind.TwGradient.CreateBrush(System.Drawing.Rectangle bounds) -> System.Drawing.Brush!
+FormWind.TwGradient.Direction.get -> FormWind.TwGradientDirection
+FormWind.TwGradient.Equals(FormWind.TwGradient other) -> bool
+FormWind.TwGradient.From.get -> System.Drawing.Color
+FormWind.TwGradient.To.get -> System.Drawing.Color
+FormWind.TwGradient.TwGradient() -> void
+FormWind.TwGradient.TwGradient(FormWind.TwGradientDirection direction, System.Drawing.Color? from, System.Drawing.Color? via, System.Drawing.Color? to) -> void
+FormWind.TwGradient.Via.get -> System.Drawing.Color?
+FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToBottom = 3 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToBottomLeft = 7 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToBottomRight = 6 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToLeft = 1 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToRight = 0 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToTop = 2 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToTopLeft = 5 -> FormWind.TwGradientDirection
+FormWind.TwGradientDirection.ToTopRight = 4 -> FormWind.TwGradientDirection
+FormWind.TwGrid
+FormWind.TwIcon
+FormWind.TwIcon.IconName.get -> string!
+FormWind.TwIcon.IconName.set -> void
+FormWind.TwIcon.TwIcon() -> void
+FormWind.TwIconCell
+FormWind.TwIconCell.TwIconCell() -> void
+FormWind.TwIconColumn
+FormWind.TwIconColumn.TwIconColumn() -> void
+FormWind.TwIconNameConverter
+FormWind.TwIconNameConverter.TwIconNameConverter() -> void
+FormWind.TwIconPosition
+FormWind.TwIconPosition.Left = 0 -> FormWind.TwIconPosition
+FormWind.TwIconPosition.Right = 1 -> FormWind.TwIconPosition
+FormWind.TwIcons
+FormWind.TwImageFit
+FormWind.TwImageFit.Contain = 1 -> FormWind.TwImageFit
+FormWind.TwImageFit.Cover = 0 -> FormWind.TwImageFit
+FormWind.TwImageFit.Fill = 2 -> FormWind.TwImageFit
+FormWind.TwItemsNeededEventArgs
+FormWind.TwItemsNeededEventArgs.First.get -> int
+FormWind.TwItemsNeededEventArgs.Last.get -> int
+FormWind.TwItemsNeededEventArgs.TwItemsNeededEventArgs(int first, int last) -> void
+FormWind.TwJustify
+FormWind.TwJustify.Around = 4 -> FormWind.TwJustify
+FormWind.TwJustify.Between = 3 -> FormWind.TwJustify
+FormWind.TwJustify.Center = 2 -> FormWind.TwJustify
+FormWind.TwJustify.End = 1 -> FormWind.TwJustify
+FormWind.TwJustify.Evenly = 5 -> FormWind.TwJustify
+FormWind.TwJustify.Start = 0 -> FormWind.TwJustify
+FormWind.TwLayout
+FormWind.TwLength
+FormWind.TwLength.Equals(FormWind.TwLength other) -> bool
+FormWind.TwLength.IsAuto.get -> bool
+FormWind.TwLength.IsFraction.get -> bool
+FormWind.TwLength.IsPixels.get -> bool
+FormWind.TwLength.Resolve(float available) -> float
+FormWind.TwLength.Scale(float scale) -> FormWind.TwLength
+FormWind.TwLength.TwLength() -> void
+FormWind.TwLength.Unit.get -> FormWind.TwLengthUnit
+FormWind.TwLength.Value.get -> float
+FormWind.TwLengthUnit
+FormWind.TwLengthUnit.Auto = 0 -> FormWind.TwLengthUnit
+FormWind.TwLengthUnit.Fraction = 2 -> FormWind.TwLengthUnit
+FormWind.TwLengthUnit.Pixels = 1 -> FormWind.TwLengthUnit
+FormWind.TwListBox
+FormWind.TwListBox.DisplayMember.get -> string!
+FormWind.TwListBox.DisplayMember.set -> void
+FormWind.TwListBox.FindString(string! text, int startIndex = 0) -> int
+FormWind.TwListBox.GetItemText(int index) -> string!
+FormWind.TwListBox.Items.get -> System.Collections.Generic.IList<object!>!
+FormWind.TwListBox.SelectedItem.get -> object?
+FormWind.TwListBox.SelectedItem.set -> void
+FormWind.TwListBox.SelectedItems.get -> System.Collections.Generic.IReadOnlyList<object!>!
+FormWind.TwListBox.TwListBox() -> void
+FormWind.TwListSelectionMode
+FormWind.TwListSelectionMode.MultiExtended = 1 -> FormWind.TwListSelectionMode
+FormWind.TwListSelectionMode.One = 0 -> FormWind.TwListSelectionMode
+FormWind.TwMasks
+FormWind.TwMotion
+FormWind.TwNumberBox
+FormWind.TwNumberBox.Commit() -> void
+FormWind.TwNumberBox.DecimalPlaces.get -> int
+FormWind.TwNumberBox.DecimalPlaces.set -> void
+FormWind.TwNumberBox.Increment.get -> decimal
+FormWind.TwNumberBox.Increment.set -> void
+FormWind.TwNumberBox.Maximum.get -> decimal
+FormWind.TwNumberBox.Maximum.set -> void
+FormWind.TwNumberBox.Minimum.get -> decimal
+FormWind.TwNumberBox.Minimum.set -> void
+FormWind.TwNumberBox.Step(int direction) -> void
+FormWind.TwNumberBox.TwNumberBox() -> void
+FormWind.TwNumberBox.Value.get -> decimal
+FormWind.TwNumberBox.Value.set -> void
+FormWind.TwNumberBox.ValueChanged -> System.EventHandler?
+FormWind.TwOriginal
+FormWind.TwOriginal.BackColor.get -> System.Drawing.Color?
+FormWind.TwOriginal.Cursor.get -> System.Windows.Forms.Cursor?
+FormWind.TwOriginal.FlatBorderSize.get -> int?
+FormWind.TwOriginal.FlatStyle.get -> System.Windows.Forms.FlatStyle?
+FormWind.TwOriginal.Font.get -> System.Drawing.Font?
+FormWind.TwOriginal.FontDpi.get -> int
+FormWind.TwOriginal.ForeColor.get -> System.Drawing.Color?
+FormWind.TwOriginal.Margin.get -> System.Windows.Forms.Padding
+FormWind.TwOriginal.Padding.get -> System.Windows.Forms.Padding
+FormWind.TwPager
+FormWind.TwPager.FirstItemIndex.get -> int
+FormWind.TwPager.GetButtonBounds(int page) -> System.Drawing.Rectangle
+FormWind.TwPager.Go(int button) -> void
+FormWind.TwPager.HoverBackColor.get -> System.Drawing.Color
+FormWind.TwPager.HoverBackColor.set -> void
+FormWind.TwPager.ItemsOnPage.get -> int
+FormWind.TwPager.Page.get -> int
+FormWind.TwPager.Page.set -> void
+FormWind.TwPager.PageChanged -> System.EventHandler?
+FormWind.TwPager.PageCount.get -> int
+FormWind.TwPager.PageSize.get -> int
+FormWind.TwPager.PageSize.set -> void
+FormWind.TwPager.SelectedBackColor.get -> System.Drawing.Color
+FormWind.TwPager.SelectedBackColor.set -> void
+FormWind.TwPager.SelectedForeColor.get -> System.Drawing.Color
+FormWind.TwPager.SelectedForeColor.set -> void
+FormWind.TwPager.Siblings.get -> int
+FormWind.TwPager.Siblings.set -> void
+FormWind.TwPager.TotalItems.get -> int
+FormWind.TwPager.TotalItems.set -> void
+FormWind.TwPager.TwPager() -> void
+FormWind.TwPager.VisiblePages() -> System.Collections.Generic.IReadOnlyList<int>!
+FormWind.TwPalette
+FormWind.TwPaletteV4
+FormWind.TwPaletteVersion
+FormWind.TwPaletteVersion.V3 = 0 -> FormWind.TwPaletteVersion
+FormWind.TwPaletteVersion.V4 = 1 -> FormWind.TwPaletteVersion
+FormWind.TwOklch
+FormWind.TwPanel
+FormWind.TwPanel.BorderColor.get -> System.Drawing.Color
+FormWind.TwPanel.BorderColor.set -> void
+FormWind.TwPanel.BorderInsets() -> System.Windows.Forms.Padding
+FormWind.TwPanel.BorderWidth.get -> float
+FormWind.TwPanel.BorderWidth.set -> void
+FormWind.TwPanel.CornerRadius.get -> float
+FormWind.TwPanel.CornerRadius.set -> void
+FormWind.TwPanel.TwPanel() -> void
+FormWind.TwParsed
+FormWind.TwParsed.Classes.get -> string!
+FormWind.TwParsed.HasCondition(FormWind.TwState condition) -> bool
+FormWind.TwParsed.HasPartCondition(string! part, FormWind.TwState condition) -> bool
+FormWind.TwParsed.Resolve(FormWind.TwState state) -> FormWind.TwStyle!
+FormWind.TwParsed.ResolveExact(FormWind.TwState required, FormWind.TwState allowed) -> FormWind.TwStyle!
+FormWind.TwParsed.ResolvePart(string? part, FormWind.TwState state) -> FormWind.TwStyle!
+FormWind.TwParsed.Unknown.get -> System.Collections.Generic.IReadOnlyList<string!>!
+FormWind.TwParsed.UsesAny(FormWind.TwState condition) -> bool
+FormWind.TwPictureBox
+FormWind.TwPictureBox.Fit.get -> FormWind.TwImageFit
+FormWind.TwPictureBox.Fit.set -> void
+FormWind.TwPictureBox.Image.get -> System.Drawing.Image?
+FormWind.TwPictureBox.Image.set -> void
+FormWind.TwPictureBox.TwPictureBox() -> void
+FormWind.TwProgress
+FormWind.TwProgress.BarBounds.get -> System.Drawing.Rectangle
+FormWind.TwProgress.BarColor.get -> System.Drawing.Color
+FormWind.TwProgress.BarColor.set -> void
+FormWind.TwProgress.Indeterminate.get -> bool
+FormWind.TwProgress.Indeterminate.set -> void
+FormWind.TwProgress.Maximum.get -> int
+FormWind.TwProgress.Maximum.set -> void
+FormWind.TwProgress.Phase.get -> float
+FormWind.TwProgress.Phase.set -> void
+FormWind.TwProgress.TrackColor.get -> System.Drawing.Color
+FormWind.TwProgress.TrackColor.set -> void
+FormWind.TwProgress.TwProgress() -> void
+FormWind.TwProgress.Value.get -> int
+FormWind.TwProgress.Value.set -> void
+FormWind.TwProgressCell
+FormWind.TwProgressCell.TwProgressCell() -> void
+FormWind.TwProgressColumn
+FormWind.TwProgressColumn.BarColor.get -> System.Drawing.Color
+FormWind.TwProgressColumn.BarColor.set -> void
+FormWind.TwProgressColumn.DarkTrackColor.get -> System.Drawing.Color
+FormWind.TwProgressColumn.DarkTrackColor.set -> void
+FormWind.TwProgressColumn.Maximum.get -> double
+FormWind.TwProgressColumn.Maximum.set -> void
+FormWind.TwProgressColumn.ShowText.get -> bool
+FormWind.TwProgressColumn.ShowText.set -> void
+FormWind.TwProgressColumn.TrackColor.get -> System.Drawing.Color
+FormWind.TwProgressColumn.TrackColor.set -> void
+FormWind.TwProgressColumn.TwProgressColumn() -> void
+FormWind.TwRadioButton
+FormWind.TwRadioButton.TwRadioButton() -> void
+FormWind.TwSelect
+FormWind.TwSelect.ApplyFilter(string? filter) -> void
+FormWind.TwSelect.DropDownMenu.get -> System.Windows.Forms.ContextMenuStrip?
+FormWind.TwSelect.Items.get -> System.Collections.Generic.List<string!>!
+FormWind.TwSelect.Searchable.get -> bool
+FormWind.TwSelect.Searchable.set -> void
+FormWind.TwSelect.SearchBox.get -> System.Windows.Forms.ToolStripTextBox?
+FormWind.TwSelect.SearchPlaceholder.get -> string!
+FormWind.TwSelect.SearchPlaceholder.set -> void
+FormWind.TwSelect.SelectedIndex.get -> int
+FormWind.TwSelect.SelectedIndex.set -> void
+FormWind.TwSelect.SelectedIndexChanged -> System.EventHandler?
+FormWind.TwSelect.SelectedItem.get -> string?
+FormWind.TwSelect.ShowDropDown() -> void
+FormWind.TwSelect.SizeToSelection.get -> bool
+FormWind.TwSelect.SizeToSelection.set -> void
+FormWind.TwSelect.TwSelect() -> void
+FormWind.TwSelect.VisibleItemIndices() -> System.Collections.Generic.IEnumerable<int>!
+FormWind.TwShadowSize
+FormWind.TwShadowSize.Base = 2 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.Lg = 4 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.Md = 3 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.None = 0 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.Sm = 1 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.Xl = 5 -> FormWind.TwShadowSize
+FormWind.TwShadowSize.Xl2 = 6 -> FormWind.TwShadowSize
+FormWind.TwSides
+FormWind.TwSides.ApplyTo(System.Windows.Forms.Padding fallback, float scale) -> System.Windows.Forms.Padding
+FormWind.TwSides.Bottom.get -> int?
+FormWind.TwSides.Bottom.set -> void
+FormWind.TwSides.IsEmpty.get -> bool
+FormWind.TwSides.Left.get -> int?
+FormWind.TwSides.Left.set -> void
+FormWind.TwSides.MergeFrom(FormWind.TwSides! other) -> void
+FormWind.TwSides.Right.get -> int?
+FormWind.TwSides.Right.set -> void
+FormWind.TwSides.Top.get -> int?
+FormWind.TwSides.Top.set -> void
+FormWind.TwSides.TwSides() -> void
+FormWind.TwSlider
+FormWind.TwSlider.AccentColor.get -> System.Drawing.Color
+FormWind.TwSlider.AccentColor.set -> void
+FormWind.TwSlider.LargeChange.get -> int
+FormWind.TwSlider.LargeChange.set -> void
+FormWind.TwSlider.Maximum.get -> int
+FormWind.TwSlider.Maximum.set -> void
+FormWind.TwSlider.Minimum.get -> int
+FormWind.TwSlider.Minimum.set -> void
+FormWind.TwSlider.SmallChange.get -> int
+FormWind.TwSlider.SmallChange.set -> void
+FormWind.TwSlider.ThumbBounds.get -> System.Drawing.Rectangle
+FormWind.TwSlider.ThumbColor.get -> System.Drawing.Color
+FormWind.TwSlider.ThumbColor.set -> void
+FormWind.TwSlider.TrackColor.get -> System.Drawing.Color
+FormWind.TwSlider.TrackColor.set -> void
+FormWind.TwSlider.TwSlider() -> void
+FormWind.TwSlider.Value.get -> int
+FormWind.TwSlider.Value.set -> void
+FormWind.TwSlider.ValueChanged -> System.EventHandler?
+FormWind.TwSlider.ValueFromX(int x) -> int
+FormWind.TwSortableBindingList<T>
+FormWind.TwSortableBindingList<T>.AllItems.get -> System.Collections.Generic.IReadOnlyList<T>!
+FormWind.TwSortableBindingList<T>.ClearFilters() -> void
+FormWind.TwSortableBindingList<T>.DistinctValues(string! property) -> System.Collections.Generic.IReadOnlyList<string!>!
+FormWind.TwSortableBindingList<T>.GetColumnFilter(string! property) -> System.Collections.Generic.IReadOnlyCollection<string!>?
+FormWind.TwSortableBindingList<T>.HasFilters.get -> bool
+FormWind.TwSortableBindingList<T>.SetColumnFilter(string! property, System.Collections.Generic.IEnumerable<string!>? allowed) -> void
+FormWind.TwSortableBindingList<T>.TwSortableBindingList() -> void
+FormWind.TwSortableBindingList<T>.TwSortableBindingList(System.Collections.Generic.IEnumerable<T>! items) -> void
+FormWind.TwState
+FormWind.TwState.Active = 64 -> FormWind.TwState
+FormWind.TwState.Breakpoints = FormWind.TwState.Sm | FormWind.TwState.Md | FormWind.TwState.Lg | FormWind.TwState.Xl | FormWind.TwState.Xxl -> FormWind.TwState
+FormWind.TwState.Checked = 2 -> FormWind.TwState
+FormWind.TwState.Dark = 1 -> FormWind.TwState
+FormWind.TwState.Disabled = 128 -> FormWind.TwState
+FormWind.TwState.Focus = 4 -> FormWind.TwState
+FormWind.TwState.FocusVisible = 8 -> FormWind.TwState
+FormWind.TwState.GroupHover = 16 -> FormWind.TwState
+FormWind.TwState.Hover = 32 -> FormWind.TwState
+FormWind.TwState.Invalid = 256 -> FormWind.TwState
+FormWind.TwState.Lg = 2048 -> FormWind.TwState
+FormWind.TwState.Md = 1024 -> FormWind.TwState
+FormWind.TwState.None = 0 -> FormWind.TwState
+FormWind.TwState.Sm = 512 -> FormWind.TwState
+FormWind.TwState.Xl = 4096 -> FormWind.TwState
+FormWind.TwState.Xxl = 8192 -> FormWind.TwState
+FormWind.TwState.HighContrast = 65536 -> FormWind.TwState
+FormWind.TwState.Ltr = 16384 -> FormWind.TwState
+FormWind.TwState.Rtl = 32768 -> FormWind.TwState
+FormWind.TwStyle
+FormWind.TwStyle.AccentColor.get -> System.Drawing.Color?
+FormWind.TwStyle.AccentColor.set -> void
+FormWind.TwStyle.AlignItems.get -> FormWind.TwAlign?
+FormWind.TwStyle.AlignItems.set -> void
+FormWind.TwStyle.AlignSelf.get -> FormWind.TwAlign?
+FormWind.TwStyle.AlignSelf.set -> void
+FormWind.TwStyle.BackColor.get -> System.Drawing.Color?
+FormWind.TwStyle.BackColor.set -> void
+FormWind.TwStyle.Backdrop.get -> FormWind.TwBackdrop?
+FormWind.TwStyle.Backdrop.set -> void
+FormWind.TwStyle.BorderColor.get -> System.Drawing.Color?
+FormWind.TwStyle.BorderColor.set -> void
+FormWind.TwStyle.BorderSides.get -> FormWind.TwSides!
+FormWind.TwStyle.BorderWidth.get -> int?
+FormWind.TwStyle.BorderWidth.set -> void
+FormWind.TwStyle.ColumnSpan.get -> int?
+FormWind.TwStyle.ColumnSpan.set -> void
+FormWind.TwStyle.Cursor.get -> System.Windows.Forms.Cursor?
+FormWind.TwStyle.Cursor.set -> void
+FormWind.TwStyle.Display.get -> FormWind.TwDisplay?
+FormWind.TwStyle.Display.set -> void
+FormWind.TwStyle.DivideColor.get -> System.Drawing.Color?
+FormWind.TwStyle.DivideColor.set -> void
+FormWind.TwStyle.DivideX.get -> bool?
+FormWind.TwStyle.DivideX.set -> void
+FormWind.TwStyle.DivideY.get -> bool?
+FormWind.TwStyle.DivideY.set -> void
+FormWind.TwStyle.DurationMs.get -> int?
+FormWind.TwStyle.DurationMs.set -> void
+FormWind.TwStyle.FillColor.get -> System.Drawing.Color?
+FormWind.TwStyle.FillColor.set -> void
+FormWind.TwStyle.FlexBasis.get -> FormWind.TwLength?
+FormWind.TwStyle.FlexBasis.set -> void
+FormWind.TwStyle.FlexDirection.get -> FormWind.TwFlexDirection?
+FormWind.TwStyle.FlexDirection.set -> void
+FormWind.TwStyle.FlexGrow.get -> float?
+FormWind.TwStyle.FlexGrow.set -> void
+FormWind.TwStyle.FlexShrink.get -> float?
+FormWind.TwStyle.FlexShrink.set -> void
+FormWind.TwStyle.FlexWrap.get -> bool?
+FormWind.TwStyle.FlexWrap.set -> void
+FormWind.TwStyle.FontFamily.get -> string?
+FormWind.TwStyle.FontFamily.set -> void
+FormWind.TwStyle.FontSizePx.get -> float?
+FormWind.TwStyle.FontSizePx.set -> void
+FormWind.TwStyle.FontWeight.get -> int?
+FormWind.TwStyle.FontWeight.set -> void
+FormWind.TwStyle.ForeColor.get -> System.Drawing.Color?
+FormWind.TwStyle.ForeColor.set -> void
+FormWind.TwStyle.GapX.get -> int?
+FormWind.TwStyle.GapX.set -> void
+FormWind.TwStyle.GapY.get -> int?
+FormWind.TwStyle.GapY.set -> void
+FormWind.TwStyle.GradientDirection.get -> FormWind.TwGradientDirection?
+FormWind.TwStyle.GradientDirection.set -> void
+FormWind.TwStyle.GradientFrom.get -> System.Drawing.Color?
+FormWind.TwStyle.GradientFrom.set -> void
+FormWind.TwStyle.GradientTo.get -> System.Drawing.Color?
+FormWind.TwStyle.GradientTo.set -> void
+FormWind.TwStyle.GradientVia.get -> System.Drawing.Color?
+FormWind.TwStyle.GradientVia.set -> void
+FormWind.TwStyle.GridColumns.get -> int?
+FormWind.TwStyle.GridColumns.set -> void
+FormWind.TwStyle.GridRows.get -> int?
+FormWind.TwStyle.GridRows.set -> void
+FormWind.TwStyle.HasChrome.get -> bool
+FormWind.TwStyle.HasFont.get -> bool
+FormWind.TwStyle.HasGradient.get -> bool
+FormWind.TwStyle.HasOutset.get -> bool
+FormWind.TwStyle.HasSideBorder.get -> bool
+FormWind.TwStyle.Height.get -> FormWind.TwLength?
+FormWind.TwStyle.Height.set -> void
+FormWind.TwStyle.Hidden.get -> bool?
+FormWind.TwStyle.Hidden.set -> void
+FormWind.TwStyle.IsGroup.get -> bool?
+FormWind.TwStyle.IsGroup.set -> void
+FormWind.TwStyle.Italic.get -> bool?
+FormWind.TwStyle.Italic.set -> void
+FormWind.TwStyle.JustifyContent.get -> FormWind.TwJustify?
+FormWind.TwStyle.JustifyContent.set -> void
+FormWind.TwStyle.Margin.get -> FormWind.TwSides!
+FormWind.TwStyle.MaxHeight.get -> int?
+FormWind.TwStyle.MaxHeight.set -> void
+FormWind.TwStyle.MaxWidth.get -> int?
+FormWind.TwStyle.MaxWidth.set -> void
+FormWind.TwStyle.MergeFrom(FormWind.TwStyle! other) -> void
+FormWind.TwStyle.MinHeight.get -> int?
+FormWind.TwStyle.MinHeight.set -> void
+FormWind.TwStyle.MinWidth.get -> int?
+FormWind.TwStyle.MinWidth.set -> void
+FormWind.TwStyle.NoWrap.get -> bool?
+FormWind.TwStyle.NoWrap.set -> void
+FormWind.TwStyle.ObjectFit.get -> FormWind.TwImageFit?
+FormWind.TwStyle.ObjectFit.set -> void
+FormWind.TwStyle.Padding.get -> FormWind.TwSides!
+FormWind.TwStyle.RowSpan.get -> int?
+FormWind.TwStyle.RowSpan.set -> void
+FormWind.TwStyle.Radius.get -> int?
+FormWind.TwStyle.Radius.set -> void
+FormWind.TwStyle.RingColor.get -> System.Drawing.Color?
+FormWind.TwStyle.RingColor.set -> void
+FormWind.TwStyle.RingOffset.get -> int?
+FormWind.TwStyle.RingOffset.set -> void
+FormWind.TwStyle.RingOffsetColor.get -> System.Drawing.Color?
+FormWind.TwStyle.RingOffsetColor.set -> void
+FormWind.TwStyle.RingWidth.get -> int?
+FormWind.TwStyle.RingWidth.set -> void
+FormWind.TwStyle.Shadow.get -> FormWind.TwShadowSize?
+FormWind.TwStyle.Shadow.set -> void
+FormWind.TwStyle.ShadowColor.get -> System.Drawing.Color?
+FormWind.TwStyle.ShadowColor.set -> void
+FormWind.TwStyle.TextAlign.get -> FormWind.TwTextAlign?
+FormWind.TwStyle.TextAlign.set -> void
+FormWind.TwStyle.Transition.get -> bool?
+FormWind.TwStyle.Transition.set -> void
+FormWind.TwStyle.Truncate.get -> bool?
+FormWind.TwStyle.Truncate.set -> void
+FormWind.TwStyle.TwStyle() -> void
+FormWind.TwStyle.Underline.get -> bool?
+FormWind.TwStyle.Underline.set -> void
+FormWind.TwStyle.Width.get -> FormWind.TwLength?
+FormWind.TwStyle.Width.set -> void
+FormWind.TwSwitch
+FormWind.TwSwitch.ThumbPosition.get -> float
+FormWind.TwSwitch.TwSwitch() -> void
+FormWind.TwTabControl
+FormWind.TwTabControl.AddPage(string! text) -> FormWind.TwTabPage!
+FormWind.TwTabControl.PageBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabControl.SelectedIndex.get -> int
+FormWind.TwTabControl.SelectedIndex.set -> void
+FormWind.TwTabControl.SelectedIndexChanged -> System.EventHandler?
+FormWind.TwTabControl.SelectedTab.get -> FormWind.TwTabPage?
+FormWind.TwTabControl.SelectedTab.set -> void
+FormWind.TwTabControl.Strip.get -> FormWind.TwTabStrip!
+FormWind.TwTabControl.StripGap.get -> int
+FormWind.TwTabControl.StripGap.set -> void
+FormWind.TwTabControl.TabPages.get -> System.Collections.Generic.IReadOnlyList<FormWind.TwTabPage!>!
+FormWind.TwTabControl.TwTabControl() -> void
+FormWind.TwTabControl.Variant.get -> FormWind.TwTabVariant
+FormWind.TwTabControl.Variant.set -> void
+FormWind.TwTabPage
+FormWind.TwTabPage.TwTabPage() -> void
+FormWind.TwTabPage.TwTabPage(string! text) -> void
+FormWind.TwTabStrip
+FormWind.TwTabStrip.Gap.get -> int
+FormWind.TwTabStrip.Gap.set -> void
+FormWind.TwTabStrip.GetTabBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwTabStrip.SelectedIndex.get -> int
+FormWind.TwTabStrip.SelectedIndex.set -> void
+FormWind.TwTabStrip.SelectedIndexChanged -> System.EventHandler?
+FormWind.TwTabStrip.Tabs.get -> System.Collections.Generic.List<string!>!
+FormWind.TwTabStrip.TwTabStrip() -> void
+FormWind.TwTabStrip.Variant.get -> FormWind.TwTabVariant
+FormWind.TwTabStrip.Variant.set -> void
+FormWind.TwTabVariant
+FormWind.TwTabVariant.Pills = 1 -> FormWind.TwTabVariant
+FormWind.TwTabVariant.Segmented = 2 -> FormWind.TwTabVariant
+FormWind.TwTabVariant.Underline = 0 -> FormWind.TwTabVariant
+FormWind.TwTextAlign
+FormWind.TwTextAlign.Center = 1 -> FormWind.TwTextAlign
+FormWind.TwTextAlign.Left = 0 -> FormWind.TwTextAlign
+FormWind.TwTextAlign.Right = 2 -> FormWind.TwTextAlign
+FormWind.TwTextBox
+FormWind.TwTextBox.HasMask.get -> bool
+FormWind.TwTextBox.InnerTextBox.get -> System.Windows.Forms.TextBox!
+FormWind.TwTextBox.Mask.get -> string!
+FormWind.TwTextBox.Mask.set -> void
+FormWind.TwTextBox.MaskCompleted.get -> bool
+FormWind.TwTextBox.MaxLength.get -> int
+FormWind.TwTextBox.MaxLength.set -> void
+FormWind.TwTextBox.Multiline.get -> bool
+FormWind.TwTextBox.Multiline.set -> void
+FormWind.TwTextBox.PlaceholderColor.get -> System.Drawing.Color?
+FormWind.TwTextBox.PlaceholderColor.set -> void
+FormWind.TwTextBox.PlaceholderText.get -> string!
+FormWind.TwTextBox.PlaceholderText.set -> void
+FormWind.TwTextBox.ReadOnly.get -> bool
+FormWind.TwTextBox.ReadOnly.set -> void
+FormWind.TwTextBox.TextChanged -> System.EventHandler?
+FormWind.TwTextBox.TwTextBox() -> void
+FormWind.TwTextBox.UnmaskedText.get -> string!
+FormWind.TwTextBox.UseSystemPasswordChar.get -> bool
+FormWind.TwTextBox.UseSystemPasswordChar.set -> void
+FormWind.TwTheme
+FormWind.TwTheme.ApplyJson(string! json, string? baseDirectory = null) -> void
+FormWind.TwTheme.ColorNames.get -> System.Collections.Generic.IEnumerable<string!>!
+FormWind.TwTheme.Components.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+FormWind.TwTheme.DefaultBorderColor.get -> System.Drawing.Color
+FormWind.TwTheme.DefaultBorderColor.set -> void
+FormWind.TwTheme.FontFamilyMono.get -> string!
+FormWind.TwTheme.FontFamilyMono.set -> void
+FormWind.TwTheme.FontFamilySans.get -> string!
+FormWind.TwTheme.FontFamilySans.set -> void
+FormWind.TwTheme.GetComponent(string! name) -> string?
+FormWind.TwTheme.HasIcon(string? name) -> bool
+FormWind.TwTheme.IconFontFamily.get -> string!
+FormWind.TwTheme.IconFontFamily.set -> void
+FormWind.TwTheme.Parse(string? classes) -> FormWind.TwParsed!
+FormWind.TwTheme.RemoveComponent(string! name) -> bool
+FormWind.TwTheme.ResolveFontWeight(string! family, int weight) -> (string! Face, bool Bold)
+FormWind.TwTheme.SetColor(string! name, string! shade, System.Drawing.Color color) -> void
+FormWind.TwTheme.SetColor(string! name, System.Drawing.Color color) -> void
+FormWind.TwTheme.SetComponent(string! name, string! classes) -> void
+FormWind.TwTheme.SetFontWeight(string! family, int weight, string! face) -> void
+FormWind.TwTheme.SetIcon(string! name, char glyph) -> void
+FormWind.TwTheme.SetSvgIcon(string! name, string! svg) -> void
+FormWind.TwTheme.SpacingUnit.get -> int
+FormWind.TwTheme.SpacingUnit.set -> void
+FormWind.TwTheme.TryGetColor(string! name, string! shade, out System.Drawing.Color color) -> bool
+FormWind.TwTheme.TryGetIcon(string? name, out char glyph) -> bool
+FormWind.TwTheme.TwTheme() -> void
+FormWind.TwTheme.TwTheme(FormWind.TwPaletteVersion palette) -> void
+FormWind.TwTheme.Palette.get -> FormWind.TwPaletteVersion
+FormWind.TwTheme.UsePalette(FormWind.TwPaletteVersion palette) -> void
+FormWind.TwToast
+FormWind.TwToastForm
+FormWind.TwToastForm.Dismiss() -> void
+FormWind.TwToastForm.Kind.get -> FormWind.TwDialogKind
+FormWind.TwToastForm.MessageLabel.get -> System.Windows.Forms.Label!
+FormWind.TwToastForm.Provider.get -> FormWind.TailwindProvider!
+FormWind.TwToastForm.TitleLabel.get -> System.Windows.Forms.Label!
+FormWind.TwToolTip
+FormWind.TwToolTip.Classes.get -> string!
+FormWind.TwToolTip.Classes.set -> void
+FormWind.TwToolTip.MeasureTip(string! text, int dpi = 96) -> System.Drawing.Size
+FormWind.TwToolTip.Provider.get -> FormWind.TailwindProvider?
+FormWind.TwToolTip.Provider.set -> void
+FormWind.TwToolTip.ResolveStyle() -> FormWind.TwStyle!
+FormWind.TwToolTip.TwToolTip() -> void
+FormWind.TwToolTip.TwToolTip(System.ComponentModel.IContainer! container) -> void
+FormWind.TwTreeNode
+FormWind.TwTreeNode.Collapse() -> void
+FormWind.TwTreeNode.Expand() -> void
+FormWind.TwTreeNode.ExpandAll() -> void
+FormWind.TwTreeNode.FullPath.get -> string!
+FormWind.TwTreeNode.HasChildren.get -> bool
+FormWind.TwTreeNode.HasLazyChildren.get -> bool
+FormWind.TwTreeNode.HasLazyChildren.set -> void
+FormWind.TwTreeNode.IconName.get -> string?
+FormWind.TwTreeNode.IconName.set -> void
+FormWind.TwTreeNode.IsExpanded.get -> bool
+FormWind.TwTreeNode.IsExpanded.set -> void
+FormWind.TwTreeNode.Level.get -> int
+FormWind.TwTreeNode.Nodes.get -> FormWind.TwTreeNodeCollection!
+FormWind.TwTreeNode.Parent.get -> FormWind.TwTreeNode?
+FormWind.TwTreeNode.Tag.get -> object?
+FormWind.TwTreeNode.Tag.set -> void
+FormWind.TwTreeNode.Text.get -> string!
+FormWind.TwTreeNode.Text.set -> void
+FormWind.TwTreeNode.TwTreeNode() -> void
+FormWind.TwTreeNode.TwTreeNode(string! text, string? iconName = null) -> void
+FormWind.TwTreeNodeCollection
+FormWind.TwTreeNodeCollection.Add(string! text, string? iconName = null) -> FormWind.TwTreeNode!
+FormWind.TwTreeNodeCollection.AddRange(System.Collections.Generic.IEnumerable<FormWind.TwTreeNode!>! nodes) -> void
+FormWind.TwTreeView
+FormWind.TwTreeView.AfterCollapse -> System.EventHandler<FormWind.TwTreeViewCancelEventArgs!>?
+FormWind.TwTreeView.AfterExpand -> System.EventHandler<FormWind.TwTreeViewCancelEventArgs!>?
+FormWind.TwTreeView.AfterSelect -> System.EventHandler?
+FormWind.TwTreeView.BeforeExpand -> System.EventHandler<FormWind.TwTreeViewCancelEventArgs!>?
+FormWind.TwTreeView.CollapseAll() -> void
+FormWind.TwTreeView.ExpandAll() -> void
+FormWind.TwTreeView.GetExpanderBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwTreeView.Indent.get -> int
+FormWind.TwTreeView.Indent.set -> void
+FormWind.TwTreeView.Nodes.get -> FormWind.TwTreeNodeCollection!
+FormWind.TwTreeView.SelectedNode.get -> FormWind.TwTreeNode?
+FormWind.TwTreeView.SelectedNode.set -> void
+FormWind.TwTreeView.TwTreeView() -> void
+FormWind.TwTreeView.VisibleNodes.get -> System.Collections.Generic.IReadOnlyList<FormWind.TwTreeNode!>!
+FormWind.TwTreeViewCancelEventArgs
+FormWind.TwTreeViewCancelEventArgs.Node.get -> FormWind.TwTreeNode!
+FormWind.TwTreeViewCancelEventArgs.TwTreeViewCancelEventArgs(FormWind.TwTreeNode! node) -> void
+FormWind.TwUnknownClassesEventArgs
+FormWind.TwUnknownClassesEventArgs.Control.get -> System.Windows.Forms.Control!
+FormWind.TwUnknownClassesEventArgs.TwUnknownClassesEventArgs(System.Windows.Forms.Control! control, System.Collections.Generic.IReadOnlyList<string!>! unknown) -> void
+FormWind.TwUnknownClassesEventArgs.Unknown.get -> System.Collections.Generic.IReadOnlyList<string!>!
+FormWind.TwStyleErrorEventArgs
+FormWind.TwStyleErrorEventArgs.Classes.get -> string!
+FormWind.TwStyleErrorEventArgs.Exception.get -> System.Exception!
+FormWind.TwStyleErrorEventArgs.Target.get -> object!
+FormWind.TwStyleErrorEventArgs.TwStyleErrorEventArgs(object! target, string! classes, System.Exception! exception) -> void
+FormWind.TwValidators
+FormWind.WinFormsApplier
+FormWind.WinFormsApplier.WinFormsApplier() -> void
+override FormWind.TailwindProvider.Dispose(bool disposing) -> void
+override FormWind.TwAvatarCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwAvatarColumn.Clone() -> object!
+override FormWind.TwBadgeCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwBadgeColumn.Clone() -> object!
+override FormWind.TwButton.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwButton.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwButtonCell.OnMouseEnter(int rowIndex) -> void
+override FormWind.TwButtonCell.OnMouseLeave(int rowIndex) -> void
+override FormWind.TwButtonCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates elementState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwButtonColumn.Clone() -> object!
+override FormWind.TwCalendar.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwCalendar.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwCalendar.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwCalendar.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwCalendar.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwCalendar.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwCalendar.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwCalendar.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwCalendar.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwCheckBox.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwCheckBox.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwCheckCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwCheckColumn.Clone() -> object!
+override FormWind.TwCheckedListBox.OnDrawItem(FormWind.TwDataListDrawEventArgs! e) -> void
+override FormWind.TwCheckedListBox.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwCheckedListBox.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwChrome.Equals(object? obj) -> bool
+override FormWind.TwChrome.GetHashCode() -> int
+override FormWind.TwContrastIssue.ToString() -> string!
+override FormWind.TwOwnerDrawn.ToString() -> string!
+override FormWind.TwDataList.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwDataList.Dispose(bool disposing) -> void
+override FormWind.TwDataList.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwDataList.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwDataList.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwDataList.OnLostFocus(System.EventArgs! e) -> void
+override FormWind.TwDataList.OnMouseDoubleClick(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataList.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataList.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwDataList.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataList.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataList.OnMouseWheel(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataList.OnPaddingChanged(System.EventArgs! e) -> void
+override FormWind.TwDataList.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwDataList.OnResize(System.EventArgs! e) -> void
+override FormWind.TwDatePicker.DisplayRectangle.get -> System.Drawing.Rectangle
+override FormWind.TwDatePicker.Dispose(bool disposing) -> void
+override FormWind.TwDatePicker.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDatePicker.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDatePicker.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwField.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwField.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwField.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwField.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwField.OnLayout(System.Windows.Forms.LayoutEventArgs! levent) -> void
+override FormWind.TwGradient.Equals(object? obj) -> bool
+override FormWind.TwGradient.GetHashCode() -> int
+override FormWind.TwIcon.AutoSize.get -> bool
+override FormWind.TwIcon.AutoSize.set -> void
+override FormWind.TwIcon.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwIcon.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwIcon.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwIcon.OnPaddingChanged(System.EventArgs! e) -> void
+override FormWind.TwIcon.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwIconCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwIconNameConverter.GetStandardValues(System.ComponentModel.ITypeDescriptorContext? context) -> System.ComponentModel.TypeConverter.StandardValuesCollection!
+override FormWind.TwIconNameConverter.GetStandardValuesExclusive(System.ComponentModel.ITypeDescriptorContext? context) -> bool
+override FormWind.TwIconNameConverter.GetStandardValuesSupported(System.ComponentModel.ITypeDescriptorContext? context) -> bool
+override FormWind.TwLength.Equals(object? obj) -> bool
+override FormWind.TwLength.GetHashCode() -> int
+override FormWind.TwLength.ToString() -> string!
+override FormWind.TwNumberBox.DisplayRectangle.get -> System.Drawing.Rectangle
+override FormWind.TwNumberBox.Dispose(bool disposing) -> void
+override FormWind.TwNumberBox.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwNumberBox.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwNumberBox.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwNumberBox.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwNumberBox.OnSizeChanged(System.EventArgs! e) -> void
+override FormWind.TwPager.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwPager.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwPager.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwPager.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwPager.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwPager.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwPager.OnLostFocus(System.EventArgs! e) -> void
+override FormWind.TwPager.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwPager.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwPager.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwPager.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwPager.OnResize(System.EventArgs! e) -> void
+override FormWind.TwPanel.DisplayRectangle.get -> System.Drawing.Rectangle
+override FormWind.TwPanel.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwPanel.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwPanel.OnRightToLeftChanged(System.EventArgs! e) -> void
+override FormWind.TwPanel.ScaleControl(System.Drawing.SizeF factor, System.Windows.Forms.BoundsSpecified specified) -> void
+override FormWind.TwPanel.OnPaintBackground(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwPictureBox.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwPictureBox.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwPictureBox.Dispose(bool disposing) -> void
+override FormWind.TwPictureBox.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwPictureBox.OnSizeChanged(System.EventArgs! e) -> void
+override FormWind.TwProgress.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwProgress.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwProgress.Dispose(bool disposing) -> void
+override FormWind.TwProgress.OnHandleCreated(System.EventArgs! e) -> void
+override FormWind.TwProgress.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwProgress.OnVisibleChanged(System.EventArgs! e) -> void
+override FormWind.TwProgressCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwProgressCell.ValueType.get -> System.Type!
+override FormWind.TwProgressColumn.Clone() -> object!
+override FormWind.TwRadioButton.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwRadioButton.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwSelect.AutoSize.get -> bool
+override FormWind.TwSelect.AutoSize.set -> void
+override FormWind.TwSelect.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwSelect.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwSelect.Dispose(bool disposing) -> void
+override FormWind.TwSelect.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwSelect.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwSelect.OnClick(System.EventArgs! e) -> void
+override FormWind.TwSelect.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwSelect.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwSelect.OnKeyPress(System.Windows.Forms.KeyPressEventArgs! e) -> void
+override FormWind.TwSelect.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwSlider.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwSlider.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwSlider.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwSlider.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwSlider.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwSlider.OnLostFocus(System.EventArgs! e) -> void
+override FormWind.TwSlider.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwSlider.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwSlider.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwSlider.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwSlider.OnMouseWheel(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwSlider.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwSortableBindingList<T>.ApplySortCore(System.ComponentModel.PropertyDescriptor! prop, System.ComponentModel.ListSortDirection direction) -> void
+override FormWind.TwSortableBindingList<T>.ClearItems() -> void
+override FormWind.TwSortableBindingList<T>.InsertItem(int index, T item) -> void
+override FormWind.TwSortableBindingList<T>.IsSortedCore.get -> bool
+override FormWind.TwSortableBindingList<T>.RemoveItem(int index) -> void
+override FormWind.TwSortableBindingList<T>.RemoveSortCore() -> void
+override FormWind.TwSortableBindingList<T>.SetItem(int index, T item) -> void
+override FormWind.TwSortableBindingList<T>.SortDirectionCore.get -> System.ComponentModel.ListSortDirection
+override FormWind.TwSortableBindingList<T>.SortPropertyCore.get -> System.ComponentModel.PropertyDescriptor?
+override FormWind.TwSortableBindingList<T>.SupportsSortingCore.get -> bool
+override FormWind.TwSwitch.Dispose(bool disposing) -> void
+override FormWind.TwSwitch.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwSwitch.OnCheckedChanged(System.EventArgs! e) -> void
+override FormWind.TwSwitch.OnCreateControl() -> void
+override FormWind.TwSwitch.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwTabControl.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwTabControl.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwTabControl.OnLayout(System.Windows.Forms.LayoutEventArgs! levent) -> void
+override FormWind.TwTabControl.ProcessCmdKey(ref System.Windows.Forms.Message msg, System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwTabPage.OnTextChanged(System.EventArgs! e) -> void
+override FormWind.TwTabPage.Text.get -> string!
+override FormWind.TwTabPage.Text.set -> void
+override FormWind.TwTabStrip.AutoSize.get -> bool
+override FormWind.TwTabStrip.AutoSize.set -> void
+override FormWind.TwTabStrip.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwTabStrip.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwTabStrip.Dispose(bool disposing) -> void
+override FormWind.TwTabStrip.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwTabStrip.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwTabStrip.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwTabStrip.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwTabStrip.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwTabStrip.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTabStrip.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwTabStrip.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTabStrip.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwTabStrip.OnSizeChanged(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnBackColorChanged(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnDpiChangedAfterParent(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnHandleCreated(System.EventArgs! e) -> void
+override FormWind.TwTextBox.Dispose(bool disposing) -> void
+override FormWind.TwTextBox.OnForeColorChanged(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwTextBox.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTextBox.OnPaddingChanged(System.EventArgs! e) -> void
+override FormWind.TwTextBox.ScaleControl(System.Drawing.SizeF factor, System.Windows.Forms.BoundsSpecified specified) -> void
+override FormWind.TwTextBox.Text.get -> string!
+override FormWind.TwTextBox.Text.set -> void
+override FormWind.TwTreeNode.ToString() -> string!
+override FormWind.TwTreeView.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwTreeView.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwTreeView.OnDrawItem(FormWind.TwDataListDrawEventArgs! e) -> void
+override FormWind.TwTreeView.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwTreeView.OnMouseDoubleClick(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTreeView.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+static FormWind.TwAppliers.Find(System.Windows.Forms.Control! control) -> FormWind.IStyleApplier!
+static FormWind.TwAppliers.FindBuiltIn(System.Windows.Forms.Control! control) -> FormWind.IStyleApplier!
+static FormWind.TwAppliers.Register(FormWind.IStyleApplier! applier) -> void
+static FormWind.TwBreakpoints.For(System.Windows.Forms.Control! control) -> FormWind.TwState
+static FormWind.TwBreakpoints.ForWidth(int width) -> FormWind.TwState
+static FormWind.TwBreakpoints.Lg.get -> int
+static FormWind.TwBreakpoints.Lg.set -> void
+static FormWind.TwBreakpoints.Md.get -> int
+static FormWind.TwBreakpoints.Md.set -> void
+static FormWind.TwBreakpoints.Sm.get -> int
+static FormWind.TwBreakpoints.Sm.set -> void
+static FormWind.TwBreakpoints.Xl.get -> int
+static FormWind.TwBreakpoints.Xl.set -> void
+static FormWind.TwBreakpoints.Xxl.get -> int
+static FormWind.TwBreakpoints.Xxl.set -> void
+static FormWind.TwChrome.FromStyle(FormWind.TwStyle! style, float scale, System.Drawing.Color defaultBorderColor) -> FormWind.TwChrome
+static FormWind.TwChrome.None.get -> FormWind.TwChrome
+static FormWind.TwContrast.Audit(System.Windows.Forms.Control! root, FormWind.TailwindProvider? provider = null, double minimum = 4.5, bool includeDisabled = false) -> System.Collections.Generic.IReadOnlyList<FormWind.TwContrastIssue!>!
+static FormWind.TwContrast.FindOwnerDrawn(System.Windows.Forms.Control! root) -> System.Collections.Generic.IReadOnlyList<FormWind.TwOwnerDrawn!>!
+static FormWind.TwContrast.Ratio(System.Drawing.Color foreground, System.Drawing.Color background) -> double
+static FormWind.TwOklch.ToColor(double lightness, double chroma, double hue, double alpha = 1) -> System.Drawing.Color
+static FormWind.TwOklch.TryParse(string? text, out System.Drawing.Color color) -> bool
+static FormWind.TwDialog.Create(FormWind.TwDialogOptions! options, System.Windows.Forms.Control? owner = null) -> FormWind.TwDialogForm!
+static FormWind.TwDialog.Show(System.Windows.Forms.IWin32Window? owner, FormWind.TwDialogOptions! options) -> System.Windows.Forms.DialogResult
+static FormWind.TwDialog.Show(System.Windows.Forms.IWin32Window? owner, string! message, string? title = null, FormWind.TwDialogKind kind = FormWind.TwDialogKind.Info, FormWind.TwDialogButtons buttons = FormWind.TwDialogButtons.Ok, bool danger = false) -> System.Windows.Forms.DialogResult
+static FormWind.TwDialog.Texts.get -> System.Collections.Generic.Dictionary<System.Windows.Forms.DialogResult, string!>!
+static FormWind.TwFocusVisible.LastInputWasKeyboard.get -> bool
+static FormWind.TwFocusVisible.LastInputWasKeyboard.set -> void
+static FormWind.TwFonts.Create(FormWind.TwStyle! style, System.Drawing.Font! baseFont, FormWind.TwTheme! theme) -> System.Drawing.Font!
+static FormWind.TwFonts.Create(FormWind.TwStyle! style, System.Drawing.Font! baseFont, FormWind.TwTheme! theme, float pixelScale) -> System.Drawing.Font!
+static FormWind.TwFonts.DefaultFamily.get -> string!
+static FormWind.TwFonts.Get(string! family, float sizeInPoints, System.Drawing.FontStyle style) -> System.Drawing.Font!
+static FormWind.TwFonts.IsInstalled(string! family) -> bool
+static FormWind.TwFonts.Register(string! path) -> System.Collections.Generic.IReadOnlyList<string!>!
+static FormWind.TwFonts.ResolveFamily(string! stack) -> string!
+static FormWind.TwGradient.FromStyle(FormWind.TwStyle! style) -> FormWind.TwGradient?
+static FormWind.TwGrid.DataRowCount(System.Windows.Forms.DataGridView! grid) -> int
+static FormWind.TwGrid.EnableColumnChooser(System.Windows.Forms.DataGridView! grid, bool enable = true) -> void
+static FormWind.TwGrid.EnableFilterMenu(System.Windows.Forms.DataGridView! grid, bool enable = true) -> void
+static FormWind.TwGrid.GetEmptyText(System.Windows.Forms.DataGridView! grid) -> string?
+static FormWind.TwGrid.IsLoading(System.Windows.Forms.DataGridView! grid) -> bool
+static FormWind.TwGrid.OpenMenu(System.Windows.Forms.DataGridView! grid) -> System.Windows.Forms.ContextMenuStrip?
+static FormWind.TwGrid.SetEmptyIcon(System.Windows.Forms.DataGridView! grid, string? icon) -> void
+static FormWind.TwGrid.SetEmptyText(System.Windows.Forms.DataGridView! grid, string? text) -> void
+static FormWind.TwGrid.SetLoading(System.Windows.Forms.DataGridView! grid, bool loading) -> void
+static FormWind.TwGrid.SetLoadingText(System.Windows.Forms.DataGridView! grid, string! text) -> void
+static FormWind.TwGrid.ShowColumnChooser(System.Windows.Forms.DataGridView! grid) -> void
+static FormWind.TwGrid.ShowFilterMenu(System.Windows.Forms.DataGridView! grid, System.Windows.Forms.DataGridViewColumn! column) -> void
+static FormWind.TwIcons.DefaultFontFamily.get -> string!
+static FormWind.TwIcons.Names.get -> System.Collections.Generic.IEnumerable<string!>!
+static FormWind.TwIcons.Register(string! name, char glyph) -> void
+static FormWind.TwIcons.TryGetGlyph(string! name, out char glyph) -> bool
+static FormWind.TwIcons.TryParseCodePoint(string? value, out char glyph) -> bool
+static FormWind.TwLayout.Apply(System.Windows.Forms.Control! control, FormWind.TwStyle! style, float scale) -> void
+static FormWind.TwLayout.Engine.get -> System.Windows.Forms.Layout.LayoutEngine!
+static FormWind.TwLayout.IsLayoutContainer(System.Windows.Forms.Control! control) -> bool
+static FormWind.TwLayout.TryMeasure(System.Windows.Forms.Control! host, out System.Drawing.Size size) -> bool
+static FormWind.TwLength.Auto.get -> FormWind.TwLength
+static FormWind.TwLength.Fraction(float fraction) -> FormWind.TwLength
+static FormWind.TwLength.operator !=(FormWind.TwLength left, FormWind.TwLength right) -> bool
+static FormWind.TwLength.operator ==(FormWind.TwLength left, FormWind.TwLength right) -> bool
+static FormWind.TwLength.Pixels(float pixels) -> FormWind.TwLength
+static FormWind.TwMotion.Enabled.get -> bool
+static FormWind.TwMotion.Enabled.set -> void
+static FormWind.TwOriginal.Capture(System.Windows.Forms.Control! control, bool designMode) -> FormWind.TwOriginal!
+static FormWind.TwSides.Scale(int pixels, float scale) -> int
+static FormWind.TwTheme.Current.get -> FormWind.TwTheme!
+static FormWind.TwTheme.Current.set -> void
+static FormWind.TwTheme.CurrentChanged -> System.EventHandler?
+static FormWind.TwTheme.DefaultComponents.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+static FormWind.TwTheme.FromJson(string! json) -> FormWind.TwTheme!
+static FormWind.TwTheme.Load(string! path) -> FormWind.TwTheme!
+static FormWind.TwTheme.LoadIfExists(string! path) -> FormWind.TwTheme!
+static FormWind.TwToast.DefaultDuration.get -> int
+static FormWind.TwToast.DefaultDuration.set -> void
+static FormWind.TwToast.OpenToasts(System.Windows.Forms.Form! owner) -> System.Collections.Generic.IReadOnlyList<FormWind.TwToastForm!>!
+static FormWind.TwToast.Show(System.Windows.Forms.Form! owner, string! message, FormWind.TwDialogKind kind = FormWind.TwDialogKind.Info, string? title = null, int? durationMs = null) -> FormWind.TwToastForm!
+static FormWind.TwValidators.Email(string! value) -> string?
+static FormWind.TwValidators.Iban(string! value) -> string?
+static FormWind.TwValidators.MinLength(int length) -> System.Func<string!, string?>!
+static FormWind.TwValidators.TcKimlikNo(string! value) -> string?
+static FormWind.TwValidators.TurkishMobile(string! value) -> string?
+static readonly FormWind.TwPalette.Colors -> System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>!
+static readonly FormWind.TwPalette.Shades -> string![]!
+static readonly FormWind.TwPaletteV4.Colors -> System.Collections.Generic.IReadOnlyDictionary<string!, string![]!>!
+static readonly FormWind.TwParsed.Empty -> FormWind.TwParsed!
+virtual FormWind.TwDataList.OnDrawItem(FormWind.TwDataListDrawEventArgs! e) -> void
+virtual FormWind.WinFormsApplier.Apply(System.Windows.Forms.Control! control, FormWind.TwStyle! style, FormWind.TwApplyContext! context) -> void
+virtual FormWind.WinFormsApplier.CanApply(System.Windows.Forms.Control! control) -> bool
+FormWind.TwVirtualRows<T>
+FormWind.TwVirtualRows<T>.CachedPages.get -> int
+FormWind.TwVirtualRows<T>.CellValue.get -> System.Func<T, System.Windows.Forms.DataGridViewColumn!, object?>?
+FormWind.TwVirtualRows<T>.CellValue.set -> void
+FormWind.TwVirtualRows<T>.Dispose() -> void
+FormWind.TwVirtualRows<T>.GetItem(int rowIndex) -> T?
+FormWind.TwVirtualRows<T>.PageSize.get -> int
+FormWind.TwVirtualRows<T>.PagesLoaded.get -> int
+FormWind.TwVirtualRows<T>.Reset(int rowCount) -> void
+FormWind.TwVirtualRows<T>.RowCount.get -> int
+FormWind.TwVirtualRows<T>.TwVirtualRows(System.Windows.Forms.DataGridView! grid, System.Func<int, int, System.Collections.Generic.IReadOnlyList<T>!>! loadPage, int pageSize = 100, int cachedPages = 8) -> void
+FormWind.TwTexts
+FormWind.TwTexts.TwTexts() -> void
+FormWind.TwTexts.Ok.get -> string!
+FormWind.TwTexts.Ok.set -> void
+FormWind.TwTexts.Cancel.get -> string!
+FormWind.TwTexts.Cancel.set -> void
+FormWind.TwTexts.Yes.get -> string!
+FormWind.TwTexts.Yes.set -> void
+FormWind.TwTexts.No.get -> string!
+FormWind.TwTexts.No.set -> void
+FormWind.TwTexts.Close.get -> string!
+FormWind.TwTexts.Close.set -> void
+FormWind.TwTexts.Required.get -> string!
+FormWind.TwTexts.Required.set -> void
+FormWind.TwTexts.InvalidFormat.get -> string!
+FormWind.TwTexts.InvalidFormat.set -> void
+FormWind.TwTexts.Incomplete.get -> string!
+FormWind.TwTexts.Incomplete.set -> void
+FormWind.TwTexts.MinLength.get -> string!
+FormWind.TwTexts.MinLength.set -> void
+FormWind.TwTexts.InvalidEmail.get -> string!
+FormWind.TwTexts.InvalidEmail.set -> void
+FormWind.TwTexts.TcKimlikLength.get -> string!
+FormWind.TwTexts.TcKimlikLength.set -> void
+FormWind.TwTexts.InvalidTcKimlik.get -> string!
+FormWind.TwTexts.InvalidTcKimlik.set -> void
+FormWind.TwTexts.InvalidIban.get -> string!
+FormWind.TwTexts.InvalidIban.set -> void
+FormWind.TwTexts.TurkishIbanLength.get -> string!
+FormWind.TwTexts.TurkishIbanLength.set -> void
+FormWind.TwTexts.InvalidMobile.get -> string!
+FormWind.TwTexts.InvalidMobile.set -> void
+FormWind.TwTexts.Search.get -> string!
+FormWind.TwTexts.Search.set -> void
+FormWind.TwTexts.Loading.get -> string!
+FormWind.TwTexts.Loading.set -> void
+FormWind.TwTexts.SelectAll.get -> string!
+FormWind.TwTexts.SelectAll.set -> void
+FormWind.TwTexts.ClearFilter.get -> string!
+FormWind.TwTexts.ClearFilter.set -> void
+FormWind.TwTexts.Blank.get -> string!
+FormWind.TwTexts.Blank.set -> void
+FormWind.TwTexts.Open.get -> string!
+FormWind.TwTexts.Open.set -> void
+FormWind.TwTexts.Select.get -> string!
+FormWind.TwTexts.Select.set -> void
+FormWind.TwTexts.Expand.get -> string!
+FormWind.TwTexts.Expand.set -> void
+FormWind.TwTexts.Collapse.get -> string!
+FormWind.TwTexts.Collapse.set -> void
+FormWind.TwTexts.PreviousMonth.get -> string!
+FormWind.TwTexts.PreviousMonth.set -> void
+FormWind.TwTexts.NextMonth.get -> string!
+FormWind.TwTexts.NextMonth.set -> void
+FormWind.TwTexts.Item.get -> string!
+FormWind.TwTexts.Item.set -> void
+FormWind.TwTexts.Page.get -> string!
+FormWind.TwTexts.Page.set -> void
+static FormWind.TwTexts.Current.get -> FormWind.TwTexts!
+static FormWind.TwTexts.Current.set -> void
+static FormWind.TwTexts.English.get -> FormWind.TwTexts!
+static FormWind.TwTexts.Turkish.get -> FormWind.TwTexts!
+static FormWind.TwTexts.ForCulture(System.Globalization.CultureInfo! culture) -> FormWind.TwTexts!

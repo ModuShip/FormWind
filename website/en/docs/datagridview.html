@@ -1,0 +1,130 @@
+<!--
+title: DataGridView
+description: Style DataGridView with part prefixes, column classes, cell types and row rules; add sorting, filtering, search, grouping, totals, row details, paging and virtual rows.
+-->
+<h1>DataGridView</h1>
+<p class="lead">The grid is styled with <strong>part prefixes</strong> that combine with state prefixes (<code>dark:header:bg-gray-900</code>, <code>row:hover:bg-gray-50</code>). The <code>table</code> component gives a light and dark table in one class.</p>
+
+<pre><code class="language-csharp">tw.SetClasses(gridOrders, "table");</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/grid-light.png" alt="Orders grid grouped by city with search, filter buttons, sparklines, tags, relative dates, an expanded row and a totals footer" loading="lazy"><figcaption>Light</figcaption></figure>
+  <figure><img src="{{root}}img/grid-dark.png" alt="The same orders grid in dark mode" loading="lazy"><figcaption>Dark</figcaption></figure>
+</div>
+<p>The showcase sample's grid form (<code>FormWind.Showcase --grid</code>): search, filter menu, grouping, totals, row details, the new cell types and saving the layout.</p>
+
+<h2>Parts</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Prefix</th><th>Target</th><th>Classes</th></tr></thead>
+  <tbody>
+    <tr><td>(none)</td><td>Control area and all cells</td><td><code>bg-*</code>, <code>text-*</code>, font, <code>border</code>, <code>divide-x</code>, <code>divide-y</code>, <code>divide-{color}</code> (grid lines)</td></tr>
+    <tr><td><code>cell:</code></td><td><code>DefaultCellStyle</code></td><td>Color, font, <code>px-*</code>/<code>py-*</code>, alignment, <code>whitespace-nowrap</code></td></tr>
+    <tr><td><code>alt:</code></td><td>Alternating rows</td><td>Color, font</td></tr>
+    <tr><td><code>selected:</code></td><td>Selection</td><td><code>bg-*</code>, <code>text-*</code></td></tr>
+    <tr><td><code>header:</code></td><td>Column headers</td><td>Color, font, padding, alignment, <code>h-*</code>, <code>border-0</code>, <code>whitespace-nowrap</code></td></tr>
+    <tr><td><code>row:</code></td><td>Rows</td><td><code>h-*</code> (row height), <code>row:hover:bg-*</code>, <code>row:hover:text-*</code></td></tr>
+    <tr><td><code>row-header:</code></td><td>Row headers</td><td><code>hidden</code>, color</td></tr>
+    <tr><td><code>match:</code></td><td>Search matches</td><td><code>bg-*</code>, <code>text-*</code></td></tr>
+    <tr><td><code>group:</code></td><td>Group headers</td><td><code>bg-*</code>, <code>text-*</code>, font</td></tr>
+    <tr><td><code>footer:</code></td><td>Totals row (<code>TwGridFooter</code>)</td><td><code>bg-*</code>, <code>text-*</code>, font</td></tr>
+  </tbody>
+</table></div>
+<pre><code class="language-csharp">tw.SetClasses(gridOrders,
+    "bg-white text-gray-800 divide-y divide-gray-100 cell:px-3 row:h-10 row:hover:bg-gray-50 "
+  + "header:bg-gray-50 header:text-gray-500 header:font-semibold header:text-xs row-header:hidden "
+  + "selected:bg-blue-50 selected:text-blue-900 "
+  + "dark:bg-gray-900 dark:text-gray-100 dark:header:bg-gray-800 dark:selected:bg-blue-950");</code></pre>
+<ul>
+  <li>Header colors turn off <code>EnableHeadersVisualStyles</code>, which would otherwise ignore them.</li>
+  <li><code>row:h-*</code> on bound or <code>VirtualMode</code> grids uses <code>RowHeightInfoNeeded</code>: rows stay shared and scrolling and selection are kept (about 12 ms for 17,000 rows).</li>
+  <li>Removing the classes returns the grid to its original styles.</li>
+  <li>Grids that paint their own cells ignore cell styles; <code>divide-*</code> and <code>row:h-*</code> change structural properties, so check such grids before using them.</li>
+  <li><code>table</code> variants go after it: <code>table-sm</code> (32 px rows), <code>table-lg</code> (48 px rows), <code>table-striped</code>, <code>table-bordered</code>. Fluent, Ant Design and Material define their own heights.</li>
+  <li><code>TwGrid.EnableDarkInversion(grid)</code> gives self-drawing grids a dark mode: the grid is styled light and its picture is inverted with the hue kept, so hard-coded light colors turn dark too.</li>
+</ul>
+
+<h2>Column classes</h2>
+<p>Every column gets a <strong>ColumnClasses on tailwindProvider1</strong> property in the Designer (<code>SetColumnClasses</code> in code). Base classes apply to the cells, <code>header:</code> to the header; <code>w-32</code>, <code>min-w-20</code>, <code>flex-1</code> (fill weight) and <code>hidden</code> affect the column itself.</p>
+<pre><code class="language-csharp">tw.SetColumnClasses(colTotal, "text-right font-semibold w-28 header:text-right");
+tw.SetColumnClasses(colName, "flex-1 min-w-40");</code></pre>
+
+<h2>Cell types</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Column</th><th>Value</th><th>Settings</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwBadgeColumn</code></td><td>Text, drawn as a colored badge</td><td><code>Variants = "Paid: bg-green-100 text-green-800; Overdue: bg-red-100 text-red-800; *: bg-gray-100 text-gray-700"</code></td></tr>
+    <tr><td><code>TwAvatarColumn</code></td><td><code>Image</code></td><td><code>AvatarSize</code>, <code>Radius</code>, <code>Placeholder</code></td></tr>
+    <tr><td><code>TwIconColumn</code></td><td>Icon name</td><td>Color from the cell's text color</td></tr>
+    <tr><td><code>TwProgressColumn</code></td><td>0–<code>Maximum</code></td><td><code>ShowText</code>, <code>BarColor</code>, <code>TrackColor</code>, <code>DarkTrackColor</code></td></tr>
+    <tr><td><code>TwCheckColumn</code></td><td><code>bool</code> / <code>CheckState</code></td><td><code>AccentColor</code>, <code>BoxSize</code>, <code>ThreeState</code></td></tr>
+    <tr><td><code>TwButtonColumn</code></td><td>Text</td><td><code>Classes = "rounded-md bg-red-600 text-white hover:bg-red-700"</code>; clicks via <code>CellContentClick</code></td></tr>
+    <tr><td><code>TwSparklineColumn</code></td><td>Numbers</td><td><code>Kind</code> (<code>Line</code>, <code>Area</code>, <code>Bar</code>), <code>LineColor</code>, <code>DarkLineColor</code>, <code>NegativeColor</code></td></tr>
+    <tr><td><code>TwDateColumn</code></td><td><code>DateTime</code></td><td>Format (default <code>g</code>); <code>Relative</code> shows "5 min ago"</td></tr>
+    <tr><td><code>TwNumberColumn</code></td><td>Number</td><td>Right-aligned <code>N2</code> / <code>C2</code>, <code>Culture</code>, <code>NegativeClasses</code>, <code>PositiveClasses</code></td></tr>
+    <tr><td><code>TwLinkColumn</code></td><td>Text</td><td>Theme blue, underlined on hover; clicks via <code>CellContentClick</code></td></tr>
+    <tr><td><code>TwTagsColumn</code></td><td>Texts</td><td>Badges with <code>Variants</code>, <code>Separator</code>; overflow as <code>+N</code></td></tr>
+    <tr><td><code>TwActionsColumn</code></td><td>—</td><td>"⋯" menu: <code>Actions = "Edit; -; Delete"</code>, <code>ActionClicked</code>, <code>MenuOpening</code></td></tr>
+    <tr><td><code>TwExpanderColumn</code></td><td>—</td><td>Expands the row's details</td></tr>
+  </tbody>
+</table></div>
+<p>Cell types learn dark mode from the grid's provider; <code>dark:</code> variants need no extra setup.</p>
+
+<h2>Row rules</h2>
+<pre><code class="language-csharp">tw.SetRowClasses(gridOrders, row =>
+    row.Cells["colStatus"].Value as string == "Cancelled" ? "text-gray-400 dark:text-gray-500" : null);</code></pre>
+<p>The rule returns classes for each row (<code>null</code> = no change). It runs during <code>CellFormatting</code>, so it updates itself when the data changes. <code>SetRowClasses(grid, null)</code> removes it.</p>
+
+<h2>Sorting, empty and loading states</h2>
+<pre><code class="language-csharp">gridOrders.DataSource = new TwSortableBindingList&lt;Order&gt;(orders);
+TwGrid.SetEmptyText(gridOrders, "No orders found");   // icon + text when there are no rows
+TwGrid.SetLoading(gridOrders, true);                  // skeleton rows, or a dimmed overlay with "Loading…"</code></pre>
+<p>A grid bound to a <code>List&lt;T&gt;</code> doesn't sort on header clicks; <code>TwSortableBindingList&lt;T&gt;</code> does, with culture-aware, stable sorting. The sort arrow is drawn with the theme's icons and <code>accent-*</code> color.</p>
+
+<h2>Filtering and paging</h2>
+<pre><code class="language-csharp">TwGrid.EnableFilterMenu(gridOrders);     // a filter button in each header: values with check boxes
+TwGrid.EnableColumnChooser(gridOrders);  // right-click a header to show or hide columns</code></pre>
+<ul>
+  <li>The filter menu appears on grids whose data source is an <code>ITwFilterableList</code> (such as <code>TwSortableBindingList&lt;T&gt;</code>) and on columns with a <code>DataPropertyName</code>. In code: <code>list.SetColumnFilter("City", new[] { "Izmir" })</code>, <code>ClearFilters()</code>.</li>
+  <li>Sorts stack, and filtering keeps the sort order.</li>
+  <li>Columns with eight or more values get a search box in the menu; number and date columns of a <code>TwSortableBindingList&lt;T&gt;</code> get <strong>Min</strong>/<strong>Max</strong> boxes (<code>list.SetRangeFilter("Amount", 100, null)</code>).</li>
+</ul>
+<p><code>TwPager</code> draws paging buttons (‹ 1 … 9 10 11 … 20 ›); you bind the page:</p>
+<pre><code class="language-csharp">pager.TotalItems = orders.Count;
+pager.PageSize = 20;
+pager.PageChanged += (s, e) => grid.DataSource = orders.Skip(pager.FirstItemIndex).Take(pager.PageSize).ToList();
+tw.SetClasses(pager, "text-gray-700 selected:bg-blue-600 selected:text-white item:hover:bg-gray-100");</code></pre>
+
+<h2>Search</h2>
+<pre><code class="language-csharp">TwGrid.AttachSearchBox(gridOrders, txtSearch);   // searches as the user types; Escape clears
+TwGrid.SetSearchText(gridOrders, "izmir");        // in code</code></pre>
+<p>Matches are highlighted with the <code>match:</code> colors. A <code>TwSortableBindingList&lt;T&gt;</code> keeps only the matching rows, an unbound grid hides the others, other bound grids only highlight.</p>
+
+<h2>Grouping and totals</h2>
+<pre><code class="language-csharp">TwGrid.SetGroupBy(gridOrders, colCity);           // header with the row count; click to collapse
+var footer = TwGrid.AddFooter(gridOrders);
+footer.SetText(colCustomer, "Total");
+footer.SetAggregate(colAmount, TwAggregate.Sum, "C2");   // Sum, Average, Count, Min, Max</code></pre>
+<ul>
+  <li>The list orders rows by the group and keeps the sorting within groups; with other sources consecutive equal values form a group.</li>
+  <li>The footer follows column widths, order and horizontal scrolling, and counts only the shown rows.</li>
+</ul>
+
+<h2>Row details</h2>
+<pre><code class="language-csharp">gridOrders.Columns.Insert(0, new TwExpanderColumn());
+TwGrid.SetRowDetails(gridOrders, row => new OrderLinesView((Order)row.DataBoundItem), height: 160);</code></pre>
+<p>The control appears below the expanded row and moves with scrolling; expanded rows survive sorting and filtering.</p>
+
+<h2>Layout and export</h2>
+<pre><code class="language-csharp">var layout = TwGrid.SaveLayout(gridOrders);   // JSON: columns, sorting, grouping, search, filters
+TwGrid.LoadLayout(gridOrders, layout);
+TwGrid.ExportCsv(gridOrders, path);           // UTF-8 with BOM, the culture's list separator
+TwGrid.CopyToClipboard(gridOrders);           // selected cells as tab-separated text</code></pre>
+<h2>Large tables</h2>
+<p><code>TwVirtualRows&lt;T&gt;</code> puts the grid in <code>VirtualMode</code> and loads rows page by page as they come into view, caching recent pages. With a million rows only the visible pages are in memory.</p>
+<pre><code class="language-csharp">var rows = new TwVirtualRows&lt;Order&gt;(gridOrders,
+    (start, count) => db.Orders.OrderBy(o => o.Id).Skip(start).Take(count).ToList(), pageSize: 100);
+rows.Reset(db.Orders.Count());   // again when the data or the sort order changes</code></pre>
+<ul>
+  <li>Cell values come from the property named by the column's <code>DataPropertyName</code> (or its name); override with <code>rows.CellValue</code>.</li>
+  <li>The loader runs on the UI thread — keep it fast (OFFSET/FETCH in the database). Sort in the query and call <code>Reset</code>.</li>
+</ul>

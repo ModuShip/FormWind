@@ -1,0 +1,6 @@
+#nullable enable
+FormWind.Krypton.KryptonApplier
+FormWind.Krypton.KryptonApplier.Apply(System.Windows.Forms.Control! control, FormWind.TwStyle! style, FormWind.TwApplyContext! context) -> void
+FormWind.Krypton.KryptonApplier.CanApply(System.Windows.Forms.Control! control) -> bool
+FormWind.Krypton.KryptonApplier.KryptonApplier() -> void
+static FormWind.Krypton.KryptonApplier.Register() -> void

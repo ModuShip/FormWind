@@ -1,0 +1,45 @@
+<!--
+title: DPI
+description: FormWind için önerilen DPI kurulumu, class değerlerinin ölçeklenmesi ve .NET Framework'teki AutoScale tuzakları.
+-->
+<h1>DPI</h1>
+<p class="lead">Class değerleri 96 DPI pikselidir ve kontrolün <code>DeviceDpi</code>'ıyla ölçeklenir: <code>p-2</code> %100'de 8 px, %125'te 10 px'tir.</p>
+
+<h2 id="recommended-setup">Önerilen kurulum</h2>
+<ul>
+  <li>Formlar: <code>AutoScaleMode = AutoScaleMode.Dpi</code> ve <code>AutoScaleDimensions = new SizeF(96F, 96F)</code>. Kodla kurulan formlarda kurucuyu <code>SuspendLayout</code>/<code>ResumeLayout</code> arasına alın.</li>
+  <li>Süreç: <code>PerMonitorV2</code>.</li>
+</ul>
+<pre><code class="language-csharp">// .NET 8+, Program.Main
+Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kurulum</th><th>Sonuç</th></tr></thead>
+  <tbody>
+    <tr><td>DPI'dan habersiz (.NET Framework 4.7.2 varsayılanı)</td><td>Windows bitmap'i ölçekler; yerleşim doğru, yazı bulanık. Ek kurulum gerekmez.</td></tr>
+    <tr><td>PerMonitorV2 + <code>AutoScaleMode.Dpi</code></td><td>Yerleşim, fontlar ve FormWind boşlukları birlikte ölçeklenir.</td></tr>
+    <tr><td>PerMonitorV2 + <code>AutoScaleMode.Font</code></td><td>.NET Framework'te <code>Font</code>'u <code>AutoScaleDimensions</code>'tan sonra atanan Designer formları ölçeklenmez: boşluklar ve fontlar büyür, kontroller büyümez.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="net-framework-notes">.NET Framework notları</h2>
+<ul>
+  <li>PerMonitorV2, <code>app.config</code>'teki <code>System.Windows.Forms.ApplicationConfigurationSection</code> içinde <code>DpiAwareness</code> ile açılır. Dosyayı düzenlerken derlemenin ürettiği <code>bindingRedirect</code>'leri silmeyin; yoksa <code>System.Text.Json</code> yüklenemez.</li>
+  <li>PerMonitorV2 yalnızca uygulama manifestosu Windows 10 uyumluluğunu (<code>supportedOS</code>) bildiriyorsa etkili olur.</li>
+  <li>Kodunuz <code>Program.Main</code>'de bir formdan önce <code>Font</code> oluşturuyorsa, GDI+ 96 DPI'da kalmasın diye önce <code>new Control().Dispose()</code> çağırın.</li>
+  <li>Yukarıdaki <code>AutoScaleMode.Font</code> sorunu FormWind olmadan da olur, çalışma zamanında düzeltilemez ve <a href="designer.html#fw002">FW002 çözümleyicisi</a> tarafından işaretlenir.</li>
+</ul>
+
+<h2 id="moving-between-screens">Ekranlar arasında taşıma</h2>
+<p>Form farklı DPI'lı bir ekrana taşındığında FormWind, WinForms ölçeklemeyi bitirdikten sonra class'ları bir kez yeniden uygular. <code>AutoScaleMode.Dpi</code> ile fontlar, boşluklar, owner-draw kontroller ve DataGridView fontları ile kolon genişlikleri doğru ölçeklenir; %150 ve %200'de doğrulandı.</p>
+
+<h2 id="double-scaling">Çift ölçekleme</h2>
+<p><code>InitializeComponent</code> içindeki <code>SetClasses</code> ölçeklenmiş değeri atar; formun AutoScale'i aynı değeri bir daha ölçeklerdi (%125'te 8 → 10 → 12 px). FormWind bunu önler:</p>
+<ul>
+  <li>Class'lar iç ya da dış boşluk tanımlıyorsa FormWind'in değeri, değiştikçe geri yazılır.</li>
+  <li>Class'lar kontrolün ilk handle'ı oluşturulduğunda (ölçeklemeden sonra, <code>Load</code>'dan önce) bir kez yeniden uygulanır.</li>
+</ul>
+<p>Sonuç olarak class'lar iç ya da dış boşluğu yönettiği sürece bunlara çalışma zamanında yapılan atamalar geri alınır (FW001 uyarır). Kendi değerlerinizi korumak için boşluk class'larını kaldırın.</p>
+
+<div class="callout">
+  <p>Uygulama DPI'ya duyarlı çalışıyor ama formların AutoScale'i yerleşimi büyütmüyorsa boşluklar büyür, kontroller büyümez. AutoScale'i düzeltin ya da <code>TailwindProvider.ScaleWithDpi = false</code> yapın.</p>
+</div>

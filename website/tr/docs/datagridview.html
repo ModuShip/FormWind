@@ -1,0 +1,130 @@
+<!--
+title: DataGridView
+description: DataGridView'u parça önekleri, kolon class'ları, hücre tipleri ve satır kurallarıyla stilleyin; sıralama, süzme, arama, gruplama, alt toplam, satır detayları, sayfalama ve sanal satırlar ekleyin.
+-->
+<h1>DataGridView</h1>
+<p class="lead">Tablo, durum önekleriyle birleşebilen <strong>parça önekleriyle</strong> stillenir (<code>dark:header:bg-gray-900</code>, <code>row:hover:bg-gray-50</code>). Hazır <code>table</code> bileşeni tek class'la açık ve koyu temalı bir tablo verir.</p>
+
+<pre><code class="language-csharp">tw.SetClasses(gridOrders, "table");</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/grid-light.png" alt="Şehre göre gruplanmış sipariş tablosu: arama, süzme düğmeleri, mini grafikler, etiketler, göreli tarihler, açık bir satır ve alt toplam" loading="lazy"><figcaption>Açık</figcaption></figure>
+  <figure><img src="{{root}}img/grid-dark.png" alt="Aynı sipariş tablosu koyu temada" loading="lazy"><figcaption>Koyu</figcaption></figure>
+</div>
+<p>Vitrin örneğinin tablo formu (<code>FormWind.Showcase --grid</code>): arama, süzme menüsü, gruplama, alt toplam, satır detayları, yeni hücre tipleri ve düzen kaydetme.</p>
+
+<h2 id="parts">Parçalar</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Önek</th><th>Hedef</th><th>Class'lar</th></tr></thead>
+  <tbody>
+    <tr><td>(yok)</td><td>Kontrol alanı ve tüm hücreler</td><td><code>bg-*</code>, <code>text-*</code>, font, <code>border</code>, <code>divide-x</code>, <code>divide-y</code>, <code>divide-{renk}</code> (ızgara çizgileri)</td></tr>
+    <tr><td><code>cell:</code></td><td><code>DefaultCellStyle</code></td><td>Renk, font, <code>px-*</code>/<code>py-*</code>, hizalama, <code>whitespace-nowrap</code></td></tr>
+    <tr><td><code>alt:</code></td><td>Alternatif satırlar</td><td>Renk, font</td></tr>
+    <tr><td><code>selected:</code></td><td>Seçim</td><td><code>bg-*</code>, <code>text-*</code></td></tr>
+    <tr><td><code>header:</code></td><td>Kolon başlıkları</td><td>Renk, font, iç boşluk, hizalama, <code>h-*</code>, <code>border-0</code>, <code>whitespace-nowrap</code></td></tr>
+    <tr><td><code>row:</code></td><td>Satırlar</td><td><code>h-*</code> (satır yüksekliği), <code>row:hover:bg-*</code>, <code>row:hover:text-*</code></td></tr>
+    <tr><td><code>row-header:</code></td><td>Satır başlıkları</td><td><code>hidden</code>, renk</td></tr>
+    <tr><td><code>match:</code></td><td>Arama eşleşmeleri</td><td><code>bg-*</code>, <code>text-*</code></td></tr>
+    <tr><td><code>group:</code></td><td>Grup başlıkları</td><td><code>bg-*</code>, <code>text-*</code>, font</td></tr>
+    <tr><td><code>footer:</code></td><td>Alt toplam satırı (<code>TwGridFooter</code>)</td><td><code>bg-*</code>, <code>text-*</code>, font</td></tr>
+  </tbody>
+</table></div>
+<pre><code class="language-csharp">tw.SetClasses(gridOrders,
+    "bg-white text-gray-800 divide-y divide-gray-100 cell:px-3 row:h-10 row:hover:bg-gray-50 "
+  + "header:bg-gray-50 header:text-gray-500 header:font-semibold header:text-xs row-header:hidden "
+  + "selected:bg-blue-50 selected:text-blue-900 "
+  + "dark:bg-gray-900 dark:text-gray-100 dark:header:bg-gray-800 dark:selected:bg-blue-950");</code></pre>
+<ul>
+  <li>Başlık renkleri verildiğinde, onları yok sayacak olan <code>EnableHeadersVisualStyles</code> kapatılır.</li>
+  <li>Bağlı ya da <code>VirtualMode</code>'daki tablolarda <code>row:h-*</code>, <code>RowHeightInfoNeeded</code> ile verilir: satırlar paylaşımda kalır, kaydırma ve seçim korunur (17.000 satırda ~12 ms).</li>
+  <li>Class'lar kaldırılınca tablo özgün stillerine döner.</li>
+  <li>Hücrelerini kendisi çizen tablolar hücre stillerini yok sayar; <code>divide-*</code> ve <code>row:h-*</code> yapısal özellikleri değiştirdiği için bu tablolarda kullanmadan önce kontrol edin.</li>
+  <li><code>table</code> varyantları ondan sonra yazılır: <code>table-sm</code> (32 px satır), <code>table-lg</code> (48 px satır), <code>table-striped</code>, <code>table-bordered</code>. Fluent, Ant Design ve Material kendi yüksekliklerini tanımlar.</li>
+  <li><code>TwGrid.EnableDarkInversion(grid)</code> kendi çizen tablolara koyu tema verir: tablo açık stillenir ve görüntüsü tonu korunarak çevrilir; sabit açık renkler de koyulaşır.</li>
+</ul>
+
+<h2 id="column-classes">Kolon class'ları</h2>
+<p>Her kolonun Designer'da <strong>ColumnClasses on tailwindProvider1</strong> özelliği vardır (kodda <code>SetColumnClasses</code>). Temel class'lar hücrelere, <code>header:</code> başlığa uygulanır; <code>w-32</code>, <code>min-w-20</code>, <code>flex-1</code> (doldurma ağırlığı) ve <code>hidden</code> kolonun kendisini etkiler.</p>
+<pre><code class="language-csharp">tw.SetColumnClasses(colTotal, "text-right font-semibold w-28 header:text-right");
+tw.SetColumnClasses(colName, "flex-1 min-w-40");</code></pre>
+
+<h2 id="cell-types">Hücre tipleri</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kolon</th><th>Değer</th><th>Ayarlar</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwBadgeColumn</code></td><td>Renkli rozet olarak çizilen metin</td><td><code>Variants = "Ödendi: bg-green-100 text-green-800; Gecikti: bg-red-100 text-red-800; *: bg-gray-100 text-gray-700"</code></td></tr>
+    <tr><td><code>TwAvatarColumn</code></td><td><code>Image</code></td><td><code>AvatarSize</code>, <code>Radius</code>, <code>Placeholder</code></td></tr>
+    <tr><td><code>TwIconColumn</code></td><td>İkon adı</td><td>Renk hücrenin yazı renginden</td></tr>
+    <tr><td><code>TwProgressColumn</code></td><td>0–<code>Maximum</code></td><td><code>ShowText</code>, <code>BarColor</code>, <code>TrackColor</code>, <code>DarkTrackColor</code></td></tr>
+    <tr><td><code>TwCheckColumn</code></td><td><code>bool</code> / <code>CheckState</code></td><td><code>AccentColor</code>, <code>BoxSize</code>, <code>ThreeState</code></td></tr>
+    <tr><td><code>TwButtonColumn</code></td><td>Metin</td><td><code>Classes = "rounded-md bg-red-600 text-white hover:bg-red-700"</code>; tıklama <code>CellContentClick</code> ile</td></tr>
+    <tr><td><code>TwSparklineColumn</code></td><td>Sayılar</td><td><code>Kind</code> (<code>Line</code>, <code>Area</code>, <code>Bar</code>), <code>LineColor</code>, <code>DarkLineColor</code>, <code>NegativeColor</code></td></tr>
+    <tr><td><code>TwDateColumn</code></td><td><code>DateTime</code></td><td>Biçim (varsayılan <code>g</code>); <code>Relative</code> "5 dk önce" gösterir</td></tr>
+    <tr><td><code>TwNumberColumn</code></td><td>Sayı</td><td>Sağa hizalı <code>N2</code> / <code>C2</code>, <code>Culture</code>, <code>NegativeClasses</code>, <code>PositiveClasses</code></td></tr>
+    <tr><td><code>TwLinkColumn</code></td><td>Metin</td><td>Tema mavisi, üzerine gelince altı çizili; tıklama <code>CellContentClick</code> ile</td></tr>
+    <tr><td><code>TwTagsColumn</code></td><td>Metinler</td><td><code>Variants</code> ile rozetler, <code>Separator</code>; sığmayanlar <code>+N</code></td></tr>
+    <tr><td><code>TwActionsColumn</code></td><td>—</td><td>"⋯" menüsü: <code>Actions = "Düzenle; -; Sil"</code>, <code>ActionClicked</code>, <code>MenuOpening</code></td></tr>
+    <tr><td><code>TwExpanderColumn</code></td><td>—</td><td>Satırın detayını açar</td></tr>
+  </tbody>
+</table></div>
+<p>Hücre tipleri koyu temayı tablonun sağlayıcısından öğrenir; <code>dark:</code> varyantları ek ayar gerektirmez.</p>
+
+<h2 id="row-rules">Satır kuralları</h2>
+<pre><code class="language-csharp">tw.SetRowClasses(gridOrders, row =>
+    row.Cells["colStatus"].Value as string == "İptal" ? "text-gray-400 dark:text-gray-500" : null);</code></pre>
+<p>Kural her satır için class döndürür (<code>null</code> = değişiklik yok). <code>CellFormatting</code> sırasında çalıştığı için veri değişince kendiliğinden güncellenir. <code>SetRowClasses(grid, null)</code> kuralı kaldırır.</p>
+
+<h2 id="sorting-empty-and-loading-states">Sıralama, boş tablo ve yükleniyor durumu</h2>
+<pre><code class="language-csharp">gridOrders.DataSource = new TwSortableBindingList&lt;Order&gt;(orders);
+TwGrid.SetEmptyText(gridOrders, "Kayıt bulunamadı");   // satır yokken ikon + metin
+TwGrid.SetLoading(gridOrders, true);                   // iskelet satırlar ya da "Yükleniyor…" yazılı soluk katman</code></pre>
+<p><code>List&lt;T&gt;</code>'ye bağlı bir tablo başlığa tıklanınca sıralamaz; <code>TwSortableBindingList&lt;T&gt;</code> kültüre duyarlı (Türkçe harf sırası dahil) ve kararlı sıralar. Sıralama oku temanın ikonlarıyla ve <code>accent-*</code> rengiyle çizilir.</p>
+
+<h2 id="filtering-and-paging">Süzme ve sayfalama</h2>
+<pre><code class="language-csharp">TwGrid.EnableFilterMenu(gridOrders);     // her başlıkta süzme düğmesi: onay kutulu değerler
+TwGrid.EnableColumnChooser(gridOrders);  // başlığa sağ tık: kolonları göster/gizle</code></pre>
+<ul>
+  <li>Süzme menüsü, veri kaynağı <code>ITwFilterableList</code> olan (<code>TwSortableBindingList&lt;T&gt;</code> gibi) tablolarda ve <code>DataPropertyName</code>'i olan kolonlarda görünür. Kodla: <code>list.SetColumnFilter("City", new[] { "İzmir" })</code>, <code>ClearFilters()</code>.</li>
+  <li>Sıralamalar üst üste uygulanır; süzme sıralamayı korur.</li>
+  <li>Sekiz ve daha çok değerli kolonlarda menüde arama kutusu vardır; <code>TwSortableBindingList&lt;T&gt;</code>'nin sayı ve tarih kolonlarında <strong>En az</strong>/<strong>En çok</strong> kutuları vardır (<code>list.SetRangeFilter("Amount", 100, null)</code>).</li>
+</ul>
+<p><code>TwPager</code> sayfalama düğmeleri çizer (‹ 1 … 9 10 11 … 20 ›); sayfayı siz bağlarsınız:</p>
+<pre><code class="language-csharp">pager.TotalItems = orders.Count;
+pager.PageSize = 20;
+pager.PageChanged += (s, e) => grid.DataSource = orders.Skip(pager.FirstItemIndex).Take(pager.PageSize).ToList();
+tw.SetClasses(pager, "text-gray-700 selected:bg-blue-600 selected:text-white item:hover:bg-gray-100");</code></pre>
+
+<h2 id="search">Arama</h2>
+<pre><code class="language-csharp">TwGrid.AttachSearchBox(gridOrders, txtSearch);   // yazdıkça arar; Escape temizler
+TwGrid.SetSearchText(gridOrders, "izmir");        // kodla</code></pre>
+<p>Eşleşmeler <code>match:</code> renkleriyle vurgulanır. <code>TwSortableBindingList&lt;T&gt;</code> yalnızca eşleşen satırları bırakır, bağlı olmayan tablo diğerlerini gizler, diğer bağlı tablolar yalnızca vurgular.</p>
+
+<h2 id="grouping-and-totals">Gruplama ve alt toplam</h2>
+<pre><code class="language-csharp">TwGrid.SetGroupBy(gridOrders, colCity);           // satır sayılı başlık; tıklayınca kapanır
+var footer = TwGrid.AddFooter(gridOrders);
+footer.SetText(colCustomer, "Toplam");
+footer.SetAggregate(colAmount, TwAggregate.Sum, "C2");   // Sum, Average, Count, Min, Max</code></pre>
+<ul>
+  <li>Liste satırları gruba göre dizer, grup içinde sıralamayı korur; diğer kaynaklarda aynı değerli ardışık satırlar bir grup olur.</li>
+  <li>Alt toplam kolon genişliklerini, sırasını ve yatay kaydırmayı izler; yalnızca görünen satırları sayar.</li>
+</ul>
+
+<h2 id="row-details">Satır detayları</h2>
+<pre><code class="language-csharp">gridOrders.Columns.Insert(0, new TwExpanderColumn());
+TwGrid.SetRowDetails(gridOrders, row => new OrderLinesView((Order)row.DataBoundItem), height: 160);</code></pre>
+<p>Kontrol açılan satırın altında görünür ve kaydırmayla hareket eder; açık satırlar sıralama ve süzmeden sonra da açık kalır.</p>
+
+<h2 id="layout-and-export">Düzen ve dışa aktarma</h2>
+<pre><code class="language-csharp">var layout = TwGrid.SaveLayout(gridOrders);   // JSON: kolonlar, sıralama, gruplama, arama, süzmeler
+TwGrid.LoadLayout(gridOrders, layout);
+TwGrid.ExportCsv(gridOrders, path);           // BOM'lu UTF-8, kültürün liste ayırıcısı
+TwGrid.CopyToClipboard(gridOrders);           // seçili hücreler, sekmeyle ayrılmış</code></pre>
+<h2 id="large-tables">Büyük tablolar</h2>
+<p><code>TwVirtualRows&lt;T&gt;</code> tabloyu <code>VirtualMode</code>'a alır ve satırları göründükçe sayfa sayfa yükler, son sayfaları önbellekte tutar. Milyon satırda yalnızca görünen sayfalar bellektedir.</p>
+<pre><code class="language-csharp">var rows = new TwVirtualRows&lt;Order&gt;(gridOrders,
+    (start, count) => db.Orders.OrderBy(o => o.Id).Skip(start).Take(count).ToList(), pageSize: 100);
+rows.Reset(db.Orders.Count());   // veri ya da sıralama değişince yeniden</code></pre>
+<ul>
+  <li>Hücre değeri kolonun <code>DataPropertyName</code>'indeki (yoksa adındaki) özellikten okunur; <code>rows.CellValue</code> ile değiştirilir.</li>
+  <li>Yükleyici UI iş parçacığında çalışır; hızlı olmalıdır (veritabanında OFFSET/FETCH). Sıralamayı sorguda yapıp <code>Reset</code> çağırın.</li>
+</ul>

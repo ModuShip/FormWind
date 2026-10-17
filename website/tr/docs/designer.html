@@ -1,0 +1,44 @@
+<!--
+title: Designer ve çözümleyiciler
+description: Classes özelliği, akıllı etikette class oluşturucu, projenizin temasıyla canlı önizleme ve FW001, FW002 çözümleyicileri.
+-->
+<h1>Designer ve çözümleyiciler</h1>
+<p class="lead">FormWind Visual Studio Designer'da çalışır; hem süreç içi .NET Framework Designer'da hem süreç dışı .NET 8+ Designer'da.</p>
+
+<h2 id="the-classes-property">Classes özelliği</h2>
+<p>Formdaki bir <code>TailwindProvider</code>, her kontrolün Properties penceresine <strong>Classes on tailwindProvider1</strong> alanını ekler. Designer class'larınızı <code>Designer.cs</code>'e <code>SetClasses</code> çağrıları olarak yazar; geri alma, kaynak kontrolü ve kod incelemesiyle uyumludur.</p>
+<p>.NET 8+'da alan, temanın bileşenlerini öneren ve diğer class'larınızı koruyan bir açılır listedir (<code>btn-ghost px-6</code> → <code>btn-primary px-6</code>). Çok satırlı "…" düzenleyicisi .NET Framework Designer'ında vardır.</p>
+
+<h2 id="smart-tag">Akıllı etiket</h2>
+<p>Her kontrolün akıllı etiketinde (standart kontroller dahil) bir FormWind bölümü bulunur:</p>
+<ul>
+  <li><strong>Classes</strong> alanı, bir <strong>Component</strong> listesi ve kontrole uygun hızlı seçimler: buton → <code>btn-primary</code>/<code>btn-ghost</code>/<code>btn-danger</code>, metin kutusu → <code>input</code>, panel → <code>card</code>, tablo → <code>table</code>.</li>
+  <li><strong>Class oluşturucu:</strong> renkler (zemin, yazı, kenarlık), boşluk ve şekil (iç boşluk, kenarlık, köşe), yazı (boyut, kalınlık), hover ve koyu tema renkleri için açılır listeler. Her alan yalnızca kendi grubunu düzenler: <code>px-4</code> seçmek <code>px-2</code> ve <code>pl-1</code>'i kaldırır, <code>py-2</code>'yi korur.</li>
+  <li>Renk listeleri temanızın kendi renkleriyle başlar (<code>brand-500</code> …); serbest metin de yazılabilir.</li>
+  <li>Tanınmayan class'lar uyarı olarak listelenir; otomatik class'lar <code>AutoStyle: input</code> olarak görünür.</li>
+  <li><strong>Clear classes</strong> hepsini kaldırır.</li>
+</ul>
+
+<h2 id="preview-and-your-theme">Önizleme ve temanız</h2>
+<p>Designer önizlemesi class'larınızı uygular ama class'ların yönettiği özellikler (<code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code>) <code>Designer.cs</code>'e yazılmaz. Class'ların yönetmediği, elle verdiğiniz değerler yine yazılır.</p>
+<p>Paketteki <code>build/FormWind.targets</code>, proje klasöründeki <code>tw.config.json</code>'u uygulamanın derlemesine gömer. Designer tasarlanan formun derlemesini bulur ve temayı onun klasöründen (fontlar ve SVG ikonlar dahil) ya da gömülü kopyadan okur; önizleme ve listeler temanızı kullanır. Tema dosyasını değiştirdikten sonra projeyi derleyip formu yeniden açın.</p>
+<pre><code class="language-xml">&lt;PropertyGroup&gt;
+  &lt;FormWindThemeFile&gt;Themes\tw.config.json&lt;/FormWindThemeFile&gt;   &lt;!-- başka bir yerdeki dosya --&gt;
+  &lt;FormWindEmbedTheme&gt;false&lt;/FormWindEmbedTheme&gt;                 &lt;!-- gömmeyi kapatır --&gt;
+&lt;/PropertyGroup&gt;</code></pre>
+<p>Çalışma zamanında uygulama dosyayı yine <code>TwTheme.LoadIfExists</code> ile yükler; gömülü kopyayı yalnızca Designer okur.</p>
+
+<h2 id="twtabcontrol">TwTabControl</h2>
+<p>"Add page" ve "Remove selected page" komutları; tasarım zamanında sekmeye tıklamak sayfayı değiştirir; kontrolün üzerine bırakılan kontroller geçerli sayfaya düşer.</p>
+
+<h2 id="fw001">FW001: class'larla çakışan atama</h2>
+<p>Paketle gelen çözümleyici, kod bir kontrolün class'larının yönettiği bir özelliğe değer atadığında uyarır:</p>
+<pre><code class="language-csharp">tw.SetClasses(btnSave, "btn-primary");
+btnSave.BackColor = Color.Red;   // FW001: 'btnSave' has classes; assigning 'BackColor' conflicts with them.</code></pre>
+<p>Çalışma zamanında renk ataması kazanır (FormWind o kanalı uygulamaya bırakır); bu yüzden bilinçli durum renklerinde uyarı bastırılabilir. İç ve dış boşluk atamaları ise geri alınır (bkz. <a href="dpi.html">DPI</a>); orada uyarı gerçek bir çakışmayı gösterir. Yalnızca sabit class metinleri ve class'ların gerçekten yönettiği özellikler denetlenir.</p>
+
+<h2 id="fw002">FW002: ölçeklenmeyen formlar</h2>
+<p>.NET Framework projelerinde, <code>SetClasses</code> kullanan bir <code>InitializeComponent</code> <code>AutoScaleMode.Font</code> ayarlayıp formun <code>Font</code>'unu <code>AutoScaleDimensions</code>'tan sonra atadığında uyarır. PerMonitorV2 altında böyle bir form ölçeklenmez; çözüm <code>AutoScaleMode.Dpi</code>'dır (bkz. <a href="dpi.html">DPI</a>).</p>
+<pre><code class="language-ini"># .editorconfig
+dotnet_diagnostic.FW001.severity = none
+dotnet_diagnostic.FW002.severity = none</code></pre>

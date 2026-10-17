@@ -1,0 +1,95 @@
+<!--
+title: Getting started
+description: Install FormWind, load a theme and style your first WinForms form with a preset, AutoStyle or utility classes.
+-->
+<h1>Getting started</h1>
+<p class="lead">FormWind styles the WinForms controls you already have. Add the package, load a theme, drop a <code>TailwindProvider</code> on a form — and either let <code>AutoStyle</code> do the work or write classes per control.</p>
+
+<h2>Requirements</h2>
+<ul>
+  <li><strong>.NET Framework 4.7.2+</strong> or <strong>.NET 8+</strong> (<code>net472</code>, <code>net8.0-windows</code>). Tests also run on .NET 9 and 10.</li>
+  <li>No dependencies beyond .NET (only <code>System.Text.Json</code> on <code>net472</code>).</li>
+  <li>Windows 10 or later for dark title bars and native dark scrollbars; Windows 11 for backdrops and Segoe Fluent Icons.</li>
+</ul>
+
+<div class="callout">
+  <p class="callout-title">Preview</p>
+  <p>FormWind 0.1 is a preview. Until the packages are on NuGet, build them with <code>dotnet pack FormWind.sln -c Release</code> and add <code>artifacts/packages</code> as a package source.</p>
+</div>
+
+<h2>Install</h2>
+<pre><code class="language-bash">dotnet add package FormWind --prerelease</code></pre>
+<p>For Krypton Toolkit applications, add <code>FormWind.Krypton</code> as well (see <a href="krypton.html">Krypton Toolkit</a>).</p>
+
+<h2>Style your first form</h2>
+<ol class="steps">
+  <li>
+    <p><strong>Load the theme</strong> in <code>Program.Main</code>, before any form is created. If the file does not exist, the default theme is used.</p>
+<pre><code class="language-csharp">TwTheme.Current = TwTheme.LoadIfExists(
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tw.config.json"));</code></pre>
+  </li>
+  <li>
+    <p><strong>Add a <code>TailwindProvider</code></strong> to the form from the Toolbox. If it is not listed: Toolbox → right-click → <strong>Choose Items</strong> → <code>FormWind.dll</code>.</p>
+  </li>
+  <li>
+    <p><strong>Pick a path.</strong> Turn on <code>AutoStyle</code> to style every control by its type, or select a control and fill in <em>Classes on tailwindProvider1</em>. The Designer writes:</p>
+<pre><code class="language-csharp">this.tailwindProvider1.SetClasses(this.btnSave, "btn-primary");</code></pre>
+  </li>
+  <li>
+    <p><strong>Turn on dark mode</strong> whenever you like — all <code>dark:</code> variants apply at once:</p>
+<pre><code class="language-csharp">tailwindProvider1.DarkMode = true;</code></pre>
+  </li>
+</ol>
+
+<h2>Without the Designer</h2>
+<p>Forms built in code work the same way. Set <code>ContainerControl</code> yourself when you use <code>AutoStyle</code>:</p>
+<pre><code class="language-csharp">public sealed class MainForm : Form
+{
+    private readonly TailwindProvider _tw = new TailwindProvider();
+
+    public MainForm()
+    {
+        SuspendLayout();
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
+
+        var save = new TwButton { Text = "Save", IconName = "save", Size = new Size(120, 36) };
+        var card = new TwPanel { Size = new Size(360, 200) };
+        card.Controls.Add(save);
+        Controls.Add(card);
+
+        _tw.ContainerControl = this;
+        _tw.AutoStyle = true;                       // every control gets its component
+        _tw.SetClasses(card, "card flex flex-col gap-3 p-6");
+        _tw.SetClasses(save, "btn-primary");        // own component wins over AutoStyle
+        ResumeLayout();
+    }
+}</code></pre>
+
+<h2>Project template</h2>
+<p><code>FormWind.Templates</code> creates an application with ready-made screens: sign-in with validated fields, a list-detail screen with a searchable <code>TwDataList</code>, and settings. The light/dark switch is shared across forms.</p>
+<pre><code class="language-bash">dotnet new install FormWind.Templates</code></pre>
+<pre><code class="language-bash">dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Option</th><th>Values</th></tr></thead>
+  <tbody>
+    <tr><td><code>--Framework</code></td><td><code>net8.0-windows</code> (default), <code>net9.0-windows</code>, <code>net10.0-windows</code>, <code>net472</code></td></tr>
+    <tr><td><code>--Preset</code></td><td><code>tailwind</code> (default), <code>fluent</code>, <code>antd</code>, <code>material</code></td></tr>
+    <tr><td><code>--Palette</code></td><td><code>v3</code> (default), <code>v4</code></td></tr>
+    <tr><td><code>--Krypton</code></td><td><code>true</code> adds <code>FormWind.Krypton</code>, registers <code>KryptonApplier</code> and binds the Krypton palette to the main form's theme</td></tr>
+    <tr><td><code>--FormWindVersion</code></td><td>Package version (default: the template package's version)</td></tr>
+  </tbody>
+</table></div>
+<p>Template forms are built in code and use <code>AutoScaleMode.Dpi</code>.</p>
+
+<h2>Try it on an existing app first</h2>
+<p>The <a href="tools.html#harness">harness</a> runs a .NET WinForms application with FormWind applied to every form — without changing its source — and reports contrast problems, stalls and unknown controls.</p>
+<pre><code class="language-powershell">.\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -SelfTest -ExitAfter 60</code></pre>
+
+<h2>Where next</h2>
+<div class="cards">
+  <a class="card-link" href="presets.html"><strong>Presets and AutoStyle</strong><span>Style a whole app without writing classes.</span></a>
+  <a class="card-link" href="classes.html"><strong>Utility classes</strong><span>Colors, spacing, borders, variants.</span></a>
+  <a class="card-link" href="layout.html"><strong>Layout</strong><span>Flex and grid on <code>TwPanel</code>.</span></a>
+  <a class="card-link" href="datagridview.html"><strong>DataGridView</strong><span>Tables with parts, cell types and filters.</span></a>
+</div>

@@ -1,0 +1,81 @@
+<!--
+title: Controls
+description: FormWind's owner-drawn controls, the virtual TwDataList, menus and toolbars, title bars and dark native parts.
+-->
+<h1>Controls</h1>
+<p class="lead">Colors, text and spacing work on every standard control. Where a native control can't be styled well — rounded text boxes, owner-drawn lists, a stylable drop-down — FormWind adds a <code>Tw*</code> control.</p>
+
+<h2>Control catalog</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Control</th><th>Use it for</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwButton</code></td><td>A button with smooth corners, gradients and an optional icon (<code>IconName</code>, <code>IconPosition</code>).</td></tr>
+    <tr><td><code>TwPanel</code></td><td>A card with smooth corners and borders; the host for <a href="layout.html">flex and grid</a>.</td></tr>
+    <tr><td><code>TwTextBox</code></td><td>A borderless TextBox in a rounded panel, with <code>PlaceholderText</code> and <a href="forms.html#masks">masks</a>.</td></tr>
+    <tr><td><code>TwNumberBox</code></td><td>Number entry with ▲▼, <code>Minimum</code>, <code>Maximum</code>, <code>DecimalPlaces</code>, arrow keys and wheel, culture-aware parsing.</td></tr>
+    <tr><td><code>TwSelect</code></td><td>A stylable drop-down: the box with base classes, the menu with <code>menu:</code> / <code>item:</code>. <code>Searchable = true</code> adds a filter box (ignoring case, accents and ı/i).</td></tr>
+    <tr><td><code>TwDatePicker</code>, <code>TwCalendar</code></td><td>A date field with a drop-down calendar; the culture's first day of week, <code>MinDate</code>/<code>MaxDate</code>, full keyboard support.</td></tr>
+    <tr><td><code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td>Owner-drawn: <code>accent-*</code> when checked, <code>fill-*</code> unchecked, <code>border-*</code>, <code>rounded-*</code>. The switch knob slides in 150 ms.</td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td>Track <code>fill-*</code>, value <code>accent-*</code>, thumb <code>item:bg-*</code>. <code>Indeterminate</code> progress.</td></tr>
+    <tr><td><code>TwTabStrip</code>, <code>TwTabControl</code></td><td>Underline, pills or segmented tabs; <code>TwTabControl</code> adds pages and Ctrl+Tab.</td></tr>
+    <tr><td><code>TwDataList</code>, <code>TwListBox</code>, <code>TwCheckedListBox</code></td><td>Virtual lists that draw only visible rows — fast with a million rows.</td></tr>
+    <tr><td><code>TwTreeView</code></td><td>A virtual tree with icons and lazy loading (<code>HasLazyChildren</code> + <code>BeforeExpand</code>).</td></tr>
+    <tr><td><code>TwPictureBox</code></td><td>Images with smooth corners (<code>rounded-full</code> avatars) and <code>object-cover</code> / <code>contain</code> / <code>fill</code>.</td></tr>
+    <tr><td><code>TwIcon</code></td><td>A standalone icon (<a href="theme.html#icons">icons</a>).</td></tr>
+    <tr><td><code>TwField</code>, <code>TwDialog</code>, <code>TwToast</code></td><td>Validated fields, message boxes and notifications (<a href="forms.html">Forms and dialogs</a>).</td></tr>
+    <tr><td><code>TwPager</code></td><td>Paging buttons for grids (<a href="datagridview.html#filtering-and-paging">DataGridView</a>).</td></tr>
+    <tr><td><code>TwToolTip</code></td><td>A tooltip styled with classes that follows dark mode.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Standard controls</h3>
+<p>A <code>TextBox</code> gets its <code>border-*</code> and <code>rounded-*</code> as a frame on its parent. A <code>ComboBox</code> in <code>DropDownList</code> mode has its closed box painted by FormWind — background, border, corners, text and arrow; the drop-down list stays native. Editable combo boxes and <code>ListBox</code> get colors and fonts but no corners; use <code>TwSelect</code> and <code>TwListBox</code> for those.</p>
+
+<h2>TwDataList</h2>
+<p>A virtual list: rows are requested by index and only visible rows are drawn, so drawing time does not depend on the item count.</p>
+<pre><code class="language-csharp">list.ItemCount = orders.Count;
+list.ItemHeight = 52;                       // 96 DPI pixels
+list.DrawItem += (s, e) =>
+{
+    var o = orders[e.Index];
+    var c = e.ContentBounds;
+    int left = e.DrawBadge(o.Status, c.Right, badgeBack, badgeFore);
+    e.DrawText(o.Customer, new Rectangle(c.X, c.Y + 6, left - c.X - 12, 20), font: e.FontWithWeight(600));
+    e.DrawText(o.Number, new Rectangle(c.X, c.Y + 26, left - c.X - 12, 20), e.MutedColor);
+};
+tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:bg-blue-50 selected:text-blue-900 "
+                  + "row:border-gray-100 fill-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:selected:bg-blue-950");</code></pre>
+<ul>
+  <li>Without <code>DrawItem</code>, <code>ItemText</code> (or the index) is drawn as one line.</li>
+  <li>Smooth wheel scrolling; an owner-drawn scrollbar colored with <code>fill-*</code>. ↑/↓, PageUp/PageDown, Home/End; Enter and double-click raise <code>ItemActivate</code>.</li>
+  <li><strong>Multi-selection</strong> with <code>SelectionMode = MultiExtended</code>: Ctrl+click, Shift+click, Shift+arrows, Ctrl+A — without storing indices, even with a million rows.</li>
+  <li><strong>Groups:</strong> <code>SetGroups(new[] { (0, "Today"), (12, "Yesterday") })</code>; the current header sticks while scrolling.</li>
+  <li><strong>Variable heights:</strong> <code>ItemHeights = i => orders[i].HasNote ? 72 : 52</code>.</li>
+  <li><strong>Incremental loading:</strong> <code>IsItemLoaded</code> draws skeleton rows and <code>ItemsNeeded(first, last)</code> asks for the visible range.</li>
+</ul>
+
+<h2>Menus and toolbars</h2>
+<p><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code> and <code>ContextMenuStrip</code> get a themed renderer. Base classes style the strip, <code>menu:</code> the drop-down menus and <code>item:</code> the items:</p>
+<pre><code class="language-csharp">tw.SetClasses(menuStrip1, "bg-white text-gray-700 border-b menu:bg-white menu:border-gray-200 "
+    + "item:hover:bg-gray-100 item:rounded-md divide-gray-200 dark:bg-gray-900 dark:text-gray-200");</code></pre>
+<ul>
+  <li>On a dark strip, the hover, separator and menu-border defaults are derived from the strip's own colors, so text never disappears in the hover box.</li>
+  <li>Drop-downs assigned by hand (<code>menuItem.DropDown = contextMenuStrip1</code>) get the strip's renderer too, nested ones included.</li>
+  <li>Removing the classes restores the strip's original renderer.</li>
+</ul>
+
+<h2>Title bar and backdrop</h2>
+<p>When a form has classes and dark mode is on, its title bar turns dark (Windows 10 20H1+). On Windows 11, <code>caption:bg-*</code>, <code>caption:text-*</code> and <code>caption:border-*</code> color it.</p>
+<p><code>backdrop-mica</code>, <code>backdrop-acrylic</code>, <code>backdrop-tabbed</code> and <code>backdrop-none</code> pick the Windows 11 22H2+ system backdrop for the title bar and window frame.</p>
+<pre><code class="language-csharp">tw.SetClasses(this, "page caption:bg-white dark:caption:bg-gray-900 backdrop-mica");</code></pre>
+
+<h2>Dark native parts</h2>
+<p>With <code>DarkMode = true</code>, the parts FormWind doesn't draw switch to Windows' dark theme too:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Property (on by default)</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>DarkScrollbars</code></td><td>Scrollbars of panels, text boxes, list boxes, tree views, list views and grids.</td></tr>
+    <tr><td><code>DarkToolTips</code></td><td>Native tooltips: <code>ToolTip</code> components, ToolStrip item tips, ListView/TreeView tips.</td></tr>
+  </tbody>
+</table></div>
+<p>Both use the undocumented <code>DarkMode_Explorer</code> theme (Windows 10 1809+) and do nothing on systems that don't support it.</p>

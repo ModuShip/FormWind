@@ -1,0 +1,4 @@
+#nullable enable
+FormWind.Krypton.TwKryptonTheme
+static FormWind.Krypton.TwKryptonTheme.CreatePalette(FormWind.TwTheme! theme, bool dark) -> Krypton.Toolkit.KryptonCustomPaletteBase!
+static FormWind.Krypton.TwKryptonTheme.Follow(FormWind.TailwindProvider! provider, Krypton.Toolkit.KryptonManager? manager = null) -> System.IDisposable!

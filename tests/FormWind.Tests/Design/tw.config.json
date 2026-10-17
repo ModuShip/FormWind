@@ -1,0 +1,10 @@
+{
+  // Designer testleri için gömülü tema (FormWind.tw.config.json): projenin temasını bulma yolunu dener.
+  "colors": { "brand": { "500": "#7c3aed", "600": "#6d28d9" } },
+  "components": {
+    "btn-primary": "btn bg-brand-600 text-white hover:bg-brand-500",
+    "pill": "rounded-full px-3"
+  },
+  // Designer'ın okuduğu klasörde bulunmayan ikon dosyası hata vermeden atlanır.
+  "icons": { "missing": "Assets/missing.svg" }
+}

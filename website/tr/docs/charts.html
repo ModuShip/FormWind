@@ -1,0 +1,55 @@
+<!--
+title: Grafikler
+description: FormWind'in çizdiği çizgi, alan, çubuk ve halka grafikler, sparkline'lar ve KPI kartları; tema, koyu tema, klavye ve ekran okuyucu desteğiyle.
+-->
+<h1>Grafikler</h1>
+<p class="lead">Ek bağımlılığı olmayan hafif grafikler: <code>TwChart</code> (çizgi, alan, çubuk), <code>TwDonutChart</code>, <code>TwSparkline</code> ve KPI kartı <code>TwStat</code>. Diğer kontroller gibi temayı, koyu temayı ve DPI'ı izler; <code>AutoStyle</code> ile <code>chart</code> ve <code>stat</code> bileşenlerini alır.</p>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/charts-light.png" alt="Üç KPI kartı, ipuçlu bir çizgi grafik, hedef çizgili gruplu çubuklar, yığılmış çubuklar ve bir halka grafikten oluşan pano" loading="lazy"><figcaption>Açık</figcaption></figure>
+  <figure><img src="{{root}}img/charts-dark.png" alt="Aynı pano koyu temada" loading="lazy"><figcaption>Koyu</figcaption></figure>
+</div>
+<p>Örnekte çalıştırmak için: <code>FormWind.Showcase --charts</code> (bir aya, çeyreğe ya da dilime tıklamak <code>ItemClick</code> ile durum satırını günceller).</p>
+
+<h2 id="line-area-bar">Çizgi, alan ve çubuk</h2>
+<pre><code class="language-csharp">chart.Kind = TwChartKind.Bar;                    // Line, Area, Bar; Stacked = true çubukları üst üste koyar
+chart.SetData(new[] { "Oca", "Şub", "Mar" },
+    new TwChartSeries("Gelir", new[] { 120.0, 150, 170 }),
+    new TwChartSeries("Hedef", new[] { 130.0, 140, 160 }) { Kind = TwChartKind.Line });
+chart.ValueFormat = "C0";                        // ipucu; eksen kısa sayılarla yazılır (1,2B), AxisFormat verilmedikçe</code></pre>
+<ul>
+  <li>Tek değer ekseni; çubuk ve alan grafikleri sıfırı içerir. <code>double.NaN</code> eksik değerdir, çizgide boşluk bırakır.</li>
+  <li>Çubuklar en çok 24 px genişlikte, uçları yuvarlak, aralarında 2 px; çizgiler 2 px; alanlar %10 opaklıkta; işaret yalnızca son noktada ve vurgulanan kategoride.</li>
+  <li>Gösterge iki ve daha çok seride görünür (<code>ShowLegend</code>); anahtarı serinin işaretini taşır.</li>
+</ul>
+
+<h2 id="donut">Halka grafik</h2>
+<pre><code class="language-csharp">donut.SetData(new[] { "Web", "Mağaza", "Telefon" }, new[] { 52.0, 28, 20 });
+donut.CenterLabel = "Sipariş";                   // ortada varsayılan olarak toplam görünür</code></pre>
+<p>Gösterge yer varsa halkanın yanında, yoksa altında; her dilimin değeri ve payıyla. Sekizden sonraki dilimler "Diğer"de birleşir.</p>
+
+<h2 id="sparklines-and-kpi-cards">Sparkline ve KPI kartları</h2>
+<pre><code class="language-csharp">spark.Values = new[] { 3.0, 5, 4, 8 };           // Kind: Line, Area, Bar
+
+stat.Title = "Gelir"; stat.Value = "₺1,24 Mn"; stat.Delta = 0.124; stat.Caption = "geçen aya göre";
+stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
+stat.PositiveIsGood = false;                     // maliyet, hata oranı: artış kırmızı</code></pre>
+<p>Değişim temanın <code>success</code> ve <code>danger</code> renklerini kullanır ve her zaman ok ve işaretle verilir.</p>
+
+<h2 id="classes">Class'lar</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Etkisi</th></tr></thead>
+  <tbody>
+    <tr><td><code>bg-*</code>, <code>text-*</code>, font</td><td>Zemin, değer ve gösterge metni, font</td></tr>
+    <tr><td><code>label:text-*</code></td><td>Eksen etiketleri, ikincil gösterge metni, başlık ve açıklama</td></tr>
+    <tr><td><code>divide-*</code></td><td>Izgara çizgileri</td></tr>
+    <tr><td><code>accent-*</code></td><td>İlk seri ve sparkline'lar</td></tr>
+  </tbody>
+</table></div>
+<p>Seriler sabit, doğrulanmış bir paleti sırayla alır (renk körlüğünde okunabilir, açık ve koyu tema için ayrı tonlar); başka seriler eklenip çıkınca renklerini korur. Belirli bir renk için <code>TwChartSeries.Color</code>.</p>
+
+<h2 id="keyboard-and-screen-readers">Klavye ve ekran okuyucular</h2>
+<ul>
+  <li>Fare ya da ok tuşları (Home/End) bir kategoriyi veya dilimi vurgular ve değerlerini gösterir; Enter ya da tıklama <code>ItemClick</code>'i tetikler.</li>
+  <li>Grafikler <code>Chart</code> rolündedir; her kategori ya da dilim bir öğedir, örn. "Mar: Gelir 170, Hedef 160".</li>
+</ul>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kod kapsamı: Microsoft.NET.Test.Sdk ile gelen "Code Coverage" toplayıcısı (net472 ve net8.0-windows).
+     Yalnızca FormWind kütüphaneleri ölçülür; testler, örnekler ve araçlar hariç. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage">
+        <Configuration>
+          <Format>Cobertura</Format>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*\FormWind\.dll$</ModulePath>
+                <ModulePath>.*\FormWind\.Analyzers\.dll$</ModulePath>
+              </Include>
+            </ModulePaths>
+            <Attributes>
+              <Exclude>
+                <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+                <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+              </Exclude>
+            </Attributes>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

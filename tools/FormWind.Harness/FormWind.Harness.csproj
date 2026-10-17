@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Startup hook: FormWind'i kaynak kodu değiştirmeden herhangi bir .NET (Core) WinForms uygulamasına uygular.
+    DOTNET_STARTUP_HOOKS=<bu klasör>\FormWind.Harness.dll ile çalıştırılır; bkz. tools\run-harness.ps1.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind.Harness</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" />
+    <InternalsVisibleTo Include="FormWind.Tests" />
+  </ItemGroup>
+
+</Project>

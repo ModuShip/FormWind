@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    FormWind'i alternatiflerle (düz WinForms, Krypton Toolkit, MaterialSkin.2) aynı formlar üzerinde karşılaştırır.
+    Her kütüphane ayrı bir süreçte ölçülür (JIT, global paletler ve GDI sayaçları birbirine karışmasın diye).
+    Çalıştırma ve sonuçlar: docs/benchmarks.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind.Benchmarks</RootNamespace>
+    <TieredPGO>true</TieredPGO>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind.Krypton\FormWind.Krypton.csproj" />
+    <PackageReference Include="MaterialSkin.2" Version="2.3.1" />
+  </ItemGroup>
+
+</Project>

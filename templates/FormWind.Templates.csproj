@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- dotnet new şablon paketi: dotnet new install FormWind.Templates; dotnet new formwind-app -n MyApp -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageType>Template</PackageType>
+    <PackageId>FormWind.Templates</PackageId>
+    <Title>FormWind templates</Title>
+    <Description>dotnet new templates for FormWind: a WinForms app with sign-in, list-detail and settings screens styled with Tailwind-style classes; choose a ready-made look (--Preset) and add Krypton Toolkit support (--Krypton).</Description>
+    <PackageTags>dotnet-new;templates;winforms;tailwind;formwind;krypton</PackageTags>
+    <IsPackable>true</IsPackable>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- Şablon paketinde lib/ klasörü olmaz (NU5128). -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- content\formwind-app\… paket içinde de content\formwind-app\… olur (NuGet klasör yolunu ekler). -->
+    <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" PackagePath="content" />
+  </ItemGroup>
+
+  <!--
+    Şablonun varsayılan FormWind sürümü paketin kendi sürümü olur (örn. 0.1.0-preview.1); yoksa üretilen projeler
+    yayımlanmamış bir sürüme başvururdu. template.json'ın sürümü işlenmiş kopyası pakete konur.
+  -->
+  <Target Name="StampTemplateVersion" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_TemplateJsonSource>content\formwind-app\.template.config\template.json</_TemplateJsonSource>
+      <_TemplateJsonStamped>$(IntermediateOutputPath)template.json</_TemplateJsonStamped>
+      <_TemplateJsonText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\$(_TemplateJsonSource)').Replace('"defaultValue": "0.1.0"', '"defaultValue": "$(PackageVersion)"'))</_TemplateJsonText>
+    </PropertyGroup>
+    <Error Condition="!$(_TemplateJsonText.Contains('&quot;defaultValue&quot;: &quot;$(PackageVersion)&quot;'))" Text="template.json: FormWindVersion varsayılanı bulunamadı." />
+    <WriteLinesToFile File="$(_TemplateJsonStamped)" Lines="$(_TemplateJsonText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Content Remove="$(_TemplateJsonSource)" />
+      <Content Include="$(_TemplateJsonStamped)" PackagePath="content\formwind-app\.template.config\template.json" />
+    </ItemGroup>
+  </Target>
+
+</Project>

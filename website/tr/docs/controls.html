@@ -1,0 +1,81 @@
+<!--
+title: Kontroller
+description: FormWind'in owner-draw kontrolleri, sanal TwDataList, menü ve araç çubukları, başlık çubukları ve koyu native parçalar.
+-->
+<h1>Kontroller</h1>
+<p class="lead">Renk, yazı ve boşluk her standart kontrolde çalışır. Native bir kontrolün iyi stillenemediği yerlerde (yuvarlak metin kutuları, owner-draw listeler, stillenebilir açılır kutu) FormWind bir <code>Tw*</code> kontrolü sunar.</p>
+
+<h2 id="control-catalog">Kontrol kataloğu</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kontrol</th><th>Ne için</th></tr></thead>
+  <tbody>
+    <tr><td><code>TwButton</code></td><td>Yumuşak köşeli, gradient destekli ve isteğe bağlı ikonlu buton (<code>IconName</code>, <code>IconPosition</code>).</td></tr>
+    <tr><td><code>TwPanel</code></td><td>Yumuşak köşeli ve kenarlıklı kart; <a href="layout.html">flex ve grid</a>'in konteyneri.</td></tr>
+    <tr><td><code>TwTextBox</code></td><td>Yuvarlak bir panelin içinde kenarlıksız TextBox; <code>PlaceholderText</code> ve <a href="forms.html#masks">maskeler</a>.</td></tr>
+    <tr><td><code>TwNumberBox</code></td><td>▲▼ düğmeli sayı girişi; <code>Minimum</code>, <code>Maximum</code>, <code>DecimalPlaces</code>, ok tuşları ve tekerlek, kültüre duyarlı ayrıştırma.</td></tr>
+    <tr><td><code>TwSelect</code></td><td>Stillenebilir açılır kutu: kutu temel class'larla, menü <code>menu:</code> / <code>item:</code> ile. <code>Searchable = true</code> bir süzme kutusu ekler (büyük/küçük harf, aksan ve ı/i farkı gözetilmez).</td></tr>
+    <tr><td><code>TwDatePicker</code>, <code>TwCalendar</code></td><td>Açılır takvimli tarih alanı; kültürün ilk günü, <code>MinDate</code>/<code>MaxDate</code>, tam klavye desteği.</td></tr>
+    <tr><td><code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td>Owner-draw: seçiliyken <code>accent-*</code>, seçili değilken <code>fill-*</code>, <code>border-*</code>, <code>rounded-*</code>. Anahtarın düğmesi 150 ms'de kayar.</td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td>İz <code>fill-*</code>, değer <code>accent-*</code>, tutamaç <code>item:bg-*</code>. Belirsiz (<code>Indeterminate</code>) ilerleme.</td></tr>
+    <tr><td><code>TwTabStrip</code>, <code>TwTabControl</code></td><td>Alt çizgili, hap ya da segment sekmeler; <code>TwTabControl</code> sayfalar ve Ctrl+Tab ekler.</td></tr>
+    <tr><td><code>TwDataList</code>, <code>TwListBox</code>, <code>TwCheckedListBox</code></td><td>Yalnızca görünen satırları çizen sanal listeler; milyon satırda da hızlı.</td></tr>
+    <tr><td><code>TwTreeView</code></td><td>İkonlu ve tembel yüklemeli (<code>HasLazyChildren</code> + <code>BeforeExpand</code>) sanal ağaç.</td></tr>
+    <tr><td><code>TwPictureBox</code></td><td>Yumuşak köşeli resimler (<code>rounded-full</code> avatar) ve <code>object-cover</code> / <code>contain</code> / <code>fill</code>.</td></tr>
+    <tr><td><code>TwIcon</code></td><td>Tek başına ikon (<a href="theme.html#icons">ikonlar</a>).</td></tr>
+    <tr><td><code>TwField</code>, <code>TwDialog</code>, <code>TwToast</code></td><td>Doğrulamalı alanlar, mesaj kutuları ve bildirimler (<a href="forms.html">Formlar ve diyaloglar</a>).</td></tr>
+    <tr><td><code>TwPager</code></td><td>Tablolar için sayfalama düğmeleri (<a href="datagridview.html#filtering-and-paging">DataGridView</a>).</td></tr>
+    <tr><td><code>TwToolTip</code></td><td>Class'larla stillenen ve koyu temayı izleyen ipucu.</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="standard-controls">Standart kontroller</h3>
+<p><code>TextBox</code>, <code>border-*</code> ve <code>rounded-*</code>'ı ebeveyninde çizilen bir çerçeve olarak alır. <code>DropDownList</code> kipindeki bir <code>ComboBox</code>'ın kapalı kutusunu (zemin, kenarlık, köşe, yazı ve ok) FormWind çizer; açılan liste native kalır. Düzenlenebilir açılır kutular ve <code>ListBox</code> renk ve font alır ama köşe almaz; bunlar için <code>TwSelect</code> ve <code>TwListBox</code> kullanın.</p>
+
+<h2 id="twdatalist">TwDataList</h2>
+<p>Sanal bir liste: satırlar dizinle istenir ve yalnızca görünenler çizilir; çizim süresi öğe sayısına bağlı değildir.</p>
+<pre><code class="language-csharp">list.ItemCount = orders.Count;
+list.ItemHeight = 52;                       // 96 DPI piksel
+list.DrawItem += (s, e) =>
+{
+    var o = orders[e.Index];
+    var c = e.ContentBounds;
+    int left = e.DrawBadge(o.Status, c.Right, badgeBack, badgeFore);
+    e.DrawText(o.Customer, new Rectangle(c.X, c.Y + 6, left - c.X - 12, 20), font: e.FontWithWeight(600));
+    e.DrawText(o.Number, new Rectangle(c.X, c.Y + 26, left - c.X - 12, 20), e.MutedColor);
+};
+tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:bg-blue-50 selected:text-blue-900 "
+                  + "row:border-gray-100 fill-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:selected:bg-blue-950");</code></pre>
+<ul>
+  <li><code>DrawItem</code> yoksa <code>ItemText</code> (ya da dizin) tek satır olarak çizilir.</li>
+  <li>Yumuşak tekerlek kaydırması; <code>fill-*</code> ile renklenen owner-draw kaydırma çubuğu. ↑/↓, PageUp/PageDown, Home/End; Enter ve çift tık <code>ItemActivate</code>'i tetikler.</li>
+  <li><strong>Çoklu seçim:</strong> <code>SelectionMode = MultiExtended</code>; Ctrl+tık, Shift+tık, Shift+oklar, Ctrl+A. Dizinler saklanmaz, milyon satırda da çalışır.</li>
+  <li><strong>Gruplar:</strong> <code>SetGroups(new[] { (0, "Bugün"), (12, "Dün") })</code>; geçerli grubun başlığı kaydırırken üstte kalır.</li>
+  <li><strong>Farklı yükseklikler:</strong> <code>ItemHeights = i => orders[i].HasNote ? 72 : 52</code>.</li>
+  <li><strong>Artımlı yükleme:</strong> <code>IsItemLoaded</code> iskelet satırlar çizer, <code>ItemsNeeded(first, last)</code> görünen aralığı ister.</li>
+</ul>
+
+<h2 id="menus-and-toolbars">Menü ve araç çubukları</h2>
+<p><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code> ve <code>ContextMenuStrip</code> temalı bir renderer alır. Temel class'lar şeride, <code>menu:</code> açılan menülere, <code>item:</code> öğelere uygulanır:</p>
+<pre><code class="language-csharp">tw.SetClasses(menuStrip1, "bg-white text-gray-700 border-b menu:bg-white menu:border-gray-200 "
+    + "item:hover:bg-gray-100 item:rounded-md divide-gray-200 dark:bg-gray-900 dark:text-gray-200");</code></pre>
+<ul>
+  <li>Koyu bir şeritte hover, ayırıcı ve menü kenarlığı varsayılanları şeridin kendi renklerinden türetilir; hover kutusunda yazı kaybolmaz.</li>
+  <li>Elle atanmış açılır menüler (<code>menuItem.DropDown = contextMenuStrip1</code>) de, iç içe olanlar dahil, şeridin renderer'ını alır.</li>
+  <li>Class'lar kaldırılınca şeridin özgün renderer'ı geri yüklenir.</li>
+</ul>
+
+<h2 id="title-bar-and-backdrop">Başlık çubuğu ve sistem zemini</h2>
+<p>Bir formun class'ı varsa ve koyu tema açıksa başlık çubuğu koyulaşır (Windows 10 20H1+). Windows 11'de <code>caption:bg-*</code>, <code>caption:text-*</code> ve <code>caption:border-*</code> ile renklendirilir.</p>
+<p><code>backdrop-mica</code>, <code>backdrop-acrylic</code>, <code>backdrop-tabbed</code> ve <code>backdrop-none</code>, başlık çubuğu ve pencere çerçevesi için Windows 11 22H2+ sistem zeminini seçer.</p>
+<pre><code class="language-csharp">tw.SetClasses(this, "page caption:bg-white dark:caption:bg-gray-900 backdrop-mica");</code></pre>
+
+<h2 id="dark-native-parts">Koyu native parçalar</h2>
+<p><code>DarkMode = true</code> iken FormWind'in çizmediği parçalar da Windows'un koyu temasına geçer:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Özellik (varsayılan açık)</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>DarkScrollbars</code></td><td>Panel, metin kutusu, liste kutusu, ağaç, liste görünümü ve tablo kaydırma çubukları.</td></tr>
+    <tr><td><code>DarkToolTips</code></td><td>Native ipuçları: <code>ToolTip</code> bileşenleri, ToolStrip öğe ipuçları, ListView/TreeView ipuçları.</td></tr>
+  </tbody>
+</table></div>
+<p>İkisi de belgelenmemiş <code>DarkMode_Explorer</code> temasını kullanır (Windows 10 1809+); desteklemeyen sistemlerde etkisizdir.</p>

@@ -1,0 +1,44 @@
+<!--
+title: Designer and analyzers
+description: The Classes property, smart tag class builder, live preview with your project's theme, and the FW001 and FW002 analyzers.
+-->
+<h1>Designer and analyzers</h1>
+<p class="lead">FormWind works in the Visual Studio Designer — the in-process .NET Framework Designer and the out-of-process .NET 8+ Designer alike.</p>
+
+<h2>The Classes property</h2>
+<p>A <code>TailwindProvider</code> on the form adds <strong>Classes on tailwindProvider1</strong> to every control's Properties window. The Designer writes your classes to <code>Designer.cs</code> as <code>SetClasses</code> calls, so they work with undo, source control and code review.</p>
+<p>On .NET 8+ the field is a drop-down that suggests the theme's components and keeps your other classes (<code>btn-ghost px-6</code> → <code>btn-primary px-6</code>). The multi-line "…" editor is available in the .NET Framework Designer.</p>
+
+<h2>Smart tag</h2>
+<p>Every control's smart tag — standard controls included — gets a FormWind section:</p>
+<ul>
+  <li><strong>Classes</strong> and a <strong>Component</strong> list, plus quick picks suited to the control: button → <code>btn-primary</code>/<code>btn-ghost</code>/<code>btn-danger</code>, text box → <code>input</code>, panel → <code>card</code>, grid → <code>table</code>.</li>
+  <li><strong>Class builder:</strong> drop-downs for colors (background, text, border), spacing and shape (padding, border, corners), typography (size, weight), and hover and dark-mode colors. Each field edits only its own group: choosing <code>px-4</code> removes <code>px-2</code> and <code>pl-1</code> but keeps <code>py-2</code>.</li>
+  <li>Color lists start with your theme's own colors (<code>brand-500</code> …); free text works too.</li>
+  <li>Unrecognized classes are listed as a warning; automatic classes show as <code>AutoStyle: input</code>.</li>
+  <li><strong>Clear classes</strong> removes them all.</li>
+</ul>
+
+<h2>Preview and your theme</h2>
+<p>The Designer preview applies your classes, but properties the classes manage — <code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code> — are not written to <code>Designer.cs</code>. Values you set by hand that the classes don't manage still are.</p>
+<p>The package's <code>build/FormWind.targets</code> embeds <code>tw.config.json</code> from the project folder into the application's assembly. The Designer finds the assembly of the form being designed and reads the theme from its folder (fonts and SVG icons included) or the embedded copy, so the preview and the lists use your theme. After changing the theme file, build and reopen the form.</p>
+<pre><code class="language-xml">&lt;PropertyGroup&gt;
+  &lt;FormWindThemeFile&gt;Themes\tw.config.json&lt;/FormWindThemeFile&gt;   &lt;!-- a file elsewhere --&gt;
+  &lt;FormWindEmbedTheme&gt;false&lt;/FormWindEmbedTheme&gt;                 &lt;!-- turn embedding off --&gt;
+&lt;/PropertyGroup&gt;</code></pre>
+<p>At run time the application still loads the file with <code>TwTheme.LoadIfExists</code>; only the Designer reads the embedded copy.</p>
+
+<h2>TwTabControl</h2>
+<p>"Add page" and "Remove selected page" commands; clicking a tab at design time switches pages; controls dropped on the control land on the current page.</p>
+
+<h2 id="fw001">FW001: assignment conflicts with classes</h2>
+<p>The analyzer shipped in the package warns when code assigns a property the control's classes manage:</p>
+<pre><code class="language-csharp">tw.SetClasses(btnSave, "btn-primary");
+btnSave.BackColor = Color.Red;   // FW001: 'btnSave' has classes; assigning 'BackColor' conflicts with them.</code></pre>
+<p>At run time a color assignment wins — FormWind leaves that channel to the application — so the warning can be suppressed for deliberate status colors. Padding and margin assignments are undone (see <a href="dpi.html">DPI</a>), so there the warning points to a real conflict. Only constant class strings and properties the classes actually manage are checked.</p>
+
+<h2 id="fw002">FW002: forms that won't scale</h2>
+<p>In .NET Framework projects, warns when an <code>InitializeComponent</code> that uses <code>SetClasses</code> sets <code>AutoScaleMode.Font</code> and assigns the form's <code>Font</code> after <code>AutoScaleDimensions</code>. Under PerMonitorV2 such a form doesn't scale; the fix is <code>AutoScaleMode.Dpi</code> (see <a href="dpi.html">DPI</a>).</p>
+<pre><code class="language-ini"># .editorconfig
+dotnet_diagnostic.FW001.severity = none
+dotnet_diagnostic.FW002.severity = none</code></pre>

@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    # Görsel referanslar Windows sürümüne bağlı; windows-latest değişince referans klasörü de değişir.
+    runs-on: windows-2022
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Görsel testlerin çizimleri; bu ortamın referansı yoksa testler yalnızca dışa aktarır.
+      FORMWIND_VISUAL_EXPORT: ${{ github.workspace }}\visual-export
+    steps:
+      - uses: actions/checkout@v4
+
+      # Kütüphane net8.0-windows hedefler; testler .NET 9 ve 10 çalışma zamanlarında da koşar (net10 için SDK 10 gerekir).
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Build
+        run: dotnet build FormWind.sln -c Release
+
+      # Her hedef kendi klasörüne test sonucu ve kapsam raporu (Cobertura) yazar.
+      - name: Test (net472)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net472 --logger "trx" --settings tests/coverage.runsettings --collect "Code Coverage" --results-directory TestResults/net472
+
+      - name: Test (net8.0-windows)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net8.0-windows --logger "trx" --settings tests/coverage.runsettings --collect "Code Coverage" --results-directory TestResults/net8.0-windows
+
+      - name: Test (net9.0-windows)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net9.0-windows --logger "trx" --results-directory TestResults/net9.0-windows
+
+      - name: Test (net10.0-windows)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net10.0-windows --logger "trx" --results-directory TestResults/net10.0-windows
+
+      # Application.SetColorMode süreç geneline etki eder ve ilk pencereden önce çağrılmalı; ayrı süreçte çalışır.
+      - name: Test (Application.SetColorMode)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net10.0-windows --filter Category=ColorMode
+        env:
+          FORMWIND_COLORMODE: "1"
+
+      # FormWind satır kapsamı %80'in altına düşerse iş akışı düşer (şu an ~%85-87); tablo iş akışı özetine yazılır.
+      - name: Coverage
+        shell: pwsh
+        run: ./tools/check-coverage.ps1 -Results TestResults -Minimum 0.80
+
+      # UI Automation istemcisi süreç genelinde ayar değiştirdiğinden ayrı bir süreçte çalışır.
+      - name: Test (UI Automation)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net472 --filter Category=UIAutomation
+        env:
+          FORMWIND_UIA: "1"
+
+      - name: Check visual baselines
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path visual-export)) { exit 0 }
+          foreach ($dir in Get-ChildItem visual-export -Directory) {
+            if (-not (Test-Path "tests/FormWind.Tests/Baselines/$($dir.Name)")) {
+              Write-Output "::warning::Görsel referans yok ($($dir.Name)); görsel testler karşılaştırma yapmadı. visual-snapshots yapıtındaki klasörü tests/FormWind.Tests/Baselines altına ekleyin."
+            }
+          }
+
+      - name: Pack
+        run: dotnet pack FormWind.sln -c Release --no-build
+
+      # Şablon yalıtılmış bir depoya kurulur, üç proje (varsayılan; net472 ve v4; Krypton ve Material) üretilip yerel paketlerle
+      # (uyarılar hata sayılarak) derlenir.
+      - name: Template smoke test
+        shell: pwsh
+        run: |
+          $hive = Join-Path $env:RUNNER_TEMP "template-hive"
+          $work = Join-Path $env:RUNNER_TEMP "template-work"
+          $packages = Join-Path $env:GITHUB_WORKSPACE "artifacts/packages"
+          $template = Get-ChildItem $packages -Filter "FormWind.Templates.*.nupkg" | Select-Object -First 1
+          dotnet new install $template.FullName --debug:custom-hive $hive
+          dotnet new formwind-app -n SmokeApp -o (Join-Path $work "SmokeApp") --debug:custom-hive $hive
+          dotnet new formwind-app -n SmokeFx -o (Join-Path $work "SmokeFx") --Framework net472 --Palette v4 --debug:custom-hive $hive
+          dotnet new formwind-app -n SmokeKrypton -o (Join-Path $work "SmokeKrypton") --Krypton true --Preset material --debug:custom-hive $hive
+          @"
+          <configuration><packageSources><clear /><add key="local" value="$packages" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources></configuration>
+          "@ | Set-Content (Join-Path $work "nuget.config")
+          dotnet build (Join-Path $work "SmokeApp") -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build (Join-Path $work "SmokeFx") -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build (Join-Path $work "SmokeKrypton") -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # Krypton sürüm matrisi: FormWind.Krypton en düşük desteklenen sürümle (Directory.Build.props: KryptonVersion) derlenip
+      # yukarıda o sürümle test edildi; burada aynı derleme en yeni desteklenen Krypton ile çalıştırılır.
+      - name: Test (Krypton 105)
+        shell: pwsh
+        run: |
+          dotnet build tests/FormWind.Tests -c Release -p:KryptonTestVersion=105.26.7.201
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($framework in "net472", "net8.0-windows") {
+            dotnet test tests/FormWind.Tests -c Release --no-build -f $framework --filter "FullyQualifiedName~KryptonTests"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+      # Bu klasör indirilip tests/FormWind.Tests/Baselines altına eklenirse CI ortamının görsel referansı olur.
+      - name: Upload visual snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-snapshots
+          path: |
+            visual-export
+            tests/FormWind.Tests/bin/Release/net472/VisualDiffs
+          if-no-files-found: ignore
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/packages

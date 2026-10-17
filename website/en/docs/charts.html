@@ -1,0 +1,55 @@
+<!--
+title: Charts
+description: Line, area, bar and donut charts, sparklines and KPI cards drawn by FormWind, with the theme, dark mode, keyboard and screen reader support.
+-->
+<h1>Charts</h1>
+<p class="lead">Lightweight charts with no extra dependency: <code>TwChart</code> (line, area, bar), <code>TwDonutChart</code>, <code>TwSparkline</code> and the KPI card <code>TwStat</code>. They follow the theme, dark mode and DPI like the other controls; with <code>AutoStyle</code> they get the <code>chart</code> and <code>stat</code> components.</p>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/charts-light.png" alt="A dashboard with three KPI cards, a line chart with a tooltip, grouped bars with a target line, stacked bars and a donut chart" loading="lazy"><figcaption>Light</figcaption></figure>
+  <figure><img src="{{root}}img/charts-dark.png" alt="The same dashboard in dark mode" loading="lazy"><figcaption>Dark</figcaption></figure>
+</div>
+<p>Run it from the sample: <code>FormWind.Showcase --charts</code> (clicking a month, quarter or slice updates the status line through <code>ItemClick</code>).</p>
+
+<h2>Line, area and bar</h2>
+<pre><code class="language-csharp">chart.Kind = TwChartKind.Bar;                    // Line, Area, Bar; Stacked = true stacks the bars
+chart.SetData(new[] { "Jan", "Feb", "Mar" },
+    new TwChartSeries("Revenue", new[] { 120.0, 150, 170 }),
+    new TwChartSeries("Target", new[] { 130.0, 140, 160 }) { Kind = TwChartKind.Line });
+chart.ValueFormat = "C0";                        // tooltip; axis ticks are compact (1.2K) unless AxisFormat is set</code></pre>
+<ul>
+  <li>One value axis; bar and area charts include zero. <code>double.NaN</code> is a missing value and leaves a gap in the line.</li>
+  <li>Bars are at most 24 px wide with a rounded end, 2 px apart; lines are 2 px; areas are a 10% wash; markers only on the last point and the highlighted category.</li>
+  <li>A legend is shown for two or more series (<code>ShowLegend</code>); its key has the series' mark.</li>
+</ul>
+
+<h2>Donut</h2>
+<pre><code class="language-csharp">donut.SetData(new[] { "Web", "Store", "Phone" }, new[] { 52.0, 28, 20 });
+donut.CenterLabel = "Orders";                    // the total is shown in the middle by default</code></pre>
+<p>The legend sits beside the ring when there is room, otherwise below it, with each slice's value and share. Slices past eight are folded into "Other".</p>
+
+<h2>Sparklines and KPI cards</h2>
+<pre><code class="language-csharp">spark.Values = new[] { 3.0, 5, 4, 8 };           // Kind: Line, Area, Bar
+
+stat.Title = "Revenue"; stat.Value = "$1.24M"; stat.Delta = 0.124; stat.Caption = "vs last month";
+stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
+stat.PositiveIsGood = false;                     // costs, error rates: a rise is red</code></pre>
+<p>The change uses the theme's <code>success</code> and <code>danger</code> colors and always carries an arrow and a sign.</p>
+
+<h2>Classes</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>bg-*</code>, <code>text-*</code>, font</td><td>Background, values and legend text, font</td></tr>
+    <tr><td><code>label:text-*</code></td><td>Axis labels, secondary legend text, titles and captions</td></tr>
+    <tr><td><code>divide-*</code></td><td>Gridlines</td></tr>
+    <tr><td><code>accent-*</code></td><td>The first series and sparklines</td></tr>
+  </tbody>
+</table></div>
+<p>Series take a fixed, validated palette in order (readable with color-vision deficiencies, separate light and dark steps) and keep their color when others are added or removed; set <code>TwChartSeries.Color</code> to choose one.</p>
+
+<h2>Keyboard and screen readers</h2>
+<ul>
+  <li>Hover or the arrow keys (Home/End) highlight a category or slice and show its values; Enter or a click raises <code>ItemClick</code>.</li>
+  <li>Charts have the <code>Chart</code> role with one item per category or slice, e.g. "Mar: Revenue 170, Target 160".</li>
+</ul>

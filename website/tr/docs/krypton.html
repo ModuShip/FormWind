@@ -1,0 +1,70 @@
+<!--
+title: Krypton ve diğer kütüphaneler
+description: FormWind'i Krypton Toolkit ile kullanın (temayı izleyen palet, Krypton kontrollerinde class'lar) ve diğer kontrol paketlerinin yanında çalıştırın.
+-->
+<h1>Krypton ve diğer kütüphaneler</h1>
+<p class="lead"><code>FormWind.Krypton</code>, Krypton Toolkit uygulamalarında birleştirilebilen iki yolla çalışır: class gerektirmeyen bir tema köprüsü ve tek tek Krypton kontrollerinde class'lar.</p>
+
+<pre><code class="language-bash">dotnet add package FormWind.Krypton --prerelease</code></pre>
+
+<div class="figure-pair">
+  <figure><img src="{{root}}img/krypton-fluent.png" alt="Fluent görünümüyle Krypton Toolkit formu" loading="lazy"><figcaption>Krypton + Fluent</figcaption></figure>
+  <figure><img src="{{root}}img/krypton-material-dark.png" alt="Koyu temada Material görünümüyle Krypton Toolkit formu" loading="lazy"><figcaption>Krypton + Material, koyu</figcaption></figure>
+</div>
+
+<h2 id="theme-bridge">Tema köprüsü</h2>
+<p><code>TwKryptonTheme</code>, FormWind temasından bir Krypton paleti üretir ve onu Krypton'un genel paleti yapar. Class'ı olmayan her Krypton kontrolü seçilen görünümü ve koyu temayı izler.</p>
+<pre><code class="language-csharp">using FormWind.Krypton;
+
+KryptonApplier.Register();                                  // Program.Main içinde
+var palette = TwKryptonTheme.Follow(tailwindProvider1);     // ana formda; form kapanınca Dispose()</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>Tema bileşeni</th><th>Krypton parçaları</th></tr></thead>
+  <tbody>
+    <tr><td><code>page</code></td><td>Form ve panel zeminleri, formun başlık çubuğu</td></tr>
+    <tr><td><code>card</code></td><td>Header group'lar ve kontrol zeminleri</td></tr>
+    <tr><td><code>btn-ghost</code>, <code>btn-primary</code></td><td>Butonlar; işaretli <code>KryptonCheckButton</code></td></tr>
+    <tr><td><code>input</code></td><td>Metin, açılır, tarih ve sayı kutuları</td></tr>
+    <tr><td><code>list</code></td><td>Liste öğeleri</td></tr>
+    <tr><td><code>table</code></td><td><code>KryptonDataGridView</code></td></tr>
+  </tbody>
+</table></div>
+<p>Palet, tema değiştiğinde ya da <code>DarkMode</code> açılıp kapandığında yeniden üretilir. Krypton'un Microsoft 365 White (açık) ya da Black (koyu) paletinden başlar; FormWind'in eşlemediği parçalar (ribbon, gezgin sekmeleri, Krypton'un menüleri) o paletin renklerinde kalır. Sabit bir paleti kendiniz yönetmek için <code>TwKryptonTheme.CreatePalette(theme, dark)</code> bir <code>KryptonCustomPaletteBase</code> döndürür.</p>
+
+<h2 id="classes-on-krypton-controls">Krypton kontrollerinde class'lar</h2>
+<p><code>KryptonApplier</code> class'ları Krypton'un durum paletlerine yazar: temel → <code>StateCommon</code>, <code>hover:</code> → <code>StateTracking</code>, <code>active:</code> → <code>StatePressed</code>, <code>focus:</code> → <code>OverrideFocus</code> (giriş kontrollerinde <code>StateActive</code>), <code>disabled:</code> → <code>StateDisabled</code>, <code>checked:</code> → <code>StateChecked*</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kontrol</th><th>Parçalar</th></tr></thead>
+  <tbody>
+    <tr><td><code>KryptonButton</code>, <code>KryptonCheckButton</code></td><td><code>checked:</code></td></tr>
+    <tr><td><code>KryptonPanel</code>, <code>KryptonLabel</code>, <code>KryptonLinkLabel</code></td><td></td></tr>
+    <tr><td><code>KryptonCheckBox</code>, <code>KryptonRadioButton</code></td><td>Yazı rengi ve font</td></tr>
+    <tr><td><code>KryptonTextBox</code>, <code>KryptonMaskedTextBox</code>, <code>KryptonRichTextBox</code>, <code>KryptonNumericUpDown</code>, <code>KryptonDateTimePicker</code></td><td>Odak ve hover → <code>StateActive</code></td></tr>
+    <tr><td><code>KryptonComboBox</code></td><td><code>item:</code>, <code>item:hover:</code>, <code>menu:</code></td></tr>
+    <tr><td><code>KryptonGroupBox</code></td><td><code>caption:</code></td></tr>
+    <tr><td><code>KryptonHeaderGroup</code></td><td><code>header:</code></td></tr>
+    <tr><td><code>KryptonListBox</code>, <code>KryptonCheckedListBox</code></td><td><code>item:</code>, <code>item:hover:</code>, <code>selected:</code></td></tr>
+    <tr><td><code>KryptonForm</code></td><td><code>caption:</code> (başlık çubuğu)</td></tr>
+    <tr><td><code>KryptonDataGridView</code></td><td><a href="datagridview.html">DataGridView</a> parçaları; renkler paletine de yazılır</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>Sabit boyutlu butonlarda iç boşluk, yazı sığana kadar kısılır; böylece Krypton yazıyı "…" ile kesmez. <code>rounded-full</code> kontrolün yüksekliğinin yarısıyla sınırlanır.</li>
+  <li>AutoStyle varsayılan olarak Krypton tiplerini eşlemez (köprü onları zaten stiller). İsterseniz tema dosyasında ekleyin: <code>"autoStyle": { "KryptonButton": "btn-ghost" }</code>.</li>
+</ul>
+
+<h2 id="versions">Sürümler</h2>
+<p><code>FormWind.Krypton</code> Krypton Toolkit 100.25.11.328 ile derlenir (paket bu sürüme ya da sonrasına bağımlıdır); CI 105.26.7.201 ile de test eder. Daha yeni bir Krypton kullanan .NET Framework uygulamaları binding redirect'e ihtiyaç duyar; SDK tarzı projeler bunları kendisi üretir.</p>
+<p><code>samples/FormWind.Krypton.Showcase</code> örneğinde görünüm seçici vardır (<code>--preset material</code>, <code>--dark</code>). Şablonda: <code>dotnet new formwind-app --Krypton true</code>.</p>
+
+<h2 id="other-control-libraries">Diğer kontrol kütüphaneleri</h2>
+<p>Kendi skin motoru olan kütüphaneler kontrollerini kendileri çizer. FormWind tanımadığı kontrollere standart uygulayıcısını uygular: boyut, boşluk ve yerleşim genelde çalışır; renkler, durum varyantları ve köşeler kütüphanenin çizimiyle çakışabilir. Birlikte kullanmanın üç yolu var:</p>
+<ul>
+  <li><strong>Yan yana.</strong> Kütüphanenin güçlü olduğu bileşenler (gelişmiş grid'ler, ribbon, scheduler) onun motorunda kalır; FormWind standart kontroller, yeni ekranlar ve form iskeleti için kullanılır. Kütüphanenin kontrolleri bir <code>TwPanel</code> flex ya da grid yerleşiminin öğesi olabilir.</li>
+  <li><strong>Uygulayıcı yazmak.</strong> <code>IStyleApplier</code>'ı uygulayın, <code>TwAppliers.Register</code> ile kaydedin; temel stili ve her varyantı kütüphanenin görünüm nesnelerine eşleyin. Krypton entegrasyonu bunun bir örneğidir. <code>DataGridView</code>'dan türeyen grid'lerde yapısal stil <code>TwAppliers.FindBuiltIn</code> ile FormWind'e bırakılabilir.</li>
+  <li><strong>Yalnızca tema eşitleme.</strong> Kütüphanenin kontrollerine class verilmez; <code>DarkModeChanged</code> olayında kütüphanenin açık/koyu skin'i de değiştirilir, istenirse <code>tw.config.json</code> renkleri paletine taşınır.</li>
+</ul>
+
+<h2 id="net-9-color-mode">.NET 9+ renk modu</h2>
+<p>.NET 9 ve sonrasında <code>Application.SetColorMode(SystemColorMode.Dark)</code> sistem renklerini ve native kontrolleri koyulaştırır. FormWind onunla birlikte çalışır: class renkleri önceliklidir, class'lar kaldırılınca kontrol koyu sistem rengine döner. <code>dark:</code> varyantları için <code>DarkMode</code>'u uygulamanın moduna bağlayın:</p>
+<pre><code class="language-csharp">tw.DarkMode = Application.IsDarkModeEnabled;</code></pre>

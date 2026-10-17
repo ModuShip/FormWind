@@ -1,0 +1,114 @@
+<!--
+title: Utility classes
+description: Colors, typography, spacing, sizes, borders, corners, shadows, rings, gradients and state variants — and how they map to WinForms.
+-->
+<h1>Utility classes</h1>
+<p class="lead">Classes follow Tailwind's names and map to WinForms properties — or to painting where WinForms has no property. The <a href="{{root}}reference/">class reference</a> shows each one rendered on a real control.</p>
+
+<h2>Overview</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Category</th><th>Pattern</th><th>Example</th><th>WinForms</th></tr></thead>
+  <tbody>
+    <tr><td>Background</td><td><code>bg-{color}-{shade}</code>, <code>bg-[#hex]</code></td><td><code>bg-blue-600</code></td><td><code>BackColor</code></td></tr>
+    <tr><td>Text color</td><td><code>text-{color}-{shade}</code></td><td><code>text-gray-900</code></td><td><code>ForeColor</code></td></tr>
+    <tr><td>Font size</td><td><code>text-xs</code> … <code>text-4xl</code></td><td><code>text-sm</code> = 14 px</td><td><code>Font</code> (px × 0.75 = pt)</td></tr>
+    <tr><td>Font style</td><td><code>font-thin</code> … <code>font-black</code>, <code>font-sans</code>, <code>font-mono</code>, <code>italic</code>, <code>underline</code></td><td><code>font-semibold</code></td><td><code>Font</code> (<a href="theme.html#font-weights">weights</a>)</td></tr>
+    <tr><td>Padding</td><td><code>p</code>, <code>px</code>, <code>py</code>, <code>pt</code>, <code>pr</code>, <code>pb</code>, <code>pl</code> + <code>-{n}</code> / <code>-px</code> / <code>-[12px]</code></td><td><code>px-4</code> = 16 px</td><td><code>Padding</code></td></tr>
+    <tr><td>Margin</td><td><code>m</code>, <code>mx</code>, <code>my</code>, <code>mt</code>, <code>mr</code>, <code>mb</code>, <code>ml</code> + <code>-{n}</code></td><td><code>mt-2</code> = 8 px</td><td><code>Margin</code> (in layouts)</td></tr>
+    <tr><td>Size</td><td><code>w-{n}</code>, <code>h-{n}</code></td><td><code>h-10</code> = 40 px</td><td><code>Width</code>, <code>Height</code></td></tr>
+    <tr><td>Border</td><td><code>border</code>, <code>border-{0,2,4,8}</code>, <code>border-{color}-{shade}</code></td><td><code>border border-gray-300</code></td><td>Painted</td></tr>
+    <tr><td>Corners</td><td><code>rounded</code>, <code>rounded-{none,sm,md,lg,xl,2xl,3xl,full}</code>, <code>rounded-[10px]</code></td><td><code>rounded-md</code> = 6 px</td><td><code>Region</code> or owner-draw</td></tr>
+    <tr><td>Alignment</td><td><code>text-left</code>, <code>text-center</code>, <code>text-right</code></td><td></td><td><code>TextAlign</code></td></tr>
+    <tr><td>Other</td><td><code>cursor-pointer</code>, <code>cursor-text</code>, <code>hidden</code>, <code>visible</code>, <code>truncate</code></td><td></td><td><code>Cursor</code>, <code>Visible</code>, <code>AutoEllipsis</code></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>The spacing unit is 4 px (<code>spacingUnit</code> in the theme). Numbers always use a dot, in every culture: <code>p-0.5</code>.</li>
+  <li>Every color class takes an opacity: <code>bg-black/50</code>, <code>text-white/75</code>.</li>
+  <li>Within the same variant the later class wins: <code>p-2 px-4</code> → 8 px vertical, 16 px horizontal.</li>
+  <li>Unknown classes are reported through <code>TailwindProvider.UnknownClasses</code> (or the Debug output when nobody listens).</li>
+</ul>
+
+<h2>Variants</h2>
+<p>A prefix applies a class only in a state. Prefixes combine: <code>dark:hover:bg-gray-800</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Variant</th><th>Applies when</th></tr></thead>
+  <tbody>
+    <tr><td><code>hover:</code>, <code>active:</code></td><td>The mouse is over the control / the button is pressed.</td></tr>
+    <tr><td><code>focus:</code>, <code>focus-visible:</code></td><td>The control has focus / focus came from the keyboard (Tab, arrows), not a click.</td></tr>
+    <tr><td><code>disabled:</code></td><td><code>Enabled</code> is false. <code>focus</code>, <code>hover</code> and <code>active</code> do not apply then.</td></tr>
+    <tr><td><code>checked:</code></td><td>A check box, radio button, switch or check button is checked.</td></tr>
+    <tr><td><code>invalid:</code></td><td>The control has a validation error (<a href="forms.html">Forms</a>).</td></tr>
+    <tr><td><code>group-hover:</code></td><td>The mouse is over a container with the <code>group</code> class.</td></tr>
+    <tr><td><code>dark:</code></td><td><code>TailwindProvider.DarkMode</code> is on.</td></tr>
+    <tr><td><code>sm:</code> … <code>2xl:</code></td><td>The form is at least 640 / 768 / 1024 / 1280 / 1536 px wide (<a href="layout.html#responsive-variants">responsive</a>).</td></tr>
+    <tr><td><code>rtl:</code>, <code>ltr:</code></td><td>The control's inherited <code>RightToLeft</code> direction.</td></tr>
+    <tr><td><code>forced-colors:</code></td><td>Windows High Contrast is on (<a href="accessibility.html#high-contrast">accessibility</a>).</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Variant order</h3>
+<p>Later overrides earlier:</p>
+<p>base → <code>dark:</code> → <code>checked:</code> → <code>focus:</code> → <code>focus-visible:</code> → <code>group-hover:</code> → <code>hover:</code> → <code>dark:hover:</code> → <code>active:</code> → <code>disabled:</code> → <code>invalid:</code> → <code>sm:</code> → <code>md:</code> → <code>lg:</code> → <code>xl:</code> → <code>2xl:</code> → <code>forced-colors:</code></p>
+<div class="callout">
+  <p><code>disabled:</code> takes precedence over <code>dark:</code>. Give your own components <code>dark:disabled:</code> colors for dark mode as well — the default <code>btn-primary</code>, <code>btn-ghost</code> and <code>btn-danger</code> do.</p>
+</div>
+
+<h2>Borders, shadows and rings</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Class</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>border-t</code>, <code>border-b-2</code>, <code>border-x</code>, <code>border-y</code></td><td>Per-side borders (drawn without corners)</td></tr>
+    <tr><td><code>shadow-sm</code> … <code>shadow-2xl</code>, <code>shadow-none</code></td><td>Tailwind v3 shadow layers, blurred</td></tr>
+    <tr><td><code>shadow-{color}</code>, <code>shadow-blue-500/50</code></td><td>Colored shadow</td></tr>
+    <tr><td><code>ring</code>, <code>ring-{0,1,2,4,8}</code>, <code>ring-{color}</code>, <code>ring-offset-2</code></td><td>Ring, usually <code>focus:ring-2 focus:ring-blue-500/30</code></td></tr>
+  </tbody>
+</table></div>
+<p>Shadows and rings are drawn on the control's <strong>parent</strong> — controls cannot paint outside their bounds — on <code>Form</code>, <code>Panel</code> and <code>TwPanel</code> parents. That is how native controls such as <code>TextBox</code> get a focus ring.</p>
+
+<h2>Gradients</h2>
+<p><code>bg-gradient-to-{r,l,t,b,tr,tl,br,bl} from-{color} via-{color} to-{color}</code> — painted on <code>TwPanel</code>, <code>TwButton</code> and the standard <code>Panel</code>. A missing end is the transparent version of the other end.</p>
+<pre><code class="language-csharp">tw.SetClasses(pnlHero, "bg-gradient-to-r from-sky-500 to-indigo-500 text-white rounded-xl p-6");</code></pre>
+
+<h2>Interaction</h2>
+<ul>
+  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) fades background, text and shadow changes (ease-out, 150 ms by default).</li>
+  <li><strong><code>hover:</code> / <code>active:</code></strong> restyle only controls that use these variants; other controls ignore mouse movement.</li>
+  <li><strong><code>group</code> / <code>group-hover:</code></strong> style children when the container is hovered — even when the cursor enters through a child.</li>
+  <li><strong>Placeholders:</strong> <code>TwTextBox.PlaceholderText</code>, colored with <code>placeholder:text-gray-400</code>.</li>
+  <li><strong><code>focus-visible:</code></strong> also governs the focus rings of owner-drawn controls. <code>TwFocusVisible.LastInputWasKeyboard</code> tells which input came last.</li>
+</ul>
+<pre><code class="language-csharp">tw.SetClasses(cardOrder, "group card transition hover:shadow-lg");
+tw.SetClasses(lblOrderTitle, "font-semibold group-hover:text-blue-600");
+tw.SetClasses(txtName, "input focus-visible:ring-2 focus-visible:ring-blue-500/40");</code></pre>
+
+<h2>Colors your code assigns</h2>
+<p>If application code changes a control's <code>BackColor</code> or <code>ForeColor</code> after classes were applied — a status indicator painted green, say — FormWind leaves that channel to the application. <code>hover:</code>, <code>dark:</code> and other variants no longer override it; the other channel stays with FormWind.</p>
+<pre><code class="language-csharp">tw.SetClasses(lblStatus, "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200");
+lblStatus.BackColor = Color.LightGreen;            // stays green in dark mode; text color still from classes
+tw.SetClasses(lblStatus, "bg-red-600 text-white"); // new classes: the background is FormWind's again</code></pre>
+<ul>
+  <li>Colors inherited from the parent (the form switching to dark mode) do not count as assignments.</li>
+  <li>To give the channel back, assign different classes; <code>Refresh(control)</code> is not enough.</li>
+  <li>The <a href="accessibility.html#contrast-audit">contrast audit</a> reports unreadable pairs this can produce in dark mode.</li>
+  <li>The <a href="designer.html#fw001">FW001 analyzer</a> flags such assignments at compile time.</li>
+</ul>
+
+<h2>Removing classes</h2>
+<p><code>SetClasses(control, "")</code> restores color, font, padding, margin, cursor, visibility, corners and the ToolStrip renderer to their values from before the classes. Sizes (<code>w-*</code>, <code>h-*</code>) are not reverted, because the layout may have resized the control since.</p>
+
+<h2>WinForms differences</h2>
+<ul>
+  <li><strong>Padding on fixed-size controls.</strong> In CSS padding grows the box; on a WinForms button or label with <code>AutoSize</code> off it shrinks the content. FormWind reduces padding just enough for the text to fit on one line and restores it when there is room. It cannot shrink the font, so avoid font classes on controls too small for them.</li>
+  <li><strong>Corners on standard controls</strong> are clipped with a <code>Region</code>, without anti-aliasing. Use <code>TwButton</code>, <code>TwPanel</code> and <code>TwTextBox</code> for smooth corners.</li>
+  <li><strong>Text boxes</strong> get <code>border-*</code> and <code>rounded-*</code> as a frame drawn on the parent, 3 px outside the control. Leave room in the layout.</li>
+  <li><strong>Disabled native text boxes</strong> only take <code>disabled:</code> colors; otherwise Windows keeps its own disabled look, because it does not reliably honor the background of a disabled text box.</li>
+  <li><strong>Disabled buttons</strong> are redrawn with <code>disabled:text-*</code> — or the text color mixed halfway toward the background — instead of Windows' darkened text, which disappeared on dark backgrounds.</li>
+  <li><strong>MDI:</strong> the container form's <code>bg-*</code> also colors the area behind the child windows.</li>
+  <li><strong>Boxes in strips</strong> (<code>ToolStripTextBox</code>, <code>ToolStripComboBox</code>) take colors derived from the strip, so they don't stay white on a dark toolbar.</li>
+</ul>
+
+<h2>Errors</h2>
+<p>Styling never crashes the application. An exception while applying styles is caught, the control keeps the style applied so far, and the error is reported through <code>StyleError</code> (or the Debug output). The control is retried on its next state change. Critical exceptions such as out-of-memory are not caught.</p>
+<pre><code class="language-csharp">tw.StyleError += (s, e) => logger.LogWarning(e.Exception, "Could not style {Target}: {Classes}", e.Target, e.Classes);
+tw.UnknownClasses += (s, e) => Debug.WriteLine($"{e.Control.Name}: {string.Join(" ", e.Unknown)}");</code></pre>
