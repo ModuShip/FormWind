@@ -49,6 +49,7 @@ public class WinFormsApplier : IStyleApplier
             bool repaint = control is Button ? applied.FlatButton : context.Parsed.Resolve(disabledState).ForeColor.HasValue;
             TwDisabledText.Update(control, explicitColor, repaint);
         }
+        if (control is LinkLabel link) ApplyLinkColors(link, style);
         ApplyChrome(control, style, context, applied);
         if (control is ITwToggle toggle) toggle.SetToggleColors(style.AccentColor, style.FillColor);
         if (!context.DesignMode && TwNativeTheme.Supports(control))
@@ -308,6 +309,47 @@ public class WinFormsApplier : IStyleApplier
                 Remember(control, back, state, inherited: true);
             }
             state.Applied = false;
+        }
+    }
+
+    private static readonly ConditionalWeakTable<LinkLabel, LinkOriginal> LinkOriginals = new ConditionalWeakTable<LinkLabel, LinkOriginal>();
+
+    // LinkLabel bağlantılarını LinkColor ile çizer, ForeColor'ı yalnızca bağlantı dışındaki yazıya uygular: accent-* bağlantı
+    // renkleridir. Devre dışı bağlantı, yazı rengiyle zeminin ortası. accent-* yoksa özgün renkler geri gelir.
+    private static void ApplyLinkColors(LinkLabel link, TwStyle style)
+    {
+        var original = LinkOriginals.GetValue(link, l => new LinkOriginal(l));
+        if (style.AccentColor is Color accent && accent.A == 255)
+        {
+            if (link.LinkColor.ToArgb() != accent.ToArgb()) link.LinkColor = accent;
+            if (link.ActiveLinkColor.ToArgb() != accent.ToArgb()) link.ActiveLinkColor = accent;
+            if (link.VisitedLinkColor.ToArgb() != accent.ToArgb()) link.VisitedLinkColor = accent;
+            var fore = link.ForeColor;
+            var back = link.BackColor.A == 255 ? link.BackColor : link.Parent?.BackColor ?? SystemColors.Control;
+            var disabled = Color.FromArgb((fore.R + back.R) / 2, (fore.G + back.G) / 2, (fore.B + back.B) / 2);
+            if (link.DisabledLinkColor.ToArgb() != disabled.ToArgb()) link.DisabledLinkColor = disabled;
+        }
+        else original.Restore(link);
+    }
+
+    private sealed class LinkOriginal
+    {
+        private readonly Color _link, _active, _visited, _disabled;
+
+        public LinkOriginal(LinkLabel link)
+        {
+            _link = link.LinkColor;
+            _active = link.ActiveLinkColor;
+            _visited = link.VisitedLinkColor;
+            _disabled = link.DisabledLinkColor;
+        }
+
+        public void Restore(LinkLabel link)
+        {
+            if (link.LinkColor != _link) link.LinkColor = _link;
+            if (link.ActiveLinkColor != _active) link.ActiveLinkColor = _active;
+            if (link.VisitedLinkColor != _visited) link.VisitedLinkColor = _visited;
+            if (link.DisabledLinkColor != _disabled) link.DisabledLinkColor = _disabled;
         }
     }
 

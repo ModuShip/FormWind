@@ -215,6 +215,8 @@ public sealed class TwTheme
         ["btn-ghost"] = "btn bg-white text-surface-700 border border-surface-300 hover:bg-surface-100 active:bg-surface-200 dark:bg-surface-800 dark:text-surface-200 dark:border-surface-600 dark:hover:bg-surface-700 disabled:bg-surface-50 disabled:text-surface-500 disabled:border-surface-200 dark:disabled:bg-surface-800 dark:disabled:text-surface-500 dark:disabled:border-surface-700",
         ["btn-danger"] = "btn bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800 disabled:bg-surface-300 disabled:text-surface-500 dark:disabled:bg-surface-700 dark:disabled:text-surface-400",
         ["link"] = "text-primary-600 underline cursor-pointer hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300",
+        // LinkLabel: yazı text-*, bağlantılar accent-*.
+        ["link-label"] = "text-surface-700 accent-primary-600 dark:text-surface-200 dark:accent-primary-400",
 
         // Form alanları
         ["input"] = "bg-white text-surface-900 border border-surface-300 rounded-md px-3 py-2 placeholder:text-surface-400 dark:placeholder:text-surface-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 dark:bg-surface-900 dark:text-surface-100 dark:border-surface-600 dark:focus:border-primary-400 invalid:border-danger-500 invalid:ring-2 invalid:ring-danger-500/20 dark:invalid:border-danger-400",
@@ -289,8 +291,8 @@ public sealed class TwTheme
     /// <summary>
     /// Components given to controls without classes when <see cref="TailwindProvider.AutoStyle"/> is on, by control type name.
     /// The type and then its base types are looked up, so <c>TextBoxBase</c> also covers <c>TextBox</c> and <c>RichTextBox</c>;
-    /// an empty value leaves that type unstyled. Labels and panels are not listed: they take the form's colors. (LinkLabel draws
-    /// its links with LinkColor, which classes do not set; use a Label with the <c>link</c> component.)
+    /// an empty value leaves that type unstyled. Labels and panels are not listed: they take the form's colors. A LinkLabel gets
+    /// <c>link-label</c>: its links are drawn with <c>accent-*</c>.
     /// </summary>
     public static IReadOnlyDictionary<string, string> DefaultAutoStyle { get; } = new Dictionary<string, string>
     {
@@ -325,6 +327,7 @@ public sealed class TwTheme
         ["TabControl"] = "tab-control",
         ["TabPage"] = "tab-page",
         ["ProgressBar"] = "range",
+        ["LinkLabel"] = "link-label",
     };
 
     // DefaultComponents'tan sonra bildirilmeli: statik başlatıcılar yazım sırasıyla çalışır.

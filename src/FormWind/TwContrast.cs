@@ -89,6 +89,8 @@ public static class TwContrast
                     break;
                 default:
                     if (CarriesText(control)) Check(issues, control, "text", fore, back, required, KeptBackground(control, provider));
+                    // LinkLabel bağlantılarını LinkColor ile çizer (class'larda accent-*).
+                    if (control is LinkLabel link && link.Enabled && link.Links.Count > 0) Check(issues, control, "link", link.LinkColor, back, required);
                     break;
             }
 
@@ -300,7 +302,7 @@ public sealed class TwContrastIssue
 
     public Control Control { get; }
 
-    /// <summary>Checked part: <c>text</c>, <c>disabled text</c>, <c>hover</c>, <c>strip</c>, <c>item:hover</c>, <c>menu</c>, <c>cell</c>, <c>selected</c>, <c>header</c>.</summary>
+    /// <summary>Checked part: <c>text</c>, <c>link</c>, <c>disabled text</c>, <c>hover</c>, <c>strip</c>, <c>item:hover</c>, <c>menu</c>, <c>cell</c>, <c>selected</c>, <c>header</c>.</summary>
     public string Part { get; }
 
     public Color Foreground { get; }
