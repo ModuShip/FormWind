@@ -151,6 +151,32 @@ public class ContrastTests
         form.Close();
     });
 
+    // Kendi koyu teması olan uygulama (ShareX) butonlara düz stil ve açık yazı rengi atar. Class'lar değişince btn-ghost'un
+    // transition'ı açık yazıdan başlar; devre dışı yazı da geçişin varacağı renkle denetlenmeli, başlangıç rengiyle değil.
+    [Fact]
+    public void Audit_checks_the_final_color_of_a_disabled_flat_button_in_transition() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var button = new Button
+        {
+            Text = "Resimi ayır",
+            FlatStyle = FlatStyle.Flat,
+            ForeColor = ColorTranslator.FromHtml("#e7e9ea"),
+            BackColor = ColorTranslator.FromHtml("#2e2e2e"),
+            Enabled = false,
+        };
+        form.Controls.Add(button);
+        form.Show();
+        provider.SetClasses(button, "text-[#e7e9ea] bg-[#2e2e2e]");                     // ilk uygulama geçişsiz
+        provider.SetClasses(button, "btn-ghost");
+        Assert.True(TwAnimator.IsAnimating(button, TwColorChannel.Fore));
+
+        var issues = TwContrast.Audit(form, provider, includeDisabled: true);
+        form.Close();
+        Assert.True(issues.Count == 0, string.Join(Environment.NewLine, issues.Select(i => i.ToString())));
+    });
+
     [Fact]
     public void Include_disabled_checks_disabled_text_boxes_against_the_system_background()
     {
@@ -204,6 +230,64 @@ public class ContrastTests
 
         var issues = TwContrast.Audit(form, provider);
         form.Close();
+        Assert.True(issues.Count == 0, string.Join(Environment.NewLine, issues.Select(i => i.ToString())));
+    });
+
+    // Windows devre dışı onay kutusunun yazısını zeminden türettiği koyu bir renkle çizer (koyu zeminde görünmez, ShareX'te
+    // 2:1 ölçüldü). Yazı rengi class'lardan geliyorsa FormWind yazıyı yeniden çizer; denetim de çizilen rengi ölçer.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Disabled_check_boxes_in_dark_mode_draw_readable_text(bool radio) => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        ButtonBase box = radio ? new RadioButton() : new CheckBox();
+        box.Text = "Girdi dosyasını sil";
+        box.AutoSize = false;
+        box.Size = new Size(200, 30);
+        box.Enabled = false;
+        form.Controls.Add(box);
+        form.Show();
+        provider.SetClasses(form, "bg-gray-900");
+        provider.SetClasses(box, "text-gray-800 dark:text-gray-200");
+
+        using var bitmap = new Bitmap(box.Width, box.Height);
+        box.DrawToBitmap(bitmap, new Rectangle(Point.Empty, box.Size));
+        int brightest = 0;
+        for (int y = 0; y < bitmap.Height; y++)
+            for (int x = 20; x < bitmap.Width; x++)                                          // işaretin sağı: yazı
+                brightest = Math.Max(brightest, bitmap.GetPixel(x, y).R);
+        var issues = TwContrast.Audit(form, provider, includeDisabled: true);
+        form.Close();
+
+        Assert.True(brightest >= 110, $"brightest text pixel R={brightest}");              // gray-200 ile zeminin ortası ≈ 123
+        Assert.True(issues.Count == 0, string.Join(Environment.NewLine, issues.Select(i => i.ToString())));
+    });
+
+    // Devre dışı etiket kabartma griyle çizilir; koyu zeminde görünmez (KeePass'te 1,1:1 ölçüldü). Yazı rengi
+    // class'lardan geliyorsa FormWind yeniden çizer.
+    [Fact]
+    public void Disabled_labels_in_dark_mode_draw_readable_text() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var label = new Label { Text = "This option is disabled.", AutoSize = false, Size = new Size(200, 30), Enabled = false };
+        form.Controls.Add(label);
+        form.Show();
+        provider.SetClasses(form, "bg-gray-900");
+        provider.SetClasses(label, "text-gray-800 dark:text-gray-200");
+
+        using var bitmap = new Bitmap(label.Width, label.Height);
+        label.DrawToBitmap(bitmap, new Rectangle(Point.Empty, label.Size));
+        int brightest = 0;
+        for (int y = 0; y < bitmap.Height; y++)
+            for (int x = 0; x < bitmap.Width; x++)
+                brightest = Math.Max(brightest, bitmap.GetPixel(x, y).R);
+        var issues = TwContrast.Audit(form, provider, includeDisabled: true);
+        form.Close();
+
+        Assert.True(brightest >= 110, $"brightest text pixel R={brightest}");
         Assert.True(issues.Count == 0, string.Join(Environment.NewLine, issues.Select(i => i.ToString())));
     });
 

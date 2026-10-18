@@ -41,10 +41,13 @@ public class WinFormsApplier : IStyleApplier
         ApplyCursor(control, style, original, applied);
         if (!context.DesignMode) ApplyHidden(control, style, applied);
         ApplyFlatButton(control, style, original, applied);
-        if (control is Button)
+        if (control is Button || control is CheckBox || control is RadioButton || control is Label and not LinkLabel)
         {
             var disabledState = (context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible)) | TwState.Disabled;
-            TwDisabledText.Update(control, context.Parsed.ResolveExact(TwState.Disabled, disabledState).ForeColor.HasValue, applied.FlatButton);
+            bool explicitColor = context.Parsed.ResolveExact(TwState.Disabled, disabledState).ForeColor.HasValue;
+            // Onay kutusu ve etikette yazı rengi class'lardan geliyorsa Windows'un zeminden türettiği devre dışı renk yerine çizilir.
+            bool repaint = control is Button ? applied.FlatButton : context.Parsed.Resolve(disabledState).ForeColor.HasValue;
+            TwDisabledText.Update(control, explicitColor, repaint);
         }
         ApplyChrome(control, style, context, applied);
         if (control is ITwToggle toggle) toggle.SetToggleColors(style.AccentColor, style.FillColor);

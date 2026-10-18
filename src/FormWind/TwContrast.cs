@@ -61,9 +61,18 @@ public static class TwContrast
         {
             // Devre dışı butonun ekrana çizilen yazı rengi (bkz. TwDisabledText); Windows'un kendi çizdiği standart
             // butonlar sistem renklerini kullanır ve denetlenmez. Devre dışı öğeler WCAG kapsamında olmadığından eşik
-            // büyük metninki (3:1): amaç görünmez yazıyı yakalamak.
+            // büyük metninki (3:1): amaç görünmez yazıyı yakalamak. Geçişi süren renklerde varılacak renk denetlenir.
             if (button is ITwChrome || button.FlatStyle == FlatStyle.Flat)
-                Check(issues, control, "disabled text", TwDisabledText.TextColor(button), EffectiveBack(control), Math.Min(minimum, LargeTextMinimum));
+            {
+                var text = TwDisabledText.TextColor(button, Final(button, TwColorChannel.Fore, button.ForeColor), Final(button, TwColorChannel.Back, button.BackColor));
+                Check(issues, control, "disabled text", text, EffectiveBack(control), Math.Min(minimum, LargeTextMinimum));
+            }
+        }
+        else if (!control.Enabled && includeDisabled && TwDisabledText.IsRepainted(control))
+        {
+            // Yazısı FormWind'in yeniden çizdiği devre dışı onay kutusu, radyo düğmesi ve etiket (bkz. TwDisabledText).
+            var text = TwDisabledText.TextColor(control, Final(control, TwColorChannel.Fore, control.ForeColor), Final(control, TwColorChannel.Back, control.BackColor));
+            Check(issues, control, "disabled text", text, EffectiveBack(control), Math.Min(minimum, LargeTextMinimum));
         }
         else if (control.Enabled || includeDisabled)
         {

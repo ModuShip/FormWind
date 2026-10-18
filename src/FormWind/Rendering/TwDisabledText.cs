@@ -12,22 +12,50 @@ namespace FormWind;
 /// darkened shade of the background (<see cref="ControlPaint.Dark(Color)"/>), which is invisible on a dark background. On buttons
 /// flattened by FormWind, the text is redrawn with this color while disabled. Buttons with images are left alone.
 /// </para>
+/// <para>
+/// Native check boxes and radio buttons do the same with every style except <see cref="FlatStyle.System"/>; when the classes
+/// set their text color, the text beside the glyph is redrawn while disabled (see <see cref="CanRepaintCheck"/>).
+/// </para>
+/// <para>
+/// A disabled native label draws embossed gray text (<see cref="ControlPaint.DrawStringDisabled(Graphics, string, Font, Color, RectangleF, StringFormat)"/>),
+/// whose dark shade disappears on a dark background; labels whose text color comes from the classes are redrawn too
+/// (not LinkLabels or labels with an image).
+/// </para>
 /// </summary>
 internal sealed class TwDisabledText
 {
     private static readonly ConditionalWeakTable<Control, TwDisabledText> Table = new ConditionalWeakTable<Control, TwDisabledText>();
 
-    private readonly Button? _native;
+    private readonly Control? _native;
     private bool _explicit;
     private bool _repaint;
 
     private TwDisabledText(Control control)
     {
-        if (control is Button button && control is not ITwChrome)
+        if (control is not ITwChrome && (control is Button || control is CheckBox || control is RadioButton || control is Label and not LinkLabel))
         {
-            _native = button;
-            button.Paint += OnPaint;
+            _native = control;
+            control.Paint += OnPaint;
         }
+    }
+
+    /// <summary>Whether the disabled text of a native check box, radio button or label is redrawn (<see cref="Update"/>'s repaint).</summary>
+    internal static bool IsRepainted(Control control) =>
+        Table.TryGetValue(control, out var state) && state._repaint
+        && (control is ButtonBase button && CanRepaintCheck(button) || control is Label label && CanRepaintLabel(label));
+
+    internal static bool CanRepaintLabel(Label label) => label is not LinkLabel && label is not ITwChrome && label.Image is null
+        && (label.ImageList is null || label.ImageIndex < 0 && string.IsNullOrEmpty(label.ImageKey));
+
+    // Yalnızca yerleşimi güvenle bilinen durum: işaret solda ya da sağda, düz görünüm, resim yok.
+    internal static bool CanRepaintCheck(ButtonBase button)
+    {
+        if (button is not (CheckBox or RadioButton) || button is ITwChrome || button.FlatStyle == FlatStyle.System || HasImage(button)) return false;
+        var appearance = button is CheckBox check ? check.Appearance : ((RadioButton)button).Appearance;
+        if (appearance != Appearance.Normal) return false;
+        var align = button is CheckBox c ? c.CheckAlign : ((RadioButton)button).CheckAlign;
+        return align is ContentAlignment.MiddleLeft or ContentAlignment.TopLeft or ContentAlignment.BottomLeft
+            or ContentAlignment.MiddleRight or ContentAlignment.TopRight or ContentAlignment.BottomRight;
     }
 
     /// <param name="control">The button.</param>
@@ -46,11 +74,13 @@ internal sealed class TwDisabledText
         if (!control.Enabled) control.Invalidate();
     }
 
-    public static Color TextColor(Control control)
+    public static Color TextColor(Control control) => TextColor(control, control.ForeColor, control.BackColor);
+
+    /// <summary>The text color for the given colors (e.g. the targets of a running transition).</summary>
+    public static Color TextColor(Control control, Color fore, Color back)
     {
-        if (control.Enabled || Table.TryGetValue(control, out var state) && state._explicit) return control.ForeColor;
-        var fore = control.ForeColor;
-        var back = control.BackColor.A == 0 ? Color.Gray : control.BackColor;
+        if (control.Enabled || Table.TryGetValue(control, out var state) && state._explicit) return fore;
+        if (back.A == 0) back = control.Parent?.BackColor is Color parent && parent.A == 255 ? parent : Color.Gray;
         return Color.FromArgb(
             (fore.R + back.R) / 2,
             (fore.G + back.G) / 2,
@@ -59,8 +89,20 @@ internal sealed class TwDisabledText
 
     private void OnPaint(object? sender, PaintEventArgs e)
     {
-        var button = _native!;
-        if (button.Enabled || !_repaint || button.FlatStyle != FlatStyle.Flat || HasImage(button)) return;
+        var native = _native!;
+        if (native.Enabled || !_repaint) return;
+        if (native is Label label)
+        {
+            if (CanRepaintLabel(label)) PaintLabelText(label, e.Graphics);
+            return;
+        }
+        var button = (ButtonBase)native;
+        if (button is not Button)
+        {
+            if (CanRepaintCheck(button)) PaintCheckText(button, e.Graphics);
+            return;
+        }
+        if (button.FlatStyle != FlatStyle.Flat || HasImage(button)) return;
         try
         {
             // Native yazının üstü zeminle örtülür; kenarlık (TwDecorator) bu olaydan sonra çizilir.
@@ -73,6 +115,70 @@ internal sealed class TwDisabledText
         {
             TwErrors.Trace("disabled button text", ex);
         }
+    }
+
+    // Etiketin tamamı zeminle örtülür ve yazı Label'ın kendi biçimlendirmesiyle (sarma, hiza, padding) yeniden çizilir.
+    private static void PaintLabelText(Label label, Graphics graphics)
+    {
+        try
+        {
+            var back = label.BackColor.A == 255 ? label.BackColor : label.Parent?.BackColor ?? SystemColors.Control;
+            using (var brush = new SolidBrush(back))
+                graphics.FillRectangle(brush, label.ClientRectangle);
+            // Ölçüldü: Label'ın yazısı NoPadding ile çizilenden fontun yatay iç boşluğunun (yüksekliğin altıda biri) yarısı
+            // ve bir piksel kadar içeride başlar; satırlar TextBoxControl olmadan sarılır.
+            int inset = (int)System.Math.Ceiling(label.Font.Height / 6.0) / 2;
+            var r = label.ClientRectangle;
+            var bounds = new Rectangle(r.X + label.Padding.Left + inset + 1, r.Y + label.Padding.Top,
+                r.Width - label.Padding.Horizontal - 2 * inset, r.Height - label.Padding.Vertical);
+            var flags = TwPainter.ToTextFormatFlags(label.TextAlign) & ~TextFormatFlags.SingleLine;
+            flags |= TextFormatFlags.WordBreak | TextFormatFlags.NoPadding;
+            if (label.AutoEllipsis) flags |= TextFormatFlags.EndEllipsis;
+            flags |= label.UseMnemonic ? TextFormatFlags.HidePrefix : TextFormatFlags.NoPrefix;
+            if (label.RightToLeft == RightToLeft.Yes) flags |= TextFormatFlags.RightToLeft;
+            TextRenderer.DrawText(graphics, label.Text, label.Font, bounds, TextColor(label), flags);
+        }
+        catch (System.Exception ex) when (!TwErrors.IsCritical(ex))
+        {
+            TwErrors.Trace("disabled label text", ex);
+        }
+    }
+
+    // İşaretin yanındaki alan zeminle örtülür ve yazı yeniden çizilir; işaretin kendisine dokunulmaz.
+    private static void PaintCheckText(ButtonBase button, Graphics graphics)
+    {
+        try
+        {
+            var bounds = CheckTextBounds(button, graphics);
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            using (var brush = new SolidBrush(button.BackColor.A == 0 && button.Parent is Control parent ? parent.BackColor : button.BackColor))
+                graphics.FillRectangle(brush, bounds);
+            TextRenderer.DrawText(graphics, button.Text, button.Font, bounds, TextColor(button), Flags(button, graphics, bounds));
+        }
+        catch (System.Exception ex) when (!TwErrors.IsCritical(ex))
+        {
+            TwErrors.Trace("disabled check text", ex);
+        }
+    }
+
+    // WinForms'un yerleşimi: işaret (13 px, DPI ile ölçeklenir) ve bir boşluk, kalan alan yazının; RTL'de işaret öbür
+    // yana geçer.
+    internal static Rectangle CheckTextBounds(ButtonBase button, Graphics graphics)
+    {
+        var align = button is CheckBox c ? c.CheckAlign : ((RadioButton)button).CheckAlign;
+        bool glyphLeft = align is ContentAlignment.MiddleLeft or ContentAlignment.TopLeft or ContentAlignment.BottomLeft;
+        if (button.RightToLeft == RightToLeft.Yes) glyphLeft = !glyphLeft;
+        int glyph = (button is CheckBox
+            ? CheckBoxRenderer.GetGlyphSize(graphics, System.Windows.Forms.VisualStyles.CheckBoxState.UncheckedDisabled)
+            : RadioButtonRenderer.GetGlyphSize(graphics, System.Windows.Forms.VisualStyles.RadioButtonState.UncheckedDisabled)).Width;
+        glyph = System.Math.Max(glyph, button.LogicalToDeviceUnits(13));
+        var r = button.ClientRectangle;
+        r = new Rectangle(r.X + button.Padding.Left, r.Y + button.Padding.Top, r.Width - button.Padding.Horizontal, r.Height - button.Padding.Vertical);
+        // Ölçüldü: WinForms onay kutusunun yazısını işaretten 2, radyo düğmesininkini 1 piksel sonra başlatır.
+        int reserved = glyph + (button is CheckBox ? 2 : 1);
+        return glyphLeft
+            ? new Rectangle(r.X + reserved, r.Y, r.Width - reserved, r.Height)
+            : new Rectangle(r.X, r.Y, r.Width - reserved, r.Height);
     }
 
     private static bool HasImage(ButtonBase button) =>
