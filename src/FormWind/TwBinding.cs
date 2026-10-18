@@ -70,6 +70,9 @@ internal sealed class TwBinding
 
     public Control Control => _control;
 
+    /// <summary>The values captured before the first application; <c>null</c> until the classes are applied once.</summary>
+    public TwOriginal? Original => _original;
+
     public TwParsed Parsed => _parsed;
 
     /// <summary>Whether the classes have <c>sm:</c>/<c>md:</c>… variants (reapplied when the form is resized).</summary>

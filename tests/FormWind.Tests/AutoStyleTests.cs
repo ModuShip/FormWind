@@ -95,6 +95,74 @@ public class AutoStyleTests
         Assert.Null(provider.GetAutomaticClasses(late));                                  // kapalıyken dinlenmez
     });
 
+    // Uygulamanın tema motoru (örn. ShareX) formun zeminini her kontrole kopyalar; yalnızca yazı rengi alan etiketler
+    // formun yeni zeminini izlemeli, eski koyu zeminde kalmamalı.
+    [Fact]
+    public void Controls_that_copy_the_parents_background_follow_the_new_one() => Sta.Run(() =>
+    {
+        var appBack = Color("#272727");
+        using var provider = new TailwindProvider();
+        using var form = new Form { BackColor = appBack };
+        var panel = new Panel { BackColor = appBack };
+        var label = new Label { BackColor = appBack, ForeColor = Color("#e7e9ea") };
+        var text = new TextBox { BackColor = appBack };
+        var status = new Label { BackColor = Color("#16a34a") };                          // kendi rengi olan etiket
+        panel.Controls.AddRange(new Control[] { label, text, status });
+        form.Controls.Add(panel);
+
+        provider.ContainerControl = form;
+        provider.AutoStyle = true;
+
+        Assert.Equal(Color("#f9fafb").ToArgb(), form.BackColor.ToArgb());                 // page
+        Assert.Equal(form.BackColor.ToArgb(), panel.BackColor.ToArgb());
+        Assert.Equal(form.BackColor.ToArgb(), label.BackColor.ToArgb());                  // torun da izler
+        Assert.Equal(Color("#ffffff").ToArgb(), text.BackColor.ToArgb());                 // input
+        Assert.Equal(Color("#16a34a").ToArgb(), status.BackColor.ToArgb());
+
+        provider.DarkMode = true;
+        Assert.Equal(Color("#111827").ToArgb(), label.BackColor.ToArgb());
+
+        var late = new Label { BackColor = appBack };                                      // sonradan, uygulamanın renginde
+        form.Controls.Add(late);
+        Assert.Equal(form.BackColor.ToArgb(), late.BackColor.ToArgb());
+    });
+
+    [Fact]
+    public void Follow_parent_back_color_can_be_turned_off() => Sta.Run(() =>
+    {
+        var appBack = Color("#272727");
+        using var provider = new TailwindProvider { FollowParentBackColor = false };
+        using var form = new Form { BackColor = appBack };
+        var label = new Label { BackColor = appBack };
+        form.Controls.Add(label);
+
+        provider.ContainerControl = form;
+        provider.AutoStyle = true;
+
+        Assert.Equal(appBack.ToArgb(), label.BackColor.ToArgb());
+    });
+
+    [Fact]
+    public void Inherit_copied_back_colors_compares_original_colors_and_keeps_other_defaults()
+    {
+        var appBack = Color("#272727");
+        using var form = new Form { BackColor = appBack };
+        var group = new GroupBox { BackColor = appBack };
+        var inner = new Label { BackColor = appBack };
+        var text = new TextBox { BackColor = appBack };                                   // sıfırlanınca Window olurdu
+        var skipped = new CheckBox { BackColor = appBack };
+        group.Controls.AddRange(new Control[] { inner, text, skipped });
+        form.Controls.Add(group);
+
+        int count = TailwindProvider.InheritCopiedBackColors(form, c => c is not CheckBox);
+
+        Assert.Equal(2, count);                                                            // group, inner
+        form.BackColor = Color("#f9fafb");
+        Assert.Equal(form.BackColor.ToArgb(), inner.BackColor.ToArgb());
+        Assert.Equal(appBack.ToArgb(), text.BackColor.ToArgb());
+        Assert.Equal(appBack.ToArgb(), skipped.BackColor.ToArgb());
+    }
+
     [Fact]
     public void Changing_the_theme_restyles_automatic_controls() => Sta.Run(() =>
     {

@@ -1,1 +1,4 @@
 #nullable enable
+FormWind.TailwindProvider.FollowParentBackColor.get -> bool
+FormWind.TailwindProvider.FollowParentBackColor.set -> void
+static FormWind.TailwindProvider.InheritCopiedBackColors(System.Windows.Forms.Control! root, System.Func<System.Windows.Forms.Control!, bool>? filter = null) -> int

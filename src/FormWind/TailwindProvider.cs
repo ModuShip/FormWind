@@ -38,6 +38,8 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     private ContainerControl? _containerControl;
     // AutoStyle'ın gezdiği ve ControlAdded'ına abone olunan konteynerler.
     private readonly HashSet<Control> _autoContainers = new HashSet<Control>();
+    // Çocuklarının kopyalanmış zeminleri bırakılmış konteynerler (bkz. FollowParentBackColor); her biri bir kez.
+    private readonly HashSet<Control> _backColorsChecked = new HashSet<Control>();
 
     public TailwindProvider()
     {
@@ -220,6 +222,68 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         }
     }
 
+    /// <summary>
+    /// With <see cref="AutoStyle"/>, controls whose background is their parent's background set explicitly are left to inherit
+    /// it before they are styled (see <see cref="InheritCopiedBackColors"/>). Theme engines of existing applications often copy
+    /// the form's background into every control; without this, a label that only gets a text color keeps the application's
+    /// background when the form gets a new one (dark text on the old dark background). Not done in the Designer.
+    /// </summary>
+    [Category("FormWind"), DefaultValue(true), Description("With AutoStyle, controls that copy their parent's background follow the parent's new background.")]
+    public bool FollowParentBackColor { get; set; } = true;
+
+    /// <summary>
+    /// Leaves to inheritance the <c>BackColor</c> of the descendants of <paramref name="root"/> whose explicitly set background
+    /// equals their parent's, comparing the colors as they are before any change, so they follow the parent's background
+    /// from then on. Call it before the controls are styled. Controls whose default background differs from the parent's
+    /// (e.g. <see cref="TextBox"/>: <see cref="System.Drawing.SystemColors.Window"/>) keep their color. Composite controls
+    /// (<see cref="PropertyGrid"/>, <see cref="UpDownBase"/>, <see cref="TwTextBox"/>) are not entered.
+    /// </summary>
+    /// <param name="root">The form or container whose descendants are checked.</param>
+    /// <param name="filter">Returns <c>false</c> for controls to leave alone; <c>null</c> checks all.</param>
+    /// <returns>The number of controls left to inheritance.</returns>
+    public static int InheritCopiedBackColors(Control root, Func<Control, bool>? filter = null)
+    {
+        if (root is null) throw new ArgumentNullException(nameof(root));
+        return InheritCopiedBackColorsIn(root, root.BackColor.ToArgb(), filter, null);
+    }
+
+    private static int InheritCopiedBackColorsIn(Control parent, int parentBack, Func<Control, bool>? filter, HashSet<Control>? visited)
+    {
+        int count = 0;
+        foreach (Control child in parent.Controls)
+        {
+            // Torunlar çocuğun özgün zeminiyle karşılaştırılır: çocuk önce bırakılsaydı ebeveyninin rengini gösterirdi.
+            var before = child.BackColor;
+            if (IsAutoContainer(child) && (visited is null || visited.Add(child)))
+                count += InheritCopiedBackColorsIn(child, before.ToArgb(), filter, visited);
+            if (InheritIfCopied(child, parentBack, filter)) count++;
+        }
+        return count;
+    }
+
+    private static bool InheritIfCopied(Control control, int parentBack, Func<Control, bool>? filter)
+    {
+        var before = control.BackColor;
+        if (before.ToArgb() != parentBack || !TwOriginal.IsExplicit(control, nameof(Control.BackColor))) return false;
+        if (filter != null && !filter(control)) return false;
+        control.ResetBackColor();
+        // Ebeveynin o anki zemini: sonradan eklenen kontrolde ebeveyn çoktan stillenmiştir.
+        if (control.Parent is Control parent && control.BackColor.ToArgb() == parent.BackColor.ToArgb()) return true;
+        control.BackColor = before;
+        return false;
+    }
+
+    // FormWind'in zemin kanalını izlediği kontrollere dokunulmaz: izlenen rengin değişmesi uygulamanın ataması sayılır ve
+    // class'lar o kanalı bırakırdı. Class'ları atanmış ama henüz uygulanmamış kontroller (InitializeComponent) bırakılabilir.
+    private bool CanInheritBackColor(Control control) =>
+        !_bindings.TryGetValue(control, out var binding) || binding.Original is null;
+
+    private void InheritCopiedBackColorsOnce(Control container)
+    {
+        if (!FollowParentBackColor || IsDesignMode || !IsAutoContainer(container) || !_backColorsChecked.Add(container)) return;
+        InheritCopiedBackColorsIn(container, container.BackColor.ToArgb(), CanInheritBackColor, _backColorsChecked);
+    }
+
     /// <summary>The form (or user control) whose controls <see cref="AutoStyle"/> styles. The Designer sets it to the form being designed.</summary>
     [Category("FormWind"), DefaultValue(null), Description("The form whose controls AutoStyle styles.")]
     public ContainerControl? ContainerControl
@@ -348,6 +412,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     private void ApplyAutoStyle(Control control)
     {
         if (control.IsDisposed) return;
+        InheritCopiedBackColorsOnce(control);
         ApplyAutomaticClasses(control);
         if (!IsAutoContainer(control)) return;
         if (_autoContainers.Add(control))
@@ -388,11 +453,17 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
             container.Disposed -= OnAutoContainerDisposed;
         }
         _autoContainers.Clear();
+        _backColorsChecked.Clear();
     }
 
     private void OnAutoControlAdded(object? sender, ControlEventArgs e)
     {
-        if (e.Control != null && _autoStyle) ApplyAutoStyle(e.Control);
+        if (e.Control is null || !_autoStyle) return;
+        // Ebeveyn zaten stillendi; sonradan eklenen kontrol ebeveynin özgün zeminiyle karşılaştırılır.
+        if (FollowParentBackColor && !IsDesignMode && sender is Control parent
+            && _bindings.TryGetValue(parent, out var binding) && binding.Original?.BackColor is System.Drawing.Color original)
+            InheritIfCopied(e.Control, original.ToArgb(), CanInheritBackColor);
+        ApplyAutoStyle(e.Control);
     }
 
     private void OnAutoContainerDisposed(object? sender, EventArgs e)
@@ -401,6 +472,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         container.ControlAdded -= OnAutoControlAdded;
         container.Disposed -= OnAutoContainerDisposed;
         _autoContainers.Remove(container);
+        _backColorsChecked.Remove(container);
     }
 
     internal TwParsed? GetParsed(Control control) =>
