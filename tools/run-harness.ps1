@@ -70,7 +70,7 @@ if (-not $run) { Write-Warning "Harness log'u yok: hook yüklenmedi ya da hiç f
 
 $lines = Get-Content (Join-Path $run.FullName 'log.txt')
 Write-Host "`nLog: $($run.FullName)"
-$lines | Where-Object { $_ -match ' (STARTED|FORM|EXCEPTION|UNKNOWN|OWNERDRAW|SCREEN|EXIT) ' }
+$lines | Where-Object { $_ -match ' (STARTED|FORM|EXCEPTION|UNKNOWN|OWNERDRAW|SCREEN|TIMER STARVATION|UI BLOCKED|EXIT) ' }
 $count = { param($pattern) ($lines | Where-Object { $_ -cmatch $pattern }).Count }
-Write-Host ("`nÖzet: {0} form, {1} exception, {2} bilinmeyen class, {3} kontrast sorunu ({7} görüntüden), {4} kendi çizen kontrol, {5} donma (>250 ms), {6} çizim fırtınası" -f `
-    (& $count ' FORM '), (& $count ' EXCEPTION '), (& $count ' UNKNOWN '), (& $count ' CONTRAST '), (& $count ' OWNERDRAW '), (& $count ' UI STALL '), (& $count ' PAINT STORM '), (& $count ' SCREEN '))
+Write-Host ("`nÖzet: {0} form, {1} exception, {2} bilinmeyen class, {3} kontrast sorunu ({7} görüntüden), {4} kendi çizen kontrol, {5} donma (>250 ms), {6} çizim fırtınası, {8} zamanlayıcı açlığı" -f `
+    (& $count ' FORM '), (& $count ' EXCEPTION '), (& $count ' UNKNOWN '), (& $count ' CONTRAST '), (& $count ' OWNERDRAW '), (& $count ' UI STALL '), (& $count ' PAINT STORM '), (& $count ' SCREEN '), (& $count ' TIMER STARVATION \d'))

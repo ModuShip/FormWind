@@ -8,6 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Interlocked = System.Threading.Interlocked;
+using SynchronizationContext = System.Threading.SynchronizationContext;
+using Thread = System.Threading.Thread;
 
 namespace FormWind.Harness;
 
@@ -19,7 +22,8 @@ namespace FormWind.Harness;
 /// <item><description><c>FORMWIND_SKIP=DataGridView,ToolStrip</c> bu tipleri stillemez.</description></item>
 /// <item><description><c>FORMWIND_SELFTEST=1</c> her yeni formun açık ve koyu temada ekran görüntüsünü alır (PrintWindow), kontrastını
 /// class renklerinden ve görüntüden (<see cref="ScreenContrast"/>) denetler.</description></item>
-/// <item><description><c>FORMWIND_EXIT_AFTER=60</c> verilen saniye sonra süreci sonlandırır (gözetimsiz çalıştırma).</description></item>
+/// <item><description><c>FORMWIND_EXIT_AFTER=60</c> verilen saniye sonra süreci sonlandırır (gözetimsiz çalıştırma). Süre arka plan
+/// iş parçacığında tutulur; UI zamanlayıcıları dursa da (bkz. <c>TIMER STARVATION</c>) süreç sonlanır.</description></item>
 /// <item><description><c>FORMWIND_DUMP=1</c> hiç stil uygulamaz; her formun kontrollerinin renk, font ve padding değerlerini
 /// <c>dump-&lt;form&gt;.txt</c> dosyasına yazar (örn. dönüştürme aracından önce ve sonra karşılaştırmak için).</description></item>
 /// <item><description><c>FORMWIND_CLOSE=FormSettings</c> adı verilen formları işlendikten sonra kapatır (açılıştaki modal
@@ -51,6 +55,7 @@ public static class FormWindHarness
         (typeof(UpDownBase), "bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"),
         (typeof(CheckBox), "text-gray-800 dark:text-gray-200"),
         (typeof(RadioButton), "text-gray-800 dark:text-gray-200"),
+        (typeof(LinkLabel), "text-gray-800 accent-blue-600 dark:text-gray-200 dark:accent-blue-400"),
         (typeof(Label), "text-gray-800 dark:text-gray-200"),
         (typeof(GroupBox), "text-gray-700 dark:text-gray-300"),
         (typeof(TreeView), "bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100"),
@@ -58,14 +63,21 @@ public static class FormWindHarness
         (typeof(ListBox), "bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100"),
         (typeof(ToolStrip), "bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-100"),
         (typeof(TabPage), "bg-white dark:bg-gray-900 dark:text-gray-100"),
+        (typeof(TabControl), "tab-control"),
+        (typeof(PropertyGrid), "properties"),
+        (typeof(ProgressBar), "range"),
         (typeof(Form), "bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100"),
         (typeof(UserControl), "dark:bg-gray-900 dark:text-gray-100"),
         (typeof(SplitContainer), "dark:bg-gray-900"),
         (typeof(Panel), "dark:bg-gray-900"),
     };
 
-    private static readonly Dictionary<Form, TailwindProvider> Providers = new();
-    private static readonly HashSet<Control> Hooked = new();
+    // Her UI iş parçacığı kendi formlarını tarar ve stiller: bazı uygulamalar pencerelerini ayrı UI iş parçacıklarında
+    // açar (Open Live Writer her düzenleyiciyi ve açılış ekranını). Bir izleyici, harness'in olmadığı iş parçacığında form
+    // görünce harness'i o formun üzerinden oraya kurar.
+    [ThreadStatic] private static UiThread? _thread;
+    private static readonly List<UiThread> Threads = new();
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Form, object> Dispatched = new();
     private static readonly HashSet<string> Reported = new();
     private static readonly object LogLock = new();
     private static readonly Stopwatch Clock = Stopwatch.StartNew();
@@ -74,7 +86,6 @@ public static class FormWindHarness
     private static bool _dark;
     private static bool _selfTest;
     private static bool _dump;
-    private static readonly HashSet<Form> Dumped = new();
     private static HashSet<string> _close = new(StringComparer.OrdinalIgnoreCase);
     private static string? _walkText;
     private static int _walkWait = 4000;
@@ -82,88 +93,250 @@ public static class FormWindHarness
     private static HashSet<int> _walkSkip = new();
     private static Form? _opened;
     private static HashSet<string> _skip = new(StringComparer.OrdinalIgnoreCase);
-    private static int _paints;
-    private static int _busySeconds;
     private static int _forms;
+    [ThreadStatic] private static int _inherited;
     private static bool _installed;
+    private static readonly object InstallLock = new();
 
-    /// <summary>UI iş parçacığında çağrılır (startup hook ya da uygulamanın kendisi).</summary>
+    private static UiThread Current => _thread ?? throw new InvalidOperationException("The harness is not installed on this thread.");
+
+    /// <summary>
+    /// Startup hook ya da uygulamanın kendisi çağırır; uygulamaya kod olarak eklenince Main'in başında çağrılabilir. Her UI
+    /// iş parçacığına harness, o iş parçacığında ilk form açılınca kurulur.
+    /// </summary>
     public static void Install()
     {
-        if (_installed) return;
-        _installed = true;
-
-        _dark = Environment.GetEnvironmentVariable("FORMWIND_DARK") == "1";
-        _selfTest = Environment.GetEnvironmentVariable("FORMWIND_SELFTEST") == "1";
-        _dump = Environment.GetEnvironmentVariable("FORMWIND_DUMP") == "1";
-        _walkText = Environment.GetEnvironmentVariable("FORMWIND_WALK") is { Length: > 0 } walk ? walk : null;
-        if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_WALK_WAIT"), out int wait) && wait > 0) _walkWait = wait;
-        _walkSkip = new HashSet<int>((Environment.GetEnvironmentVariable("FORMWIND_WALK_SKIP") ?? "")
-            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x.Trim(), out int n) ? n : -1));
-        _close = new HashSet<string>(
-            (Environment.GetEnvironmentVariable("FORMWIND_CLOSE") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
-            StringComparer.OrdinalIgnoreCase);
-        // .NET Framework'te de derlenir (projeye kopyalanarak kullanılabilir): Split(char, TrimEntries) yok.
-        _skip = new HashSet<string>(
-            (Environment.GetEnvironmentVariable("FORMWIND_SKIP") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
-            StringComparer.OrdinalIgnoreCase);
-
-        string process = Process.GetCurrentProcess().ProcessName;
-        _directory = Path.Combine(Path.GetTempPath(), "FormWind-Harness", $"{process}-{DateTime.Now:yyyyMMdd-HHmmss}");
-        Directory.CreateDirectory(_directory);
-        _logPath = Path.Combine(_directory, "log.txt");
-        Log($"STARTED {process} FormWind {typeof(TailwindProvider).Assembly.GetName().Version} dark={_dark} selftest={_selfTest} dump={_dump} skip=[{string.Join(",", _skip)}]");
-
-        Application.AddMessageFilter(new DarkToggleFilter());
-        if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_EXIT_AFTER"), out int seconds) && seconds > 0)
+        bool first = false;
+        lock (InstallLock)
         {
-            var exit = new Timer { Interval = seconds * 1000 };
-            exit.Tick += (_, _) =>
+            if (!_installed)
             {
-                Log($"EXIT after {seconds} s: {_forms} forms styled");
-                Environment.Exit(0);
-            };
-            exit.Start();
-        }
+                _installed = true;
+                first = true;
+            _dark = Environment.GetEnvironmentVariable("FORMWIND_DARK") == "1";
+            _selfTest = Environment.GetEnvironmentVariable("FORMWIND_SELFTEST") == "1";
+            _dump = Environment.GetEnvironmentVariable("FORMWIND_DUMP") == "1";
+            _walkText = Environment.GetEnvironmentVariable("FORMWIND_WALK") is { Length: > 0 } walk ? walk : null;
+            if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_WALK_WAIT"), out int wait) && wait > 0) _walkWait = wait;
+            _walkSkip = new HashSet<int>((Environment.GetEnvironmentVariable("FORMWIND_WALK_SKIP") ?? "")
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x.Trim(), out int n) ? n : -1));
+            _close = new HashSet<string>(
+                (Environment.GetEnvironmentVariable("FORMWIND_CLOSE") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+            // .NET Framework'te de derlenir (projeye kopyalanarak kullanılabilir): Split(char, TrimEntries) yok.
+            _skip = new HashSet<string>(
+                (Environment.GetEnvironmentVariable("FORMWIND_SKIP") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
+                StringComparer.OrdinalIgnoreCase);
 
-        if (Environment.GetEnvironmentVariable("FORMWIND_OPEN") is { Length: > 0 } open) StartOpening(open);
+            string process = Process.GetCurrentProcess().ProcessName;
+            _directory = Path.Combine(Path.GetTempPath(), "FormWind-Harness", $"{process}-{DateTime.Now:yyyyMMdd-HHmmss}");
+            Directory.CreateDirectory(_directory);
+            _logPath = Path.Combine(_directory, "log.txt");
+            Log($"STARTED {process} FormWind {typeof(TailwindProvider).Assembly.GetName().Version} dark={_dark} selftest={_selfTest} dump={_dump} skip=[{string.Join(",", _skip)}]");
+
+            // WinForms zamanlayıcısı değil: Windows WM_TIMER'ı yalnızca kuyrukta başka mesaj yokken üretir. Her OnPaint'te
+            // Invalidate eden bir form (örn. ShareX'in bölge yakalaması) UI zamanlayıcılarını süresiz durdurur.
+            if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_EXIT_AFTER"), out int seconds) && seconds > 0)
+            {
+                StartBackground("FormWind harness exit", () =>
+                {
+                    Thread.Sleep(seconds * 1000);
+                    Log($"EXIT after {seconds} s: {_forms} forms styled");
+                    Exit();
+                });
+            }
+
+                StartBackground("FormWind harness watchdog", Watchdog);
+            }
+        }
+        // Mesaj döngüsü yoksa (örn. Main'in başında) burada pencere oluşturulmaz: WinForms zamanlayıcısı gizli bir pencere
+        // açar ve uygulamanın sonraki SetCompatibleTextRenderingDefault çağrısı düşerdi (Open Live Writer). İzleyici,
+        // ilk form açılınca harness'i o formun iş parçacığına kurar.
+        if (Application.MessageLoop) InstallThread();
+        if (first && Environment.GetEnvironmentVariable("FORMWIND_OPEN") is { Length: > 0 } open) _openList = open;
+        if (_thread != null) StartPendingOpen();
+    }
+
+    // FORMWIND_OPEN ilk kurulan UI iş parçacığında başlar.
+    private static string? _openList;
+
+    private static void StartPendingOpen()
+    {
+        string? open;
+        lock (InstallLock)
+        {
+            open = _openList;
+            _openList = null;
+        }
+        if (open != null) StartOpening(open);
+    }
+
+    // Bu iş parçacığına bir kez: tema kısayolu, formları bulan ve donmaları ölçen zamanlayıcı. Bekçiye ilk tikte kaydolunur:
+    // Install mesaj döngüsü olmayan bir iş parçacığında (örn. Main'de, Application.Run'dan önce) çağrılmış olabilir.
+    private static void InstallThread()
+    {
+        if (_thread != null) return;
+        var thread = _thread = new UiThread($"#{Thread.CurrentThread.ManagedThreadId}");
+        Application.AddMessageFilter(new DarkToggleFilter());
+        Application.ThreadExit += (_, _) =>
+        {
+            lock (Threads) Threads.Remove(thread);
+        };
 
         // Tek zamanlayıcı: yeni formları bulur, donmaları (geç gelen tik) ve saniyedeki çizim sayısını kaydeder.
         var timer = new Timer { Interval = 50 };
-        long lastTick = 0, lastFlush = 0;
+        long lastFlush = 0;
         timer.Tick += (_, _) =>
         {
             long now = Clock.ElapsedMilliseconds;
-            if (lastTick > 0 && now - lastTick > 250) Log($"UI STALL {now - lastTick} ms");
-            lastTick = now;
+            if (thread.Context is null)
+            {
+                thread.Context = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
+                Interlocked.Exchange(ref thread.LastTick, now);
+                int count;
+                lock (Threads)
+                {
+                    Threads.Add(thread);
+                    count = Threads.Count;
+                }
+                if (count > 1) Log($"THREAD {thread.Name}: harness running on {count} UI threads");
+            }
+            long last = Interlocked.Exchange(ref thread.LastTick, now);
+            if (thread.Starved)
+            {
+                thread.Starved = false;
+                Log($"TIMER STARVATION ended after {now - last} ms");
+            }
+            else if (now - last > 250) Log($"UI STALL {now - last} ms");
             Scan();
             if (now - lastFlush < 1000) return;
             // Tema değişimi gibi tek seferlik yeniden çizimler kısa sürer; 3 saniye üst üste süren yoğun çizim bir
             // döngüdür (çizim sırasında yeniden geçersiz kılma).
-            if (_paints > 100)
+            if (thread.Paints > 100)
             {
-                _busySeconds++;
-                Log(_busySeconds >= 3 ? $"PAINT STORM {_paints} in {now - lastFlush} ms ({_busySeconds} s in a row)" : $"PAINTS {_paints} in {now - lastFlush} ms");
+                thread.BusySeconds++;
+                Log(thread.BusySeconds >= 3 ? $"PAINT STORM {thread.Paints} in {now - lastFlush} ms ({thread.BusySeconds} s in a row)" : $"PAINTS {thread.Paints} in {now - lastFlush} ms");
             }
-            else _busySeconds = 0;
-            _paints = 0;
+            else thread.BusySeconds = 0;
+            thread.Paints = 0;
             lastFlush = now;
         };
         timer.Start();
         Scan();
+        StartPendingOpen();
+    }
+
+    // Her 500 ms: harness'in kurulmadığı iş parçacığındaki formlar üzerinden o iş parçacığına kurulur (BeginInvoke iş
+    // parçacığı güvenlidir). Bir UI zamanlayıcısı 2 saniyedir çalışmadıysa o iş parçacığına bir mesaj gönderilir: mesaj
+    // işlenirse iş parçacığı çalışıyor ama WM_TIMER gelmiyordur (kuyrukta hep çizim mesajı var); işlenmezse iş parçacığı
+    // bloklanmıştır. Her durum bir kez yazılır.
+    private static void Watchdog()
+    {
+        while (true)
+        {
+            Thread.Sleep(500);
+            DispatchToNewThreads();
+            UiThread[] threads;
+            lock (Threads) threads = Threads.ToArray();
+            foreach (var thread in threads)
+            {
+                long silent = Clock.ElapsedMilliseconds - Interlocked.Read(ref thread.LastTick);
+                if (silent < 2000)
+                {
+                    thread.Reported = false;
+                    continue;
+                }
+                if (thread.Reported || thread.Context is null) continue;
+                thread.Reported = true;
+                long sent = Clock.ElapsedMilliseconds;
+                thread.Context.Post(_ => Interlocked.Exchange(ref thread.Probed, Clock.ElapsedMilliseconds), null);
+                Thread.Sleep(500);
+                string where = threads.Length > 1 ? $" (thread {thread.Name})" : "";
+                if (Interlocked.Read(ref thread.Probed) >= sent)
+                {
+                    thread.Starved = true;
+                    Log($"TIMER STARVATION {silent} ms{where}: UI thread processes messages but WinForms timers do not tick (a window invalidating itself on every paint?)");
+                }
+                else Log($"UI BLOCKED {silent} ms{where}: UI thread does not process messages");
+            }
+        }
+    }
+
+    private static void DispatchToNewThreads()
+    {
+        Form[] forms;
+        try
+        {
+            forms = Application.OpenForms.Cast<Form>().ToArray();
+        }
+        catch (InvalidOperationException)
+        {
+            return; // Koleksiyon başka bir iş parçacığında değişti; bir sonraki turda.
+        }
+        foreach (var form in forms)
+        {
+            if (form.IsDisposed || !form.IsHandleCreated || Dispatched.TryGetValue(form, out _)) continue;
+            Dispatched.Add(form, form);
+            try
+            {
+                form.BeginInvoke(new Action(InstallThread));
+            }
+            catch (InvalidOperationException)
+            {
+                // Form tam o an kapandı.
+            }
+        }
+    }
+
+    private static bool Report(string key)
+    {
+        lock (Reported) return Reported.Add(key);
+    }
+
+    private sealed class UiThread
+    {
+        public readonly Dictionary<Form, TailwindProvider> Providers = new();
+        public readonly HashSet<Control> Hooked = new();
+        public readonly HashSet<Form> Dumped = new();
+        public readonly string Name;
+        public SynchronizationContext? Context;
+        public int Paints;
+        public int BusySeconds;
+        public long LastTick;
+        public long Probed;
+        public volatile bool Starved;
+        public bool Reported;
+
+        public UiThread(string name) => Name = name;
+    }
+
+    private static void StartBackground(string name, Action action) =>
+        new Thread(() => action()) { IsBackground = true, Name = name }.Start();
+
+    // Environment.Exit, ProcessExit dinleyicileri UI iş parçacığını beklerse dönmeyebilir; o durumda süreç zorla sonlandırılır.
+    private static void Exit()
+    {
+        StartBackground("FormWind harness kill", () =>
+        {
+            Thread.Sleep(5000);
+            Log("EXIT forced: Environment.Exit did not return in 5 s");
+            Process.GetCurrentProcess().Kill();
+        });
+        Environment.Exit(0);
     }
 
     private static void Scan()
     {
+        var thread = Current;
         foreach (Form form in Application.OpenForms.Cast<Form>().ToList())
         {
-            if (form.IsDisposed || !form.Visible) continue;
+            if (form.IsDisposed || !form.Visible || form.InvokeRequired) continue;
             if (_dump)
             {
-                if (Dumped.Add(form)) ScheduleDump(form);
+                if (thread.Dumped.Add(form)) ScheduleDump(form);
                 continue;
             }
-            if (!Providers.ContainsKey(form)) Attach(form);
+            if (!thread.Providers.ContainsKey(form)) Attach(form);
         }
     }
 
@@ -202,15 +375,16 @@ public static class FormWindHarness
         provider.UnknownClasses += (_, e) =>
         {
             foreach (string cls in e.Unknown)
-                if (Reported.Add($"unknown {e.Control.GetType().Name}:{cls}")) Log($"UNKNOWN class '{cls}' on {Describe(e.Control)}");
+                if (Report($"unknown {e.Control.GetType().Name}:{cls}")) Log($"UNKNOWN class '{cls}' on {Describe(e.Control)}");
         };
-        Providers.Add(form, provider);
+        var thread = Current;
+        thread.Providers.Add(form, provider);
         form.Disposed += (_, _) =>
         {
-            Providers.Remove(form);
+            thread.Providers.Remove(form);
             provider.Dispose();
         };
-        _forms++;
+        Interlocked.Increment(ref _forms);
 
         var sw = Stopwatch.StartNew();
         var counts = new Dictionary<string, int>();
@@ -218,6 +392,7 @@ public static class FormWindHarness
         form.SuspendLayout();
         try
         {
+            if (!_skip.Contains("*")) _inherited = TailwindProvider.InheritCopiedBackColors(form, CanInheritBackColor);
             Walk(provider, form, counts, unstyled);
         }
         finally
@@ -227,12 +402,21 @@ public static class FormWindHarness
         Log($"FORM {form.GetType().FullName} styled {counts.Values.Sum()} controls in {sw.ElapsedMilliseconds} ms [{Summary(counts)}]");
         if (unstyled.Count > 0)
             Log($"  unstyled: {string.Join(", ", unstyled.GroupBy(t => t).OrderByDescending(g => g.Count()).Select(g => $"{g.Key}={g.Count()}"))}");
+        if (_inherited > 0) Log($"  inherited: {_inherited} controls had the parent's background copied into BackColor; reset to follow the parent");
 
         AuditContrast(form, provider, _dark ? "dark" : "light");
         // Renklerini uygulamanın çizdiği kontroller: kontrast denetimi bunları ölçemez, koyu temada açık kalabilirler.
         foreach (var drawn in TwContrast.FindOwnerDrawn(form))
-            if (Reported.Add($"ownerdraw {Describe(drawn.Control)}")) Log($"OWNERDRAW {Describe(drawn.Control)}: {drawn.Reason}");
-        if (form is ThreadExceptionDialog) Log($"APP EXCEPTION dialog opened: {form.Text}");
+            if (Report($"ownerdraw {Describe(drawn.Control)}")) Log($"OWNERDRAW {Describe(drawn.Control)}: {drawn.Reason}");
+        if (form is ThreadExceptionDialog)
+        {
+            Log($"APP EXCEPTION dialog opened: {form.Text}");
+            // Ayrıntı kutusu (gizli olabilir) istisnanın tipini, iletisini ve yığınını taşır.
+            var details = Descendants(form).OfType<TextBoxBase>().Select(t => t.Text).FirstOrDefault(t => t.Length > 0);
+            if (details != null)
+                foreach (var line in details.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Trim().Length > 0).Take(8))
+                    Log($"  {line.Trim()}");
+        }
         if (_walkText != null)
         {
             if (_walkRoot is null)
@@ -406,28 +590,37 @@ public static class FormWindHarness
         Style(provider, control, counts, unstyled);
         if (!IsContentContainer(control))
         {
-            if (Hooked.Add(control))
+            if (Current.Hooked.Add(control))
             {
-                control.Paint += (_, _) => _paints++;
-                control.Disposed += (_, _) => Hooked.Remove(control);
+                control.Paint += (_, _) => Current.Paints++;
+                control.Disposed += (_, _) => Current.Hooked.Remove(control);
             }
             return;
         }
-        if (Hooked.Add(control))
+        if (Current.Hooked.Add(control))
         {
-            control.Paint += (_, _) => _paints++;
+            control.Paint += (_, _) => Current.Paints++;
             control.ControlAdded += (_, e) =>
             {
-                if (e.Control is null || Hooked.Contains(e.Control)) return;
+                if (e.Control is null || Current.Hooked.Contains(e.Control)) return;
                 var added = new Dictionary<string, int>();
                 Walk(provider, e.Control, added, null);
                 if (added.Count > 0) Log($"ADDED {e.Control.GetType().FullName} into {control.FindForm()?.GetType().Name} styled {added.Values.Sum()} [{Summary(added)}]");
             };
-            control.Disposed += (_, _) => Hooked.Remove(control);
+            control.Disposed += (_, _) => Current.Hooked.Remove(control);
         }
 
         foreach (Control child in control.Controls.Cast<Control>().ToList())
             Walk(provider, child, counts, unstyled);
+    }
+
+    // Kendi tema motoru olan uygulamalar (örn. ShareX) ebeveynin zeminini her çocuğa açıkça yazar. Ebeveyn yeni zemine
+    // geçince bu çocuklar eski zeminde kalır ve yalnızca yazı rengi verilen etiketler okunmaz olur (koyu üstüne koyu).
+    // Form stillenmeden önce bu çocuklar ebeveyni izlemeye bırakılır (AutoStyle'ın FollowParentBackColor'ı gibi).
+    private static bool CanInheritBackColor(Control control)
+    {
+        var match = Map.FirstOrDefault(m => m.Type.IsInstanceOfType(control));
+        return match.Type is null || !_skip.Contains(match.Type.Name);
     }
 
     private static void Style(TailwindProvider provider, Control control, Dictionary<string, int> counts, List<string>? unstyled)
@@ -460,7 +653,7 @@ public static class FormWindHarness
             int fresh = 0;
             foreach (var issue in issues)
             {
-                if (!Reported.Add($"contrast {mode} {form.GetType().Name} {Describe(issue.Control)} {issue.Part}")) continue;
+                if (!Report($"contrast {mode} {form.GetType().Name} {Describe(issue.Control)} {issue.Part}")) continue;
                 fresh++;
                 Log($"CONTRAST {mode} {form.GetType().Name}: {issue}");
             }
@@ -475,8 +668,19 @@ public static class FormWindHarness
     private static void ToggleDark()
     {
         _dark = !_dark;
+        UiThread[] threads;
+        lock (Threads) threads = Threads.ToArray();
+        foreach (var thread in threads)
+        {
+            if (thread == _thread) ApplyDark(thread);
+            else thread.Context?.Post(_ => ApplyDark(thread), null);
+        }
+    }
+
+    private static void ApplyDark(UiThread thread)
+    {
         var sw = Stopwatch.StartNew();
-        foreach (var provider in Providers.Values.ToList())
+        foreach (var provider in thread.Providers.Values.ToList())
         {
             try
             {
@@ -487,8 +691,8 @@ public static class FormWindHarness
                 Log($"EXCEPTION toggling dark mode: {ex}");
             }
         }
-        Log($"DARK toggled to {_dark} across {Providers.Count} forms in {sw.ElapsedMilliseconds} ms");
-        foreach (var pair in Providers.ToList()) AuditContrast(pair.Key, pair.Value, _dark ? "dark" : "light");
+        Log($"DARK toggled to {_dark} across {thread.Providers.Count} forms in {sw.ElapsedMilliseconds} ms");
+        foreach (var pair in thread.Providers.ToList()) AuditContrast(pair.Key, pair.Value, _dark ? "dark" : "light");
     }
 
     // Formu o anki ve karşı temada çizer, karşı temanın kontrastını denetler ve geri döner. Görüntüler formun kendi
@@ -554,7 +758,7 @@ public static class FormWindHarness
         try
         {
             foreach (var issue in ScreenContrast.Audit(form, image, ScreenContrast.WindowOrigin(form)))
-                if (Reported.Add($"screen {mode} {Describe(issue.Control)}"))
+                if (Report($"screen {mode} {Describe(issue.Control)}"))
                     Log($"SCREEN {mode} {Describe(issue.Control)}: {issue.Ratio:0.0}:1 (yazı #{issue.Foreground.ToArgb() & 0xFFFFFF:X6}, zemin #{issue.Background.ToArgb() & 0xFFFFFF:X6})");
         }
         catch (Exception ex)
