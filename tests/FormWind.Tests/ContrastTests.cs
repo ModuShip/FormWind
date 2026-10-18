@@ -108,6 +108,28 @@ public class ContrastTests
         form.Close();
     });
 
+    // Yalnızca yazı rengi veren class'lar uygulamanın kendi zeminini bırakır; denetim nedenini söylemeli.
+    [Fact]
+    public void Audit_reports_a_kept_application_background_as_the_cause()
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form { BackColor = ColorTranslator.FromHtml("#272727") };
+        var copied = new Label { Name = "copied", Text = "Ad", BackColor = ColorTranslator.FromHtml("#272727") };
+        var plain = new Label { Name = "plain", Text = "Soyad", BackColor = ColorTranslator.FromHtml("#272727") };
+        form.Controls.Add(copied);
+        form.Controls.Add(plain);
+        provider.SetClasses(form, "bg-gray-50");
+        provider.SetClasses(copied, "text-gray-800");
+        provider.SetClasses(plain, "text-gray-800 bg-gray-800");
+
+        var issues = TwContrast.Audit(form, provider);
+
+        var kept = Assert.Single(issues, i => i.Control == copied);
+        Assert.Equal(TwContrastCause.KeptBackground, kept.Cause);
+        Assert.Contains("add bg-*", kept.ToString());
+        Assert.Equal(TwContrastCause.None, Assert.Single(issues, i => i.Control == plain).Cause);
+    }
+
     // İlk uygulamada transition çalışmaz: uygulamanın atadığı renkten başlayan geçiş açılışta renk kaydırırdı. Sonraki
     // değişimler (tema, durum, class) geçişlidir.
     [Fact]

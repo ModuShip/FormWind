@@ -79,7 +79,7 @@ public static class TwContrast
                     CheckGrid(grid, back, minimum, issues);
                     break;
                 default:
-                    if (CarriesText(control)) Check(issues, control, "text", fore, back, required);
+                    if (CarriesText(control)) Check(issues, control, "text", fore, back, required, KeptBackground(control, provider));
                     break;
             }
 
@@ -128,11 +128,24 @@ public static class TwContrast
 
     private static double Required(Font font, double minimum) => IsLarge(font) ? Math.Min(minimum, LargeTextMinimum) : minimum;
 
-    private static void Check(List<TwContrastIssue> issues, Control control, string part, Color fore, Color back, double required)
+    private static void Check(List<TwContrastIssue> issues, Control control, string part, Color fore, Color back, double required,
+        TwContrastCause cause = TwContrastCause.None)
     {
         if (fore.IsEmpty || back.IsEmpty || fore.A == 0) return;
         double ratio = Ratio(fore, back);
-        if (ratio + 1e-9 < required) issues.Add(new TwContrastIssue(control, part, fore, back, ratio, required));
+        if (ratio + 1e-9 < required) issues.Add(new TwContrastIssue(control, part, fore, back, ratio, required, cause));
+    }
+
+    // Class'lar yazı rengini verip zemini vermiyorsa ve zemin uygulamanın açıkça atadığı, ebeveyninkinden farklı bir
+    // renkse: uygulamanın tema motoru zemini kopyalamış, FormWind ebeveyni değiştirmiştir (yazı yeni, zemin eski).
+    private static TwContrastCause KeptBackground(Control control, TailwindProvider? provider)
+    {
+        if (provider?.GetParsed(control) is not TwParsed parsed) return TwContrastCause.None;
+        var style = parsed.Resolve(provider.BaseState);
+        if (style.ForeColor is null || style.BackColor != null) return TwContrastCause.None;
+        if (!TwOriginal.IsExplicit(control, nameof(Control.BackColor))) return TwContrastCause.None;
+        if (control.Parent is Control parent && EffectiveBack(parent).ToArgb() == EffectiveBack(control).ToArgb()) return TwContrastCause.None;
+        return TwContrastCause.KeptBackground;
     }
 
     // Kendi metnini çizen kontroller; paneller ve konteynerler yalnızca zemindir.
@@ -246,10 +259,26 @@ public static class TwContrast
     }
 }
 
+/// <summary>Why a contrast issue occurs, when <see cref="TwContrast.Audit"/> can tell.</summary>
+public enum TwContrastCause
+{
+    /// <summary>No specific cause: the colors themselves do not contrast.</summary>
+    None,
+
+    /// <summary>
+    /// The classes set only the text color, and the background is a color the application set explicitly that differs from
+    /// the parent's (typically copied by the application's theme engine before FormWind restyled the parent). Add a
+    /// <c>bg-*</c> class or let the control inherit its parent's background (<see cref="TailwindProvider.InheritCopiedBackColors"/>,
+    /// <see cref="TailwindProvider.FollowParentBackColor"/>).
+    /// </summary>
+    KeptBackground,
+}
+
 /// <summary>A foreground/background pair below the threshold.</summary>
 public sealed class TwContrastIssue
 {
-    internal TwContrastIssue(Control control, string part, Color foreground, Color background, double ratio, double required)
+    internal TwContrastIssue(Control control, string part, Color foreground, Color background, double ratio, double required,
+        TwContrastCause cause = TwContrastCause.None)
     {
         Control = control;
         Part = part;
@@ -257,6 +286,7 @@ public sealed class TwContrastIssue
         Background = background;
         Ratio = ratio;
         Required = required;
+        Cause = cause;
     }
 
     public Control Control { get; }
@@ -272,9 +302,14 @@ public sealed class TwContrastIssue
 
     public double Required { get; }
 
+    public TwContrastCause Cause { get; }
+
     public override string ToString() =>
         $"{Control.GetType().Name} '{Control.Name}' {Part}: {Ratio:0.00}:1 < {Required:0.0}:1 " +
-        $"(#{Foreground.R:X2}{Foreground.G:X2}{Foreground.B:X2} on #{Background.R:X2}{Background.G:X2}{Background.B:X2})";
+        $"(#{Foreground.R:X2}{Foreground.G:X2}{Foreground.B:X2} on #{Background.R:X2}{Background.G:X2}{Background.B:X2})" +
+        (Cause == TwContrastCause.KeptBackground
+            ? "; the classes set only the text color and the background is the application's own: add bg-* or inherit the parent's background"
+            : "");
 }
 
 /// <summary>A control whose colors the application paints itself (see <see cref="TwContrast.FindOwnerDrawn"/>).</summary>
