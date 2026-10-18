@@ -5,6 +5,33 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `AutoStyle` leaves controls whose background was copied from their parent (typical of application theme engines) to
+  follow the parent's new background (`FollowParentBackColor`, on by default); `TailwindProvider.InheritCopiedBackColors`
+  does the same for classes assigned in code.
+- `PropertyGrid`, standard `TabControl`/`TabPage` and `ProgressBar` are styled (`properties`, `tab-control`, `tab-page`
+  and `range` components, also mapped by `AutoStyle`).
+- `TailwindProvider.GetColors` and `GetCurrentColors` resolve class colors for code that paints controls itself.
+- `TwContrastIssue.Cause` (`TwContrastCause.KeptBackground`) explains low contrast caused by an application background
+  kept under a class text color.
+- Harness: `TIMER STARVATION` and `UI BLOCKED` log lines; `FORMWIND_EXIT_AFTER` runs on a background thread.
+- `LinkLabel` links take `accent-*` (`link-label` component, mapped by `AutoStyle`); the contrast audit checks them.
+- Dark mode darkens ListView column and group headers.
+- Harness: runs on every UI thread of applications with several; `Install` can be called at the start of `Main`;
+  the application's error dialog details are logged.
+
+### Changed
+
+- `transition` no longer animates the first application of classes; theme, state and class changes still animate.
+
+### Fixed
+
+- Disabled standard `Label` text is redrawn in a readable color when the classes set the text color.
+- Disabled standard `CheckBox` and `RadioButton` text is redrawn in a readable color when the classes set the text
+  color (it was nearly invisible in dark mode).
+- The contrast audit checks the target color of disabled flat buttons during a transition (false reports).
+
 ## [0.1.0-preview.1] - 2026-10-17
 
 First public preview.

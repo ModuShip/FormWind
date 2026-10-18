@@ -72,7 +72,7 @@ description: Colors, typography, spacing, sizes, borders, corners, shadows, ring
 
 <h2>Interaction</h2>
 <ul>
-  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) fades background, text and shadow changes (ease-out, 150 ms by default).</li>
+  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) fades background, text and shadow changes (ease-out, 150 ms by default). The first application has no transition: when classes are assigned, the control takes its final color at once; theme, state and class changes are animated.</li>
   <li><strong><code>hover:</code> / <code>active:</code></strong> restyle only controls that use these variants; other controls ignore mouse movement.</li>
   <li><strong><code>group</code> / <code>group-hover:</code></strong> style children when the container is hovered — even when the cursor enters through a child.</li>
   <li><strong>Placeholders:</strong> <code>TwTextBox.PlaceholderText</code>, colored with <code>placeholder:text-gray-400</code>.</li>
@@ -93,6 +93,13 @@ tw.SetClasses(lblStatus, "bg-red-600 text-white"); // new classes: the backgroun
   <li>The <a href="accessibility.html#contrast-audit">contrast audit</a> reports unreadable pairs this can produce in dark mode.</li>
   <li>The <a href="designer.html#fw001">FW001 analyzer</a> flags such assignments at compile time.</li>
 </ul>
+
+<h2>Colors for painting code</h2>
+<p>Where the application paints the colors itself (a <code>CellPainting</code> handler, an owner-drawn <code>ListView</code>), ask the provider for the class colors. The result follows the provider's current mode (dark, high contrast); a color the classes do not set is <code>null</code>.</p>
+<pre><code class="language-csharp">var selected = tw.GetColors("list", "selected");            // components and parts are expanded
+var hover = tw.GetColors("list", "item", TwState.Hover);
+var own = tw.GetCurrentColors(lvUploads, "selected");          // the control's classes and current state
+e.Graphics.FillRectangle(new SolidBrush(selected.Back ?? SystemColors.Highlight), e.Bounds);</code></pre>
 
 <h2>Removing classes</h2>
 <p><code>SetClasses(control, "")</code> restores color, font, padding, margin, cursor, visibility, corners and the ToolStrip renderer to their values from before the classes. Sizes (<code>w-*</code>, <code>h-*</code>) are not reverted, because the layout may have resized the control since.</p>

@@ -94,7 +94,7 @@ Bütün görünümler **aynı bileşen adlarını** tanımlar; görünüm deği�
 | Butonlar | `btn`, `btn-primary`, `btn-secondary` (dolgulu nötr), `btn-ghost` (kenarlıklı varsayılan), `btn-danger`, `link` |
 | Form | `input`, `select` (input ve açılır liste), `field`, `toggle`, `range` (slider, ilerleme) |
 | Yüzey ve yazı | `page` (form zemini, yazı rengi ve font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
-| Veri ve gezinme | `table`, `list`, `tabs`, `menu` |
+| Veri ve gezinme | `table`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties` |
 
 **Anlamsal renkler.** Bileşenler `primary`, `surface` (nötr zemin ve yazı), `danger`, `success` ve `warning` renklerini kullanır (`bg-primary-600`, `text-surface-500` …). Varsayılan temada bunlar sırasıyla `blue`, `gray`, `red`, `green` ve `amber`'ın kopyasıdır ve palet sürümünü izler. Tema dosyasında bir rampa tanımlamak (`"colors": { "primary": { "50": "…", …, "950": "…" } }`) bütün bileşenleri birlikte yeniden renklendirir. Kendi class'larınızda da anlamsal adları kullanırsanız onlar da görünümle değişir.
 
@@ -109,19 +109,25 @@ Bütün görünümler **aynı bileşen adlarını** tanımlar; görünüm deği�
 | `TextBox`, `RichTextBox`, `MaskedTextBox`, `TwTextBox`, `TwNumberBox` | `input` |
 | `ComboBox`, `TwSelect`, `TwDatePicker` | `select` |
 | `CheckBox`, `RadioButton`, `TwCheckBox`, `TwRadioButton`, `TwSwitch` | `toggle` |
-| `TwSlider`, `TwProgress` | `range` |
+| `TwSlider`, `TwProgress`, `ProgressBar` | `range` |
 | `TwField` | `field` |
 | `DataGridView` | `table` |
 | `ListBox`, `ListView`, `TreeView`, `TwDataList`, `TwListBox`, `TwTreeView` | `list` |
 | `TwTabStrip` (ve `TwTabControl`'ün şeridi) | `tabs` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
+| `LinkLabel` | `link-label` |
+| `TabControl`, `TabPage` | `tab-control`, `tab-page` |
+| `PropertyGrid` | `properties` |
 
 - Etiketler ve paneller listede yoktur: formun yazı ve zemin rengini alırlar.
+- **Kopyalanan zeminler.** Mevcut uygulamaların tema motorları formun zeminini çoğu zaman her kontrole açıkça yazar. FormWind formu yeniden boyayınca bu kontroller eski zeminde kalır ve yalnızca yazı rengi alan etiketler okunmaz olur (koyu zemin üzerinde koyu yazı). `AutoStyle`, bir konteyneri ilk gezişinde zemini ebeveyninkiyle aynı olan kontrolleri ebeveyni izlemeye bırakır (`FollowParentBackColor`, varsayılan açık; Designer'da yapılmaz). Sıfırlanınca ebeveynden farklı bir varsayılana dönen kontroller (örn. TextBox) rengini korur; sonradan eklenen kontroller ebeveynin özgün zeminiyle karşılaştırılır. Class'ları kendiniz atıyorsanız aynı işi stillemeden önce `TailwindProvider.InheritCopiedBackColors(form)` yapar.
 - Kontrolün kendi class'ları otomatik bileşenin **üzerine** eklenir: `flex-1`, `mt-2` ya da `bg-red-50` görünümü korur. Kendi class'larında bir bileşen adı varsa (`btn-primary`, `card` …) otomatik bileşen kullanılmaz.
 - Otomatik class'lar Designer.cs'e yazılmaz; akıllı etikette `AutoStyle: input` olarak görünür ve class oluşturucu onların üzerine yazar.
 - Eşleme tema dosyasında değiştirilir: `"autoStyle": { "Button": "btn-primary", "Label": "muted", "KryptonButton": "btn-ghost", "ListView": "" }`. Anahtar tipin kısa adıdır, temel tipler de aranır (`TextBoxBase` tüm metin kutularını kapsar); boş değer o tipi stillemez. Kodda `theme.SetAutoStyle("Button", "btn-primary")`.
-- `LinkLabel` bağlantılarını `LinkColor` ile çizdiği için eşlenmez; bağlantı için `link` bileşenli bir `Label` kullanın.
-- İç kontrolleri olan bileşik kontrollerin (`TwTextBox`'ın metin kutusu, `NumericUpDown`, `PropertyGrid`) içine girilmez.
+- `LinkLabel` `link-label` bileşenini alır: bağlantı dışındaki yazı `text-*`, bağlantılar (`LinkColor`, `ActiveLinkColor`, `VisitedLinkColor`) `accent-*`; devre dışı bağlantı yazı rengiyle zeminin ortasıdır. Kontrast denetimi bağlantı rengini `link` bölümü olarak ölçer.
+- İç kontrolleri olan bileşik kontrollerin (`TwTextBox`'ın metin kutusu, `NumericUpDown`, `PropertyGrid`) içine girilmez. `PropertyGrid` kendi renk özellikleriyle stillenir: `bg-*`/`text-*` görünüm, yardım ve komut alanları, `divide-*` aralarındaki çizgiler, `header:` kategori satırları, `selected:` seçili özellik; koyu temada iç kaydırma çubuğu da koyulaşır.
+- Standart `TabControl` renkleri yok saydığından renk veren class'larda sekme şeridini FormWind, Windows'un çiziminin üzerine yeniden çizer (`DrawMode` değişmez; değişimi sayfalardaki bütün kontrollerin handle'larını yeniden oluştururdu): `bg-*`/`text-*` sekmeler, `selected:` seçili sekme, `selected:border-*` seçili sekmenin dış kenarında 2 px çizgi; şeridin boş kısmı ebeveynin, sayfa çerçevesi seçili sayfanın zeminini alır. Uygulamanın kendisi çizdiği (`OwnerDrawFixed`) sekmelere dokunulmaz.
+- Standart `ProgressBar` temalı çizildiğinde renk almaz; `accent-*` (çubuk) ya da `fill-*`/`bg-*` (iz) verilince görsel stili kapatılır ve renkler native kontrole gönderilir (düz, klasik çubuk; `Blocks` stili bu sürede `Continuous` olur). Class'lar kaldırılınca tema ve stil geri gelir.
 
 Vitrinde görünümler arasında geçiş yapan bir form vardır: `FormWind.Showcase.exe --presets` (ilk görünüm için `--preset fluent`).
 
@@ -167,7 +173,16 @@ tw.SetClasses(lblStatus, "bg-red-600 text-white");   // yeni class'lar: arka pla
 
 - Ebeveynden kalıtılan renk değişimleri (örn. form koyu temaya geçti) uygulamanın ataması sayılmaz.
 - Kanalı geri almak için farklı class'lar atanmalıdır; `Refresh(control)` yetmez.
-- Uygulama yalnızca zemini değiştirip yazı rengini class'lara bırakırsa koyu temada okunmayan bir çift (açık yazı, açık zemin) çıkabilir. [Kontrast denetimi](#kontrast-denetimi) bunu raporlar.
+- Uygulama yalnızca zemini değiştirip yazı rengini class'lara bırakırsa koyu temada okunmayan bir çift (açık yazı, açık zemin) çıkabilir. [Kontrast denetimi](#kontrast-denetimi) bunu raporlar ve nedenini `Cause = TwContrastCause.KeptBackground` olarak verir.
+
+**Kendi çizen kod.** `CellPainting` işleyicisi ya da owner-draw bir ListView gibi renkleri uygulamanın çizdiği yerlerde class renkleri sağlayıcıdan istenir; sonuç sağlayıcının o anki modunu (koyu tema, yüksek karşıtlık) izler:
+
+```csharp
+var selected = tw.GetColors("list", "selected");            // bileşenler ve part'lar açılır
+var hover = tw.GetColors("list", "item", TwState.Hover);
+var own = tw.GetCurrentColors(lvUploads, "selected");          // kontrolün class'ları ve o anki durumu
+e.Graphics.FillRectangle(new SolidBrush(selected.Back ?? SystemColors.Highlight), e.Bounds);
+```
 
 ## Yerleşim (flex ve grid)
 
@@ -278,6 +293,8 @@ Gölge ve halka kontrolün **ebeveyninde** çizilir (kontroller kendi sınırlar
 ## Etkileşim
 
 - **`transition`** (`transition-colors`, `duration-75` … `duration-1000`, `duration-[250ms]`): arka plan ve metin rengi değişimleri yumuşak geçişle (ease-out, varsayılan 150 ms) uygulanır. Gölge değişimleri de (`shadow-sm hover:shadow-lg transition`) aynı sürede, eski gölge solarken yenisi belirerek geçer; bulanık gölgeler önbellekten gelir, geçiş sırasında yeniden hesaplanmaz.
+  - İlk uygulama geçişsizdir: class'lar atandığında kontrol hemen son rengini alır (geçiş uygulamanın kendi renginden başlayıp açılışta renk kaydırırdı). Tema, durum (hover, focus, disabled …) ve class değişimleri geçişlidir.
+  - Geçişler bir WinForms zamanlayıcısıyla (yaklaşık 60 kare/sn) ilerler. Windows `WM_TIMER`'ı yalnızca kuyrukta başka mesaj yokken üretir; her `OnPaint`'te kendini yeniden geçersiz kılan bir pencere açıkken (örn. ShareX'in bölge yakalaması) ya da UI iş parçacığı meşgulken geçişler durur ve o sırada ara renkte kalır, pencere kapanınca tamamlanır. Kontrast denetimi bu sürede de varılacak rengi ölçer.
 - **`hover:` / `active:`**: yalnızca bu varyantları olan kontroller fare girip çıkınca yeniden stillenir; diğerlerinde fare hareketi stil uygulamasını tetiklemez. Class'lar imleç zaten kontrolün üzerindeyken atanırsa (örn. tıklayınca class'ı değişen bir buton) hover durumu hemen uygulanır.
 - **`group` / `group-hover:`**: `group` class'lı konteynerin üzerine gelindiğinde içindeki kontrollerin `group-hover:` varyantları uygulanır. Hover'a tepki veren konteynerler, imleç doğrudan bir çocuk kontrolün üzerinden girse de hover sayılır.
 - **Placeholder**: `TwTextBox.PlaceholderText`; renk `placeholder:text-gray-400`.
@@ -286,6 +303,10 @@ Gölge ve halka kontrolün **ebeveyninde** çizilir (kontroller kendi sınırlar
 ## CheckBox, Radio, Switch
 
 `TwCheckBox`, `TwRadioButton`, `TwSwitch` owner-draw çizilir. Seçili renk `accent-*`, seçili değilken dolgu `fill-*`, kutu kenarlığı `border-*`, köşe `rounded-*`, metin `text-*`. `TwSwitch` (44×24 px) düğmesi 150 ms içinde kayar.
+
+Devre dışı standart `Label` da (resimsiz, `LinkLabel` olmayan) yazı rengi class'lardan geliyorsa aynı şekilde yeniden çizilir: Windows onu koyu temada görünmeyen kabartma griyle çizer.
+
+Standart `CheckBox` ve `RadioButton` devre dışıyken `ForeColor`'ı yok sayar ve yazıyı zeminden türettiği koyu bir renkle çizer; koyu temada yazı görünmez olur. Class'lar yazı rengini veriyorsa FormWind devre dışı yazıyı işaretin yanında yeniden çizer: `disabled:text-*` varsa o renk, yoksa yazı rengiyle zeminin ortası. İşaret solda ya da sağda, `Appearance.Normal`, resimsiz ve `FlatStyle.System` olmayan kontrollerde yapılır.
 
 ## Menü ve araç çubukları
 
@@ -311,9 +332,10 @@ Form'a class verildiğinde koyu tema açıkken başlık çubuğu otomatik koyula
 
 | Özellik (varsayılan açık) | Etki |
 | --- | --- |
-| `TailwindProvider.DarkScrollbars` | Panel, TextBox, ListBox, TreeView, ListView ve DataGridView kaydırma çubukları |
+| `TailwindProvider.DarkScrollbars` | Panel, TextBox, ListBox, TreeView, ListView ve DataGridView kaydırma çubukları; ListView'da sütun ve grup başlıkları da (Explorer'ın koyu liste teması; başlık yazısı listenin yazı rengiyle çizilir, `OwnerDraw` listeler hariç) |
 | `TailwindProvider.DarkToolTips` | Native ipucu pencereleri: `ToolTip` bileşenleri, ToolStrip öğe ipuçları, ListView/TreeView ipuçları |
 
+- Windows devre dışı ListView, ComboBox ve metin kutularını sistem renkleriyle çizer; koyu temada açık kalırlar ve `BackColor` bunu değiştirmez (örn. KeePass'te veritabanı açık değilken girdi listesi ve arama kutusu).
 - İpuçları uygulamanın kendi bileşenlerine ait olduğundan `DarkToolTips` iş parçacığı geneline etki eder: koyu temada en az bir provider varsa o iş parçacığının ipuçları koyudur. Tema değişince açık ipucu pencereleri de güncellenir.
 - İkisi de Windows Gezgini'nin kullandığı belgelenmemiş `DarkMode_Explorer` temasını kullanır (Windows 10 1809+); desteklenmeyen sistemlerde etkisizdir, sorun olursa kapatılabilir.
 - Class'larla stillenen ipucu için `TwToolTip` kullanılabilir.
@@ -699,10 +721,11 @@ foreach (var issue in TwContrast.Audit(this, tw))
 
 - Eşik normal metinde 4,5:1, büyük metinde (18 pt ya da 14 pt kalın) 3:1 (WCAG AA). `minimum` parametresiyle değiştirilebilir.
 - Saydam zeminler ebeveynin zeminiyle birleştirilerek hesaplanır. Gizli kontroller atlanır.
-- Devre dışı kontroller WCAG'ın kapsamı dışında olduğundan varsayılan olarak atlanır. `includeDisabled: true` onları da denetler (bölüm adı `disabled text`); bu, devre dışı bir kontrolün içerik göstermek için kullanıldığı durumları yakalar (örn. imleç görünmesin diye devre dışı bırakılmış bir açıklama kutusu). Devre dışı native metin kutularında zemin Windows'un çizdiği sistem zemini sayılır. Harness denetimi bu seçenekle çalıştırır. Devre dışı butonlarda ekrana çizilen yazı rengi 3:1 eşiğiyle denetlenir: amaç kontrast değil, görünmez yazıyı yakalamak.
+- Devre dışı kontroller WCAG'ın kapsamı dışında olduğundan varsayılan olarak atlanır. `includeDisabled: true` onları da denetler (bölüm adı `disabled text`); bu, devre dışı bir kontrolün içerik göstermek için kullanıldığı durumları yakalar (örn. imleç görünmesin diye devre dışı bırakılmış bir açıklama kutusu). Devre dışı native metin kutularında zemin Windows'un çizdiği sistem zemini sayılır. Harness denetimi bu seçenekle çalıştırır. Devre dışı butonlarda ve yazısını FormWind'in yeniden çizdiği onay kutularında ekrana çizilen yazı rengi 3:1 eşiğiyle denetlenir: amaç kontrast değil, görünmez yazıyı yakalamak.
 - `transition` geçişi süren renklerde varılacak renk denetlenir; denetim tema değişiminin hemen ardından çağrılabilir.
+- `issue.Cause` bilinen nedeni verir: `KeptBackground`, class'lar yalnızca yazı rengini verip zemin uygulamanın açıkça atadığı (ebeveyninkinden farklı) renkte kaldığında; çözüm bir `bg-*` class'ı ya da [kopyalanan zeminlerin](#hazır-görünümler-ve-autostyle) ebeveyni izlemesidir. `ToString()` nedeni de yazar.
 - `TwContrast.Ratio(ön, zemin)` iki renk arasındaki oranı verir.
-- `TwContrast.FindOwnerDrawn(root)` renklerini uygulamanın kendisi çizen kontrolleri listeler (`CellPainting` aboneli ya da `OnPaint`'i ezen grid'ler, `OwnerDraw`/`DrawMode` açık liste, ağaç, sekme ve açılır kutular). Denetim bunların ekrandaki renklerini bilemez; koyu temada elle bakılmalıdır.
+- `TwContrast.FindOwnerDrawn(root)` renklerini uygulamanın kendisi çizen kontrolleri listeler (`CellPainting` aboneli ya da `OnPaint`'i ezen grid'ler, `OwnerDraw`/`DrawMode` açık liste, ağaç, sekme ve açılır kutular). Denetim bunların ekrandaki renklerini bilemez; koyu temada elle bakılmalıdır. Çizim kodu renkleri `tw.GetColors(…)` ile alabilir.
 - Varsayılan bileşenler (`btn-primary`, `btn-ghost`, `card`, `input`, `table`) açık ve koyu temada bu denetimden geçer (`ContrastTests`). `btn-primary` koyu temada da `blue-600`/`blue-700` kullanır; beyaz yazı `blue-500` üzerinde 3,7:1, `blue-400` üzerinde 2,5:1 ile eşiğin altında kalır.
 
 ## Hata yönetimi
@@ -955,7 +978,7 @@ Bu testlerin bulduğu her hata için `ApplierTests` içinde ayrıca açık bir r
 | --- | --- |
 | `-Dark` / `FORMWIND_DARK=1` | Koyu temayla başlar. Çalışırken **Ctrl+Alt+Shift+D** temayı değiştirir. |
 | `-SelfTest` / `FORMWIND_SELFTEST=1` | Her yeni formun açık ve koyu temada görüntüsünü alır ve kontrastını hem class renklerinden hem görüntüden denetler. |
-| `-ExitAfter 60` / `FORMWIND_EXIT_AFTER` | Verilen saniye sonra süreci sonlandırır (gözetimsiz çalıştırma). |
+| `-ExitAfter 60` / `FORMWIND_EXIT_AFTER` | Verilen saniye sonra süreci sonlandırır (gözetimsiz çalıştırma). Süre arka plan iş parçacığında tutulur; UI zamanlayıcıları dursa da süreç sonlanır. |
 | `-Skip DataGridView,ToolStrip` / `FORMWIND_SKIP` | Bu tipleri stillemez; bir sorunu bir kontrol tipine indirmek için. |
 | `FORMWIND_DISABLE=1` | Harness'i kapatır; aynı senaryoyu FormWind'siz karşılaştırmak için. |
 | `-Dump` / `FORMWIND_DUMP=1` | Hiç stil uygulamaz; her formun kontrollerinin renk, font ve padding değerlerini `dump-<form>.txt` dosyasına yazar. Dönüştürme aracından önce ve sonra çalıştırılıp karşılaştırılır. |
@@ -975,14 +998,19 @@ Log ve görüntüler `%TEMP%\FormWind-Harness\<süreç>-<zaman>\` altına yazıl
 | `OWNERDRAW` | Renklerini uygulamanın kendisi çizen kontroller (`TwContrast.FindOwnerDrawn`): kontrast denetimi bunları ölçemez, class'ların hücre/öğe renkleri yok sayılabilir; koyu temada elle bakılmalı |
 | `UI STALL` | UI iş parçacığının 250 ms'den uzun donması |
 | `PAINT STORM` | 3 saniye üst üste saniyede 100'den fazla çizim: çizim sırasında yeniden geçersiz kılma döngüsü |
+| `TIMER STARVATION` | UI iş parçacığı mesaj işliyor ama WinForms zamanlayıcıları 2 saniyedir çalışmıyor: Windows `WM_TIMER`'ı kuyrukta başka mesaj yokken üretir, her `OnPaint`'te `Invalidate` eden bir pencere (örn. ShareX'in bölge yakalaması) onu süresiz bekletir. Bu sürede harness yeni formları bulamaz ve `PAINT STORM` ölçülemez; zamanlayıcılar dönünce `TIMER STARVATION ended` yazılır |
+| `UI BLOCKED` | UI iş parçacığı 2 saniyedir hiç mesaj işlemiyor; bitince süresi `UI STALL` olarak da yazılır |
 | `EXCEPTION`, `UNKNOWN` | Stil uygulanırken çıkan hata; tanınmayan class |
 
-- Startup hook yalnızca .NET (Core) uygulamalarında vardır; trim edilmiş ya da hook'u kapatılmış uygulamalarda yüklenmez. .NET Framework uygulamalarında projeye `FormWind.Harness`'teki `FormWindHarness.cs` eklenip UI iş parçacığında `FormWindHarness.Install()` çağrılmalıdır.
+- Startup hook yalnızca .NET (Core) uygulamalarında vardır; trim edilmiş ya da hook'u kapatılmış uygulamalarda yüklenmez. .NET Framework uygulamalarında projeye `FormWind.Harness`'teki `FormWindHarness.cs` (`LangVersion` `latest`) ve FormWind'in net472 derlemesi eklenir, `Main`'in başında `FormWindHarness.Install()` çağrılır. `Install` mesaj döngüsü yokken pencere oluşturmaz (uygulamanın sonraki `SetCompatibleTextRenderingDefault` çağrısı düşerdi); kurulum ilk form açılınca yapılır. FormWind'in bağımlılıkları için projede `AutoGenerateBindingRedirects` açılmalıdır.
+- Pencerelerini ayrı UI iş parçacıklarında açan uygulamalarda (Open Live Writer her düzenleyiciyi ve açılış ekranını) harness her iş parçacığına ayrı kurulur: her iş parçacığı kendi formlarını tarar, donma ve zamanlayıcı açlığı iş parçacığı başına ölçülür, tema kısayolu hepsine geçer.
+- Uygulamanın hata diyaloğu (`ThreadExceptionDialog`) açılınca `APP EXCEPTION` satırının altına hatanın ilk satırları yazılır.
 - Harness yalnızca içerik taşıyan konteynerlere (form, panel, GroupBox, sekme, SplitContainer, UserControl, ToolStrip konteynerleri) iner. Bileşik kontrollerin iç parçaları (örn. `KryptonTextBox`'ın içindeki `TextBox`, `PropertyGrid`'in yardım paneli, `NumericUpDown`'ın düzenleme kutusu) kontrolün kendisine aittir ve stillenmez.
 - Self-test görüntüleri üst düzey pencerelerde `PrintWindow` ile alınır: başlık çubuğu, `RichTextBox` ve MDI çocukları ekrandaki gibi çıkar, pencere başka bir pencerenin altında kalsa da çalışır. MDI çocuklarında (`PrintWindow` üstteki kardeş pencereleri de yakaladığından) ve `PrintWindow` başarısız olursa `DrawToBitmap` kullanılır; orada başlık çubuğu Windows'un çizdiği gibi görünmez ve `RichTextBox` yanlış çizilir.
 - Formlar bir zamanlayıcıyla bulunur; uygulama WinForms ya da WPF mesaj döngüsüyle çalışsa da (örn. Greenshot) olur. Class'lar form gösterildikten sonra uygulandığından açılışta kısa bir an stilsiz görünebilir; o anda uygulamanın atadığı renkler özgün değer sayılır.
 - Bir sorun bulunduğunda önce `FORMWIND_DISABLE=1` ile FormWind'siz tekrarlayın; sorun yine oluyorsa uygulamanındır. Sonra `-Skip` ile sorunu bir kontrol tipine indirin.
-- Denenen uygulamalar: Git Extensions (.NET 10, startup hook), Greenshot (.NET Framework 4.8, WPF döngüsü), Greenshot 1.3 (.NET Framework 4.7.2, WinForms döngüsü, harness kod olarak), mRemoteNG (.NET 10, DockPanelSuite), Krypton Toolkit örnekleri (.NET 9: grid, giriş formu, ribbon, docking), ScottPlot WinForms demosu (.NET 10, 45 demo, `FORMWIND_WALK` ile), bir MDI kabuğu (.NET 8: birleşen menüler, pencere listesi, büyütülmüş çocuk, sonradan açılan çocuklar). Bulunan sorunlar bu README'deki davranışlara ve testlere dönüştü. Kendi tema motoru olan uygulamalarda (mRemoteNG) uygulamanın atadığı renkler korunduğu için koyu tema kısmen görünür; bu beklenen davranıştır.
+- Kendi tema motoru olan uygulamalar ebeveynin zeminini çoğu zaman her çocuğa açıkça yazar (örn. ShareX). Harness, form stillenmeden önce zemini ebeveyninkiyle aynı olan çocukların `BackColor`'ını sıfırlar; böylece yalnızca yazı rengi verilen etiketler ve checkbox'lar ebeveynin yeni zeminini izler (log'da `inherited`). Sıfırlanınca ebeveynden farklı bir varsayılana dönen kontroller (örn. TextBox) eski renklerini korur.
+- Denenen uygulamalar: Git Extensions (.NET 10, startup hook), Greenshot (.NET Framework 4.8, WPF döngüsü), Greenshot 1.3 (.NET Framework 4.7.2, WinForms döngüsü, harness kod olarak), mRemoteNG (.NET 10, DockPanelSuite), Krypton Toolkit örnekleri (.NET 9: grid, giriş formu, ribbon, docking), ScottPlot WinForms demosu (.NET 10, 45 demo, `FORMWIND_WALK` ile), bir MDI kabuğu (.NET 8: birleşen menüler, pencere listesi, büyütülmüş çocuk, sonradan açılan çocuklar), KeePass 2.61.1 (.NET Framework 4.8, harness kod olarak), Open Live Writer (.NET Framework 4.7.2, harness kod olarak, birden çok UI iş parçacığı; C++ Ribbon olmadan yalnızca açılış ekranı ve sihirbaz), ShareX 19.0.2 (.NET 9, kendi koyu teması, `FORMWIND_OPEN` ile 8 form; sonraki sürümlerin arayüzü Avalonia'dır). Bulunan sorunlar bu README'deki davranışlara ve testlere dönüştü. Kendi tema motoru olan uygulamalarda (mRemoteNG) uygulamanın atadığı renkler korunduğu için koyu tema kısmen görünür; bu beklenen davranıştır.
 
 ### Görsel regresyon testleri
 

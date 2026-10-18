@@ -31,6 +31,22 @@ description: FormWind's owner-drawn controls, the virtual TwDataList, menus and 
 <h3>Standard controls</h3>
 <p>A <code>TextBox</code> gets its <code>border-*</code> and <code>rounded-*</code> as a frame on its parent. A <code>ComboBox</code> in <code>DropDownList</code> mode has its closed box painted by FormWind — background, border, corners, text and arrow; the drop-down list stays native. Editable combo boxes and <code>ListBox</code> get colors and fonts but no corners; use <code>TwSelect</code> and <code>TwListBox</code> for those.</p>
 
+<p>A <code>PropertyGrid</code> is styled through its own color properties: <code>bg-*</code> and <code>text-*</code> set the grid view, help and commands panes, <code>divide-*</code> the lines between them, <code>header:</code> the category rows and <code>selected:</code> the selected property; read-only properties are the text color mixed halfway toward the background.</p>
+<p>The standard <code>TabControl</code> ignores colors; with classes that give colors, FormWind repaints the tab strip over Windows' drawing as flat blocks. <code>bg-*</code> and <code>text-*</code> set the tabs, <code>selected:</code> the selected tab, and <code>selected:border-*</code> draws a 2 px bar on its outer edge. The empty part of the strip takes the parent's background and the frame around the pages the selected page's. <code>DrawMode</code> is not changed (changing it would recreate the handles of every control on the pages); tabs the application draws itself are left alone.</p>
+<p>The standard <code>ProgressBar</code> takes no colors while themed. With <code>accent-*</code> (bar) or <code>fill-*</code>/<code>bg-*</code> (track), its visual style is turned off and the colors are sent to the native control; the <code>Blocks</code> style becomes <code>Continuous</code> meanwhile. Removing the classes restores the theme and the style.</p>
+<pre><code class="language-csharp">tw.SetClasses(propertyGrid1, "properties");
+tw.SetClasses(tabControl1, "tab-control");   // pages: tab-page
+tw.SetClasses(progressBar1, "range");
+tw.SetClasses(lnkHelp, "text-gray-700 accent-blue-600 dark:text-gray-200 dark:accent-blue-400");</code></pre>
+
+<h3>Disabled text</h3>
+<p>Windows draws the text of disabled standard controls in a color derived from the background, ignoring <code>ForeColor</code>; on a dark background that text disappears. When the classes give the text color, FormWind redraws the text: in the <code>disabled:text-*</code> color if there is one, otherwise in the text color mixed halfway toward the background.</p>
+<ul>
+  <li><strong>Flat buttons</strong> (flattened by FormWind, without an image).</li>
+  <li><strong><code>CheckBox</code> and <code>RadioButton</code>:</strong> with the glyph on the left or right, <code>Appearance.Normal</code>, no image and a <code>FlatStyle</code> other than <code>System</code>; the glyph itself is left alone.</li>
+  <li><strong><code>Label</code>:</strong> without an image and not a <code>LinkLabel</code>; wrapping, alignment and padding match the label's own.</li>
+</ul>
+
 <h2>TwDataList</h2>
 <p>A virtual list: rows are requested by index and only visible rows are drawn, so drawing time does not depend on the item count.</p>
 <pre><code class="language-csharp">list.ItemCount = orders.Count;
@@ -74,8 +90,9 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
 <div class="table-wrap"><table>
   <thead><tr><th>Property (on by default)</th><th>Effect</th></tr></thead>
   <tbody>
-    <tr><td><code>DarkScrollbars</code></td><td>Scrollbars of panels, text boxes, list boxes, tree views, list views and grids.</td></tr>
+    <tr><td><code>DarkScrollbars</code></td><td>Scrollbars of panels, text boxes, list boxes, tree views, list views and grids; for list views also the column and group headers (the header text is drawn in the list's text color, except for <code>OwnerDraw</code> lists).</td></tr>
     <tr><td><code>DarkToolTips</code></td><td>Native tooltips: <code>ToolTip</code> components, ToolStrip item tips, ListView/TreeView tips.</td></tr>
   </tbody>
 </table></div>
-<p>Both use the undocumented <code>DarkMode_Explorer</code> theme (Windows 10 1809+) and do nothing on systems that don't support it.</p>
+<p>Both use the undocumented <code>DarkMode_Explorer</code> theme (<code>DarkMode_ItemsView</code> for list views; Windows 10 1809+) and do nothing on systems that don't support it.</p>
+<p>Windows draws disabled <code>ListView</code>, <code>ComboBox</code> and text box controls in system colors; they stay light in dark mode and <code>BackColor</code> does not change that.</p>

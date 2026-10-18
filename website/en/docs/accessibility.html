@@ -38,7 +38,9 @@ foreach (var issue in TwContrast.Audit(this, tw))
     Debug.WriteLine(issue);   // TwButton 'btnSave' hover: 2.54:1 &lt; 4.5:1 (#FFFFFF on #60A5FA)</code></pre>
 <ul>
   <li>Checks text controls, <code>hover:</code> variants (no mouse needed), strips and menus, and DataGridView cells, selection and headers.</li>
-  <li>Transparent backgrounds are blended with the parent's; hidden controls are skipped. <code>includeDisabled: true</code> also checks disabled controls.</li>
+  <li>Transparent backgrounds are blended with the parent's; hidden controls are skipped. <code>includeDisabled: true</code> also checks disabled controls; for buttons, check boxes and labels whose text FormWind redraws, the color actually drawn is checked against 3:1 (see <a href="controls.html#disabled-text">Disabled text</a>).</li>
+  <li>The link color of a <code>LinkLabel</code> is checked as the <code>link</code> part.</li>
+  <li><code>issue.Cause</code> gives a known cause: <code>TwContrastCause.KeptBackground</code> when the classes give only the text color and the background stays a color the application set explicitly, different from the parent's. The fix is a <code>bg-*</code> class or letting <a href="presets.html#copied-backgrounds">copied backgrounds</a> follow the parent; <code>ToString()</code> mentions the cause too.</li>
   <li>Colors mid-<code>transition</code> are checked at their target, so the audit can run right after a theme change.</li>
   <li><code>TwContrast.Ratio(foreground, background)</code> returns the ratio between two colors.</li>
   <li><code>TwContrast.FindOwnerDrawn(root)</code> lists controls that paint their own colors, which the audit can't see — check those by eye.</li>

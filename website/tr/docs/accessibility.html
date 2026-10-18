@@ -38,7 +38,9 @@ foreach (var issue in TwContrast.Audit(this, tw))
     Debug.WriteLine(issue);   // TwButton 'btnSave' hover: 2.54:1 &lt; 4.5:1 (#FFFFFF on #60A5FA)</code></pre>
 <ul>
   <li>Yazılı kontrolleri, <code>hover:</code> varyantlarını (fare gerekmez), şerit ve menüleri, DataGridView hücrelerini, seçimini ve başlıklarını denetler.</li>
-  <li>Saydam zeminler ebeveynin zeminiyle karıştırılır; gizli kontroller atlanır. <code>includeDisabled: true</code> devre dışı kontrolleri de denetler.</li>
+  <li>Saydam zeminler ebeveynin zeminiyle karıştırılır; gizli kontroller atlanır. <code>includeDisabled: true</code> devre dışı kontrolleri de denetler; yazısını FormWind'in yeniden çizdiği butonlar, onay kutuları ve etiketlerde ekrana çizilen renk 3:1 eşiğiyle ölçülür (bkz. <a href="controls.html#disabled-text">Devre dışı yazı</a>).</li>
+  <li><code>LinkLabel</code> bağlantılarının rengi <code>link</code> bölümü olarak ölçülür.</li>
+  <li><code>issue.Cause</code> bilinen nedeni verir: <code>TwContrastCause.KeptBackground</code>, class'lar yalnızca yazı rengini verip zemin uygulamanın açıkça atadığı, ebeveyninkinden farklı bir renkte kaldığında. Çözüm bir <code>bg-*</code> class'ı ya da <a href="presets.html#copied-backgrounds">kopyalanan zeminlerin</a> ebeveyni izlemesidir; <code>ToString()</code> nedeni de yazar.</li>
   <li><code>transition</code> ortasındaki renkler hedef değerleriyle denetlenir; denetim tema değişiminin hemen ardından çağrılabilir.</li>
   <li><code>TwContrast.Ratio(foreground, background)</code> iki renk arasındaki oranı verir.</li>
   <li><code>TwContrast.FindOwnerDrawn(root)</code> renklerini kendisi çizen, denetimin göremediği kontrolleri listeler; bunları gözle kontrol edin.</li>

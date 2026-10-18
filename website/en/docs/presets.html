@@ -33,7 +33,7 @@ description: Ready-made looks (Tailwind, Fluent, Ant Design, Material), semantic
     <tr><td>Buttons</td><td><code>btn</code>, <code>btn-primary</code>, <code>btn-secondary</code> (filled neutral), <code>btn-ghost</code> (outlined default), <code>btn-danger</code>, <code>link</code></td></tr>
     <tr><td>Forms</td><td><code>input</code>, <code>select</code>, <code>field</code>, <code>toggle</code>, <code>range</code> (slider, progress)</td></tr>
     <tr><td>Surfaces and text</td><td><code>page</code> (form background, text color and font), <code>card</code>, <code>sidebar</code>, <code>nav-item</code>, <code>title</code>, <code>muted</code>, <code>badge</code>, <code>alert-info</code>, <code>alert-success</code>, <code>alert-warning</code>, <code>alert-danger</code></td></tr>
-    <tr><td>Data and navigation</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>menu</code></td></tr>
+    <tr><td>Data and navigation</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>tab-control</code>, <code>tab-page</code>, <code>menu</code>, <code>properties</code> (<code>PropertyGrid</code>), <code>link-label</code></td></tr>
   </tbody>
 </table></div>
 
@@ -63,21 +63,34 @@ description: Ready-made looks (Tailwind, Fluent, Ant Design, Material), semantic
     <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code></td><td><code>input</code></td></tr>
     <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code></td><td><code>select</code></td></tr>
     <tr><td><code>CheckBox</code>, <code>RadioButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td><code>toggle</code></td></tr>
-    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td><code>range</code></td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code>, <code>ProgressBar</code></td><td><code>range</code></td></tr>
     <tr><td><code>TwField</code></td><td><code>field</code></td></tr>
     <tr><td><code>DataGridView</code></td><td><code>table</code></td></tr>
     <tr><td><code>ListBox</code>, <code>ListView</code>, <code>TreeView</code>, <code>TwDataList</code>, <code>TwListBox</code>, <code>TwTreeView</code></td><td><code>list</code></td></tr>
     <tr><td><code>TwTabStrip</code> (and the strip of <code>TwTabControl</code>)</td><td><code>tabs</code></td></tr>
     <tr><td><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code></td><td><code>menu</code></td></tr>
+    <tr><td><code>TabControl</code>, <code>TabPage</code></td><td><code>tab-control</code>, <code>tab-page</code></td></tr>
+    <tr><td><code>PropertyGrid</code></td><td><code>properties</code></td></tr>
+    <tr><td><code>LinkLabel</code></td><td><code>link-label</code></td></tr>
   </tbody>
 </table></div>
 <ul>
   <li>Labels and panels are not listed: they take the form's text and background colors.</li>
   <li>A control's own classes are added <strong>on top of</strong> the automatic component, so <code>flex-1</code>, <code>mt-2</code> or <code>bg-red-50</code> keep the look. When its own classes name a component (<code>btn-primary</code>, <code>card</code> …), the automatic one is not used.</li>
   <li>Automatic classes are not written to <code>Designer.cs</code>. The smart tag shows them as <code>AutoStyle: input</code>.</li>
-  <li><code>LinkLabel</code> is not mapped (it draws links with <code>LinkColor</code>); use a <code>Label</code> with the <code>link</code> component.</li>
-  <li>Composite controls (the text box inside <code>TwTextBox</code>, <code>NumericUpDown</code>, <code>PropertyGrid</code>) are not entered.</li>
+  <li>In a <code>LinkLabel</code> the text outside the links takes <code>text-*</code> and the links take <code>accent-*</code>; a disabled link is the text color mixed halfway toward the background.</li>
+  <li>Composite controls (the text box inside <code>TwTextBox</code>, <code>NumericUpDown</code>, <code>PropertyGrid</code>) are not entered; a <code>PropertyGrid</code> is styled through its own color properties (see <a href="controls.html#standard-controls">Standard controls</a>).</li>
 </ul>
+
+<h3>Copied backgrounds</h3>
+<p>Theme engines of existing applications often write the form's background into every control explicitly. When FormWind repaints the form, those controls keep the old background and labels that only get a text color become unreadable (dark text on a dark background). On its first walk of a container, <code>AutoStyle</code> leaves controls whose background equals their parent's to follow the parent.</p>
+<ul>
+  <li><code>FollowParentBackColor</code> is on by default; nothing is changed in the Designer.</li>
+  <li>Controls that would fall back to a different default when reset (a <code>TextBox</code>, for example) keep their color. Controls added later are compared with the parent's original background.</li>
+  <li>If you assign classes yourself, this does the same before styling:</li>
+</ul>
+<pre><code class="language-csharp">TailwindProvider.InheritCopiedBackColors(this);   // controls that copied their parent's background follow it
+tw.FollowParentBackColor = false;                 // to turn it off for AutoStyle</code></pre>
 
 <h3>Changing the mapping</h3>
 <p>The key is the short type name; base types are searched too (<code>TextBoxBase</code> covers every text box). An empty value leaves that type unstyled.</p>

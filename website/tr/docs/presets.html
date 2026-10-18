@@ -33,7 +33,7 @@ description: Hazır görünümler (Tailwind, Fluent, Ant Design, Material), anla
     <tr><td>Butonlar</td><td><code>btn</code>, <code>btn-primary</code>, <code>btn-secondary</code> (dolgulu nötr), <code>btn-ghost</code> (kenarlıklı varsayılan), <code>btn-danger</code>, <code>link</code></td></tr>
     <tr><td>Form</td><td><code>input</code>, <code>select</code>, <code>field</code>, <code>toggle</code>, <code>range</code> (slider, ilerleme)</td></tr>
     <tr><td>Yüzey ve yazı</td><td><code>page</code> (form zemini, yazı rengi ve font), <code>card</code>, <code>sidebar</code>, <code>nav-item</code>, <code>title</code>, <code>muted</code>, <code>badge</code>, <code>alert-info</code>, <code>alert-success</code>, <code>alert-warning</code>, <code>alert-danger</code></td></tr>
-    <tr><td>Veri ve gezinme</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>menu</code></td></tr>
+    <tr><td>Veri ve gezinme</td><td><code>table</code>, <code>list</code>, <code>tabs</code>, <code>tab-control</code>, <code>tab-page</code>, <code>menu</code>, <code>properties</code> (<code>PropertyGrid</code>), <code>link-label</code></td></tr>
   </tbody>
 </table></div>
 
@@ -63,21 +63,34 @@ description: Hazır görünümler (Tailwind, Fluent, Ant Design, Material), anla
     <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code></td><td><code>input</code></td></tr>
     <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code></td><td><code>select</code></td></tr>
     <tr><td><code>CheckBox</code>, <code>RadioButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td><code>toggle</code></td></tr>
-    <tr><td><code>TwSlider</code>, <code>TwProgress</code></td><td><code>range</code></td></tr>
+    <tr><td><code>TwSlider</code>, <code>TwProgress</code>, <code>ProgressBar</code></td><td><code>range</code></td></tr>
     <tr><td><code>TwField</code></td><td><code>field</code></td></tr>
     <tr><td><code>DataGridView</code></td><td><code>table</code></td></tr>
     <tr><td><code>ListBox</code>, <code>ListView</code>, <code>TreeView</code>, <code>TwDataList</code>, <code>TwListBox</code>, <code>TwTreeView</code></td><td><code>list</code></td></tr>
     <tr><td><code>TwTabStrip</code> (ve <code>TwTabControl</code>'ün şeridi)</td><td><code>tabs</code></td></tr>
     <tr><td><code>MenuStrip</code>, <code>ToolStrip</code>, <code>StatusStrip</code></td><td><code>menu</code></td></tr>
+    <tr><td><code>TabControl</code>, <code>TabPage</code></td><td><code>tab-control</code>, <code>tab-page</code></td></tr>
+    <tr><td><code>PropertyGrid</code></td><td><code>properties</code></td></tr>
+    <tr><td><code>LinkLabel</code></td><td><code>link-label</code></td></tr>
   </tbody>
 </table></div>
 <ul>
   <li>Etiketler ve paneller listede yoktur: formun yazı ve zemin rengini alırlar.</li>
   <li>Kontrolün kendi class'ları otomatik bileşenin <strong>üzerine</strong> eklenir; <code>flex-1</code>, <code>mt-2</code> ya da <code>bg-red-50</code> görünümü korur. Kendi class'larında bir bileşen adı varsa (<code>btn-primary</code>, <code>card</code> …) otomatik bileşen kullanılmaz.</li>
   <li>Otomatik class'lar <code>Designer.cs</code>'e yazılmaz; akıllı etikette <code>AutoStyle: input</code> olarak görünür.</li>
-  <li><code>LinkLabel</code> bağlantılarını <code>LinkColor</code> ile çizdiği için eşlenmez; bağlantı için <code>link</code> bileşenli bir <code>Label</code> kullanın.</li>
-  <li>İç kontrolleri olan bileşik kontrollerin (<code>TwTextBox</code>'ın metin kutusu, <code>NumericUpDown</code>, <code>PropertyGrid</code>) içine girilmez.</li>
+  <li><code>LinkLabel</code>'da bağlantı dışındaki yazı <code>text-*</code>, bağlantılar <code>accent-*</code> alır; devre dışı bağlantı yazı rengiyle zeminin ortasıdır.</li>
+  <li>İç kontrolleri olan bileşik kontrollerin (<code>TwTextBox</code>'ın metin kutusu, <code>NumericUpDown</code>, <code>PropertyGrid</code>) içine girilmez; <code>PropertyGrid</code> kendi renk özellikleriyle stillenir (bkz. <a href="controls.html#standard-controls">Standart kontroller</a>).</li>
 </ul>
+
+<h3 id="copied-backgrounds">Kopyalanan zeminler</h3>
+<p>Mevcut uygulamaların tema motorları formun zeminini çoğu zaman her kontrole açıkça yazar. FormWind formu yeniden boyayınca bu kontroller eski zeminde kalır ve yalnızca yazı rengi alan etiketler okunmaz olur (koyu zemin üzerinde koyu yazı). <code>AutoStyle</code>, bir konteyneri ilk gezişinde zemini ebeveyninkiyle aynı olan kontrolleri ebeveyni izlemeye bırakır.</p>
+<ul>
+  <li><code>FollowParentBackColor</code> varsayılan olarak açıktır; Designer'da hiçbir şey değiştirilmez.</li>
+  <li>Sıfırlanınca ebeveynden farklı bir varsayılana dönen kontroller (örneğin <code>TextBox</code>) rengini korur. Sonradan eklenen kontroller ebeveynin özgün zeminiyle karşılaştırılır.</li>
+  <li>Class'ları kendiniz atıyorsanız aynı işi stillemeden önce şu yapar:</li>
+</ul>
+<pre><code class="language-csharp">TailwindProvider.InheritCopiedBackColors(this);   // ebeveyninin zeminini kopyalamış kontroller onu izler
+tw.FollowParentBackColor = false;                 // AutoStyle'da kapatmak için</code></pre>
 
 <h3 id="changing-the-mapping">Eşlemeyi değiştirme</h3>
 <p>Anahtar tipin kısa adıdır; temel tipler de aranır (<code>TextBoxBase</code> bütün metin kutularını kapsar). Boş değer o tipi stillemez.</p>

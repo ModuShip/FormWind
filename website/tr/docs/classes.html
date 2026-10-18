@@ -72,7 +72,7 @@ description: Renkler, yazı, boşluklar, boyutlar, kenarlıklar, köşeler, göl
 
 <h2 id="interaction">Etkileşim</h2>
 <ul>
-  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) zemin, yazı ve gölge değişimlerini yumuşatır (ease-out, varsayılan 150 ms).</li>
+  <li><strong><code>transition</code></strong> (<code>transition-colors</code>, <code>duration-75</code> … <code>duration-1000</code>, <code>duration-[250ms]</code>) zemin, yazı ve gölge değişimlerini yumuşatır (ease-out, varsayılan 150 ms). İlk uygulama geçişsizdir: class'lar atandığında kontrol hemen son rengini alır; tema, durum ve class değişimleri geçişlidir.</li>
   <li><strong><code>hover:</code> / <code>active:</code></strong> yalnızca bu varyantları kullanan kontrolleri yeniden stiller; diğerleri fare hareketini yok sayar.</li>
   <li><strong><code>group</code> / <code>group-hover:</code></strong> konteynerin üzerine gelindiğinde çocukları stiller; imleç bir çocuğun üzerinden girse de.</li>
   <li><strong>Placeholder:</strong> <code>TwTextBox.PlaceholderText</code>; renk <code>placeholder:text-gray-400</code>.</li>
@@ -93,6 +93,13 @@ tw.SetClasses(lblStatus, "bg-red-600 text-white"); // yeni class'lar: zemin yeni
   <li>Bunun koyu temada yol açabileceği okunmaz renk çiftlerini <a href="accessibility.html#contrast-audit">kontrast denetimi</a> raporlar.</li>
   <li><a href="designer.html#fw001">FW001 çözümleyicisi</a> bu atamaları derleme sırasında işaretler.</li>
 </ul>
+
+<h2 id="colors-for-painting-code">Çizim kodu için renkler</h2>
+<p>Renkleri uygulamanın kendisinin çizdiği yerlerde (bir <code>CellPainting</code> işleyicisi, owner-draw bir <code>ListView</code>) class renklerini sağlayıcıdan isteyin. Sonuç sağlayıcının o anki modunu (koyu tema, yüksek karşıtlık) izler; class'ların vermediği renk <code>null</code>'dır.</p>
+<pre><code class="language-csharp">var selected = tw.GetColors("list", "selected");            // bileşenler ve part'lar açılır
+var hover = tw.GetColors("list", "item", TwState.Hover);
+var own = tw.GetCurrentColors(lvUploads, "selected");          // kontrolün class'ları ve o anki durumu
+e.Graphics.FillRectangle(new SolidBrush(selected.Back ?? SystemColors.Highlight), e.Bounds);</code></pre>
 
 <h2 id="removing-classes">Class'ları kaldırma</h2>
 <p><code>SetClasses(control, "")</code>; renk, font, iç ve dış boşluk, imleç, görünürlük, köşe ve ToolStrip renderer'ını class'lardan önceki değerlerine döndürür. Boyutlar (<code>w-*</code>, <code>h-*</code>) geri alınmaz; yerleşim kontrolü o arada yeniden boyutlandırmış olabilir.</p>

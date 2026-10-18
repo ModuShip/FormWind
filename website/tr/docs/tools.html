@@ -35,16 +35,17 @@ description: Designer dosyası dönüştürücüsü, gerçek uygulamaları deği
   <tbody>
     <tr><td><code>-Dark</code></td><td>Koyu temada başlatır. Çalışırken <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> temayı değiştirir.</td></tr>
     <tr><td><code>-SelfTest</code></td><td>Açılan her formu açık ve koyu temada görüntüler; kontrastı hem class renklerinden hem görüntüden denetler.</td></tr>
-    <tr><td><code>-ExitAfter 60</code></td><td>Gözetimsiz çalışmalar için süreci 60 saniye sonra bitirir.</td></tr>
+    <tr><td><code>-ExitAfter 60</code></td><td>Gözetimsiz çalışmalar için süreci 60 saniye sonra bitirir. Süre arka plan iş parçacığında tutulur; UI zamanlayıcıları dursa da süreç sonlanır.</td></tr>
     <tr><td><code>-Skip DataGridView,ToolStrip</code></td><td>Bir sorunu daraltmak için bu tipleri stillemez.</td></tr>
     <tr><td><code>-Dump</code></td><td>Stil uygulamaz; her formun renk, font ve iç boşluk değerlerini yazar. Dönüştürücüden önce ve sonra karşılaştırın.</td></tr>
     <tr><td><code>FORMWIND_DISABLE=1</code></td><td>Bir sorunu FormWind olmadan yeniden üretmek için harness'i kapatır.</td></tr>
   </tbody>
 </table></div>
-<p><code>%TEMP%\FormWind-Harness\</code> altındaki günlük; stillenen formları, kontrast sorunlarını (<code>CONTRAST</code>, <code>SCREEN</code>), gözle kontrol edilecek owner-draw kontrolleri, 250 ms'yi aşan donmaları, çizim fırtınalarını, istisnaları ve tanınmayan class'ları listeler.</p>
+<p><code>%TEMP%\FormWind-Harness\</code> altındaki günlük; stillenen formları, kontrast sorunlarını (<code>CONTRAST</code>, <code>SCREEN</code>), gözle kontrol edilecek owner-draw kontrolleri, 250 ms'yi aşan donmaları, çizim fırtınalarını, istisnaları ve tanınmayan class'ları listeler. <code>TIMER STARVATION</code>, UI iş parçacığının mesaj işlediği ama WinForms zamanlayıcılarının 2 saniyedir çalışmadığı durumu (her çizimde kendini yeniden geçersiz kılan bir pencere), <code>UI BLOCKED</code> hiç mesaj işlenmediğini bildirir. Uygulamanın hata diyaloğu açılınca hatanın ilk satırları da yazılır.</p>
 <ul>
-  <li>Harness bir .NET başlangıç kancasıdır. .NET Framework uygulamalarında <code>FormWindHarness.cs</code>'i projeye ekleyip <code>FormWindHarness.Install()</code> çağırın.</li>
-  <li>Git Extensions, Greenshot, mRemoteNG, Krypton Toolkit örnekleri, ScottPlot WinForms demosu ve bir MDI kabuğunda denendi.</li>
+  <li>Harness bir .NET başlangıç kancasıdır. .NET Framework uygulamalarında <code>FormWindHarness.cs</code>'i (<code>LangVersion</code> <code>latest</code>) ve FormWind'in net472 derlemesini projeye ekleyin, <code>AutoGenerateBindingRedirects</code>'i açın ve <code>Main</code>'in başında <code>FormWindHarness.Install()</code> çağırın. Mesaj döngüsü yokken <code>Install</code> pencere oluşturmaz; kurulum ilk form açılınca yapılır.</li>
+  <li>Pencerelerini ayrı UI iş parçacıklarında açan uygulamalarda harness her iş parçacığına ayrı kurulur; tema kısayolu hepsine geçer.</li>
+  <li>Git Extensions, Greenshot, mRemoteNG, Krypton Toolkit örnekleri, ScottPlot WinForms demosu, bir MDI kabuğu, ShareX, KeePass ve Open Live Writer'da denendi.</li>
 </ul>
 
 <h2 id="samples">Örnekler</h2>

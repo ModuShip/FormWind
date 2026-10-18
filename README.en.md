@@ -94,7 +94,7 @@ All presets define **the same component names**, so switching presets restyles t
 | Buttons | `btn`, `btn-primary`, `btn-secondary` (filled neutral), `btn-ghost` (outlined default), `btn-danger`, `link` |
 | Forms | `input`, `select` (input and drop-down), `field`, `toggle`, `range` (slider, progress) |
 | Surfaces and text | `page` (form background, text color and font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
-| Data and navigation | `table`, `list`, `tabs`, `menu` |
+| Data and navigation | `table`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties` |
 
 **Semantic colors.** The components use the colors `primary`, `surface` (neutral backgrounds and text), `danger`, `success` and `warning` (`bg-primary-600`, `text-surface-500` …). In the default theme they copy `blue`, `gray`, `red`, `green` and `amber` and follow the palette version. Defining a ramp in the theme file (`"colors": { "primary": { "50": "…", …, "950": "…" } }`) recolors every component at once. Classes of your own that use the semantic names change with the preset too.
 
@@ -109,19 +109,25 @@ All presets define **the same component names**, so switching presets restyles t
 | `TextBox`, `RichTextBox`, `MaskedTextBox`, `TwTextBox`, `TwNumberBox` | `input` |
 | `ComboBox`, `TwSelect`, `TwDatePicker` | `select` |
 | `CheckBox`, `RadioButton`, `TwCheckBox`, `TwRadioButton`, `TwSwitch` | `toggle` |
-| `TwSlider`, `TwProgress` | `range` |
+| `TwSlider`, `TwProgress`, `ProgressBar` | `range` |
 | `TwField` | `field` |
 | `DataGridView` | `table` |
 | `ListBox`, `ListView`, `TreeView`, `TwDataList`, `TwListBox`, `TwTreeView` | `list` |
 | `TwTabStrip` (and the strip of `TwTabControl`) | `tabs` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
+| `LinkLabel` | `link-label` |
+| `TabControl`, `TabPage` | `tab-control`, `tab-page` |
+| `PropertyGrid` | `properties` |
 
 - Labels and panels are not listed: they take the form's text and background colors.
+- **Copied backgrounds.** Theme engines of existing applications often write the form's background into every control explicitly. When FormWind repaints the form, those controls keep the old background and labels that only get a text color become unreadable (dark text on a dark background). On its first walk of a container, `AutoStyle` leaves controls whose background equals their parent's to follow the parent (`FollowParentBackColor`, on by default; not done in the Designer). Controls that would fall back to a different default when reset (e.g. TextBox) keep their color; controls added later are compared with the parent's original background. If you assign classes yourself, `TailwindProvider.InheritCopiedBackColors(form)` does the same before styling.
 - A control's own classes are added **on top of** the automatic component: `flex-1`, `mt-2` or `bg-red-50` keep the look. When its own classes name a component (`btn-primary`, `card` …), the automatic one is not used.
 - Automatic classes are not written to Designer.cs; the smart tag shows them as `AutoStyle: input`, and the class builder writes on top of them.
 - The mapping is changed in the theme file: `"autoStyle": { "Button": "btn-primary", "Label": "muted", "KryptonButton": "btn-ghost", "ListView": "" }`. The key is the short type name and base types are searched too (`TextBoxBase` covers all text boxes); an empty value leaves that type unstyled. In code: `theme.SetAutoStyle("Button", "btn-primary")`.
-- `LinkLabel` is not mapped, because it draws its links with `LinkColor`; use a `Label` with the `link` component for links.
-- Composite controls with inner controls (the text box of `TwTextBox`, `NumericUpDown`, `PropertyGrid`) are not entered.
+- `LinkLabel` gets the `link-label` component: the text outside the links is `text-*`, the links (`LinkColor`, `ActiveLinkColor`, `VisitedLinkColor`) `accent-*`; a disabled link is the text color mixed halfway toward the background. The contrast audit checks the link color as the `link` part.
+- Composite controls with inner controls (the text box of `TwTextBox`, `NumericUpDown`, `PropertyGrid`) are not entered. `PropertyGrid` is styled through its own color properties: `bg-*`/`text-*` the grid view, help and commands panes, `divide-*` the lines between them, `header:` category rows, `selected:` the selected property; in dark mode the inner scrollbar is darkened too.
+- The standard `TabControl` ignores colors, so with classes that give colors FormWind repaints the tab strip over Windows' drawing (`DrawMode` is not changed; changing it would recreate the handles of every control on the pages): `bg-*`/`text-*` the tabs, `selected:` the selected tab, `selected:border-*` a 2 px bar on its outer edge; the empty part of the strip takes the parent's background and the frame around the pages the selected page's. Tabs the application owner-draws itself (`OwnerDrawFixed`) are left alone.
+- The standard `ProgressBar` takes no colors while themed; with `accent-*` (bar) or `fill-*`/`bg-*` (track) its visual style is turned off and the colors are sent to the native control (a flat, classic bar; the `Blocks` style becomes `Continuous` meanwhile). Removing the classes restores the theme and the style.
 
 The showcase has a form that switches between the presets: `FormWind.Showcase.exe --presets` (`--preset fluent` for the initial preset).
 
@@ -167,7 +173,16 @@ tw.SetClasses(lblStatus, "bg-red-600 text-white");   // new classes: the backgro
 
 - Color changes inherited from the parent (e.g. the form switched to dark mode) do not count as application assignments.
 - To give the channel back, assign different classes; `Refresh(control)` is not enough.
-- If the application changes only the background and leaves the text color to the classes, dark mode may produce an unreadable pair (light text on a light background). The [contrast audit](#contrast-audit) reports this.
+- If the application changes only the background and leaves the text color to the classes, dark mode may produce an unreadable pair (light text on a light background). The [contrast audit](#contrast-audit) reports this and gives the cause as `Cause = TwContrastCause.KeptBackground`.
+
+**Code that paints controls itself.** Where the application paints the colors (a `CellPainting` handler, an owner-drawn ListView), ask the provider for the class colors; the result follows the provider's current mode (dark, high contrast):
+
+```csharp
+var selected = tw.GetColors("list", "selected");            // components and parts are expanded
+var hover = tw.GetColors("list", "item", TwState.Hover);
+var own = tw.GetCurrentColors(lvUploads, "selected");          // the control's classes and current state
+e.Graphics.FillRectangle(new SolidBrush(selected.Back ?? SystemColors.Highlight), e.Bounds);
+```
 
 ## Layout (flex and grid)
 
@@ -278,6 +293,8 @@ Shadows and rings are drawn on the control's **parent** (controls cannot paint o
 ## Interaction
 
 - **`transition`** (`transition-colors`, `duration-75` … `duration-1000`, `duration-[250ms]`): background and text color changes are animated (ease-out, 150 ms by default). Shadow changes (`shadow-sm hover:shadow-lg transition`) are animated over the same duration too, the old shadow fading out as the new one fades in; blurred shadows come from the cache and are not recomputed during the transition.
+  - The first application has no transition: when classes are assigned, the control takes its final color at once (a transition would start from the application's own color and shift colors at startup). Theme, state (hover, focus, disabled …) and class changes are animated.
+  - Transitions are advanced by a WinForms timer (about 60 frames/s). Windows only generates `WM_TIMER` when no other message is queued; while a window that invalidates itself in every `OnPaint` is open (e.g. ShareX's region capture) or the UI thread is busy, transitions stop at an intermediate color and finish once that window closes. The contrast audit checks the target color meanwhile.
 - **`hover:` / `active:`**: only controls with these variants are restyled when the mouse enters or leaves; for the others, mouse movement does not trigger styling. If classes are assigned while the cursor is already over the control (e.g. a button whose classes change on click), the hover state is applied immediately.
 - **`group` / `group-hover:`**: hovering a container with the `group` class applies the `group-hover:` variants of the controls inside it. A container that reacts to hover counts as hovered even when the cursor enters directly over a child.
 - **Placeholder**: `TwTextBox.PlaceholderText`; color `placeholder:text-gray-400`.
@@ -286,6 +303,10 @@ Shadows and rings are drawn on the control's **parent** (controls cannot paint o
 ## CheckBox, Radio, Switch
 
 `TwCheckBox`, `TwRadioButton` and `TwSwitch` are owner-drawn. The checked color is `accent-*`, the unchecked fill `fill-*`, the box border `border-*`, the corners `rounded-*`, the text `text-*`. The `TwSwitch` (44×24 px) knob slides in 150 ms.
+
+A disabled standard `Label` (without an image, not a `LinkLabel`) is redrawn the same way when its text color comes from the classes: Windows draws it in an embossed gray that is invisible in dark mode.
+
+While disabled, the standard `CheckBox` and `RadioButton` ignore `ForeColor` and draw the text in a dark shade derived from the background, which is invisible in dark mode. When the classes give the text color, FormWind redraws the disabled text beside the glyph: the `disabled:text-*` color if there is one, otherwise the text color mixed halfway toward the background. This is done for controls with the glyph on the left or right, `Appearance.Normal`, no image and a `FlatStyle` other than `System`.
 
 ## Menus and toolbars
 
@@ -311,9 +332,10 @@ With `DarkMode = true`, native parts that FormWind does not paint also switch to
 
 | Property (on by default) | Effect |
 | --- | --- |
-| `TailwindProvider.DarkScrollbars` | Scrollbars of Panel, TextBox, ListBox, TreeView, ListView and DataGridView |
+| `TailwindProvider.DarkScrollbars` | Scrollbars of Panel, TextBox, ListBox, TreeView, ListView and DataGridView; for a ListView also its column and group headers (Explorer's dark list theme; the header text is drawn in the list's text color, except for `OwnerDraw` lists) |
 | `TailwindProvider.DarkToolTips` | Native tooltip windows: `ToolTip` components, ToolStrip item tooltips, ListView/TreeView tooltips |
 
+- Windows draws disabled ListViews, ComboBoxes and text boxes in system colors; they stay light in dark mode and `BackColor` does not change that (e.g. KeePass's entry list and search box while no database is open).
 - Because tooltips belong to the application's own components, `DarkToolTips` is thread-wide: if at least one provider on a thread is in dark mode, that thread's tooltips are dark. Open tooltip windows update when the theme changes.
 - Both use the undocumented `DarkMode_Explorer` theme used by Windows Explorer (Windows 10 1809+); it has no effect on unsupported systems and can be turned off if it causes problems.
 - For a tooltip styled with classes, use `TwToolTip`.
@@ -699,10 +721,11 @@ foreach (var issue in TwContrast.Audit(this, tw))
 
 - The threshold is 4.5:1 for normal text and 3:1 for large text (18 pt, or 14 pt bold) (WCAG AA). It can be changed with the `minimum` parameter.
 - Transparent backgrounds are blended with the parent's background. Hidden controls are skipped.
-- Disabled controls are outside WCAG's scope and are skipped by default. `includeDisabled: true` checks them too (part name `disabled text`); this catches disabled controls used to display content (e.g. a description box disabled so that no caret shows). For disabled native text boxes the background is the system background Windows paints. The harness runs the audit with this option. For disabled buttons the text color actually drawn is checked against 3:1: the aim is to catch invisible text, not to enforce contrast.
+- Disabled controls are outside WCAG's scope and are skipped by default. `includeDisabled: true` checks them too (part name `disabled text`); this catches disabled controls used to display content (e.g. a description box disabled so that no caret shows). For disabled native text boxes the background is the system background Windows paints. The harness runs the audit with this option. For disabled buttons and for check boxes whose text FormWind redraws, the text color actually drawn is checked against 3:1: the aim is to catch invisible text, not to enforce contrast.
 - For colors in the middle of a `transition`, the target color is checked; the audit can be called right after a theme change.
+- `issue.Cause` gives a known cause: `KeptBackground` when the classes give only the text color and the background stays a color the application set explicitly (different from the parent's); the fix is a `bg-*` class or letting [copied backgrounds](#presets-and-autostyle) follow the parent. `ToString()` mentions the cause too.
 - `TwContrast.Ratio(foreground, background)` returns the ratio between two colors.
-- `TwContrast.FindOwnerDrawn(root)` lists controls that paint their own colors (grids with `CellPainting` handlers or an overridden `OnPaint`, lists, trees, tabs and combo boxes with `OwnerDraw`/`DrawMode` on). The audit cannot know their colors on screen; check them by eye in dark mode.
+- `TwContrast.FindOwnerDrawn(root)` lists controls that paint their own colors (grids with `CellPainting` handlers or an overridden `OnPaint`, lists, trees, tabs and combo boxes with `OwnerDraw`/`DrawMode` on). The audit cannot know their colors on screen; check them by eye in dark mode. Painting code can get the colors with `tw.GetColors(…)`.
 - The default components (`btn-primary`, `btn-ghost`, `card`, `input`, `table`) pass this audit in light and dark mode (`ContrastTests`). `btn-primary` uses `blue-600`/`blue-700` in dark mode too; white text stays below the threshold on `blue-500` (3.7:1) and `blue-400` (2.5:1).
 
 ## Error handling
@@ -955,7 +978,7 @@ For every bug these tests found, `ApplierTests` also keeps an explicit regressio
 | --- | --- |
 | `-Dark` / `FORMWIND_DARK=1` | Starts in dark mode. **Ctrl+Alt+Shift+D** toggles the theme while running. |
 | `-SelfTest` / `FORMWIND_SELFTEST=1` | Captures every new form in light and dark mode and audits its contrast both from the class colors and from the image. |
-| `-ExitAfter 60` / `FORMWIND_EXIT_AFTER` | Ends the process after the given number of seconds (unattended runs). |
+| `-ExitAfter 60` / `FORMWIND_EXIT_AFTER` | Ends the process after the given number of seconds (unattended runs). The countdown runs on a background thread, so the process ends even when UI timers stop. |
 | `-Skip DataGridView,ToolStrip` / `FORMWIND_SKIP` | Does not style these types; to narrow a problem down to one control type. |
 | `FORMWIND_DISABLE=1` | Turns the harness off; to compare the same scenario without FormWind. |
 | `-Dump` / `FORMWIND_DUMP=1` | Applies no styles; writes the color, font and padding values of each form's controls to `dump-<form>.txt`. Run before and after the conversion tool and compare. |
@@ -975,14 +998,19 @@ Logs and images are written to `%TEMP%\FormWind-Harness\<process>-<time>\`:
 | `OWNERDRAW` | Controls that paint their own colors (`TwContrast.FindOwnerDrawn`): the contrast audit cannot measure them and the classes' cell/item colors may be ignored; check them by eye in dark mode |
 | `UI STALL` | The UI thread froze for more than 250 ms |
 | `PAINT STORM` | More than 100 paints per second for 3 seconds in a row: an invalidate-while-painting loop |
+| `TIMER STARVATION` | The UI thread processes messages but WinForms timers have not ticked for 2 seconds: Windows only generates `WM_TIMER` when no other message is queued, so a window that invalidates itself in every `OnPaint` (e.g. ShareX's region capture) holds it off indefinitely. Meanwhile the harness cannot find new forms and `PAINT STORM` cannot be measured; `TIMER STARVATION ended` is logged when timers resume |
+| `UI BLOCKED` | The UI thread has not processed any message for 2 seconds; its duration is also logged as `UI STALL` when it ends |
 | `EXCEPTION`, `UNKNOWN` | An error while applying styles; an unknown class |
 
-- Startup hooks only exist in .NET (Core) applications; they are not loaded in trimmed applications or when hooks are disabled. For .NET Framework applications, add `FormWindHarness.cs` from `FormWind.Harness` to the project and call `FormWindHarness.Install()` on the UI thread.
+- Startup hooks only exist in .NET (Core) applications; they are not loaded in trimmed applications or when hooks are disabled. For .NET Framework applications, add `FormWindHarness.cs` from `FormWind.Harness` (`LangVersion` `latest`) and FormWind's net472 build to the project and call `FormWindHarness.Install()` at the start of `Main`. Without a message loop `Install` creates no window (the application's later `SetCompatibleTextRenderingDefault` call would fail); the harness is installed when the first form opens. Turn on `AutoGenerateBindingRedirects` in the project for FormWind's dependencies.
+- In applications that open windows on separate UI threads (Open Live Writer opens every editor and the splash screen on its own), the harness is installed on each thread: each thread scans its own forms, stalls and timer starvation are measured per thread, and the theme shortcut reaches all of them.
+- When the application's error dialog (`ThreadExceptionDialog`) opens, the first lines of the error are logged under the `APP EXCEPTION` line.
 - The harness only descends into containers that carry content (forms, panels, GroupBox, tabs, SplitContainer, UserControl, ToolStrip containers). The inner parts of composite controls (e.g. the `TextBox` inside a `KryptonTextBox`, the help pane of a `PropertyGrid`, the edit box of a `NumericUpDown`) belong to the control itself and are not styled.
 - Self-test images of top-level windows are taken with `PrintWindow`: the title bar, `RichTextBox` and MDI children look as on screen, and it works even when the window is covered by another one. MDI children (where `PrintWindow` also captures sibling windows on top) and failed captures fall back to `DrawToBitmap`, where the title bar does not look as Windows draws it and `RichTextBox` is drawn incorrectly.
 - Forms are found with a timer, so this works whether the application runs a WinForms or a WPF message loop (e.g. Greenshot). Classes are applied after a form is shown, so it may appear unstyled for a moment at startup; colors the application assigned at that point count as original values.
 - When you find a problem, first reproduce it without FormWind using `FORMWIND_DISABLE=1`; if it still happens, it belongs to the application. Then narrow it down to one control type with `-Skip`.
-- Applications tried: Git Extensions (.NET 10, startup hook), Greenshot (.NET Framework 4.8, WPF loop), Greenshot 1.3 (.NET Framework 4.7.2, WinForms loop, harness as code), mRemoteNG (.NET 10, DockPanelSuite), the Krypton Toolkit samples (.NET 9: grid, input form, ribbon, docking), the ScottPlot WinForms demo (.NET 10, 45 demos, with `FORMWIND_WALK`), an MDI shell (.NET 8: merged menus, window list, maximized child, children opened later). The problems found became the behaviors and tests described in this README. In applications with their own theme engine (mRemoteNG) dark mode shows only partially, because colors assigned by the application are kept; this is expected.
+- Applications with their own theme engine often write the parent's background into every child explicitly (e.g. ShareX). Before a form is styled, the harness resets `BackColor` on children whose background equals their parent's, so labels and check boxes that only get a text color follow the parent's new background (`inherited` in the log). Controls that would fall back to a different default when reset (e.g. TextBox) keep their color.
+- Applications tried: Git Extensions (.NET 10, startup hook), Greenshot (.NET Framework 4.8, WPF loop), Greenshot 1.3 (.NET Framework 4.7.2, WinForms loop, harness as code), mRemoteNG (.NET 10, DockPanelSuite), the Krypton Toolkit samples (.NET 9: grid, input form, ribbon, docking), the ScottPlot WinForms demo (.NET 10, 45 demos, with `FORMWIND_WALK`), an MDI shell (.NET 8: merged menus, window list, maximized child, children opened later), KeePass 2.61.1 (.NET Framework 4.8, harness as code), Open Live Writer (.NET Framework 4.7.2, harness as code, several UI threads; without the C++ Ribbon only the splash screen and the wizard), ShareX 19.0.2 (.NET 9, its own dark theme, 8 forms with `FORMWIND_OPEN`; later versions use Avalonia for the UI). The problems found became the behaviors and tests described in this README. In applications with their own theme engine (mRemoteNG) dark mode shows only partially, because colors assigned by the application are kept; this is expected.
 
 ### Visual regression tests
 
