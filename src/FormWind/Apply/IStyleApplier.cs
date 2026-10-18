@@ -56,6 +56,9 @@ public static class TwAppliers
         new DataGridViewApplier(),
         new ToolStripApplier(),
         new FormApplier(),
+        new PropertyGridApplier(),
+        new TabControlApplier(),
+        new ProgressBarApplier(),
     };
     private static readonly IStyleApplier Fallback = new WinFormsApplier();
     private static readonly IStyleApplier[] BuiltIn = Registered.ToArray();

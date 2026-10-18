@@ -260,9 +260,16 @@ public sealed class TwTheme
         ["table-bordered"] = "divide-x divide-y",
         ["list"] = "p-1 bg-white text-surface-900 item:hover:bg-surface-100 selected:bg-primary-50 selected:text-primary-900 row:border-surface-100 fill-surface-300 " +
                    "dark:bg-surface-800 dark:text-surface-100 dark:item:hover:bg-surface-700 dark:selected:bg-primary-950 dark:selected:text-primary-100 dark:row:border-surface-700 dark:fill-surface-600",
+        // Standart TabControl ve sayfaları (TwTabStrip için "tabs").
+        ["tab-control"] = "bg-surface-100 text-surface-600 selected:bg-white selected:text-surface-900 selected:border-primary-600 " +
+                          "dark:bg-surface-800 dark:text-surface-300 dark:selected:bg-surface-900 dark:selected:text-white dark:selected:border-primary-400",
+        ["tab-page"] = "bg-white text-surface-900 dark:bg-surface-900 dark:text-surface-100",
         ["tabs"] = "text-surface-500 border-b border-surface-200 selected:text-surface-900 selected:border-primary-600 item:hover:text-surface-700 " +
                    "dark:text-surface-400 dark:border-surface-700 dark:selected:text-white dark:selected:border-primary-400",
         ["menu"] = "bg-white text-surface-700 item:hover:bg-surface-100 dark:bg-surface-800 dark:text-surface-100 dark:item:hover:bg-surface-700",
+        // PropertyGrid: header: kategori satırları, selected: seçili özellik, divide-* iç çizgiler.
+        ["properties"] = "bg-white text-surface-900 divide-surface-200 header:bg-surface-100 header:text-surface-700 selected:bg-primary-600 selected:text-white " +
+                         "dark:bg-surface-800 dark:text-surface-100 dark:divide-surface-700 dark:header:bg-surface-900 dark:header:text-surface-300",
     };
 
     /// <summary>
@@ -314,6 +321,10 @@ public sealed class TwTheme
         ["ListView"] = "list",
         ["TwTabStrip"] = "tabs",
         ["ToolStrip"] = "menu",
+        ["PropertyGrid"] = "properties",
+        ["TabControl"] = "tab-control",
+        ["TabPage"] = "tab-page",
+        ["ProgressBar"] = "range",
     };
 
     // DefaultComponents'tan sonra bildirilmeli: statik başlatıcılar yazım sırasıyla çalışır.

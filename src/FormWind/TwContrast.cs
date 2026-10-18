@@ -231,7 +231,7 @@ public static class TwContrast
                     if (Overrides(grid, name)) reasons.Add(name + " override");
                 return reasons.Count > 0 ? string.Join(", ", reasons) : null;
             case ListView { OwnerDraw: true }:
-            case TabControl { DrawMode: TabDrawMode.OwnerDrawFixed }:
+            case TabControl { DrawMode: TabDrawMode.OwnerDrawFixed } tabs when !TabControlApplier.IsPainted(tabs):
                 return "OwnerDraw";
             case ListBox { DrawMode: not DrawMode.Normal } list:
                 return "DrawMode." + list.DrawMode;
