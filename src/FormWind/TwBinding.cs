@@ -232,6 +232,9 @@ internal sealed class TwBinding
         OnStateChanged(sender, e);
     }
 
+    /// <summary>The control's current state (dark, hover, focus, disabled …) as the classes are resolved with it.</summary>
+    public TwState State => CurrentState();
+
     private TwState CurrentState()
     {
         var state = _owner.BaseState | (_control.RightToLeft == RightToLeft.Yes ? TwState.Rtl : TwState.Ltr);

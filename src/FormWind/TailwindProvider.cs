@@ -478,6 +478,28 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     internal TwParsed? GetParsed(Control control) =>
         _bindings.TryGetValue(control, out var binding) ? binding.Parsed : null;
 
+    /// <summary>
+    /// The colors <paramref name="classes"/> give in the provider's current mode (<see cref="DarkMode"/>, high contrast), for
+    /// code that paints controls itself (a <c>CellPainting</c> handler, an owner-drawn ListView …). Theme components are
+    /// expanded: <c>GetColors("list", "selected")</c> is the selected item of the <c>list</c> component.
+    /// </summary>
+    /// <param name="classes">Class string, e.g. <c>"bg-white text-gray-900 dark:bg-gray-800 selected:bg-primary-600"</c>.</param>
+    /// <param name="part">A part such as <c>selected</c>, <c>header</c>, <c>item</c>; <c>null</c> for the base classes.</param>
+    /// <param name="state">Extra states, e.g. <see cref="TwState.Hover"/> for the item under the cursor.</param>
+    public TwColors GetColors(string classes, string? part = null, TwState state = TwState.None) =>
+        new TwColors(Theme.Parse(TwParser.Normalize(classes)).ResolvePart(part, BaseState | state));
+
+    /// <summary>
+    /// The colors of <paramref name="control"/>'s classes (automatic ones included) in its current state (dark, hover, focus,
+    /// disabled …); all <c>null</c> when the control has no classes. See <see cref="GetColors(string, string?, TwState)"/>.
+    /// </summary>
+    public TwColors GetCurrentColors(Control control, string? part = null, TwState state = TwState.None)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        if (!_bindings.TryGetValue(control, out var binding)) return new TwColors(new TwStyle());
+        return new TwColors(binding.Parsed.ResolvePart(part, binding.State | state));
+    }
+
     /// <summary>Recalculates the control's style (e.g. after application code changed a property).</summary>
     public void Refresh(Control control)
     {
