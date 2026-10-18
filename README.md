@@ -38,7 +38,7 @@ btnSave  →  Classes: "bg-blue-600 text-white px-4 py-2 rounded-md font-bold ho
 
 ## Hızlı başlangıç
 
-1. Paketi ekleyin (bkz. [Paketleme](#paketleme)) ya da `src/FormWind` projesine proje referansı verin.
+1. Paketi ekleyin (FormWind önizlemedeyken `dotnet add package FormWind --prerelease`) ya da `src/FormWind` projesine proje referansı verin.
 2. `Program.Main` içinde, formlar açılmadan önce temayı yükleyin (dosya yoksa varsayılan tema kullanılır):
 
    ```csharp
@@ -66,7 +66,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.0-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır. Paket yayımlanana kadar `artifacts/packages` klasörü paket kaynağı olarak eklenmelidir; CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
+`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.0-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır. CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
 
 ## Hazır görünümler ve AutoStyle
 

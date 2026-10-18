@@ -38,7 +38,7 @@ btnSave  →  Classes: "bg-blue-600 text-white px-4 py-2 rounded-md font-bold ho
 
 ## Quick start
 
-1. Add the package (see [Packaging](#packaging)) or a project reference to `src/FormWind`.
+1. Add the package (`dotnet add package FormWind --prerelease` while FormWind is in preview) or a project reference to `src/FormWind`.
 2. In `Program.Main`, load the theme before any form is opened (the default theme is used if the file does not exist):
 
    ```csharp
@@ -66,7 +66,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.0-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`. Until the package is published, add the `artifacts/packages` folder as a package source; CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
+`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.0-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`. CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
 
 ## Presets and AutoStyle
 
