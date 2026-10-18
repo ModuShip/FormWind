@@ -14,7 +14,9 @@ internal enum TwColorChannel
 /// <summary>
 /// Color transitions for the <c>transition</c> class. A single timer per thread (about 60 frames/s) runs all
 /// animations with an ease-out curve. When a channel gets a new target, the transition continues from the
-/// current color.
+/// current color. Windows generates <c>WM_TIMER</c> only when no other message is queued: while a window keeps
+/// invalidating itself during paint, or the UI thread is busy, transitions pause at an intermediate color
+/// (<see cref="TryGetTarget"/> still gives the target).
 /// </summary>
 internal static class TwAnimator
 {

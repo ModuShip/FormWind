@@ -108,6 +108,27 @@ public class ContrastTests
         form.Close();
     });
 
+    // İlk uygulamada transition çalışmaz: uygulamanın atadığı renkten başlayan geçiş açılışta renk kaydırırdı. Sonraki
+    // değişimler (tema, durum, class) geçişlidir.
+    [Fact]
+    public void Transition_does_not_run_on_the_first_application() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var button = new Button { Text = "Kaydet", BackColor = ColorTranslator.FromHtml("#2e2e2e") };
+        form.Controls.Add(button);
+        form.Show();
+
+        provider.SetClasses(button, "transition bg-white dark:bg-gray-900");
+        Assert.False(TwAnimator.IsAnimating(button, TwColorChannel.Back));
+        Assert.Equal(Color.White.ToArgb(), button.BackColor.ToArgb());
+
+        provider.DarkMode = true;
+        Assert.True(TwAnimator.IsAnimating(button, TwColorChannel.Back));
+        TwAnimator.Step(DateTime.UtcNow.AddSeconds(10));
+        form.Close();
+    });
+
     [Fact]
     public void Include_disabled_checks_disabled_text_boxes_against_the_system_background()
     {

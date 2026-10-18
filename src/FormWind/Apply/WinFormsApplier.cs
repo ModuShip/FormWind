@@ -261,9 +261,11 @@ public class WinFormsApplier : IStyleApplier
         string property = back ? nameof(Control.BackColor) : nameof(Control.ForeColor);
         if (state.Overridden) return;
         // İzleme class'ların atandığı andaki özgün değerle başlar: FormWind kanala henüz dokunmamışken (örn. yalnızca
-        // dark:hover: varyantı varken) uygulamanın yaptığı atama da değişiklik sayılır.
+        // dark:hover: varyantı varken) uygulamanın yaptığı atama da değişiklik sayılır. İlk uygulama geçişsizdir: geçiş
+        // uygulamanın kendi renginden başlar, açılışta renk kayar ve geçiş süresince ara renkler görünürdü.
         if (!state.Tracked && !designMode)
         {
+            duration = 0;
             state.Tracked = true;
             state.Left = original;
         }
