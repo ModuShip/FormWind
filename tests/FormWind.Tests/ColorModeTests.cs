@@ -58,5 +58,42 @@ public class ColorModeTests
         Assert.Equal(systemBack.ToArgb(), styled.BackColor.ToArgb());                           // koyu sistem rengine döner
         form.Close();
     });
+
+    // WinForms'un koyu modu da sekmeleri, ListView başlığını, ProgressBar'ı ve devre dışı yazıyı kendisi çizer; FormWind'in
+    // çizimi onunla çakışmamalı: başlık yazısı ve devre dışı etiket koyu zeminde okunur, sekme ve çubuk FormWind'indir.
+    [ColorModeFact]
+    public void Formwind_drawing_works_on_top_of_the_dark_color_mode() => Sta.Run(() =>
+    {
+        Application.SetColorMode(SystemColorMode.Dark);
+        if (!Application.IsDarkModeEnabled) return;
+
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false, ClientSize = new Size(400, 300) };
+        var tabs = new TabControl { Dock = DockStyle.Top, Height = 120, TabPages = { new TabPage("Genel"), new TabPage("Gelişmiş") } };
+        var list = new ListView { View = View.Details, Dock = DockStyle.Top, Height = 80, Columns = { "Ad" } };
+        var progress = new ProgressBar { Dock = DockStyle.Top, Value = 50 };
+        var label = new Label { Text = "Devre dışı etiket", AutoSize = false, Size = new Size(200, 30), Enabled = false, UseCompatibleTextRendering = false };
+        tabs.TabPages[0].Controls.Add(label);
+        form.Controls.AddRange(new Control[] { progress, list, tabs });
+        form.Show();
+        using var provider = new TailwindProvider { DarkMode = Application.IsDarkModeEnabled };
+        provider.ContainerControl = form;
+        provider.AutoStyle = true;
+        provider.SetClasses(label, "text-gray-800 dark:text-gray-200");
+
+        Assert.True(TabControlApplier.IsPainted(tabs));
+        Assert.True(TwNativeTheme.PaintsHeader(list));
+        Assert.NotNull(ProgressBarApplier.Colors(progress));
+        Assert.True(TwDisabledText.IsRepainted(label));
+        using (var bitmap = new Bitmap(label.Width, label.Height))
+        {
+            label.DrawToBitmap(bitmap, new Rectangle(Point.Empty, label.Size));
+            int brightest = 0;
+            for (int y = 0; y < bitmap.Height; y++)
+                for (int x = 0; x < bitmap.Width; x++)
+                    brightest = Math.Max(brightest, bitmap.GetPixel(x, y).R);
+            Assert.True(brightest >= 110, $"brightest text pixel R={brightest}");       // gray-200 ile zeminin ortası
+        }
+        form.Close();
+    });
 }
 #endif

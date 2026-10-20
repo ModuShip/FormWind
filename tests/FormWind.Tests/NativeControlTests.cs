@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -93,11 +94,165 @@ public class NativeControlTests
         provider.SetClasses(drawn, "list");
 
         Assert.True(TwNativeTheme.PaintsHeader(list));
-        Assert.False(TwNativeTheme.PaintsHeader(drawn));                                   // uygulama kendisi çizer
+        Assert.True(TwNativeTheme.PaintsHeader(drawn));                                    // Windows'a bırakılan hücreler
         provider.DarkMode = false;
         Assert.False(TwNativeTheme.PaintsHeader(list));
         form.Close();
     });
+
+    // KeePass'te görüldü: seçenekler penceresi listelere OnLoad'da SetWindowTheme(..., "explorer") veriyor ve FormWind'in
+    // koyu temasını eziyordu (grup başlıkları koyu zeminde koyu mavi). Koyu temadaki liste, uygulamanın verdiği temadan sonra
+    // koyu temayı geri alır; açık temada uygulamanın teması kalır.
+    [Fact]
+    public void List_view_keeps_the_dark_theme_when_the_app_sets_its_own() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var list = new ListView { View = View.Details, Columns = { "Seçenek" } };
+        form.Controls.Add(list);
+        form.Show();
+        provider.SetClasses(list, "list");
+        var pushes = TwNativeTheme.ListPushes(list);
+
+        SetWindowTheme(list.Handle, "explorer", null);
+        Assert.Equal(pushes + 1, TwNativeTheme.ListPushes(list));                       // bir kez geri verilir, döngü yok
+        Assert.True(TwNativeTheme.PaintsHeader(list));
+
+        provider.DarkMode = false;
+        pushes = TwNativeTheme.ListPushes(list);
+        SetWindowTheme(list.Handle, "explorer", null);
+        Assert.Equal(pushes, TwNativeTheme.ListPushes(list));                           // açık temada dokunulmaz
+        form.Close();
+    });
+
+    // KeePass grup ağacı: seçili düğüm koyu zeminde açık temanın koyu yazısıyla çiziliyordu.
+    [Fact]
+    public void Tree_view_keeps_the_dark_theme_when_the_app_sets_its_own() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var tree = new TreeView { Nodes = { "test" } };
+        form.Controls.Add(tree);
+        form.Show();
+        provider.SetClasses(tree, "list");
+        var pushes = TwNativeTheme.TreePushes(tree);
+
+        SetWindowTheme(tree.Handle, "explorer", null);
+        Assert.Equal(pushes + 1, TwNativeTheme.TreePushes(tree));
+
+        provider.DarkMode = false;
+        pushes = TwNativeTheme.TreePushes(tree);
+        SetWindowTheme(tree.Handle, "explorer", null);
+        Assert.Equal(pushes, TwNativeTheme.TreePushes(tree));
+        form.Close();
+    });
+
+    [System.Runtime.InteropServices.DllImport("uxtheme.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int SetWindowTheme(IntPtr hwnd, string? subAppName, string? subIdList);
+
+    // Bulk Crap Uninstaller'da (ObjectListView) görüldü: owner-draw listenin başlığı koyu temaya geçiyor ama yazısı temanın
+    // koyu rengiyle kalıyordu. Uygulama hücreyi Windows'a bıraktığında (DrawDefault, ObjectListView'ün varsayılanı) yazı
+    // listenin yazı rengini alır; kendisi çizdiği hücrelere dokunulmaz. Test süreci görsel stilsiz çalıştığından başlığın
+    // NM_CUSTOMDRAW bildirimi doğrudan gönderilir.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Owner_drawn_list_view_headers_left_to_windows_take_the_text_color_in_dark_mode(bool drawDefault) => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false, ClientSize = new Size(300, 120) };
+        var list = new ListView { View = View.Details, OwnerDraw = true, Dock = DockStyle.Fill, Columns = { { "Başlık yazısı", 200 } } };
+        list.DrawColumnHeader += (_, e) =>
+        {
+            if (drawDefault) e.DrawDefault = true;
+            else e.Graphics.FillRectangle(Brushes.White, e.Bounds);
+        };
+        form.Controls.Add(list);
+        form.Show();
+        provider.SetClasses(list, "list");
+
+        var header = SendMessage(list.Handle, 0x101F /* LVM_GETHEADER */, IntPtr.Zero, IntPtr.Zero);
+        using var bitmap = new Bitmap(200, 30);
+        using var g = Graphics.FromImage(bitmap);
+        var hdc = g.GetHdc();
+        try
+        {
+            SetTextColor(hdc, 0);
+            long prePaint = CustomDraw(list, header, hdc, 0x00000001 /* CDDS_PREPAINT */);
+            Assert.True((prePaint & 0x20) != 0, "CDRF_NOTIFYITEMDRAW bekleniyordu");
+            long itemPrePaint = CustomDraw(list, header, hdc, 0x00010001 /* CDDS_ITEMPREPAINT */);
+            if (drawDefault)
+            {
+                Assert.Equal(0, itemPrePaint & 0x4);                                               // Windows çizer
+                Assert.Equal(ColorTranslator.ToWin32(list.ForeColor), GetTextColor(hdc));
+            }
+            else
+            {
+                Assert.Equal(0x4, itemPrePaint & 0x4);                                             // CDRF_SKIPDEFAULT
+                Assert.Equal(0, GetTextColor(hdc));                                                 // dokunulmadı
+            }
+        }
+        finally
+        {
+            g.ReleaseHdc(hdc);
+        }
+        form.Close();
+    });
+
+    private static long CustomDraw(ListView list, IntPtr header, IntPtr hdc, int stage)
+    {
+        var draw = new NmCustomDraw
+        {
+            Header = new NmHdr { HwndFrom = header, IdFrom = UIntPtr.Zero, Code = -12 /* NM_CUSTOMDRAW */ }, DrawStage = stage, Hdc = hdc,
+            Rect = new NativeRect { Left = 0, Top = 0, Right = 200, Bottom = 30 }, ItemSpec = UIntPtr.Zero,
+        };
+        var memory = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf<NmCustomDraw>());
+        try
+        {
+            System.Runtime.InteropServices.Marshal.StructureToPtr(draw, memory, false);
+            return SendMessage(list.Handle, 0x004E /* WM_NOTIFY */, IntPtr.Zero, memory).ToInt64();
+        }
+        finally
+        {
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(memory);
+        }
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NmHdr
+    {
+        public IntPtr HwndFrom;
+        public UIntPtr IdFrom;
+        public int Code;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NmCustomDraw
+    {
+        public NmHdr Header;
+        public int DrawStage;
+        public IntPtr Hdc;
+        public NativeRect Rect;
+        public UIntPtr ItemSpec;
+        public int ItemState;
+        public IntPtr ItemParam;
+    }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern int SetTextColor(IntPtr hdc, int color);
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern int GetTextColor(IntPtr hdc);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
+
 
     // KeePass'in Hakkında penceresi: LinkLabel bağlantıları koyu zeminde koyu mavi (2,1:1) kalıyordu.
     [Fact]

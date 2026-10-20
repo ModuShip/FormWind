@@ -13,7 +13,9 @@ namespace FormWind;
 /// <para>
 /// A ListView and its column header get Explorer's dark items view theme (<c>DarkMode_ItemsView</c>): dark scrollbars,
 /// header and group headers. The theme draws the header text dark, so it is drawn in the list's text color
-/// (<c>NM_CUSTOMDRAW</c>); owner-drawn lists (<see cref="ListView.OwnerDraw"/>) draw their headers themselves.
+/// (<c>NM_CUSTOMDRAW</c>, after the application and WinForms have handled the message). Header cells the application
+/// draws itself (owner-drawn lists, ObjectListView's header styles) are left alone; cells it leaves to Windows get the
+/// text color.
 /// </para>
 /// </summary>
 internal static class TwNativeTheme
@@ -63,6 +65,21 @@ internal static class TwNativeTheme
             PushList(list, dark);
             return;
         }
+        if (control is TreeView tree)
+        {
+            var keeper = TreeKeepers.GetValue(tree, t => new TreeKeeper(t));
+            keeper.Pushing = true;
+            try
+            {
+                SetTheme(tree.Handle, dark);
+            }
+            finally
+            {
+                keeper.Pushing = false;
+            }
+            keeper.Update(dark);
+            return;
+        }
         SetTheme(control.Handle, dark);
 
         // DataGridView kaydırma çubuklarını ayrı ScrollBar alt kontrolleri olarak çizer.
@@ -76,15 +93,69 @@ internal static class TwNativeTheme
     // Liste ve başlığı ItemsView temasını alır; başlık yazısını tema koyu çizdiği için alt sınıf yazı rengini atar.
     private static void PushList(ListView list, bool dark)
     {
-        SetTheme(list.Handle, dark, DarkItemsTheme);
-        var header = SendMessage(list.Handle, LvmGetHeader, IntPtr.Zero, IntPtr.Zero);
-        if (header != IntPtr.Zero) SetTheme(header, dark, DarkItemsTheme);
         var painter = HeaderPainters.GetValue(list, l => new HeaderPainter(l));
-        painter.Update(dark && !list.OwnerDraw && header != IntPtr.Zero, header);
+        IntPtr header;
+        painter.Pushing = true;
+        try
+        {
+            SetTheme(list.Handle, dark, DarkItemsTheme);
+            header = SendMessage(list.Handle, LvmGetHeader, IntPtr.Zero, IntPtr.Zero);
+            if (header != IntPtr.Zero) SetTheme(header, dark, DarkItemsTheme);
+        }
+        finally
+        {
+            painter.Pushing = false;
+        }
+        painter.Pushes++;
+        painter.Update(dark && header != IntPtr.Zero, header);
     }
 
-    /// <summary>Whether the list's column header text is drawn in its text color (dark mode).</summary>
+    /// <summary>How many times the list was given its theme (tests).</summary>
+    internal static int ListPushes(ListView list) => HeaderPainters.TryGetValue(list, out var painter) ? painter.Pushes : 0;
+
+    /// <summary>Whether the list's column header text is drawn in its text color where Windows draws it (dark mode).</summary>
     internal static bool PaintsHeader(ListView list) => HeaderPainters.TryGetValue(list, out var painter) && painter.Handle != IntPtr.Zero;
+
+    private static readonly ConditionalWeakTable<TreeView, TreeKeeper> TreeKeepers = new ConditionalWeakTable<TreeView, TreeKeeper>();
+
+    // KeePass grup ağacına SetWindowTheme(..., "explorer") verir: seçili düğüm açık temanın koyu yazısıyla çiziliyordu.
+    // Koyu temadaki ağaç uygulamanın verdiği temadan sonra koyu temayı geri alır (ListView için bkz. HeaderPainter).
+    private sealed class TreeKeeper : NativeWindow
+    {
+        private const int WmThemeChanged = 0x031A;
+        private readonly TreeView _tree;
+        public bool Pushing;
+        public int Pushes;
+
+        public TreeKeeper(TreeView tree)
+        {
+            _tree = tree;
+            tree.HandleDestroyed += (_, _) => ReleaseHandle();
+        }
+
+        public void Update(bool dark)
+        {
+            Pushes++;
+            if (!dark)
+            {
+                if (Handle != IntPtr.Zero) ReleaseHandle();
+            }
+            else if (Handle != _tree.Handle)
+            {
+                if (Handle != IntPtr.Zero) ReleaseHandle();
+                AssignHandle(_tree.Handle);
+            }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (m.Msg == WmThemeChanged && !Pushing) Push(_tree, true);
+        }
+    }
+
+    /// <summary>How many times the tree was given its theme (tests).</summary>
+    internal static int TreePushes(TreeView tree) => TreeKeepers.TryGetValue(tree, out var keeper) ? keeper.Pushes : 0;
 
     private static readonly ConditionalWeakTable<ListView, HeaderPainter> HeaderPainters = new ConditionalWeakTable<ListView, HeaderPainter>();
 
@@ -94,9 +165,15 @@ internal static class TwNativeTheme
         private const int NmCustomDraw = -12;
         private const int CddsPrePaint = 0x00000001;
         private const int CddsItemPrePaint = 0x00010001;
+        private const int CdrfSkipDefault = 0x00000004;
         private const int CdrfNotifyItemDraw = 0x00000020;
+        private const int WmThemeChanged = 0x031A;
         private readonly ListView _list;
         private IntPtr _header;
+
+        /// <summary>FormWind is setting the theme itself; its own WM_THEMECHANGED is not answered.</summary>
+        public bool Pushing;
+        public int Pushes;
 
         public HeaderPainter(ListView list)
         {
@@ -121,23 +198,28 @@ internal static class TwNativeTheme
 
         protected override void WndProc(ref Message m)
         {
+            // Uygulama listeye kendi temasını verdi (KeePass OnLoad'da SetWindowTheme(..., "explorer") çağırır): açık
+            // temanın grup başlıkları ve kaydırma çubukları koyu zeminde kalmasın diye koyu tema geri verilir.
+            if (m.Msg == WmThemeChanged && !Pushing)
+            {
+                base.WndProc(ref m);
+                PushList(_list, true);
+                return;
+            }
             if (m.Msg == WmNotify && m.LParam != IntPtr.Zero)
             {
                 var header = Marshal.PtrToStructure<NmHdr>(m.LParam);
                 if (header.HwndFrom == _header && header.Code == NmCustomDraw)
                 {
+                    // Önce uygulama ve WinForms işler (ObjectListView font seçer, owner-draw liste hücreyi kendisi
+                    // çizebilir); çizimi Windows'a bırakılan hücrelerin yazı rengi atanır.
                     var draw = Marshal.PtrToStructure<NmCustomDrawInfo>(m.LParam);
-                    if (draw.DrawStage == CddsPrePaint)
-                    {
-                        m.Result = (IntPtr)CdrfNotifyItemDraw;
-                        return;
-                    }
-                    if (draw.DrawStage == CddsItemPrePaint)
-                    {
-                        SetTextColor(draw.Hdc, ColorTranslator.ToWin32(_list.ForeColor));
-                        m.Result = IntPtr.Zero;
-                        return;
-                    }
+                    base.WndProc(ref m);
+                    long result = m.Result.ToInt64();
+                    if ((result & CdrfSkipDefault) != 0) return;
+                    if (draw.DrawStage == CddsPrePaint) m.Result = (IntPtr)(result | CdrfNotifyItemDraw);
+                    else if (draw.DrawStage == CddsItemPrePaint) SetTextColor(draw.Hdc, ColorTranslator.ToWin32(_list.ForeColor));
+                    return;
                 }
             }
             base.WndProc(ref m);
