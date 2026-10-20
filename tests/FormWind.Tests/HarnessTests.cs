@@ -170,11 +170,14 @@ public class HarnessTests
         Assert.NotNull(image);
         var origin = ScreenContrast.WindowOrigin(form);
         var area = picker.RectangleToScreen(picker.ClientRectangle);
-        int y = area.Top - origin.Y + area.Height / 2;
-        // Seçili alanın (ilk sayı) sağındaki ay adı: koyu zemin ve açık yazı birlikte.
-        var row = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Select(System.Linq.Enumerable.Range(area.Left - origin.X + area.Width / 4, area.Width / 3), x => image!.GetPixel(x, y)));
-        Assert.Contains(row, p => p.GetBrightness() < 0.2f);
-        Assert.Contains(row, p => p.GetBrightness() > 0.7f);
+        // Kontrolün içi (kenarlık hariç): koyu zemin ve açık yazı birlikte. Tarihin biçimi ve yeri bölge ayarına bağlıdır
+        // (tr-TR "18 Ekim 2026 Pazar", en-US "Sunday, October 18, 2026"); tek bir satır kesiti yazıyı ıskalayabiliyordu.
+        var pixels = new System.Collections.Generic.List<Color>();
+        for (int y = area.Top - origin.Y + 3; y < area.Bottom - origin.Y - 3; y++)
+            for (int x = area.Left - origin.X + 3; x < area.Right - origin.X - 3; x++)
+                pixels.Add(image!.GetPixel(x, y));
+        Assert.Contains(pixels, p => p.GetBrightness() < 0.2f);
+        Assert.Contains(pixels, p => p.GetBrightness() > 0.7f);
         form.Close();
     });
 
