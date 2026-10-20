@@ -71,7 +71,7 @@ internal static class TwParser
         var variants = new Dictionary<(TwState Conditions, string? Part), TwVariant>();
         var unknown = new List<string>();
 
-        foreach (var token in Expand(classes, theme, 0))
+        foreach (var token in Expand(classes, theme))
         {
             var variantName = "";
             var utility = token;
@@ -94,7 +94,7 @@ internal static class TwParser
                 variants.Add((conditions, part), variant);
             }
 
-            if (!ApplyUtility(utility, variant.Style, theme))
+            if (!TryApplyUtility(utility, variant.Style, theme))
                 unknown.Add(token);
         }
 
@@ -107,21 +107,54 @@ internal static class TwParser
         return new TwParsed(Normalize(classes), ordered, unknown);
     }
 
-    private static IEnumerable<string> Expand(string? classes, TwTheme theme, int depth)
+    // Keyfi değerlerdeki çok uzun sayılar (w-[99999999999px]) int'e sığmaz: class tanınmaz, istisna SetClasses'tan dışarı
+    // çıkıp uygulamayı düşürmez.
+    private static bool TryApplyUtility(string utility, TwStyle style, TwTheme theme)
     {
-        if (string.IsNullOrWhiteSpace(classes)) yield break;
-
-        foreach (var token in classes!.Split(Separators, StringSplitOptions.RemoveEmptyEntries))
+        try
         {
-            var component = depth < MaxComponentDepth ? theme.GetComponent(token) : null;
-            if (component is null)
-            {
-                yield return token;
-                continue;
-            }
-            foreach (var inner in Expand(component, theme, depth + 1))
-                yield return inner;
+            return ApplyUtility(utility, style, theme);
         }
+        catch (OverflowException)
+        {
+            return false;
+        }
+    }
+
+    // Bileşenler açılır. Her bileşenin açılımı bir kez hesaplanır ve tekrarlayan class'lar ayıklanır (her class'ın son geçtiği
+    // yer kalır; sonra gelen kazandığından sonuç değişmez): kendini birden çok kez içeren bileşen ("a": "a a a …") açılımı
+    // üstel büyütüp ayrıştırmayı saniyelerce kilitliyordu. Açılmakta olan bir bileşene yeniden başvuru açılmaz (döngü); o
+    // ad tanınmayan class olarak kalır.
+    private static List<string> Expand(string? classes, TwTheme theme)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(classes)) return result;
+        var expanded = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var active = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var token in classes!.Split(Separators, StringSplitOptions.RemoveEmptyEntries))
+            result.AddRange(ExpandToken(token, theme, expanded, active));
+        return result;
+    }
+
+    private static List<string> ExpandToken(string token, TwTheme theme, Dictionary<string, List<string>> expanded, HashSet<string> active)
+    {
+        if (expanded.TryGetValue(token, out var known)) return known;
+        var component = active.Count < MaxComponentDepth && !active.Contains(token) ? theme.GetComponent(token) : null;
+        if (component is null) return new List<string>(1) { token };
+
+        active.Add(token);
+        var tokens = new List<string>();
+        foreach (var inner in component.Split(Separators, StringSplitOptions.RemoveEmptyEntries))
+            tokens.AddRange(ExpandToken(inner, theme, expanded, active));
+        active.Remove(token);
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var distinct = new List<string>(tokens.Count);
+        for (int i = tokens.Count - 1; i >= 0; i--)
+            if (seen.Add(tokens[i])) distinct.Add(tokens[i]);
+        distinct.Reverse();
+        expanded[token] = distinct;
+        return distinct;
     }
 
     // Kontrol parçaları. Bir varyantta en fazla bir parça olabilir; parçayı tanımayan kontrol onu yok sayar.
@@ -256,9 +289,12 @@ internal static class TwParser
         {
             var size = match.Groups[1].Value;
             // text-[13px]: keyfi boyut (dönüştürme aracı ve tasarım dosyalarındaki ara değerler için).
-            style.FontSizePx = size[0] == '['
+            var pixels = size[0] == '['
                 ? float.Parse(size.Substring(1, size.Length - 4), System.Globalization.CultureInfo.InvariantCulture)
                 : FontSizes[size];
+            // text-[0px]: sıfır boyutlu font oluşturulamaz; class tanınmaz.
+            if (pixels <= 0) return false;
+            style.FontSizePx = pixels;
             return true;
         }
 

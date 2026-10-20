@@ -526,6 +526,25 @@ public sealed class TwTheme
     // bir klasörden okuyabilir).
     internal void ApplyJson(string json, string? baseDirectory, bool skipMissingFiles)
     {
+        // Bozuk dosya türüne göre JsonException (sözdizimi), InvalidOperationException (beklenmeyen değer tipi, örn. bileşen
+        // yerine sayı) ya da FormatException çıkıyordu; uygulama hepsini ayrı ayrı yakalamak zorundaydı. Hepsi
+        // FormatException olur, asıl hata InnerException'dadır.
+        try
+        {
+            ApplyJsonCore(json, baseDirectory, skipMissingFiles);
+        }
+        catch (JsonException ex)
+        {
+            throw new FormatException($"tw.config.json: invalid JSON: {ex.Message}", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new FormatException($"tw.config.json: unexpected value type: {ex.Message}", ex);
+        }
+    }
+
+    private void ApplyJsonCore(string json, string? baseDirectory, bool skipMissingFiles)
+    {
         var options = new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         using var document = JsonDocument.Parse(json, options);
         var root = document.RootElement;
