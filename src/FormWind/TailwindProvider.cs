@@ -309,7 +309,12 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     private void InheritCopiedBackColorsOnce(Control container)
     {
         if (!FollowParentBackColor || IsDesignMode || !IsAutoContainer(container) || !_backColorsChecked.Add(container)) return;
-        InheritCopiedBackColorsIn(container, container.BackColor.ToArgb(), CanInheritBackColor, _backColorsChecked);
+        // Konteynere class'lar AutoStyle'dan önce verildiyse rengi çoktan değişmiştir; çocukların kopyaladığı, özgün renktir
+        // (sonradan eklenen kontrollerde olduğu gibi).
+        var back = _bindings.TryGetValue(container, out var binding) && binding.Original?.BackColor is System.Drawing.Color original
+            ? original
+            : container.BackColor;
+        InheritCopiedBackColorsIn(container, back.ToArgb(), CanInheritBackColor, _backColorsChecked);
     }
 
     /// <summary>The form (or user control) whose controls <see cref="AutoStyle"/> styles. The Designer sets it to the form being designed.</summary>

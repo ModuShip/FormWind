@@ -127,6 +127,25 @@ public class AutoStyleTests
         Assert.Equal(form.BackColor.ToArgb(), late.BackColor.ToArgb());
     });
 
+    // WPF denemesinde bulundu: konteynere class AutoStyle'dan önce verilince rengi çoktan değişmişti; çocukların kopyaladığı
+    // özgün renk tanınmıyor, etiket eski zeminde kalıyordu.
+    [Fact]
+    public void Copied_back_colors_follow_when_the_container_got_classes_first() => Sta.Run(() =>
+    {
+        var appBack = Color("#272727");
+        using var provider = new TailwindProvider();
+        using var form = new Form { BackColor = appBack };
+        var label = new Label { BackColor = appBack };
+        form.Controls.Add(label);
+
+        provider.SetClasses(form, "page");
+        provider.ContainerControl = form;
+        provider.AutoStyle = true;
+
+        Assert.Equal(Color("#f9fafb").ToArgb(), form.BackColor.ToArgb());
+        Assert.Equal(form.BackColor.ToArgb(), label.BackColor.ToArgb());
+    });
+
     [Fact]
     public void Follow_parent_back_color_can_be_turned_off() => Sta.Run(() =>
     {
