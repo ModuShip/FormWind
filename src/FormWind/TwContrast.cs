@@ -51,11 +51,13 @@ public static class TwContrast
         if (IsHidden(control)) return;
         if (!control.Enabled && includeDisabled && control is TextBoxBase)
         {
-            // Windows devre dışı metin kutusunun yazı satırının arkasına sistem zeminini çizer; yazı rengi açıkça
-            // atanmamışsa sistemin gri rengini kullanır.
-            var disabledFore = TwOriginal.IsExplicit(control, nameof(Control.ForeColor)) ? control.ForeColor : SystemColors.GrayText;
-            double disabledRequired = IsLarge(control.Font) ? Math.Min(minimum, LargeTextMinimum) : minimum;
-            Check(issues, control, "disabled text", disabledFore, SystemColors.Control, disabledRequired);
+            // Devre dışı RichTextBox sistem zeminini çizer, yazı rengini (açıkça atanmışsa) kullanır. Diğer metin kutuları
+            // atanmış zemini izler ama yazıyı her zaman sistemin gri rengiyle çizer.
+            bool rich = control is RichTextBox;
+            var disabledFore = rich && TwOriginal.IsExplicit(control, nameof(Control.ForeColor)) ? control.ForeColor : SystemColors.GrayText;
+            var disabledBack = !rich && TwOriginal.IsExplicit(control, nameof(Control.BackColor)) ? EffectiveBack(control) : SystemColors.Control;
+            // Devre dışı öğeler WCAG kapsamında değildir; diğer devre dışı kontroller gibi eşik büyük metninki (3:1).
+            Check(issues, control, "disabled text", disabledFore, disabledBack, Math.Min(minimum, LargeTextMinimum));
         }
         else if (!control.Enabled && includeDisabled && control is Button button)
         {

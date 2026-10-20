@@ -41,15 +41,20 @@ public class WinFormsApplier : IStyleApplier
         ApplyCursor(control, style, original, applied);
         if (!context.DesignMode) ApplyHidden(control, style, applied);
         ApplyFlatButton(control, style, original, applied);
-        if (control is Button || control is CheckBox || control is RadioButton || control is Label and not LinkLabel)
+        if (control is Button || control is CheckBox || control is RadioButton || control is Label and not LinkLabel || control is GroupBox)
         {
             var disabledState = (context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible)) | TwState.Disabled;
-            bool explicitColor = context.Parsed.ResolveExact(TwState.Disabled, disabledState).ForeColor.HasValue;
-            // Onay kutusu ve etikette yazı rengi class'lardan geliyorsa Windows'un zeminden türettiği devre dışı renk yerine çizilir.
+            // Yüksek Karşıtlık: ResolveExact sistem renklerine çevirmez; disabled:text-* class rengi kullanılmaz.
+            bool forced = (context.State & TwState.HighContrast) != 0;
+            bool explicitColor = !forced && context.Parsed.ResolveExact(TwState.Disabled, disabledState).ForeColor.HasValue;
+            // Onay kutusu, etiket ve grup başlığında yazı rengi class'lardan geliyorsa Windows'un zeminden türettiği devre dışı
+            // renk yerine çizilir.
             bool repaint = control is Button ? applied.FlatButton : context.Parsed.Resolve(disabledState).ForeColor.HasValue;
-            TwDisabledText.Update(control, explicitColor, repaint);
+            TwDisabledText.Update(control, explicitColor, repaint, forced);
         }
         if (control is LinkLabel link) ApplyLinkColors(link, style);
+        // Windows'un devre dışıyken sistem renkleriyle çizdiği ListView ve düzenlenebilir ComboBox (bkz. TwDisabledNative).
+        if (!context.DesignMode && TwDisabledNative.Supports(control)) TwDisabledNative.Update(control, style.BackColor is Color { A: 255 });
         ApplyChrome(control, style, context, applied);
         if (control is ITwToggle toggle) toggle.SetToggleColors(style.AccentColor, style.FillColor);
         if (!context.DesignMode && TwNativeTheme.Supports(control))
@@ -232,14 +237,15 @@ public class WinFormsApplier : IStyleApplier
     }
 
     /// <summary>
-    /// A disabled native text box (TextBox, RichTextBox, MaskedTextBox) does not reliably follow its background color: depending
-    /// on the handle and on whether the color was set before or after disabling, Windows sometimes paints the system background
-    /// (#F0F0F0). The text color is always applied, which produced light text on a light background in dark mode. So while
-    /// disabled only the colors of the <c>disabled:</c> variants are applied; otherwise the original colors (Windows' disabled look) stay.
+    /// A disabled RichTextBox ignores its background color (Windows paints the system background, #F0F0F0, even after
+    /// EM_SETBKGNDCOLOR) but uses its text color, which produced light text on a light background in dark mode. So while
+    /// disabled only the colors of the <c>disabled:</c> variants are applied; otherwise the original colors (Windows' disabled
+    /// look) stay. Other text boxes (TextBox, MaskedTextBox) follow the background while disabled and draw the text in the
+    /// system gray (measured: before and after disabling, and after toggling); they keep the classes' colors.
     /// </summary>
     internal static (Color? Back, Color? Fore) ColorTargets(Control control, TwStyle style, TwApplyContext context)
     {
-        if (context.DesignMode || !(control is TextBoxBase) || control.Enabled) return (style.BackColor, style.ForeColor);
+        if (context.DesignMode || !(control is RichTextBox) || control.Enabled) return (style.BackColor, style.ForeColor);
         var disabled = context.Parsed.ResolveExact(TwState.Disabled, context.State);
         return (disabled.BackColor, disabled.ForeColor);
     }

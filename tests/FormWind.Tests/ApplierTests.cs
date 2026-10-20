@@ -276,15 +276,13 @@ public class ApplierTests
         Assert.Equal(expected, TwSides.Scale(pixels, scale));
 
     // ScottPlot demosunda bulundu: imleç görünmesin diye devre dışı bırakılan RichTextBox koyu temada açık zeminde açık
-    // yazıyla çiziliyordu (Windows devre dışı metin kutusunda zemin rengine güvenilir biçimde uymaz, yazı rengine uyar).
-    [Theory]
-    [InlineData(typeof(TextBox))]
-    [InlineData(typeof(RichTextBox))]
-    public void Disabled_native_text_box_keeps_windows_colors_unless_disabled_variants(Type type)
+    // yazıyla çiziliyordu (Windows devre dışı RichTextBox'ta zemin rengine uymaz, yazı rengine uyar).
+    [Fact]
+    public void Disabled_rich_text_box_keeps_windows_colors_unless_disabled_variants()
     {
         using var provider = new TailwindProvider();
         using var form = new Form();
-        var box = (TextBoxBase)Activator.CreateInstance(type)!;
+        var box = new RichTextBox();
         form.Controls.Add(box);
         provider.SetClasses(box, "bg-gray-900 text-gray-100");
 
@@ -300,6 +298,29 @@ public class ApplierTests
         box.Enabled = false;
         Assert.Equal(ColorTranslator.FromHtml("#1f2937").ToArgb(), box.BackColor.ToArgb());
         Assert.Equal(ColorTranslator.FromHtml("#9ca3af").ToArgb(), box.ForeColor.ToArgb());
+    }
+
+    // KeePass'te görüldü: devre dışı arama kutusu koyu temada beyaz kalıyordu. TextBox ve MaskedTextBox devre dışıyken de
+    // zemini izler (yazıyı sistem grisiyle çizer); class'ların renkleri korunur.
+    [Theory]
+    [InlineData(typeof(TextBox))]
+    [InlineData(typeof(MaskedTextBox))]
+    public void Disabled_text_boxes_keep_the_class_background(Type type)
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form();
+        var box = (TextBoxBase)Activator.CreateInstance(type)!;
+        form.Controls.Add(box);
+        provider.SetClasses(box, "bg-gray-900 text-gray-100");
+
+        box.Enabled = false;
+        Assert.Equal(ColorTranslator.FromHtml("#111827").ToArgb(), box.BackColor.ToArgb());
+        box.Enabled = true;
+        Assert.Equal(ColorTranslator.FromHtml("#111827").ToArgb(), box.BackColor.ToArgb());
+
+        provider.SetClasses(box, "bg-gray-900 text-gray-100 disabled:bg-gray-800");
+        box.Enabled = false;
+        Assert.Equal(ColorTranslator.FromHtml("#1f2937").ToArgb(), box.BackColor.ToArgb());
     }
 
     [Fact]

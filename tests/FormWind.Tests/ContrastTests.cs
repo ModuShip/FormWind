@@ -193,6 +193,15 @@ public class ContrastTests
         Assert.Same(display, issue.Control);
         Assert.Equal("disabled text", issue.Part);
         Assert.Equal(SystemColors.Control.ToArgb(), issue.Background.ToArgb());
+
+        // TextBox atanmış zemini izler, yazıyı sistem grisiyle çizer: gri-800 zeminde 2,9:1.
+        var dark = new TextBox { Text = "Koyu", BackColor = ColorTranslator.FromHtml("#1f2937"), Enabled = false };
+        panel.Controls.Add(dark);
+        var darkIssue = Assert.Single(TwContrast.Audit(panel, includeDisabled: true), i => i.Control == dark);
+        Assert.Equal(ColorTranslator.FromHtml("#1f2937").ToArgb(), darkIssue.Background.ToArgb());
+        Assert.Equal(SystemColors.GrayText.ToArgb(), darkIssue.Foreground.ToArgb());
+        dark.BackColor = ColorTranslator.FromHtml("#111827");                                // 3,4:1 ≥ 3:1
+        Assert.DoesNotContain(TwContrast.Audit(panel, includeDisabled: true), i => i.Control == dark);
     }
 
     // Kütüphanenin varsayılan bileşen class'ları açık ve koyu temada, iki palet sürümüyle de okunabilir olmalı.
