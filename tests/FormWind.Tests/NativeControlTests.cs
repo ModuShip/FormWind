@@ -100,6 +100,32 @@ public class NativeControlTests
         form.Close();
     });
 
+    // Görsel stiller kapalıyken (EnableVisualStyles çağrılmamış, uzak masaüstü, klasik tema) koyu ItemsView teması uygulanamaz;
+    // başlık klasik açık gri kalır. Yazısı açık renge çevrilseydi okunmazdı (ölçüldü: #F0F0F0 üzerinde 1,04:1); başlığa
+    // dokunulmaz, liste kendi renklerini alır.
+    [Fact]
+    public void List_view_header_is_left_to_windows_without_visual_styles() => Sta.Run(() =>
+    {
+        TwNativeTheme.ThemesOverride = false;
+        try
+        {
+            using var provider = new TailwindProvider { DarkMode = true };
+            using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+            var list = new ListView { View = View.Details, Columns = { "Başlık" } };
+            form.Controls.Add(list);
+            form.Show();
+            provider.SetClasses(list, "list");
+
+            Assert.False(TwNativeTheme.PaintsHeader(list));
+            Assert.Equal(Color("#1f2937").ToArgb(), list.BackColor.ToArgb());                   // liste yine koyu
+            form.Close();
+        }
+        finally
+        {
+            TwNativeTheme.ThemesOverride = true;
+        }
+    });
+
     // KeePass'te görüldü: seçenekler penceresi listelere OnLoad'da SetWindowTheme(..., "explorer") veriyor ve FormWind'in
     // koyu temasını eziyordu (grup başlıkları koyu zeminde koyu mavi). Koyu temadaki liste, uygulamanın verdiği temadan sonra
     // koyu temayı geri alır; açık temada uygulamanın teması kalır.

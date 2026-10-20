@@ -107,13 +107,21 @@ internal static class TwNativeTheme
             painter.Pushing = false;
         }
         painter.Pushes++;
-        painter.Update(dark && header != IntPtr.Zero, header);
+        // Görsel stiller kapalıyken (EnableVisualStyles çağrılmamış, uzak masaüstü, klasik tema) DarkMode_ItemsView uygulanamaz
+        // ve başlık klasik açık gri kalır: yazısı açık renge çevrilseydi okunmazdı (#F0F0F0 üzerinde 1,04:1).
+        painter.Update(dark && header != IntPtr.Zero && ThemesActive, header);
     }
 
     /// <summary>How many times the list was given its theme (tests).</summary>
     internal static int ListPushes(ListView list) => HeaderPainters.TryGetValue(list, out var painter) ? painter.Pushes : 0;
 
     /// <summary>Whether the list's column header text is drawn in its text color where Windows draws it (dark mode).</summary>
+    /// <summary>Windows'un temaları uygulamada etkin (comctl32 v6 ve görsel stiller); testler <see cref="ThemesOverride"/> ile benzetir.</summary>
+    internal static bool ThemesActive => ThemesOverride ?? Application.RenderWithVisualStyles;
+
+    /// <summary>Tests: whether themes are active (<c>null</c> = <see cref="Application.RenderWithVisualStyles"/>).</summary>
+    internal static bool? ThemesOverride { get; set; }
+
     internal static bool PaintsHeader(ListView list) => HeaderPainters.TryGetValue(list, out var painter) && painter.Handle != IntPtr.Zero;
 
     private static readonly ConditionalWeakTable<TreeView, TreeKeeper> TreeKeepers = new ConditionalWeakTable<TreeView, TreeKeeper>();
