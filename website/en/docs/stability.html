@@ -24,9 +24,11 @@ description: What FormWind keeps stable during the preview: the public API, the 
   BackColor = #80DC2626
   ForeColor = #BF111827</code></pre>
 <p><code>GoldenParseTests</code> fails when one of them changes. An intended change is recorded with <code>FORMWIND_UPDATE_BASELINES=1</code> and listed in the changelog, so <code>bg-blue-500</code> on your form does not change color by accident.</p>
+<p>Malformed classes do not crash the application: arbitrary values that do not fit an <code>int</code> (<code>w-[99999999999px]</code>) and a zero font size (<code>text-[0px]</code>) are unknown classes; components that contain themselves repeatedly or form a cycle are expanded once. Applier errors are reported through <code>StyleError</code>.</p>
 
 <h2 id="theme-file">Theme file</h2>
 <p><code>"version"</code> in <code>tw.config.json</code> is the file format version: <code>TwTheme.FileVersion</code>, currently 1. A file without it is version 1. A file written for a newer format is rejected with <code>NotSupportedException</code> instead of being read wrongly.</p>
+<p>An invalid file (syntax error, unexpected value type, invalid color) is rejected with <code>FormatException("tw.config.json: …")</code>; the original error is the <code>InnerException</code>.</p>
 <pre><code class="language-json">{ "version": 1, "preset": "fluent" }</code></pre>
 
 <h2 id="experimental-extension-points">Experimental extension points (FW9001)</h2>

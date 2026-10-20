@@ -38,6 +38,8 @@ description: Style DataGridView with part prefixes, column classes, cell types a
   <li>Header colors turn off <code>EnableHeadersVisualStyles</code>, which would otherwise ignore them.</li>
   <li><code>row:h-*</code> on bound or <code>VirtualMode</code> grids uses <code>RowHeightInfoNeeded</code>: rows stay shared and scrolling and selection are kept (about 12 ms for 17,000 rows).</li>
   <li>Removing the classes returns the grid to its original styles.</li>
+  <li>When the classes set the cell background and <code>alt:</code> sets none, the Designer's zebra is kept but derived from the classes' background; columns with a background and no text color (e.g. a beige total column) are drawn with the original text color they were designed for. The contrast audit measures these pairs too.</li>
+  <li>While the classes hide the row headers (<code>row-header:hidden</code>, <code>table</code>), a row with an error (<code>ErrorText</code>) gets a bar in the danger color on its leading edge and the error as its cells' tooltip.</li>
   <li>Grids that paint their own cells ignore cell styles; <code>divide-*</code> and <code>row:h-*</code> change structural properties, so check such grids before using them.</li>
   <li><code>table</code> variants go after it: <code>table-sm</code> (32 px rows), <code>table-lg</code> (48 px rows), <code>table-striped</code>, <code>table-bordered</code>. Fluent, Ant Design and Material define their own heights.</li>
   <li><code>TwGrid.EnableDarkInversion(grid)</code> gives self-drawing grids a dark mode: the grid is styled light and its picture is inverted with the hue kept, so hard-coded light colors turn dark too.</li>

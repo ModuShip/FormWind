@@ -19,7 +19,7 @@ description: Owner-draw kontroller için UI Automation, Windows Yüksek Karşıt
     <tr><td><code>TwPager</code>, <code>TwToast</code>, <code>TwDialog</code></td><td>ToolBar, Alert, Dialog</td><td>"Sayfa 3 / 20".</td></tr>
   </tbody>
 </table></div>
-<p>Seçim ve odak değişimleri duyurulur. Görünür etiketi olmayan alanlara bir <code>AccessibleName</code> verin; <code>TwField</code> içinde etiket otomatik kullanılır. Bütün kontroller klavyeyle tam kullanılabilir; <code>focus-visible:</code> halkaları yalnızca klavye odağında görünür.</p>
+<p>Seçim ve odak değişimleri duyurulur. Görünür etiketi olmayan alanlara bir <code>AccessibleName</code> verin; <code>TwField</code> içinde etiket otomatik kullanılır. Bütün kontroller klavyeyle tam kullanılabilir; <code>focus-visible:</code> halkaları yalnızca klavye odağında görünür. FormWind'in Windows'un yerine çizdiği native parçalar (sekme şeridi, devre dışı yazı, koyu <code>DropDownList</code> kutusu, devre dışı liste) ad, rol, durum ve değeri değiştirmez; örttükleri odak çerçevesini klavye ipuçları açıkken kendileri çizer.</p>
 
 <h2 id="high-contrast">Yüksek Karşıtlık</h2>
 <p>Windows'ta bir karşıtlık teması açıkken FormWind class renkleri yerine sistem renklerini kullanır:</p>
@@ -29,7 +29,11 @@ description: Owner-draw kontroller için UI Automation, Windows Yüksek Karşıt
   <li>Boşluk, yazı boyutu, köşe ve yerleşim değişmez. Mod değişince stiller yeniden uygulanır.</li>
   <li>Bu moda özgü renkler Tailwind'deki gibi <code>forced-colors:</code> ile verilir: <code>forced-colors:border-2</code>.</li>
   <li>Kapatmak için <code>RespectHighContrast = false</code>; kendi çizen kodda durumu <code>HighContrastActive</code>'ten okuyun.</li>
+  <li>FormWind'in Windows'un yerine çizdikleri Windows'a döner: sekme şeridi, <code>ProgressBar</code> renkleri, koyu kaydırma çubukları, liste teması ve ipuçları, başlık çubuğunun koyu modu ve renkleri, <code>LinkLabel</code> bağlantı renkleri, PropertyGrid işaretleri. Yeniden çizilen devre dışı yazı <code>GrayText</code> olur.</li>
 </ul>
+
+<h2 id="text-size">Windows metin boyutu</h2>
+<p>Windows'un <strong>Metin boyutu</strong> ayarı (%100–225) <code>text-*</code> boyutlarını tarayıcıdaki <code>rem</code> gibi çarpar; boşluklar değişmez, sabit boyutlu butonlarda iç boşluk yazı sığacak kadar kısılır. Ayar çalışırken değişirse stiller yeniden uygulanır. Kapatmak için <code>TwFonts.RespectTextScale = false</code>.</p>
 
 <h2 id="contrast-audit">Kontrast denetimi</h2>
 <p><code>TwContrast</code> bir formun güncel renklerini WCAG 2 oranlarına göre denetler: normal yazı için 4,5:1, büyük yazı için 3:1. Testlerde ya da geliştirme sırasında, iki modda da çalıştırın:</p>

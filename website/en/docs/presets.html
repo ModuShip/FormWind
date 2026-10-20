@@ -55,13 +55,14 @@ description: Ready-made looks (Tailwind, Fluent, Ant Design, Material), semantic
 
 <h2>AutoStyle</h2>
 <p>While <code>TailwindProvider.AutoStyle</code> is on, the controls of the <code>ContainerControl</code> form get the component mapped to their type — including controls added later. In the Designer, <code>ContainerControl</code> is set to the form itself (as with <code>ErrorProvider</code>); in code, write <code>provider.ContainerControl = this;</code>.</p>
+<p><strong>One line in an existing application:</strong> <code>TwAutoTheme.Install();</code> in <code>Program.Main</code> loads the theme and gives every form that opens, after <code>Load</code> and before it appears, a provider with <code>AutoStyle</code> on. <code>TwAutoTheme.DarkMode</code> switches all forms together (<code>FollowWindowsTheme</code> follows Windows); forms with their own provider are left alone, <code>Filter</code> leaves forms out, and the <code>FormAttached</code> event gives single controls their classes.</p>
 <div class="table-wrap"><table>
   <thead><tr><th>Control</th><th>Component</th></tr></thead>
   <tbody>
     <tr><td><code>Form</code></td><td><code>page</code></td></tr>
     <tr><td><code>Button</code>, <code>TwButton</code></td><td><code>btn-ghost</code></td></tr>
-    <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code></td><td><code>input</code></td></tr>
-    <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code></td><td><code>select</code></td></tr>
+    <tr><td><code>TextBox</code>, <code>RichTextBox</code>, <code>MaskedTextBox</code>, <code>TwTextBox</code>, <code>TwNumberBox</code>, <code>NumericUpDown</code>, <code>DomainUpDown</code></td><td><code>input</code></td></tr>
+    <tr><td><code>ComboBox</code>, <code>TwSelect</code>, <code>TwDatePicker</code>, <code>DateTimePicker</code></td><td><code>select</code></td></tr>
     <tr><td><code>CheckBox</code>, <code>RadioButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code></td><td><code>toggle</code></td></tr>
     <tr><td><code>TwSlider</code>, <code>TwProgress</code>, <code>ProgressBar</code></td><td><code>range</code></td></tr>
     <tr><td><code>TwField</code></td><td><code>field</code></td></tr>

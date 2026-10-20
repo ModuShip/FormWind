@@ -24,9 +24,11 @@ description: FormWind'in önizleme süresince neyi kararlı tuttuğu: public API
   BackColor = #80DC2626
   ForeColor = #BF111827</code></pre>
 <p>Biri değişirse <code>GoldenParseTests</code> başarısız olur. Bilinçli bir değişiklik <code>FORMWIND_UPDATE_BASELINES=1</code> ile kaydedilir ve değişiklik günlüğüne yazılır; böylece formunuzdaki <code>bg-blue-500</code> kazara renk değiştirmez.</p>
+<p>Bozuk class'lar uygulamayı düşürmez: <code>int</code>'e sığmayan keyfi değerler (<code>w-[99999999999px]</code>) ve sıfır boyutlu font (<code>text-[0px]</code>) tanınmayan class sayılır; kendini tekrar tekrar içeren ya da döngü kuran bileşenler bir kez açılır. Uygulayıcı hataları <code>StyleError</code> ile bildirilir.</p>
 
 <h2 id="theme-file">Tema dosyası</h2>
 <p><code>tw.config.json</code>'daki <code>"version"</code> dosya biçiminin sürümüdür: <code>TwTheme.FileVersion</code>, şu an 1. Bu alanı olmayan dosya sürüm 1 sayılır. Daha yeni bir biçim için yazılmış dosya yanlış okunmak yerine <code>NotSupportedException</code> ile reddedilir.</p>
+<p>Bozuk dosya (sözdizimi hatası, beklenmeyen değer tipi, geçersiz renk) <code>FormatException("tw.config.json: …")</code> ile reddedilir; asıl hata <code>InnerException</code>'dadır.</p>
 <pre><code class="language-json">{ "version": 1, "preset": "fluent" }</code></pre>
 
 <h2 id="experimental-extension-points">Deneysel genişletme noktaları (FW9001)</h2>

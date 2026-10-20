@@ -20,13 +20,13 @@ description: The Classes property, smart tag class builder, live preview with yo
 </ul>
 
 <h2>Preview and your theme</h2>
-<p>The Designer preview applies your classes, but properties the classes manage — <code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code> — are not written to <code>Designer.cs</code>. Values you set by hand that the classes don't manage still are.</p>
+<p>The Designer preview applies your classes; the only FormWind lines written to <code>Designer.cs</code> are <code>SetClasses</code> calls. Properties the classes manage — <code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code> — and the preview's side effects (a flat button's <code>FlatStyle</code>, <code>FlatAppearance</code> and <code>UseVisualStyleBackColor</code>; a text box's <code>BorderStyle</code>; grid styles; link colors) are not written: while a control is serialized the preview is taken off and applied again afterwards. Saving doesn't mark the form modified again. Values you set by hand that the classes don't manage still are. Turning <code>DesignTimePreview</code> off puts the original values back. Saving and reopening doesn't change the code, and sizes don't grow at 150 % DPI.</p>
 <p>The package's <code>build/FormWind.targets</code> embeds <code>tw.config.json</code> from the project folder into the application's assembly. The Designer finds the assembly of the form being designed and reads the theme from its folder (fonts and SVG icons included) or the embedded copy, so the preview and the lists use your theme. After changing the theme file, build and reopen the form.</p>
 <pre><code class="language-xml">&lt;PropertyGroup&gt;
   &lt;FormWindThemeFile&gt;Themes\tw.config.json&lt;/FormWindThemeFile&gt;   &lt;!-- a file elsewhere --&gt;
   &lt;FormWindEmbedTheme&gt;false&lt;/FormWindEmbedTheme&gt;                 &lt;!-- turn embedding off --&gt;
 &lt;/PropertyGroup&gt;</code></pre>
-<p>At run time the application still loads the file with <code>TwTheme.LoadIfExists</code>; only the Designer reads the embedded copy.</p>
+<p>At run time the application still loads the file with <code>TwTheme.LoadIfExists</code>; only the Designer reads the embedded copy. The package also copies the file to the output and publish folders (not again if the project already copies it; <code>&lt;FormWindCopyTheme&gt;false&lt;/FormWindCopyTheme&gt;</code> turns it off).</p>
 
 <h2>TwTabControl</h2>
 <p>"Add page" and "Remove selected page" commands; clicking a tab at design time switches pages; controls dropped on the control land on the current page.</p>

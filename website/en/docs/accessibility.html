@@ -19,7 +19,7 @@ description: UI Automation for owner-drawn controls, Windows High Contrast suppo
     <tr><td><code>TwPager</code>, <code>TwToast</code>, <code>TwDialog</code></td><td>ToolBar, Alert, Dialog</td><td>"Page 3 of 20".</td></tr>
   </tbody>
 </table></div>
-<p>Selection and focus changes are announced. Give fields without a visible label an <code>AccessibleName</code>; inside a <code>TwField</code> the label is used automatically. All controls are fully keyboard-operable, and <code>focus-visible:</code> rings show only for keyboard focus.</p>
+<p>Selection and focus changes are announced. Give fields without a visible label an <code>AccessibleName</code>; inside a <code>TwField</code> the label is used automatically. All controls are fully keyboard-operable, and <code>focus-visible:</code> rings show only for keyboard focus. Native parts FormWind draws in place of Windows (the tab strip, disabled text, the dark <code>DropDownList</code> box, disabled lists) keep name, role, state and value; they draw the focus rectangle they cover while keyboard cues are on.</p>
 
 <h2 id="high-contrast">High Contrast</h2>
 <p>When a Windows contrast theme is on, FormWind uses system colors instead of class colors:</p>
@@ -29,7 +29,11 @@ description: UI Automation for owner-drawn controls, Windows High Contrast suppo
   <li>Spacing, font size, corners and layout stay. Styles are reapplied when the mode changes.</li>
   <li>Use <code>forced-colors:</code> for colors specific to this mode, as in Tailwind: <code>forced-colors:border-2</code>.</li>
   <li>Opt out with <code>RespectHighContrast = false</code>; read the state from <code>HighContrastActive</code> in code that draws itself.</li>
+  <li>What FormWind draws in place of Windows returns to Windows: the tab strip, <code>ProgressBar</code> colors, dark scrollbars, the list theme and tooltips, the title bar's dark mode and colors, <code>LinkLabel</code> link colors, the PropertyGrid glyphs. Redrawn disabled text is <code>GrayText</code>.</li>
 </ul>
+
+<h2 id="text-size">Windows text size</h2>
+<p>Windows' <strong>Text size</strong> setting (100–225%) multiplies <code>text-*</code> sizes like <code>rem</code> in a browser; spacing stays, and fixed-size buttons trim their padding so the text fits. Styles are reapplied when the setting changes. Turn it off with <code>TwFonts.RespectTextScale = false</code>.</p>
 
 <h2>Contrast audit</h2>
 <p><code>TwContrast</code> checks a form's current colors against WCAG 2 ratios — 4.5:1 for normal text, 3:1 for large text. Run it in tests or during development, in both modes:</p>

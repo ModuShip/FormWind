@@ -82,6 +82,21 @@ description: How long FormWind takes to open, repaint and restyle a form, and ho
   </tbody>
 </table></div>
 
+<h2 id="large-forms">Large forms</h2>
+<p>Tabs, controls nested in panels and a grid or list every 100 controls (<code>LargeFormTests</code>, net9):</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Controls</th><th>First styling (AutoStyle / classes by hand)</th><th>Theme switch + paint</th><th>FormWind memory</th></tr></thead>
+  <tbody>
+    <tr><td>1,011</td><td>165 ms / 362 ms</td><td>38 ms / 38 ms</td><td>2.0–3.3 KB/control</td></tr>
+    <tr><td>2,523</td><td>447 ms / 1,160 ms</td><td>39 ms / 83 ms</td><td>2.3–2.4 KB/control</td></tr>
+    <tr><td>5,039</td><td>824 ms / 1,550 ms</td><td>85 ms / 118 ms</td><td>2.1–2.5 KB/control</td></tr>
+  </tbody>
+</table></div>
+<p>Time grows linearly with the number of controls. Adding controls later grows from 250 to 2000 controls at the same rate as WinForms itself (FormWind ~9x, WinForms ~12x); use <code>SuspendLayout</code> for bulk adds. FormWind runs the parent's layout once while styling a control (before, each font, padding and size assignment triggered its own layout: 2000 controls 5.8 s → ~4.1 s). At ~60 theme switches per second color transitions overlap, every control ends on its target color and the handle count does not grow; with 200 animated controls the frame rate drops to ~10 fps. Thresholds are time per control and growth ratios, not fixed milliseconds.</p>
+
+<h2 id="long-running">Long-running use</h2>
+<p><code>SoakTests</code> opens a form full of controls that FormWind subclasses or hooks (dark ListView and TreeView, RTF, DropDownList, DateTimePicker, disabled ListView and ComboBox, tooltips, PropertyGrid) again and again. Each round switches the theme, sets the application's own theme, recreates handles and closes the form; a provider attached by hand and <code>TwAutoTheme</code> are tried separately. Over 300 rounds (net9) GDI stays 62→62, USER 37→37 and managed memory at ~4.3 MB; a round takes as long in the second half as in the first, and every form and provider except the last round's is collected.</p>
+
 <h2 id="method">Method</h2>
 <ul>
   <li>Each scenario repeats the same six roles (label, primary button, secondary button, text box, card, check box) in a <code>FlowLayoutPanel</code> on a 1200 × 900 borderless form, at 50, 200 and 500 controls.</li>

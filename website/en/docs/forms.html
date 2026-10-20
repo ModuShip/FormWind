@@ -56,6 +56,7 @@ TwTexts.Current.Loading = "Fetching data…";                                   
   <li>Flex and grid layouts mirror horizontally, and margins swap with them.</li>
   <li><code>TwButton</code>, <code>TwCheckBox</code>, <code>TwRadioButton</code>, <code>TwSwitch</code> and <code>TwSelect</code> mirror.</li>
   <li>With <code>RightToLeftLayout = true</code> Windows mirrors the window itself and FormWind does not mirror again.</li>
+  <li>What FormWind draws in place of Windows follows Windows' RTL layout: disabled label text is right-aligned, the glyph of check boxes and radio buttons moves to the other side, and the <code>TabControl</code> tab strip keeps Windows' tab order and icon position.</li>
 </ul>
 <div class="callout warn">
   <p>Not mirrored yet: <code>TwNumberBox</code>, <code>TwDatePicker</code>, <code>TwSlider</code>, <code>TwProgress</code>, <code>TwTabStrip</code>, <code>TwDataList</code>, <code>TwTreeView</code>, <code>TwCalendar</code> and the painted <code>DropDownList</code> combo box. There are no logical <code>ps-*</code>/<code>pe-*</code> classes; use <code>rtl:</code>.</p>

@@ -32,6 +32,14 @@ Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
 <h2>Moving between screens</h2>
 <p>When a form moves to a screen with a different DPI, FormWind reapplies classes once after WinForms finishes scaling. With <code>AutoScaleMode.Dpi</code>, fonts, spacing, owner-drawn controls and DataGridView fonts and column widths scale correctly — verified at 150% and 200%.</p>
 
+<h2 id="text-drawn-by-formwind">Text drawn by FormWind</h2>
+<p>Text FormWind draws after Windows (disabled label, check box, radio button and flat button text, the tab strip) follows WinForms' layout at every DPI:</p>
+<ul>
+  <li>Disabled text is drawn by a hidden, enabled label with the same font and format and copied into place, honoring the control's <code>UseCompatibleTextRendering</code> (GDI or GDI+). Check boxes and radio buttons take the glyph size from the theme at the window's DPI.</li>
+  <li>Tab text is drawn without padding in Windows' layout (icon, <code>Padding.X</code> gap, text; centered together), so text Windows fits is not shortened.</li>
+  <li>Measured to match Windows' drawing within 1 px at 125%, 150% and 200% and on a real screen change (120 → 96 DPI).</li>
+</ul>
+
 <h2>Double scaling</h2>
 <p><code>SetClasses</code> in <code>InitializeComponent</code> assigns a scaled value, which the form's AutoScale would scale again (8 → 10 → 12 px at 125%). FormWind prevents this:</p>
 <ul>

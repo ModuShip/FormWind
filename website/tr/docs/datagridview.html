@@ -38,6 +38,8 @@ description: DataGridView'u parça önekleri, kolon class'ları, hücre tipleri 
   <li>Başlık renkleri verildiğinde, onları yok sayacak olan <code>EnableHeadersVisualStyles</code> kapatılır.</li>
   <li>Bağlı ya da <code>VirtualMode</code>'daki tablolarda <code>row:h-*</code>, <code>RowHeightInfoNeeded</code> ile verilir: satırlar paylaşımda kalır, kaydırma ve seçim korunur (17.000 satırda ~12 ms).</li>
   <li>Class'lar kaldırılınca tablo özgün stillerine döner.</li>
+  <li>Class'lar hücre zeminini verip <code>alt:</code> zemini vermiyorsa Designer'daki zebra korunur ama class'ların zemininden türetilir; zemini verilip yazı rengi verilmemiş kolonlar (örn. bej toplam kolonu) tasarlandıkları özgün yazı rengiyle çizilir. Kontrast denetimi bu çiftleri de ölçer.</li>
+  <li>Satır başlıkları class'larla gizliyken (<code>row-header:hidden</code>, <code>table</code>) hatalı satırın (<code>ErrorText</code>) başına tehlike renginde bir şerit çizilir ve hata metni hücre ipucu olur.</li>
   <li>Hücrelerini kendisi çizen tablolar hücre stillerini yok sayar; <code>divide-*</code> ve <code>row:h-*</code> yapısal özellikleri değiştirdiği için bu tablolarda kullanmadan önce kontrol edin.</li>
   <li><code>table</code> varyantları ondan sonra yazılır: <code>table-sm</code> (32 px satır), <code>table-lg</code> (48 px satır), <code>table-striped</code>, <code>table-bordered</code>. Fluent, Ant Design ve Material kendi yüksekliklerini tanımlar.</li>
   <li><code>TwGrid.EnableDarkInversion(grid)</code> kendi çizen tablolara koyu tema verir: tablo açık stillenir ve görüntüsü tonu korunarak çevrilir; sabit açık renkler de koyulaşır.</li>

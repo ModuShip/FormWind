@@ -20,13 +20,13 @@ description: Classes özelliği, akıllı etikette class oluşturucu, projenizin
 </ul>
 
 <h2 id="preview-and-your-theme">Önizleme ve temanız</h2>
-<p>Designer önizlemesi class'larınızı uygular ama class'ların yönettiği özellikler (<code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code>) <code>Designer.cs</code>'e yazılmaz. Class'ların yönetmediği, elle verdiğiniz değerler yine yazılır.</p>
+<p>Designer önizlemesi class'larınızı uygular; <code>Designer.cs</code>'e FormWind'den yalnızca <code>SetClasses</code> satırları yazılır. Class'ların yönettiği özellikler (<code>BackColor</code>, <code>ForeColor</code>, <code>Font</code>, <code>Padding</code>, <code>Margin</code>, <code>Cursor</code>) ve önizlemenin yan etkileri (düz buton için <code>FlatStyle</code>, <code>FlatAppearance</code>, <code>UseVisualStyleBackColor</code>; metin kutusunun <code>BorderStyle</code>'ı; grid stilleri; bağlantı renkleri) yazılmaz: kontrol serileştirilirken önizleme geri alınır, sonra yeniden uygulanır. Kayıt formu yeniden değişmiş göstermez. Class'ların yönetmediği, elle verdiğiniz değerler yine yazılır. <code>DesignTimePreview</code> kapatılınca kontroller özgün değerlerine döner. Kaydedip yeniden açmak kodu değiştirmez; %150 DPI'da boyutlar büyümez.</p>
 <p>Paketteki <code>build/FormWind.targets</code>, proje klasöründeki <code>tw.config.json</code>'u uygulamanın derlemesine gömer. Designer tasarlanan formun derlemesini bulur ve temayı onun klasöründen (fontlar ve SVG ikonlar dahil) ya da gömülü kopyadan okur; önizleme ve listeler temanızı kullanır. Tema dosyasını değiştirdikten sonra projeyi derleyip formu yeniden açın.</p>
 <pre><code class="language-xml">&lt;PropertyGroup&gt;
   &lt;FormWindThemeFile&gt;Themes\tw.config.json&lt;/FormWindThemeFile&gt;   &lt;!-- başka bir yerdeki dosya --&gt;
   &lt;FormWindEmbedTheme&gt;false&lt;/FormWindEmbedTheme&gt;                 &lt;!-- gömmeyi kapatır --&gt;
 &lt;/PropertyGroup&gt;</code></pre>
-<p>Çalışma zamanında uygulama dosyayı yine <code>TwTheme.LoadIfExists</code> ile yükler; gömülü kopyayı yalnızca Designer okur.</p>
+<p>Çalışma zamanında uygulama dosyayı yine <code>TwTheme.LoadIfExists</code> ile yükler; gömülü kopyayı yalnızca Designer okur. Paket dosyayı çıktı ve yayın klasörüne de kopyalar (proje zaten kopyalıyorsa ikinci kez eklemez; <code>&lt;FormWindCopyTheme&gt;false&lt;/FormWindCopyTheme&gt;</code> kapatır).</p>
 
 <h2 id="twtabcontrol">TwTabControl</h2>
 <p>"Add page" ve "Remove selected page" komutları; tasarım zamanında sekmeye tıklamak sayfayı değiştirir; kontrolün üzerine bırakılan kontroller geçerli sayfaya düşer.</p>

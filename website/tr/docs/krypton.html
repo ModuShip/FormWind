@@ -66,5 +66,5 @@ var palette = TwKryptonTheme.Follow(tailwindProvider1);     // ana formda; form 
 </ul>
 
 <h2 id="net-9-color-mode">.NET 9+ renk modu</h2>
-<p>.NET 9 ve sonrasında <code>Application.SetColorMode(SystemColorMode.Dark)</code> sistem renklerini ve native kontrolleri koyulaştırır. FormWind onunla birlikte çalışır: class renkleri önceliklidir, class'lar kaldırılınca kontrol koyu sistem rengine döner. <code>dark:</code> varyantları için <code>DarkMode</code>'u uygulamanın moduna bağlayın:</p>
+<p>.NET 9 ve sonrasında <code>Application.SetColorMode(SystemColorMode.Dark)</code> sistem renklerini ve native kontrolleri koyulaştırır. FormWind onunla birlikte çalışır: class renkleri önceliklidir, class'lar kaldırılınca kontrol koyu sistem rengine döner. <code>dark:</code> varyantları için <code>DarkMode</code>'u uygulamanın moduna bağlayın; FormWind'in çizdiği sekme şeridi, ListView başlığı, ProgressBar ve devre dışı yazı WinForms'un koyu çizimiyle çakışmaz. Bağlanmamış modda (uygulama koyu, FormWind açık) ListView başlığı ve onay işaretleri koyu kalır:</p>
 <pre><code class="language-csharp">tw.DarkMode = Application.IsDarkModeEnabled;</code></pre>

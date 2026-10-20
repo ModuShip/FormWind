@@ -82,6 +82,21 @@ description: FormWind'in bir formu açma, yeniden çizme ve tema değiştirme s�
   </tbody>
 </table></div>
 
+<h2 id="large-forms">Büyük formlar</h2>
+<p>Sekmeler, paneller içinde iç içe kontroller ve her 100 kontrolde bir grid ya da liste (<code>LargeFormTests</code>, net9):</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Kontrol</th><th>İlk stilleme (AutoStyle / elle class)</th><th>Tema geçişi + çizim</th><th>FormWind belleği</th></tr></thead>
+  <tbody>
+    <tr><td>1 011</td><td>165 ms / 362 ms</td><td>38 ms / 38 ms</td><td>2,0–3,3 KB/kontrol</td></tr>
+    <tr><td>2 523</td><td>447 ms / 1 160 ms</td><td>39 ms / 83 ms</td><td>2,3–2,4 KB/kontrol</td></tr>
+    <tr><td>5 039</td><td>824 ms / 1 550 ms</td><td>85 ms / 118 ms</td><td>2,1–2,5 KB/kontrol</td></tr>
+  </tbody>
+</table></div>
+<p>Süre kontrol sayısıyla doğrusal büyür. Sonradan eklenen kontrollerde 250'den 2000 kontrole süre WinForms'un kendisiyle aynı oranda büyür (FormWind ~9x, WinForms ~12x); toplu eklemede <code>SuspendLayout</code> kullanın. FormWind stil uygularken ebeveynin yerleşimini bir kez çalıştırır (önceden her font, padding ve boyut ataması ayrı yerleşim tetikliyordu: 2000 kontrolde 5,8 sn → ~4,1 sn). Saniyede ~60 tema geçişinde renk geçişleri üst üste biner, her kontrol hedef renginde biter, handle sayısı artmaz; 200 animasyonlu kontrolde kare hızı ~10 kare/sn'ye düşer. Eşikler kontrol başına süre ve büyüme oranıdır, sabit milisaniye değil.</p>
+
+<h2 id="long-running">Uzun süreli kullanım</h2>
+<p><code>SoakTests</code>, FormWind'in pencere alt sınıflamaları ve kancaları olan kontrollerle (koyu ListView ve TreeView, RTF, DropDownList, DateTimePicker, devre dışı ListView ve ComboBox, ipuçları, PropertyGrid) dolu bir formu tekrar tekrar açar. Her turda temayı değiştirir, uygulamanın kendi temasını verir, handle'ları yeniden oluşturur ve formu kapatır; elle bağlanan sağlayıcı ve <code>TwAutoTheme</code> ayrı denenir. 300 turda (net9) GDI 62→62, USER 37→37, yönetilen bellek ~4,3 MB'ta sabit; tur süresi iki yarıda aynı, son tur dışındaki bütün formlar ve sağlayıcılar toplanır.</p>
+
 <h2 id="method">Yöntem</h2>
 <ul>
   <li>Her senaryo aynı altı rolü (etiket, birincil buton, ikincil buton, metin kutusu, kart, onay kutusu) 1200 × 900 çerçevesiz bir formdaki <code>FlowLayoutPanel</code>'de 50, 200 ve 500 kontrolle tekrarlar.</li>

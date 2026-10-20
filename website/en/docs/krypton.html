@@ -66,5 +66,5 @@ var palette = TwKryptonTheme.Follow(tailwindProvider1);     // in the main form;
 </ul>
 
 <h2>.NET 9+ color mode</h2>
-<p>On .NET 9 and later, <code>Application.SetColorMode(SystemColorMode.Dark)</code> darkens system colors and native controls. FormWind works with it: class colors take precedence, and removing classes returns a control to the dark system color. Bind <code>DarkMode</code> to the application's mode for <code>dark:</code> variants:</p>
+<p>On .NET 9 and later, <code>Application.SetColorMode(SystemColorMode.Dark)</code> darkens system colors and native controls. FormWind works with it: class colors take precedence, and removing classes returns a control to the dark system color. Bind <code>DarkMode</code> to the application's mode for <code>dark:</code> variants; the tab strip, ListView header, ProgressBar and disabled text FormWind draws do not clash with WinForms' dark drawing. Unbound (application dark, FormWind light), the ListView header and check glyphs stay dark:</p>
 <pre><code class="language-csharp">tw.DarkMode = Application.IsDarkModeEnabled;</code></pre>

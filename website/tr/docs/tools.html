@@ -7,7 +7,8 @@ description: Designer dosyası dönüştürücüsü, gerçek uygulamaları deği
 
 <h2 id="converter">Dönüştürücü</h2>
 <p><code>tools/FormWind.Convert</code>, Designer dosyalarındaki sabit stil atamalarını class'lara çevirir. Varsayılan kuru çalıştırmadır; neyin değişeceğini yazdırır:</p>
-<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --report conversion.md</code></pre>
+<pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --report conversion.md
+dotnet run --project tools/FormWind.Convert -- src/MyApp --audit --report audit.md</code></pre>
 <pre><code class="language-bash">dotnet run --project tools/FormWind.Convert -- src/MyApp --write</code></pre>
 <div class="table-wrap"><table>
   <thead><tr><th>Designer satırı</th><th>Class</th></tr></thead>
@@ -21,7 +22,9 @@ description: Designer dosyası dönüştürücüsü, gerçek uygulamaları deği
 <ul>
   <li>Dönüştürülen satırlar bir <code>SetClasses</code> çağrısıyla değiştirilir; dosyada yoksa bir <code>TailwindProvider</code> eklenir (ve formla birlikte dispose edilir).</li>
   <li>C# ve <strong>Visual Basic</strong> (<code>.Designer.vb</code>), eski ve yeni Designer biçimleri ve yerel değişken olarak üretilen kontroller desteklenir.</li>
-  <li>Sistem renkleri, kendi renk ifadeleriniz, türetilmiş fontlar ve başka font aileleri yerinde bırakılır ve raporda listelenir.</li>
+  <li>Sistem renkleri, kendi renk ifadeleriniz, türetilmiş fontlar ve başka font aileleri yerinde bırakılır ve raporda listelenir; hiçbir şeyi çevrilemeyen kontrol <code>(çevrilen yok)</code> diye işaretlenir.</li>
+  <li>İkinci çalıştırma dosyalara dokunmaz (<code>Değiştirilecek bir şey yok.</code>); BOM ve satır sonları korunur.</li>
+  <li><strong>Geçiş öncesi tarama:</strong> <code>--audit</code> dosyalara dokunmadan, FormWind eklendikten sonra elle bakılacak yerleri dosya:satır ve öneriyle listeler: kodda atanan renkler, liste öğesi ve ağaç düğümü renkleri, grid hücre stilleri, kendi çizen kontroller, görselli sabit boyutlu butonlar, <code>SetWindowTheme</code> ve RTF yükleme. Designer dışı kod da taranır. KeePass 2.61.1'de elle entegrasyonun ekran görüntülerinden bulduğu yerlerin hepsini listeledi.</li>
   <li><code>--config tw.config.json</code> kendi paletinizle eşler; <code>--tolerance</code> en yakın renk eşiğini değiştirir.</li>
   <li>Git Extensions (74 Designer dosyası, 360 class) ve Greenshot (311 kontrol) üzerinde doğrulandı: dönüştürülen projeler uyarısız derlendi, renkler ve fontlar aynı çıktı.</li>
 </ul>
@@ -38,14 +41,17 @@ description: Designer dosyası dönüştürücüsü, gerçek uygulamaları deği
     <tr><td><code>-ExitAfter 60</code></td><td>Gözetimsiz çalışmalar için süreci 60 saniye sonra bitirir. Süre arka plan iş parçacığında tutulur; UI zamanlayıcıları dursa da süreç sonlanır.</td></tr>
     <tr><td><code>-Skip DataGridView,ToolStrip</code></td><td>Bir sorunu daraltmak için bu tipleri stillemez.</td></tr>
     <tr><td><code>-Dump</code></td><td>Stil uygulamaz; her formun renk, font ve iç boşluk değerlerini yazar. Dönüştürücüden önce ve sonra karşılaştırın.</td></tr>
+    <tr><td><code>-Dpi 144</code></td><td>Her formu stillendikten sonra 144 DPI'lı bir ekrana taşınmış gibi ölçekler (yalnızca PerMonitorV2 uygulamalarda). <code>-Dpi screen</code> formu DPI'ı farklı gerçek bir ekrana taşır.</td></tr>
+    <tr><td><code>FORMWIND_MENU=m_menuToolsOptions</code></td><td>İlk formdaki bu adlara sahip menü öğelerine sırayla tıklar, açılan formları işleyip kapatır; menüden açılan diyaloglara gözetimsiz ulaşmak için.</td></tr>
     <tr><td><code>FORMWIND_DISABLE=1</code></td><td>Bir sorunu FormWind olmadan yeniden üretmek için harness'i kapatır.</td></tr>
   </tbody>
 </table></div>
 <p><code>%TEMP%\FormWind-Harness\</code> altındaki günlük; stillenen formları, kontrast sorunlarını (<code>CONTRAST</code>, <code>SCREEN</code>), gözle kontrol edilecek owner-draw kontrolleri, 250 ms'yi aşan donmaları, çizim fırtınalarını, istisnaları ve tanınmayan class'ları listeler. <code>TIMER STARVATION</code>, UI iş parçacığının mesaj işlediği ama WinForms zamanlayıcılarının 2 saniyedir çalışmadığı durumu (her çizimde kendini yeniden geçersiz kılan bir pencere), <code>UI BLOCKED</code> hiç mesaj işlenmediğini bildirir. Uygulamanın hata diyaloğu açılınca hatanın ilk satırları da yazılır.</p>
+<p>FormWind'i zaten kullanan formlar (formda <code>TailwindProvider</code> alanı varsa ya da form <code>TwAutoTheme</code> ile stilleniyorsa) yeniden stillenmez; harness uygulamanın sağlayıcısıyla denetler ve tema geçişini onunla yapar.</p>
 <ul>
   <li>Harness bir .NET başlangıç kancasıdır. .NET Framework uygulamalarında <code>FormWindHarness.cs</code>'i (<code>LangVersion</code> <code>latest</code>) ve FormWind'in net472 derlemesini projeye ekleyin, <code>AutoGenerateBindingRedirects</code>'i açın ve <code>Main</code>'in başında <code>FormWindHarness.Install()</code> çağırın. Mesaj döngüsü yokken <code>Install</code> pencere oluşturmaz; kurulum ilk form açılınca yapılır.</li>
   <li>Pencerelerini ayrı UI iş parçacıklarında açan uygulamalarda harness her iş parçacığına ayrı kurulur; tema kısayolu hepsine geçer.</li>
-  <li>Git Extensions, Greenshot, mRemoteNG, Krypton Toolkit örnekleri, ScottPlot WinForms demosu, bir MDI kabuğu, ShareX, KeePass ve Open Live Writer'da denendi.</li>
+  <li>Git Extensions, Greenshot, mRemoteNG, Krypton Toolkit örnekleri, ScottPlot WinForms demosu, bir MDI kabuğu, ShareX, KeePass, Open Live Writer, Bulk Crap Uninstaller (ObjectListView), AdvancedDataGridView örneği ve bir iş formunda (master-detail grid'ler, doğrulama) denendi. Açılışta uzun yükleme yapan uygulamalarda <code>FORMWIND_SELFTEST_DELAY=30000</code> ilk görüntüyü geciktirir.</li>
 </ul>
 
 <h2 id="samples">Örnekler</h2>

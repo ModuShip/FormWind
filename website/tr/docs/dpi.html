@@ -32,6 +32,14 @@ Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
 <h2 id="moving-between-screens">Ekranlar arasında taşıma</h2>
 <p>Form farklı DPI'lı bir ekrana taşındığında FormWind, WinForms ölçeklemeyi bitirdikten sonra class'ları bir kez yeniden uygular. <code>AutoScaleMode.Dpi</code> ile fontlar, boşluklar, owner-draw kontroller ve DataGridView fontları ile kolon genişlikleri doğru ölçeklenir; %150 ve %200'de doğrulandı.</p>
 
+<h2 id="text-drawn-by-formwind">FormWind'in çizdiği yazılar</h2>
+<p>FormWind'in Windows'tan sonra çizdiği yazılar (devre dışı etiket, onay kutusu, radyo ve düz buton yazısı, sekme şeridi) her DPI'da WinForms'un yerleşimini izler:</p>
+<ul>
+  <li>Devre dışı yazı, aynı font ve biçimdeki gizli, etkin bir etikete çizdirilip yerine kopyalanır; kontrolün <code>UseCompatibleTextRendering</code> değerine (GDI ya da GDI+) uyulur. Onay kutusu ve radyo düğmesinin işaret boyutu pencerenin DPI'ındaki temadan alınır.</li>
+  <li>Sekme yazısı Windows'un yerleşimiyle (ikon, <code>Padding.X</code> boşluk, yazı; birlikte ortalanır) iç boşluksuz çizilir; Windows'un sığdırdığı yazı kısaltılmaz.</li>
+  <li>%125, %150 ve %200'de ve gerçek bir ekran değişiminde (120 → 96 DPI) Windows'un çizimiyle ±1 piksel örtüştüğü ölçüldü.</li>
+</ul>
+
 <h2 id="double-scaling">Çift ölçekleme</h2>
 <p><code>InitializeComponent</code> içindeki <code>SetClasses</code> ölçeklenmiş değeri atar; formun AutoScale'i aynı değeri bir daha ölçeklerdi (%125'te 8 → 10 → 12 px). FormWind bunu önler:</p>
 <ul>
