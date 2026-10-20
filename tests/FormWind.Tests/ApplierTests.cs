@@ -193,6 +193,41 @@ public class ApplierTests
         Assert.Equal(ColorTranslator.FromHtml("#374151").ToArgb(), button.ForeColor.ToArgb());
     }
 
+    // KeePass 2.61.1 denemesinde görüldü: şifre tekrarı uyuşmazken zemin kırmızı, eşleşince ResetBackColor. Varsayılana dönen
+    // renk class'lara geri geçer (kutu koyu temada beyaz kalıyordu); açıkça atanmış özgün renk varken geçmez.
+    [Fact]
+    public void Color_reset_by_the_app_goes_back_to_the_classes() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form();
+        var repeat = new TextBox();
+        var colored = new TextBox { BackColor = Color.Beige };
+        form.Controls.Add(repeat);
+        form.Controls.Add(colored);
+        provider.SetClasses(repeat, "input");
+        provider.SetClasses(colored, "input");
+        var themed = repeat.BackColor;
+
+        repeat.BackColor = Color.FromArgb(128, 0, 0);                                      // uyuşmazlık
+        provider.Refresh(repeat);
+        Assert.Equal(Color.FromArgb(128, 0, 0).ToArgb(), repeat.BackColor.ToArgb());
+        repeat.ResetBackColor();                                                           // eşleşti
+        Assert.Equal(themed.ToArgb(), repeat.BackColor.ToArgb());
+        Assert.False(WinFormsApplier.IsColorOverridden(repeat, back: true));
+
+        // KeePass'in grup ağacı: önce Enabled = true (FormWind rengi uygular), sonra ResetBackColor.
+        repeat.Enabled = false;
+        repeat.Enabled = true;
+        repeat.ResetBackColor();
+        Assert.Equal(themed.ToArgb(), repeat.BackColor.ToArgb());
+
+        colored.BackColor = Color.Red;
+        provider.Refresh(colored);
+        colored.ResetBackColor();
+        provider.Refresh(colored);
+        Assert.Equal(SystemColors.Window.ToArgb(), colored.BackColor.ToArgb());           // özgün renk açıktı: uygulamada kalır
+    });
+
     // Dönüştürme aracı Git Extensions'ta denenirken bulundu: %125'te p-2 (8 px) önce FormWind'le 10 px, sonra formun
     // AutoScale'iyle 12 px oluyordu.
     [Fact]

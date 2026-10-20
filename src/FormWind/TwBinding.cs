@@ -37,6 +37,8 @@ internal sealed class TwBinding
         _control.Leave += OnStateChanged;
         _control.EnabledChanged += OnStateChanged;
         _control.RightToLeftChanged += OnStateChanged;
+        _control.BackColorChanged += OnBackColorChanged;
+        _control.ForeColorChanged += OnForeColorChanged;
         _control.DpiChangedAfterParent += OnDpiChanged;
         _control.Disposed += OnDisposed;
         // Ekran değişimi formun DpiChanged olayıyla güvenilir biçimde gelir (alt kontrollerin olayları .NET Framework'te
@@ -167,6 +169,45 @@ internal sealed class TwBinding
         }
     }
 
+    // Uygulama kendi aldığı rengi varsayılana döndürdü (ResetBackColor): class'ların rengi hemen geri gelir.
+    private void OnBackColorChanged(object? sender, EventArgs e)
+    {
+        if (!_applying && WinFormsApplier.IsColorReleased(_control, back: true, _original)) Refresh(force: true);
+    }
+
+    private void OnForeColorChanged(object? sender, EventArgs e)
+    {
+        if (!_applying && WinFormsApplier.IsColorReleased(_control, back: false, _original)) Refresh(force: true);
+    }
+
+    /// <summary>
+    /// Puts back the values the control had before the classes, keeping the classes (Designer: the preview is turned off, or
+    /// the control is being written to Designer.cs). <see cref="Refresh"/> with <c>force</c> applies them again.
+    /// </summary>
+    public void Restore()
+    {
+        if (_original is null || _applying || _control.IsDisposed) return;
+        var empty = _owner.Theme.Parse("");
+        var context = new TwApplyContext(empty, _lastState, _lastScale > 0 ? _lastScale : 1f, _owner.Theme, _original, _owner.IsDesignMode)
+        {
+            DarkScrollbars = _owner.DarkScrollbars,
+        };
+        _applying = true;
+        try
+        {
+            TwAppliers.Find(_control).Apply(_control, empty.Resolve(_lastState), context);
+        }
+        catch (Exception ex) when (!TwErrors.IsCritical(ex))
+        {
+            _owner.ReportError(_control, Classes, ex);
+        }
+        finally
+        {
+            _applying = false;
+            _lastParsed = null;
+        }
+    }
+
     public bool IsCursorInside() =>
         _control.IsHandleCreated
         && _control.Visible
@@ -191,6 +232,8 @@ internal sealed class TwBinding
         _control.Leave -= OnStateChanged;
         _control.EnabledChanged -= OnStateChanged;
         _control.RightToLeftChanged -= OnStateChanged;
+        _control.BackColorChanged -= OnBackColorChanged;
+        _control.ForeColorChanged -= OnForeColorChanged;
         _control.DpiChangedAfterParent -= OnDpiChanged;
         _control.Disposed -= OnDisposed;
         if (_control is CheckBox checkBox) checkBox.CheckedChanged -= OnStateChanged;

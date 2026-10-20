@@ -275,6 +275,20 @@ public class WinFormsApplier : IStyleApplier
     internal static bool IsColorOverridden(Control control, bool back) =>
         AppliedTable.TryGetValue(control, out var applied) && (back ? applied.Back : applied.Fore).Overridden;
 
+    /// <summary>
+    /// Application code reset the channel to its default (<c>ResetBackColor</c>), which is where it was when the classes were
+    /// assigned, after taking it over or over FormWind's color: the channel goes back to the classes.
+    /// </summary>
+    internal static bool IsColorReleased(Control control, bool back, TwOriginal? original)
+    {
+        if (!AppliedTable.TryGetValue(control, out var applied)) return false;
+        var state = back ? applied.Back : applied.Fore;
+        return (state.Overridden || state.Left is Color) && Released(control, back, back ? original?.BackColor : original?.ForeColor);
+    }
+
+    private static bool Released(Control control, bool back, Color? original) =>
+        original is null && !TwOriginal.IsExplicit(control, back ? nameof(Control.BackColor) : nameof(Control.ForeColor));
+
     /// <summary>When classes are assigned again, the color channels go back to FormWind.</summary>
     internal static void ResetColorOverrides(Control control)
     {
@@ -290,7 +304,15 @@ public class WinFormsApplier : IStyleApplier
     {
         bool back = channel == TwColorChannel.Back;
         string property = back ? nameof(Control.BackColor) : nameof(Control.ForeColor);
-        if (state.Overridden) return;
+        // KeePass şifre tekrarı: uyuşmazlıkta zemini kırmızı yapar, eşleşince ResetBackColor çağırır. Varsayılana dönen kanal
+        // (class'lar atandığında da varsayılandaydı) yeniden class'lara geçer.
+        bool released = !designMode && Released(control, back, original);
+        if (state.Overridden)
+        {
+            if (!released) return;
+            state.Overridden = false;
+            state.Left = null;
+        }
         // İzleme class'ların atandığı andaki özgün değerle başlar: FormWind kanala henüz dokunmamışken (örn. yalnızca
         // dark:hover: varyantı varken) uygulamanın yaptığı atama da değişiklik sayılır. İlk uygulama geçişsizdir: geçiş
         // uygulamanın kendi renginden başlar, açılışta renk kayar ve geçiş süresince ara renkler görünürdü.
@@ -303,7 +325,7 @@ public class WinFormsApplier : IStyleApplier
         if (!designMode && state.Tracked && !TwAnimator.IsAnimating(control, channel))
         {
             bool changed = state.Left is Color left
-                ? Current(control, back).ToArgb() != left.ToArgb()
+                ? !released && Current(control, back).ToArgb() != left.ToArgb()
                 : TwOriginal.IsExplicit(control, property);
             if (changed)
             {
