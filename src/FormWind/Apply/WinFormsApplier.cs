@@ -64,6 +64,13 @@ public class WinFormsApplier : IStyleApplier
             bool dark = context.DarkScrollbars && (context.State & TwState.Dark) != 0;
             if (dark || TwNativeTheme.IsDark(control)) TwNativeTheme.Apply(control, dark);
         }
+        // Windows DateTimePicker'ı temadan çizer ve BackColor'ı yok sayar; koyu zeminde çizim koyuya çevrilir.
+        if (!context.DesignMode && control is DateTimePicker dateTime)
+        {
+            var dateBack = IsColorOverridden(control, back: true) ? control.BackColor : style.BackColor;
+            var dateFore = IsColorOverridden(control, back: false) ? control.ForeColor : style.ForeColor;
+            TwDateTimePickerPainter.Update(dateTime, dateBack, dateFore, CalendarColors(style, context));
+        }
         if (control is TwTextBox textBox)
             textBox.PlaceholderColor = context.Parsed.ResolvePart("placeholder", context.State & ~(TwState.Hover | TwState.Active)).ForeColor;
         if (control is TwPictureBox picture && style.ObjectFit is TwImageFit fit) picture.Fit = fit;
@@ -250,6 +257,16 @@ public class WinFormsApplier : IStyleApplier
         if (context.DesignMode || !(control is RichTextBox) || control.Enabled) return (style.BackColor, style.ForeColor);
         var disabled = context.Parsed.ResolveExact(TwState.Disabled, context.State);
         return (disabled.BackColor, disabled.ForeColor);
+    }
+
+    private static bool IsDark(Color color) => (color.R * 299 + color.G * 587 + color.B * 114) / 1000 < 128;
+
+    // Kenarlık class'ı olmayan koyu DropDownList kutusu: zeminden yazıya doğru %25'lik 1 px'lik kenarlık.
+    private static TwChrome DefaultComboChrome(Color back, Color fore, float scale, float radius)
+    {
+        var border = Color.FromArgb(back.R + (fore.R - back.R) / 4, back.G + (fore.G - back.G) / 4, back.B + (fore.B - back.B) / 4);
+        float width = Math.Max(1f, (float)Math.Floor(scale));
+        return new TwChrome(radius, width, width, width, width, border);
     }
 
     /// <summary>If application code changed a channel's color (e.g. a status color), the classes no longer touch that channel.</summary>
@@ -684,10 +701,14 @@ public class WinFormsApplier : IStyleApplier
             }
         }
 
-        // DropDownList ComboBox'ın kapalı kutusu tümüyle FormWind tarafından çizilir (kenarlık, köşe, ok).
+        // DropDownList ComboBox'ın kapalı kutusu tümüyle FormWind tarafından çizilir (kenarlık, köşe, ok). Koyu bir zemin de
+        // yeterlidir: temalı kutu BackColor'ı yok sayar ve etkinken de devre dışıyken de açık kalırdı; kenarlık class'larda
+        // yoksa zeminle yazının arasından 1 px'lik bir kenarlık çizilir.
         if (control is ComboBox combo)
         {
             if (TwComboPainter.Supports(combo) && (chrome.HasBorder || chrome.Radius > 0)) TwComboPainter.Attach(combo, chrome);
+            else if (TwComboPainter.Supports(combo) && !context.DesignMode && style.BackColor is Color { A: 255 } comboBack && IsDark(comboBack))
+                TwComboPainter.Attach(combo, DefaultComboChrome(comboBack, style.ForeColor ?? combo.ForeColor, context.Scale, chrome.Radius));
             else TwComboPainter.Detach(combo);
         }
 

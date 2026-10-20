@@ -293,6 +293,115 @@ public class NativeControlTests
         Assert.Equal(Color("#2563eb").ToArgb(), link.LinkColor.ToArgb());                 // primary-600
     });
 
+    // Windows standart DateTimePicker'ın düzenleme alanını temadan çizer ve BackColor'ı yok sayar; koyu temada açık kalıyordu.
+    // Koyu zeminde Windows'un çizimi koyuya çevrilir, açık zeminde Windows'a bırakılır. DrawToBitmap (WM_PRINTCLIENT) da
+    // aynı yoldan geçer.
+    [Fact]
+    public void Date_time_picker_is_painted_dark_on_a_dark_background_only() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var picker = new DateTimePicker { Width = 200, Value = new DateTime(2026, 10, 18) };
+        form.Controls.Add(picker);
+        form.Show();
+        provider.SetClasses(picker, "bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100");
+
+        Assert.True(TwDateTimePickerPainter.IsPainted(picker));
+        var dark = Pixels(picker);
+        Assert.Contains(dark, p => p.ToArgb() == Color("#111827").ToArgb());                // gray-900 zemin
+        Assert.Contains(dark, p => p.GetBrightness() > 0.8f);                               // açık yazı
+        // Görsel stilsiz test sürecinde 3B kenarlık istemci alanı dışındadır (WS_EX_CLIENTEDGE); o da çevrilir.
+        Assert.DoesNotContain(dark, p => p.GetBrightness() > 0.97f);
+        Assert.True(dark[0].GetBrightness() < 0.5f && dark[dark.Length - 1].GetBrightness() < 0.5f, $"{dark[0]} {dark[dark.Length - 1]}");
+
+        provider.DarkMode = false;
+        Assert.False(TwDateTimePickerPainter.IsPainted(picker));
+        Assert.Contains(Pixels(picker), p => p.GetBrightness() > 0.95f);                    // Windows'un açık zemini
+        form.Close();
+    });
+
+    // AutoStyle DateTimePicker'ı eşlemiyordu; koyu temada açık kalırdı.
+    [Fact]
+    public void Auto_style_gives_date_time_pickers_the_select_component_and_paints_them_dark() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var picker = new DateTimePicker();
+        form.Controls.Add(picker);
+        form.Show();
+        provider.ContainerControl = form;
+        provider.AutoStyle = true;
+
+        Assert.Equal("select", provider.GetAutomaticClasses(picker));
+        Assert.True(TwDateTimePickerPainter.IsPainted(picker));
+        Assert.DoesNotContain(Pixels(picker), p => p.GetBrightness() > 0.97f);
+        form.Close();
+    });
+
+    private static Color[] Pixels(Control control)
+    {
+        using var bitmap = new Bitmap(control.Width, control.Height);
+        control.DrawToBitmap(bitmap, new Rectangle(Point.Empty, control.Size));
+        return Enumerable.Range(0, control.Width).Select(x => bitmap.GetPixel(x, control.Height / 2)).ToArray();
+    }
+
+    [Fact]
+    public void Date_time_picker_inversion_maps_neutrals_onto_the_colors_and_keeps_hues()
+    {
+        var back = Color("#111827");
+        var fore = Color("#f3f4f6");
+        int Map(Color c) => TwDateTimePickerPainter.Invert(c.ToArgb(), back, fore);
+
+        Assert.Equal(back.ToArgb(), Map(System.Drawing.Color.White));
+        Assert.Equal(fore.ToArgb(), Map(System.Drawing.Color.Black));
+        var selection = System.Drawing.Color.FromArgb(Map(Color("#0078d7")));                // seçili alan
+        Assert.True(selection.B > selection.G && selection.G > selection.R);                 // mavi kalır
+        Assert.True(selection.GetBrightness() > Color("#0078d7").GetBrightness());          // açılır
+        var day = System.Drawing.Color.FromArgb(Map(Color("#cce8ff")));                      // açık mavi seçili gün
+        Assert.True(day.GetBrightness() < 0.3f && day.B > day.R);                            // koyu mavi
+    }
+
+    // Kenar yumuşatmanın renkli alt pikselleri çevrimde renkli kalırdı; etkinken gri tonlu kopya, kapanınca özgün font.
+    [Fact]
+    public void Dark_date_time_picker_uses_a_grayscale_copy_of_its_font_until_it_turns_light() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider { DarkMode = true };
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var picker = new DateTimePicker();
+        form.Controls.Add(picker);
+        form.Show();
+        provider.SetClasses(picker, "bg-white dark:bg-gray-900 dark:text-gray-100");
+
+        Assert.Equal(4 /* ANTIALIASED_QUALITY */, FontQuality(picker));
+        picker.Font = new Font("Segoe UI", 12f);                                           // WinForms yeni fontu gönderir
+        Assert.Equal(4, FontQuality(picker));
+
+        provider.DarkMode = false;
+        Assert.NotEqual(4, FontQuality(picker));
+        form.Close();
+    });
+
+    private static int FontQuality(Control control)
+    {
+        var font = SendMessage(control.Handle, 0x0031 /* WM_GETFONT */, IntPtr.Zero, IntPtr.Zero);
+        Assert.NotEqual(IntPtr.Zero, font);
+        var logFont = new LogFont();
+        Assert.NotEqual(0, GetObject(font, System.Runtime.InteropServices.Marshal.SizeOf<LogFont>(), ref logFont));
+        return logFont.Quality;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private struct LogFont
+    {
+        public int Height, Width, Escapement, Orientation, Weight;
+        public byte Italic, Underline, StrikeOut, CharSet, OutPrecision, ClipPrecision, Quality, PitchAndFamily;
+        [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string FaceName;
+    }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int GetObject(IntPtr obj, int size, ref LogFont logFont);
+
     [Fact]
     public void Progress_bar_colors_turn_off_the_theme_and_removing_them_restores_it() => Sta.Run(() =>
     {

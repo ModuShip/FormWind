@@ -242,4 +242,27 @@ public class AutoStyleTests
         Assert.Equal("input", provider.GetAutomaticClasses(text));
         Assert.Equal("bg-red-50", list.Background);
     });
+
+    // KeePass 2.61.1 denemesi: seçenekler penceresindeki NumericUpDown kutuları koyu temada beyaz kalıyordu.
+    [Fact]
+    public void Up_down_boxes_get_the_input_component() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form();
+        var number = new NumericUpDown();
+        var domain = new DomainUpDown();
+        form.Controls.Add(number);
+        form.Controls.Add(domain);
+        provider.ContainerControl = form;
+        provider.DarkMode = true;
+        provider.AutoStyle = true;
+
+        Assert.Equal("input", provider.GetAutomaticClasses(number));
+        Assert.Equal("input", provider.GetAutomaticClasses(domain));
+        Assert.Equal(Color("#111827").ToArgb(), number.BackColor.ToArgb());               // dark:bg-surface-900
+        Assert.Equal(Color("#f3f4f6").ToArgb(), number.ForeColor.ToArgb());               // dark:text-surface-100
+        Assert.Equal(Color("#111827").ToArgb(), domain.BackColor.ToArgb());
+        Assert.Equal(number.PreferredHeight, number.Height);                              // py-2 kutuyu büyütmez (font formdan)
+        Assert.All(number.Controls.Cast<Control>(), c => Assert.Null(provider.GetAutomaticClasses(c)));
+    });
 }
