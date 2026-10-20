@@ -37,6 +37,7 @@ internal class TailwindProviderDesigner : ComponentDesigner
     {
         base.Initialize(component);
         LoadProjectTheme();
+        TwPreviewSerialization.Register(Provider);
         _actions = GetService(typeof(DesignerActionService)) as DesignerActionService;
         _changes = GetService(typeof(IComponentChangeService)) as IComponentChangeService;
         if (GetService(typeof(IDesignerHost)) is IDesignerHost host)
@@ -104,6 +105,7 @@ internal class TailwindProviderDesigner : ComponentDesigner
             _lists.Clear();
             foreach (var pair in _previews) TypeDescriptor.RemoveProvider(pair.Value, pair.Key);
             _previews.Clear();
+            TwPreviewSerialization.Unregister(Provider);
         }
         base.Dispose(disposing);
     }

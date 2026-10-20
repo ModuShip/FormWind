@@ -243,8 +243,22 @@ public class WinFormsApplier : IStyleApplier
 
     private static void ApplyColors(Control control, Color? back, Color? fore, TwOriginal original, Applied applied, int duration, bool designMode)
     {
+        bool backApplied = applied.Back.Applied;
         ApplyColor(control, TwColorChannel.Back, back, original.BackColor, applied.Back, duration, designMode);
         ApplyColor(control, TwColorChannel.Fore, fore, original.ForeColor, applied.Fore, duration, designMode);
+        // BackColor atanınca buton UseVisualStyleBackColor'ı kapatır; zemin geri verilince özgün değeri döner (Designer.cs'e
+        // UseVisualStyleBackColor = false yazılıyordu).
+        if (backApplied && !applied.Back.Applied && control is ButtonBase button) RestoreVisualStyleBackColor(button, original.UseVisualStyleBackColor);
+    }
+
+    private static readonly System.Reflection.MethodInfo? ResetUseVisualStyleBackColor =
+        typeof(ButtonBase).GetMethod("ResetUseVisualStyleBackColor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public, null, Type.EmptyTypes, null);
+
+    private static void RestoreVisualStyleBackColor(ButtonBase button, bool? original)
+    {
+        if (original is bool value) button.UseVisualStyleBackColor = value;
+        else if (ResetUseVisualStyleBackColor != null) ResetUseVisualStyleBackColor.Invoke(button, null);
+        else button.UseVisualStyleBackColor = true;
     }
 
     /// <summary>
@@ -381,24 +395,28 @@ public class WinFormsApplier : IStyleApplier
         else original.Restore(link);
     }
 
+    // Açıkça atanmamış renk (null) Color.Empty ile varsayılanına döner; varsayılan değeri atamak onu Designer.cs'e yazdırırdı.
     private sealed class LinkOriginal
     {
-        private readonly Color _link, _active, _visited, _disabled;
+        private readonly Color? _link, _active, _visited, _disabled;
 
         public LinkOriginal(LinkLabel link)
         {
-            _link = link.LinkColor;
-            _active = link.ActiveLinkColor;
-            _visited = link.VisitedLinkColor;
-            _disabled = link.DisabledLinkColor;
+            _link = Explicit(link, nameof(LinkLabel.LinkColor), link.LinkColor);
+            _active = Explicit(link, nameof(LinkLabel.ActiveLinkColor), link.ActiveLinkColor);
+            _visited = Explicit(link, nameof(LinkLabel.VisitedLinkColor), link.VisitedLinkColor);
+            _disabled = Explicit(link, nameof(LinkLabel.DisabledLinkColor), link.DisabledLinkColor);
         }
+
+        private static Color? Explicit(LinkLabel link, string property, Color value) =>
+            TwOriginal.IsExplicit(link, property) ? value : null;
 
         public void Restore(LinkLabel link)
         {
-            if (link.LinkColor != _link) link.LinkColor = _link;
-            if (link.ActiveLinkColor != _active) link.ActiveLinkColor = _active;
-            if (link.VisitedLinkColor != _visited) link.VisitedLinkColor = _visited;
-            if (link.DisabledLinkColor != _disabled) link.DisabledLinkColor = _disabled;
+            if (link.LinkColor != (_link ?? Color.Empty)) link.LinkColor = _link ?? Color.Empty;
+            if (link.ActiveLinkColor != (_active ?? Color.Empty)) link.ActiveLinkColor = _active ?? Color.Empty;
+            if (link.VisitedLinkColor != (_visited ?? Color.Empty)) link.VisitedLinkColor = _visited ?? Color.Empty;
+            if (link.DisabledLinkColor != (_disabled ?? Color.Empty)) link.DisabledLinkColor = _disabled ?? Color.Empty;
         }
     }
 
@@ -449,13 +467,41 @@ public class WinFormsApplier : IStyleApplier
         if (control.BackColor.ToArgb() == color.ToArgb() && TwOriginal.IsExplicit(control, nameof(Control.BackColor))) return;
         try
         {
-            control.BackColor = color;
+            // Tasarım modunda ButtonBase.BackColor, UseVisualStyleBackColor'ı PropertyDescriptor ile atar; bu ComponentChanged
+            // bildirir ve Visual Studio önizleme her uygulandığında (Designer.cs kaydedilirken de) formu değişmiş sayar.
+            // Çalışma anındaki yol izlenir: UseVisualStyleBackColor doğrudan, BackColor Control'ün setter'ıyla atanır.
+            if (control is ButtonBase button && button.Site?.DesignMode == true && color != Color.Empty && ControlBackColorSetter.Value is { } setBase)
+            {
+                button.UseVisualStyleBackColor = false;
+                setBase(button, color);
+            }
+            else control.BackColor = color;
         }
         catch (ArgumentException)
         {
             // Kontrol saydam arka planı desteklemiyor (örn. TextBox + bg-transparent).
         }
     }
+
+    // Control.BackColor'ın setter'ı sanal olmayan çağrıyla (ButtonBase'in override'ı atlanır); kurulamazsa null.
+    private static readonly Lazy<Action<Control, Color>?> ControlBackColorSetter = new Lazy<Action<Control, Color>?>(() =>
+    {
+        try
+        {
+            var setter = typeof(Control).GetProperty(nameof(Control.BackColor))!.GetSetMethod()!;
+            var method = new System.Reflection.Emit.DynamicMethod("FormWindSetControlBackColor", null, new[] { typeof(Control), typeof(Color) }, typeof(Control).Module, skipVisibility: true);
+            var il = method.GetILGenerator();
+            il.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+            il.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            il.Emit(System.Reflection.Emit.OpCodes.Call, setter);
+            il.Emit(System.Reflection.Emit.OpCodes.Ret);
+            return (Action<Control, Color>)method.CreateDelegate(typeof(Action<Control, Color>));
+        }
+        catch (Exception ex) when (ex is MemberAccessException or NotSupportedException or InvalidOperationException or System.Security.SecurityException)
+        {
+            return null;
+        }
+    });
 
     internal static Font ScaleFont(Font font, float factor) =>
         System.Math.Abs(factor - 1f) < 0.01f ? font : TwFonts.Get(font.FontFamily.Name, font.SizeInPoints * factor, font.Style);

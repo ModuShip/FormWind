@@ -14,7 +14,7 @@ namespace FormWind.Tests;
 
 public class AnalyzerTests
 {
-    private static ImmutableArray<Diagnostic> Analyze(string source)
+    internal static ImmutableArray<Diagnostic> Analyze(string source)
     {
         var platform = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
         var references = platform.Select(path => MetadataReference.CreateFromFile(path))
@@ -156,7 +156,7 @@ public class AnalyzerTests
     private static string FontModeSource(string mode, bool fontFirst = false) => FontModeForm
         .Replace("MODE", mode).Replace("EARLY", fontFirst ? FormFont : "").Replace("LATE", fontFirst ? "" : FormFont);
 
-    private static ImmutableArray<Diagnostic> AnalyzeFontScaling(string source, string targetFramework)
+    internal static ImmutableArray<Diagnostic> AnalyzeFontScaling(string source, string targetFramework)
     {
         var platform = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
         var references = platform.Select(path => MetadataReference.CreateFromFile(path))

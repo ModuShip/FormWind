@@ -55,6 +55,95 @@ public sealed class DataGridViewTests : IDisposable
         Assert.Equal(Argb("#f9fafb"), _grid.AlternatingRowsDefaultCellStyle.BackColor.ToArgb());
     }
 
+    // AdvancedDataGridView örneği: Designer'daki açık gri zebra koyu temada açık yazıyla okunmuyordu. Class'lar hücre
+    // zeminini verince zebra onların zemininden türetilir; zemin verilmezse uygulamanın tonu kalır.
+    [Fact]
+    public void Designer_alternating_background_follows_the_class_background()
+    {
+        _grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(224, 224, 224);
+
+        _provider.SetClasses(_grid, "text-gray-700");
+        Assert.Equal(Color.FromArgb(224, 224, 224).ToArgb(), _grid.AlternatingRowsDefaultCellStyle.BackColor.ToArgb());
+
+        _provider.SetClasses(_grid, "bg-gray-800 text-gray-100");
+        Assert.DoesNotContain(TwContrast.Audit(_grid, _provider), i => i.Part == "alternating row");
+        var zebra = _grid.AlternatingRowsDefaultCellStyle.BackColor;
+        Assert.NotEqual(Argb("#1f2937"), zebra.ToArgb());                                   // zebra kalır
+        Assert.True(TwContrast.Ratio(ColorTranslator.FromHtml("#f3f4f6"), zebra) >= 4.5, $"zebra {zebra}");
+
+        _provider.SetClasses(_grid, "bg-gray-800 text-gray-100 alt:bg-gray-700");
+        Assert.Equal(Argb("#374151"), _grid.AlternatingRowsDefaultCellStyle.BackColor.ToArgb());
+
+        _provider.SetClasses(_grid, "");
+        Assert.Equal(Color.FromArgb(224, 224, 224).ToArgb(), _grid.AlternatingRowsDefaultCellStyle.BackColor.ToArgb());
+
+        // Uygulamanın zebrası açık yazıyla kalırsa denetim alternatif satırı raporlar.
+        _provider.SetClasses(_grid, "text-gray-100");
+        Assert.Contains(TwContrast.Audit(_grid, _provider), i => i.Part == "alternating row");
+    }
+
+    // İş formu denemesi: uygulamanın bej "Tutar" kolonu koyu temada açık yazıyla okunmuyordu, denetim de görmüyordu.
+    // Uygulamanın zemin verip yazı vermediği kolon, tasarlandığı özgün yazı rengini alır; denetim kolon çiftini ölçer.
+    [Fact]
+    public void Columns_with_an_application_background_keep_their_designed_text_color()
+    {
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        form.Controls.Add(_grid);
+        form.Show();
+        var amount = _grid.Columns["amount"]!;
+        amount.DefaultCellStyle.BackColor = Color.FromArgb(245, 245, 220);
+        Color formatted = Color.Empty;
+        _provider.SetClasses(_grid, "bg-gray-800 text-gray-100");
+        _grid.CellFormatting += (_, e) => { if (e.ColumnIndex == amount.Index && e.RowIndex == 0) formatted = e.CellStyle!.ForeColor; };
+        // Renkler yalnızca çizimde biçimlendirilir (FormattedValue renksiz stil verir).
+        void Paint()
+        {
+            using var bitmap = new Bitmap(_grid.Width, _grid.Height);
+            _grid.DrawToBitmap(bitmap, new Rectangle(Point.Empty, _grid.Size));
+        }
+
+        Paint();
+        Assert.Equal(SystemColors.ControlText.ToArgb(), formatted.ToArgb());
+        Assert.DoesNotContain(TwContrast.Audit(_grid, _provider), i => i.Part.StartsWith("column"));
+
+        // Yazı rengini class'lar vermiyorsa (yalnızca zemin) kolon kendi hâlinde kalır.
+        _provider.SetClasses(_grid, "bg-white");
+        Paint();
+        Assert.Equal(_grid.DefaultCellStyle.ForeColor.ToArgb(), formatted.ToArgb());
+        form.Controls.Remove(_grid);
+    }
+
+    // İş formu denemesi: table bileşeni satır başlıklarını gizler; satır hatası (ErrorText) ikonu da kayboluyordu. Hatalı
+    // satırın başında tehlike renginde bir şerit çizilir, hata metni hücre ipucu olur.
+    [Fact]
+    public void Row_errors_stay_visible_when_the_classes_hide_row_headers()
+    {
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false, ClientSize = new Size(300, 200) };
+        _grid.Dock = DockStyle.Fill;
+        form.Controls.Add(_grid);
+        form.Show();
+        _grid.Rows[1].ErrorText = "Stokta yeterli ürün yok.";
+        _provider.SetClasses(_grid, "table");
+        Assert.False(_grid.RowHeadersVisible);
+
+        var mark = TwGridDecorator.TryGet(_grid)!.RowErrorColor;
+        Assert.NotNull(mark);
+        using var bitmap = new Bitmap(_grid.Width, _grid.Height);
+        _grid.DrawToBitmap(bitmap, new Rectangle(Point.Empty, _grid.Size));
+        Color Edge(int row)
+        {
+            var r = _grid.GetRowDisplayRectangle(row, false);
+            return bitmap.GetPixel(r.Left + 1, r.Top + r.Height / 2);
+        }
+        Assert.Equal(mark!.Value.ToArgb(), Edge(1).ToArgb());
+        Assert.NotEqual(mark.Value.ToArgb(), Edge(0).ToArgb());
+
+        _provider.SetClasses(_grid, "bg-white");                                              // başlıklar görünür
+        Assert.True(_grid.RowHeadersVisible);
+        Assert.Null(TwGridDecorator.TryGet(_grid)!.RowErrorColor);
+        form.Controls.Remove(_grid);
+    }
+
     [Fact]
     public void Base_classes_style_background_cells_and_grid_lines()
     {

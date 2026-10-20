@@ -100,8 +100,28 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         {
             if (_designTimePreview == value) return;
             _designTimePreview = value;
-            RefreshAll();
+            // Önizleme kapanınca kontroller özgün değerlerine döner; yoksa önizlemenin renkleri kontrolde kalıp Designer.cs'e
+            // yazılıyordu.
+            if (!value && DesignMode)
+            {
+                foreach (var binding in _bindings.Values.ToList()) binding.Restore();
+            }
+            else RefreshAll();
         }
+    }
+
+    /// <summary>Designer: the control's values before the classes are put back while it is written to Designer.cs.</summary>
+    internal bool RestoreForSerialization(Control control)
+    {
+        if (!DesignMode || !_designTimePreview || !_bindings.TryGetValue(control, out var binding)) return false;
+        binding.Restore();
+        return true;
+    }
+
+    /// <summary>Designer: applies the preview again after <see cref="RestoreForSerialization"/>.</summary>
+    internal void ReapplyAfterSerialization(Control control)
+    {
+        if (_bindings.TryGetValue(control, out var binding)) binding.Refresh(force: true);
     }
 
     /// <summary>

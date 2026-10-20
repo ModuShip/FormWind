@@ -17,6 +17,7 @@ FormWind.TwColors.Fore.get -> System.Drawing.Color?
 override FormWind.TwColors.ToString() -> string!
 static FormWind.TwFonts.RespectTextScale.get -> bool
 static FormWind.TwFonts.RespectTextScale.set -> void
+FormWind.TwOriginal.UseVisualStyleBackColor.get -> bool?
 FormWind.TwAutoTheme
 static FormWind.TwAutoTheme.DarkMode.get -> bool
 static FormWind.TwAutoTheme.DarkMode.set -> void

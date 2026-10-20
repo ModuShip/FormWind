@@ -29,6 +29,7 @@ internal class DataGridViewApplier : WinFormsApplier
         var grid = (DataGridView)control;
         // base.Apply'dan önce: grid.Font değişince DataGridView bunu varsayılan hücre stillerine de yayar.
         var original = Originals.GetValue(grid, GridOriginal.Capture);
+        original.Restoring = context.Parsed.Classes.Length == 0;
 
         base.Apply(control, style, context);
         TwGridState.SetDark(grid, (context.State & TwState.Dark) != 0);
@@ -63,12 +64,23 @@ internal class DataGridViewApplier : WinFormsApplier
         cells.BackColor = style.BackColor;
         cells.ForeColor = style.ForeColor;
         cells.MergeFrom(cell);
-        var cellStyle = BuildCellStyle(original.DefaultCellStyle, cells, grid.Font, scale, context.Theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
+        // Yazı rengi gridin (formdan kalıtılan) rengiyse o an yakalanan değer değil gridin güncel rengi esas alınır: Designer'da
+        // önizleme kapatılınca formun önizleme rengi hücre stiline gömülü kalıp Designer.cs'e yazılıyordu.
+        var defaultCells = original.Current(grid, nameof(GridOriginal.DefaultCellStyle), original.DefaultCellStyle, original.DefaultForeFollowsGrid);
+        var cellStyle = BuildCellStyle(defaultCells, cells, grid.Font, scale, context.Theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
         if (selected.BackColor is Color selectionBack) cellStyle.SelectionBackColor = selectionBack;
         if (selected.ForeColor is Color selectionFore) cellStyle.SelectionForeColor = selectionFore;
         Assign(grid.DefaultCellStyle, cellStyle, v => grid.DefaultCellStyle = v);
 
-        var altStyle = BuildCellStyle(original.AlternatingRowsDefaultCellStyle, alt, grid.Font, scale, context.Theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
+        var altStyle = BuildCellStyle(original.Current(grid, nameof(GridOriginal.AlternatingRowsDefaultCellStyle), original.AlternatingRowsDefaultCellStyle), alt, grid.Font, scale, context.Theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
+        // Uygulamanın (Designer'ın) zebra zemini özgün hücre zeminine göre seçilmiş bir tondur; class'lar hücre zeminini
+        // verip alt: zemini vermiyorsa o ton yeni yazı rengiyle çakışır (AdvancedDataGridView örneği: koyu temada açık
+        // gri satırda açık yazı). Zebra korunur ama class'ların zemininden türetilir.
+        if (alt.BackColor is null && cells.BackColor is Color rowBack && rowBack.A == 255 && !original.AlternatingRowsDefaultCellStyle.BackColor.IsEmpty)
+        {
+            var rowFore = cellStyle.ForeColor.IsEmpty ? grid.ForeColor : cellStyle.ForeColor;
+            altStyle.BackColor = Zebra(rowBack, rowFore);
+        }
         Assign(grid.AlternatingRowsDefaultCellStyle, altStyle, v => grid.AlternatingRowsDefaultCellStyle = v);
 
         ApplyHeader(grid, original, header, scale, context.Theme);
@@ -144,7 +156,7 @@ internal class DataGridViewApplier : WinFormsApplier
         var visualStyles = styled ? false : original.EnableHeadersVisualStyles;
         if (grid.EnableHeadersVisualStyles != visualStyles) grid.EnableHeadersVisualStyles = visualStyles;
 
-        var headerStyle = BuildCellStyle(original.ColumnHeadersDefaultCellStyle, header, grid.Font, scale, theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
+        var headerStyle = BuildCellStyle(original.Current(grid, nameof(GridOriginal.ColumnHeadersDefaultCellStyle), original.ColumnHeadersDefaultCellStyle), header, grid.Font, scale, theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
         if (styled)
         {
             // Seçim sırasında başlıklar vurgulanmasın.
@@ -211,7 +223,7 @@ internal class DataGridViewApplier : WinFormsApplier
         var visible = rowHeader.Hidden is bool hidden ? !hidden : original.RowHeadersVisible;
         if (grid.RowHeadersVisible != visible) grid.RowHeadersVisible = visible;
 
-        var style = BuildCellStyle(original.RowHeadersDefaultCellStyle, rowHeader, grid.Font, scale, theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
+        var style = BuildCellStyle(original.Current(grid, nameof(GridOriginal.RowHeadersDefaultCellStyle), original.RowHeadersDefaultCellStyle), rowHeader, grid.Font, scale, theme, TwDpi.FontScale(grid), TwDpi.DeviceDpi(grid) / (float)original.Dpi);
         Assign(grid.RowHeadersDefaultCellStyle, style, v => grid.RowHeadersDefaultCellStyle = v);
     }
 
@@ -239,6 +251,12 @@ internal class DataGridViewApplier : WinFormsApplier
 
         return style;
     }
+
+    /// <summary>The alternating row background derived from the row colors: the background moved 6 % toward the text.</summary>
+    internal static Color Zebra(Color back, Color fore) => Color.FromArgb(
+        back.R + (fore.R - back.R) * 6 / 100,
+        back.G + (fore.G - back.G) * 6 / 100,
+        back.B + (fore.B - back.B) * 6 / 100);
 
     private static DataGridViewContentAlignment ToAlignment(TwTextAlign align) => align switch
     {
@@ -277,6 +295,8 @@ internal class DataGridViewApplier : WinFormsApplier
         public int RowHeight;
         public bool RowHeadersVisible;
         public DataGridViewCellStyle DefaultCellStyle = null!;
+        /// <summary>The default cell text color was the grid's own (inherited) text color.</summary>
+        public bool DefaultForeFollowsGrid;
 
         /// <summary>DPI at which the original values were captured and the last applied DPI (to scale column widths).</summary>
         public int Dpi = 96;
@@ -284,6 +304,41 @@ internal class DataGridViewApplier : WinFormsApplier
         public DataGridViewCellStyle AlternatingRowsDefaultCellStyle = null!;
         public DataGridViewCellStyle ColumnHeadersDefaultCellStyle = null!;
         public DataGridViewCellStyle RowHeadersDefaultCellStyle = null!;
+
+        /// <summary>
+        /// Styles whose font was the grid's own (inherited) font when captured; when the classes are removed they take the grid's
+        /// current font. Otherwise the font at capture time (in the Designer the form's preview font) stayed in the style and was
+        /// written to Designer.cs. While classes are applied the captured font stays the base (classes may change the grid's font).
+        /// </summary>
+        public System.Collections.Generic.HashSet<string> FontsFollowingGrid = new System.Collections.Generic.HashSet<string>();
+
+        /// <summary>The grid has no classes (the original values are being put back).</summary>
+        public bool Restoring;
+
+        private static System.Collections.Generic.HashSet<string> FontsOf(DataGridView grid)
+        {
+            var result = new System.Collections.Generic.HashSet<string>();
+            void Check(string name, DataGridViewCellStyle style)
+            {
+                if (style.Font != null && style.Font.Equals(grid.Font)) result.Add(name);
+            }
+            Check(nameof(DefaultCellStyle), grid.DefaultCellStyle);
+            Check(nameof(AlternatingRowsDefaultCellStyle), grid.AlternatingRowsDefaultCellStyle);
+            Check(nameof(ColumnHeadersDefaultCellStyle), grid.ColumnHeadersDefaultCellStyle);
+            Check(nameof(RowHeadersDefaultCellStyle), grid.RowHeadersDefaultCellStyle);
+            return result;
+        }
+
+        /// <summary>The captured style, with the grid's current text color and font where it followed the grid.</summary>
+        public DataGridViewCellStyle Current(DataGridView grid, string name, DataGridViewCellStyle captured, bool fore = false)
+        {
+            bool font = Restoring && FontsFollowingGrid.Contains(name);
+            if (!font && !fore) return captured;
+            var style = new DataGridViewCellStyle(captured);
+            if (font) style.Font = grid.Font;
+            if (fore) style.ForeColor = grid.ForeColor;
+            return style;
+        }
 
         public static GridOriginal Capture(DataGridView grid) => new GridOriginal
         {
@@ -298,9 +353,11 @@ internal class DataGridViewApplier : WinFormsApplier
             RowHeight = grid.RowTemplate.Height,
             RowHeadersVisible = grid.RowHeadersVisible,
             DefaultCellStyle = new DataGridViewCellStyle(grid.DefaultCellStyle),
+            DefaultForeFollowsGrid = grid.DefaultCellStyle.ForeColor.ToArgb() == grid.ForeColor.ToArgb(),
             AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle(grid.AlternatingRowsDefaultCellStyle),
             ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle(grid.ColumnHeadersDefaultCellStyle),
             RowHeadersDefaultCellStyle = new DataGridViewCellStyle(grid.RowHeadersDefaultCellStyle),
+            FontsFollowingGrid = FontsOf(grid),
             Dpi = TwDpi.DeviceDpi(grid),
             LastDpi = TwDpi.DeviceDpi(grid),
         };

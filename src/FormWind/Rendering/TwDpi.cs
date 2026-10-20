@@ -41,7 +41,10 @@ internal static class TwDpi
     /// DPI of the screen the control is on. On .NET Framework some controls (e.g. Label) do not update their own
     /// <c>DeviceDpi</c> when the screen changes; the form's value is used.
     /// </summary>
-    public static int DeviceDpi(Control control) => control.FindForm()?.DeviceDpi ?? control.DeviceDpi;
+    public static int DeviceDpi(Control control) => DeviceDpiOverride ?? control.FindForm()?.DeviceDpi ?? control.DeviceDpi;
+
+    /// <summary>Tests: the screen DPI FormWind scales class values with (e.g. 144 for 150 %).</summary>
+    internal static int? DeviceDpiOverride { get; set; }
 
     public static bool EnsureInitialized()
     {
