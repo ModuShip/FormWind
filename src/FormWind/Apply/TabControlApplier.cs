@@ -43,7 +43,8 @@ internal sealed class TabControlApplier : WinFormsApplier
 
         var state = context.State & ~(TwState.Hover | TwState.Active);
         var selected = context.Parsed.ResolvePart("selected", state);
-        bool active = !context.DesignMode && tabs.DrawMode == TabDrawMode.Normal
+        // Yüksek Karşıtlık'ta sekmeleri Windows çizer (karşıtlık renkleri, odak çerçevesi).
+        bool active = !context.DesignMode && tabs.DrawMode == TabDrawMode.Normal && (context.State & TwState.HighContrast) == 0
             && (style.BackColor.HasValue || style.ForeColor.HasValue || selected.BackColor.HasValue || selected.ForeColor.HasValue);
 
         if (!Painters.TryGetValue(tabs, out var painter))

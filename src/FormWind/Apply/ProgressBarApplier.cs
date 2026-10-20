@@ -38,7 +38,9 @@ internal sealed class ProgressBarApplier : WinFormsApplier
 
         var track = Opaque(style.FillColor) ?? Opaque(style.BackColor);
         var fill = Opaque(style.AccentColor);
-        bool active = !context.DesignMode && (track.HasValue || fill.HasValue);
+        // Yüksek Karşıtlık'ta çubuk Windows'un temalı (karşıtlık renkli) çizimine döner; zorlanan renkler her çubuğu
+        // klasik çizime geçirirdi.
+        bool active = !context.DesignMode && (context.State & TwState.HighContrast) == 0 && (track.HasValue || fill.HasValue);
 
         if (!States.TryGetValue(bar, out var state))
         {

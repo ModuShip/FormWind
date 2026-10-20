@@ -135,6 +135,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
             if (_respectHighContrast == value) return;
             _respectHighContrast = value;
             RefreshAll();
+            UpdateNativeToolTips();
         }
     }
 
@@ -151,7 +152,9 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
 
     private void OnHighContrastChanged(object? sender, EventArgs e)
     {
-        if (_respectHighContrast) RefreshAll();
+        if (!_respectHighContrast) return;
+        RefreshAll();
+        UpdateNativeToolTips();
     }
 
     /// <summary>
@@ -189,7 +192,8 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
 
     private void UpdateNativeToolTips()
     {
-        if (!DesignMode) TwNativeToolTips.SetDark(this, _darkMode && _darkToolTips);
+        // Yüksek Karşıtlık'ta ipuçları Windows'un karşıtlık renkleriyle kalır.
+        if (!DesignMode) TwNativeToolTips.SetDark(this, _darkMode && _darkToolTips && !HighContrastActive);
     }
 
     /// <summary>The theme used by this provider. <see cref="TwTheme.Current"/> when not set.</summary>

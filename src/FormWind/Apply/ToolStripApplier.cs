@@ -391,6 +391,12 @@ internal class FormApplier : WinFormsApplier
 
         var form = (Form)control;
         TwMdiBackground.Update(form, style.BackColor.HasValue);
+        // Yüksek Karşıtlık'ta başlık çubuğunu Windows çizer (koyu mod, caption: renkleri ve zemin efekti uygulanmaz).
+        if ((context.State & TwState.HighContrast) != 0)
+        {
+            TwTitleBar.For(form).Update(false, null, null, null, null);
+            return;
+        }
         var caption = context.Parsed.ResolvePart("caption", context.State & ~(TwState.Hover | TwState.Active));
         TwTitleBar.For(form).Update(
             (context.State & TwState.Dark) != 0,

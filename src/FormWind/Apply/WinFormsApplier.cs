@@ -54,14 +54,16 @@ public class WinFormsApplier : IStyleApplier
             bool repaint = control is Button ? applied.FlatButton : context.Parsed.Resolve(disabledState).ForeColor.HasValue;
             TwDisabledText.Update(control, explicitColor, repaint, forced);
         }
-        if (control is LinkLabel link) ApplyLinkColors(link, style);
         // Windows'un devre dışıyken sistem renkleriyle çizdiği ListView ve düzenlenebilir ComboBox (bkz. TwDisabledNative).
         if (!context.DesignMode && TwDisabledNative.Supports(control)) TwDisabledNative.Update(control, style.BackColor is Color { A: 255 });
+        // Yüksek Karşıtlık'ta accent-* vurgu rengine (Highlight) çevrilir; bağlantılar Windows'un bağlantı rengiyle kalır.
+        if (control is LinkLabel link) ApplyLinkColors(link, (context.State & TwState.HighContrast) != 0 ? new TwStyle() : style);
         ApplyChrome(control, style, context, applied);
         if (control is ITwToggle toggle) toggle.SetToggleColors(style.AccentColor, style.FillColor);
         if (!context.DesignMode && TwNativeTheme.Supports(control))
         {
-            bool dark = context.DarkScrollbars && (context.State & TwState.Dark) != 0;
+            // Yüksek Karşıtlık'ta Windows'un karşıtlık temaları kalır (koyu tema adları onun renklerini ezerdi).
+            bool dark = context.DarkScrollbars && (context.State & TwState.Dark) != 0 && (context.State & TwState.HighContrast) == 0;
             if (dark || TwNativeTheme.IsDark(control)) TwNativeTheme.Apply(control, dark);
         }
         // Windows DateTimePicker'ı temadan çizer ve BackColor'ı yok sayar; koyu zeminde çizim koyuya çevrilir.
