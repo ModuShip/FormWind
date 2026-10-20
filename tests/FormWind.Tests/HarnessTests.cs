@@ -91,6 +91,50 @@ public class HarnessTests
     {
     }
 
+    // Uzak masaüstü ve kısıtlı ortamlarda yazı yumuşatması çoğu zaman kapalıdır (görüntüde yalnızca yazı ve zemin renkleri).
+    // Ekran ölçümü yazı rengini zemine en karşıt pikselden alır: yumuşatmasız yazıda bu tam yazı rengidir, okunur yazı
+    // yanlış alarm vermez, okunmaz yazı yakalanır. Sistem ayarı değiştirilmeden, aynı yazı üç biçimde çizilir.
+    [Theory]
+    [InlineData(System.Drawing.Text.TextRenderingHint.SingleBitPerPixel)]
+    [InlineData(System.Drawing.Text.TextRenderingHint.AntiAlias)]
+    [InlineData(System.Drawing.Text.TextRenderingHint.ClearTypeGridFit)]
+    public void Screen_audit_measures_text_without_font_smoothing(System.Drawing.Text.TextRenderingHint hint) => Sta.Run(() =>
+    {
+        foreach (var (fore, back, readable) in new[]
+        {
+            ("#888888", "#ffffff", true),     // 3,5:1 (eşik 3:1)
+            ("#777777", "#111827", true),     // koyu zemin, ~3,9:1
+            ("#dddddd", "#ffffff", false),    // 1,4:1
+            ("#2a2f3a", "#1f2937", false),    // koyu üzerinde koyu
+        })
+        {
+            using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false, ClientSize = new Size(300, 60) };
+            var label = new Label { Text = "Ödeme yöntemi", Location = new Point(10, 10), Size = new Size(200, 30), Font = new Font("Segoe UI", 9f) };
+            form.Controls.Add(label);
+            form.Show();
+            var origin = ScreenContrast.WindowOrigin(form);
+            var bounds = form.RectangleToScreen(form.ClientRectangle);
+            using var image = new Bitmap(bounds.Right - origin.X, bounds.Bottom - origin.Y);
+            using (var g = Graphics.FromImage(image))
+            using (var brush = new SolidBrush(ColorTranslator.FromHtml(fore)))
+            {
+                g.Clear(ColorTranslator.FromHtml(back));
+                g.TextRenderingHint = hint;
+                var at = label.RectangleToScreen(label.ClientRectangle);
+                g.DrawString(label.Text, label.Font, brush, at.X - origin.X + 4, at.Y - origin.Y + 6);
+            }
+
+            var issues = ScreenContrast.Audit(form, image, origin);
+            var (measured, measuredBack) = ScreenContrast.Measure(label, image, origin);
+            double ratio = TwContrast.Ratio(measured!.Value, measuredBack!.Value);
+            if (readable) Assert.True(issues.Count == 0, $"{hint} {fore}/{back}: ölçülen {ratio:F2}, gerçek {TwContrast.Ratio(ColorTranslator.FromHtml(fore), ColorTranslator.FromHtml(back)):F2}");
+            else Assert.Contains(issues, i => i.Control == label);
+            if (hint == System.Drawing.Text.TextRenderingHint.SingleBitPerPixel)
+                Assert.Equal(ColorTranslator.FromHtml(fore).ToArgb(), measured.Value.ToArgb());    // tam yazı rengi
+            form.Close();
+        }
+    });
+
     // Standart DateTimePicker eşlemede yoktu; koyu temada açık kalır ve "unstyled" diye raporlanırdı.
     [Fact]
     public void Map_styles_date_time_pickers_for_both_modes()

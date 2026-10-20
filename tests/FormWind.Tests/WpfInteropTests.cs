@@ -55,7 +55,7 @@ public class WpfInteropTests
 
     private sealed class Panel : UserControl
     {
-        public readonly TextBox Text = new TextBox { Location = new Point(10, 10), Width = 150 };
+        public new readonly TextBox Text = new TextBox { Location = new Point(10, 10), Width = 150 };
         public readonly Button Save = new Button { Location = new Point(10, 40), Text = "Kaydet" };
         public readonly CheckBox Check = new CheckBox { Location = new Point(10, 70), Text = "Seçenek" };
         public readonly CheckBox Disabled = new CheckBox { Location = new Point(10, 95), Text = "Kapalı", Enabled = false };
