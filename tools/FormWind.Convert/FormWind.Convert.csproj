@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" />
+    <!-- Tarama modu (audit): Designer dışı kod da sözdizimi ağacıyla taranır. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
   </ItemGroup>
 
   <ItemGroup>

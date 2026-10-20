@@ -6,6 +6,8 @@ using Xunit;
 
 namespace FormWind.Tests;
 
+// Araç Console.Out'a yazar; çıktıyı yakalayan testler aynı anda çalışmaz.
+[Collection("Konsol çıktısı")]
 public class ConverterTests
 {
     private const string Designer = """
@@ -469,6 +471,84 @@ public class ConverterTests
         Assert.Equal("ToolStripComboBox", map["FontComboBox"]);
         Assert.Equal("System.Windows.Forms.Label", map["Badge"]);
         Assert.True(DesignerConverter.IsControlType("FontComboBox", map, out var unverified) == false && !unverified);
+    }
+
+    // KeePass 2.61.1 denemesi: yalnızca notu olan (çevrilmeyen) kontrol rapora boş bir class kodu (``) olarak yazılıyordu;
+    // ikinci --write çalıştırması hiçbir dosyayı değiştirmediği halde "Dosyalar güncellendi." diyordu. Araç ikinci kez
+    // çalıştırılınca dosya değişmemeli.
+    [Fact]
+    public void Tool_reports_unconverted_controls_and_a_second_run_changes_nothing()
+    {
+        var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        System.IO.Directory.CreateDirectory(folder);
+        var output = System.Console.Out;
+        try
+        {
+            var file = System.IO.Path.Combine(folder, "EditForm.Designer.cs");
+            System.IO.File.WriteAllText(file, Designer.Replace("\"Georgia\", 14F", "\"Courier New\", 9F"), new System.Text.UTF8Encoding(true));
+            var report = System.IO.Path.Combine(folder, "rapor.md");
+
+            using var first = new System.IO.StringWriter();
+            System.Console.SetOut(first);
+            Assert.Equal(0, FormWind.Convert.Program.Main(new[] { folder, "--write", "--report", report }));
+            var converted = System.IO.File.ReadAllBytes(file);
+            var markdown = System.IO.File.ReadAllText(report);
+            Assert.Contains("- **lblTitle**: `", markdown);                                     // rengi çevrildi
+            Assert.DoesNotContain("``", markdown);
+
+            using var second = new System.IO.StringWriter();
+            System.Console.SetOut(second);
+            Assert.Equal(0, FormWind.Convert.Program.Main(new[] { folder, "--write" }));
+            Assert.Equal(converted, System.IO.File.ReadAllBytes(file));                          // ikinci çalıştırma değiştirmez
+            Assert.Contains("Değiştirilecek bir şey yok.", second.ToString());
+            Assert.DoesNotContain("Dosyalar güncellendi", second.ToString());
+        }
+        finally
+        {
+            System.Console.SetOut(output);
+            try { System.IO.Directory.Delete(folder, true); } catch (System.IO.IOException) { }
+        }
+    }
+
+    [Fact]
+    public void Report_marks_controls_that_only_have_notes()
+    {
+        var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        System.IO.Directory.CreateDirectory(folder);
+        var output = System.Console.Out;
+        try
+        {
+            // Yalnızca farklı bir font ailesi: satır kalır, kontrol için class yok, not var.
+            const string onlyFont = """
+                namespace Demo
+                {
+                    partial class KeyForm
+                    {
+                        private void InitializeComponent()
+                        {
+                            this.m_rbKeySeq = new System.Windows.Forms.RadioButton();
+                            this.m_rbKeySeq.Font = new System.Drawing.Font("Courier New", 8.25F);
+                            this.m_rbKeySeq.Text = "Sıra";
+                        }
+
+                        private System.Windows.Forms.RadioButton m_rbKeySeq;
+                    }
+                }
+                """;
+            System.IO.File.WriteAllText(System.IO.Path.Combine(folder, "KeyForm.Designer.cs"), onlyFont);
+            var report = System.IO.Path.Combine(folder, "rapor.md");
+            using var writer = new System.IO.StringWriter();
+            System.Console.SetOut(writer);
+            Assert.Equal(0, FormWind.Convert.Program.Main(new[] { folder, "--report", report }));
+            var markdown = System.IO.File.ReadAllText(report);
+            Assert.Contains("- **m_rbKeySeq**: (çevrilen yok)", markdown);
+            Assert.DoesNotContain("``", markdown);
+        }
+        finally
+        {
+            System.Console.SetOut(output);
+            try { System.IO.Directory.Delete(folder, true); } catch (System.IO.IOException) { }
+        }
     }
 }
 #endif

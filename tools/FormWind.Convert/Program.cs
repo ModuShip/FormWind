@@ -9,6 +9,7 @@ namespace FormWind.Convert;
 /// <summary>
 /// <code>
 /// formwind-convert &lt;dosya.Designer.cs | dosya.Designer.vb | klasör&gt; [--write] [--config tw.config.json] [--report rapor.md] [--tolerance 10]
+/// formwind-convert &lt;klasör&gt; --audit [--report tarama.md]
 /// </code>
 /// Varsayılan kuru çalıştırmadır: ne değişeceğini yazar, dosyaya dokunmaz. <c>--write</c> dosyaları yerinde günceller
 /// (önce değişiklikleri commit'leyin; geri dönüş git ile yapılır).
@@ -23,10 +24,13 @@ public static class Program
             Console.WriteLine("Kullanım: formwind-convert <dosya.Designer.cs | dosya.Designer.vb | klasör> [--write] [--config tw.config.json] [--report rapor.md] [--tolerance 10]");
             Console.WriteLine("Sabit BackColor/ForeColor/Font/Padding/FlatAppearance atamalarını TailwindProvider class'larına çevirir.");
             Console.WriteLine("Varsayılan kuru çalıştırmadır; --write dosyaları günceller.");
+            Console.WriteLine("--audit: geçiş öncesi tarama; Designer dışı kodda elle bakılacak yerleri (kodda atanan renkler, liste öğesi");
+            Console.WriteLine("renkleri, kendi çizen kontroller, görselli sabit butonlar, SetWindowTheme, RTF) listeler, dosyalara dokunmaz.");
             return args.Length == 0 ? 1 : 0;
         }
 
         string target = args[0];
+        if (args.Contains("--audit")) return Audit(target, Option(args, "--report"));
         bool write = args.Contains("--write");
         string? config = Option(args, "--config");
         string? report = Option(args, "--report");
@@ -85,7 +89,8 @@ public static class Program
             {
                 var classes = string.Join(" ", control.Classes.Distinct());
                 Console.WriteLine($"  {control.Control}: {(classes.Length > 0 ? classes : "(çevrilen yok)")}");
-                markdown.Append($"- **{control.Control}**: `{classes}`\n");
+                // Yalnızca not düşülen (çevrilmeyen) kontrolde boş bir class kodu yazılmaz.
+                markdown.Append(classes.Length > 0 ? $"- **{control.Control}**: `{classes}`\n" : $"- **{control.Control}**: (çevrilen yok)\n");
                 foreach (var note in control.Notes)
                 {
                     Console.WriteLine($"    ! {note}");
@@ -103,8 +108,37 @@ public static class Program
             }
         }
 
-        Console.WriteLine($"\n{changedFiles} dosya, {classCount} class, {noteCount} not. {(write ? "Dosyalar güncellendi." : "Kuru çalıştırma: dosyalar değişmedi (--write ile uygulayın).")}");
+        // İkinci çalıştırmada (dosyalar zaten çevrilmiş) hiçbir dosya değişmez; "güncellendi" yazılmaz.
+        var outcome = changedFiles == 0 ? "Değiştirilecek bir şey yok."
+            : write ? "Dosyalar güncellendi." : "Kuru çalıştırma: dosyalar değişmedi (--write ile uygulayın).";
+        Console.WriteLine($"\n{changedFiles} dosya, {classCount} class, {noteCount} not. {outcome}");
         if (report != null) File.WriteAllText(report, markdown.ToString(), new UTF8Encoding(true));
+        return 0;
+    }
+
+    // Geçiş öncesi tarama: yalnızca okur; özet konsola, ayrıntı --report dosyasına (yoksa konsola).
+    private static int Audit(string target, string? report)
+    {
+        if (!Directory.Exists(target) && !File.Exists(target))
+        {
+            Console.Error.WriteLine($"Klasör ya da dosya bulunamadı: {target}");
+            return 2;
+        }
+        var findings = MigrationAudit.AuditPath(target);
+        var markdown = MigrationAudit.Report(findings, target);
+        foreach (AuditCategory category in Enum.GetValues(typeof(AuditCategory)))
+            Console.WriteLine($"{MigrationAudit.Title(category)}: {findings.Count(f => f.Category == category)}");
+        if (report != null)
+        {
+            File.WriteAllText(report, markdown, new UTF8Encoding(true));
+            Console.WriteLine();
+            Console.WriteLine($"{findings.Count} yer. Rapor: {report}");
+        }
+        else
+        {
+            Console.WriteLine();
+            Console.WriteLine(markdown);
+        }
         return 0;
     }
 
