@@ -145,6 +145,11 @@ internal sealed class TwBinding
             DarkScrollbars = _owner.DarkScrollbars,
         };
         _applying = true;
+        // Font, padding ve margin atamalarının her biri ebeveynin yerleşimini baştan çalıştırır (kardeş sayısıyla doğrusal).
+        // AutoStyle açıkken tek tek eklenen 2000 kontrolde bu, eklemeyi karesel büyütüyordu; ebeveyn uygulama boyunca askıya
+        // alınır ve istek geldiyse yerleşim bir kez yapılır.
+        var parent = _control.Parent;
+        parent?.SuspendLayout();
         try
         {
             TwAppliers.Find(_control).Apply(_control, style, context);
@@ -157,6 +162,7 @@ internal sealed class TwBinding
         }
         finally
         {
+            parent?.ResumeLayout(true);
             _applying = false;
         }
 

@@ -21,6 +21,16 @@ public sealed class PerformanceFactAttribute : FactAttribute
     }
 }
 
+/// <summary><see cref="PerformanceFactAttribute"/> gibi, veri satırlı testler için.</summary>
+public sealed class PerformanceTheoryAttribute : TheoryAttribute
+{
+    public PerformanceTheoryAttribute()
+    {
+        if (Environment.GetEnvironmentVariable(PerformanceFactAttribute.EnvironmentVariable) != "1")
+            Skip = $"Performans testi. Çalıştırmak için {PerformanceFactAttribute.EnvironmentVariable}=1 ortam değişkenini ayarlayın.";
+    }
+}
+
 /// <summary>Kodu WinForms'un beklediği STA iş parçacığında çalıştırır.</summary>
 internal static class Sta
 {
