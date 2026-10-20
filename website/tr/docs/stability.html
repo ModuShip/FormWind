@@ -44,6 +44,17 @@ description: FormWind'in önizleme süresince neyi kararlı tuttuğu: public API
 &lt;/PropertyGroup&gt;</code></pre>
 <p>Yalnızca class'ları, hazır görünümleri, tema dosyasını ve kontrolleri kullanan uygulamalar FW9001'le hiç karşılaşmaz. Başka bir kontrol kütüphanesi için kendi uygulayıcınızı yazarken gerekir (bkz. <a href="krypton.html#other-control-libraries">diğer kontrol kütüphaneleri</a>).</p>
 
+<h2 id="plugins">Eklentiler ve paylaşılan süreç</h2>
+<p>FormWind'i bir uygulamanın eklentisi (ör. KeePass eklentisi) kullanabilir; barındıran uygulama FormWind kullanmaz. Eklenti yazarları için:</p>
+<ul>
+  <li>Temayı provider'a verin (<code>provider.Theme = TwTheme.FromJson(...)</code>); süreç geneli <code>TwTheme.Current</code>'ı değiştirmeyin. <code>Theme</code> verilmeyen provider'lar ve <code>TwButton</code> ikonları, <code>TwTabStrip</code>, <code>TwIcon</code>, <code>TwToolTip</code>, <code>TwCalendar</code>, <code>TwDataList</code>, grid kolon tipleri <code>Current</code>'ı kullanır.</li>
+  <li><code>TwAutoTheme.Install</code> çağırmayın (barındıran uygulamanın formlarını da stiller) ya da <code>Filter</code> ile yalnızca kendi formlarınızı seçin.</li>
+  <li>Açık/koyu: barındıran uygulamayı izleyin, ör. KeePass'te <code>DarkMode = UIUtil.IsDarkTheme</code>.</li>
+  <li>Koyu ipuçları yalnızca provider'ın formlarında koyulaşır; odak halkası, Yüksek Karşıtlık ve metin boyutu abonelikleri provider başınadır, <code>Dispose</code> yalnızca kendi kaydını kaldırır. <code>TwAppliers.Register</code> ve <code>TwFonts.RespectTextScale</code> süreç genelidir.</li>
+  <li>.NET Framework: <code>System.Text.Json</code> ve bağımlılıklarını eklenti klasörüne koyun. Barındıran uygulamada binding redirect olmadığından eski sürüm istekleri (System.Memory → Unsafe 4.0.4.1) FormWind tarafından <code>AssemblyResolve</code> ile klasördeki daha yeni, aynı anahtarlı dosyaya yönlendirilir.</li>
+  <li>Derlemeler güçlü adlıdır: farklı <code>AssemblyVersion</code>'lı iki FormWind kopyası yan yana yüklenir ve statikleri ayrıdır; aynı sürümün iki kopyası tek derleme olarak paylaşılır.</li>
+</ul>
+
 <h2 id="known-limitations">Bilinen sınırlamalar</h2>
 <ul>
   <li>Hücrelerini kendisi çizen kontroller (örn. owner-draw grid'ler) hücre stillerini yok sayar ve koyu temada açık kalabilir; bazıları için <code>TwGrid.EnableDarkInversion</code> yardımcı olur.</li>

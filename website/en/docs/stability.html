@@ -44,6 +44,17 @@ description: What FormWind keeps stable during the preview: the public API, the 
 &lt;/PropertyGroup&gt;</code></pre>
 <p>Applications that only use classes, presets, the theme file and the controls never see FW9001. You need it when you write your own applier for another control library (see <a href="krypton.html#other-control-libraries">other control libraries</a>).</p>
 
+<h2 id="plugins">Plugins and shared processes</h2>
+<p>FormWind can be used by an application's plugin (for example a KeePass plugin) while the host does not use it. For plugin authors:</p>
+<ul>
+  <li>Give the theme to the provider (<code>provider.Theme = TwTheme.FromJson(...)</code>); do not change the process-wide <code>TwTheme.Current</code>. Providers without a <code>Theme</code>, and <code>TwButton</code> icons, <code>TwTabStrip</code>, <code>TwIcon</code>, <code>TwToolTip</code>, <code>TwCalendar</code>, <code>TwDataList</code> and grid column types use <code>Current</code>.</li>
+  <li>Do not call <code>TwAutoTheme.Install</code> (it styles the host's forms too), or pick only your own forms with <code>Filter</code>.</li>
+  <li>Light/dark: follow the host, for example in KeePass <code>DarkMode = UIUtil.IsDarkTheme</code>.</li>
+  <li>Dark tooltips are dark only on the provider's forms; the focus ring, High Contrast and text size subscriptions are per provider, and <code>Dispose</code> removes only its own registration. <code>TwAppliers.Register</code> and <code>TwFonts.RespectTextScale</code> are process-wide.</li>
+  <li>.NET Framework: put <code>System.Text.Json</code> and its dependencies in the plugin folder. The host has no binding redirects, so FormWind redirects requests for older versions (System.Memory → Unsafe 4.0.4.1) with <code>AssemblyResolve</code> to the newer file with the same key in that folder.</li>
+  <li>The assemblies are strong-named: two FormWind copies with different <code>AssemblyVersion</code>s load side by side with separate statics; two copies of the same version are shared as one assembly.</li>
+</ul>
+
 <h2 id="known-limitations">Known limitations</h2>
 <ul>
   <li>Controls that draw their own cells (for example owner-drawn grids) ignore cell styles and may stay light in dark mode; <code>TwGrid.EnableDarkInversion</code> helps for some of them.</li>

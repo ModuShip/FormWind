@@ -335,6 +335,9 @@ public sealed class TwTheme
     // DefaultComponents'tan sonra bildirilmeli: statik başlatıcılar yazım sırasıyla çalışır.
     private static TwTheme _current = new TwTheme();
 
+    // .NET Framework'te bağlama yönlendirmesi olmayan bir sürece (KeePass eklentisi) yüklenen FormWind'in bağımlılıkları.
+    static TwTheme() => TwDependencyResolver.EnsureInstalled();
+
     public string FontFamilySans
     {
         get => _fontFamilySans;

@@ -194,9 +194,9 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     }
 
     /// <summary>
-    /// Also darkens native tooltip windows (ToolTip components, ToolStrip item tooltips) in dark mode. Because tooltips
-    /// belong to the application's components, the effect is thread-wide. Requires Windows 10 1809+ and uses an undocumented
-    /// theme name; turn it off if it causes problems.
+    /// Also darkens native tooltip windows (ToolTip components, ToolStrip item tooltips) in dark mode, on the forms this
+    /// provider styles; tooltips of other forms on the thread are left alone. Requires Windows 10 1809+ and uses an
+    /// undocumented theme name; turn it off if it causes problems.
     /// </summary>
     [Category("FormWind"), DefaultValue(true), Description("Also darkens native tooltips in dark mode.")]
     public bool DarkToolTips
@@ -208,6 +208,15 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
             _darkToolTips = value;
             UpdateNativeToolTips();
         }
+    }
+
+    // Bu sağlayıcının stillediği formlardan biri mi (ipuçları yalnızca onlarda koyulaşır; bkz. TwNativeToolTips).
+    internal bool CoversTopLevel(Control top)
+    {
+        if (_containerControl != null && (_containerControl.TopLevelControl ?? _containerControl) == top) return true;
+        foreach (var control in _bindings.Keys)
+            if ((control.TopLevelControl ?? control) == top) return true;
+        return false;
     }
 
     private void UpdateNativeToolTips()

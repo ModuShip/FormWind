@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace FormWind;
 
 /// <summary>
 /// Also darkens the thread's native tooltip windows in dark mode: ToolTip components, ToolStrip item tooltips,
 /// ListView/TreeView tooltips. <c>tooltips_class32</c> windows get the <c>DarkMode_Explorer</c> theme when created and first
-/// shown (Windows 10 1809+, undocumented; no effect on unsupported systems). Tooltip windows belong to the application's
-/// own components, so tracking is thread-wide: tooltips are dark while at least one provider is in dark mode. The hook is
-/// installed only while in dark mode.
+/// shown (Windows 10 1809+, undocumented; no effect on unsupported systems). A tooltip is dark when the form that owns it
+/// (for a drop-down menu, the form of the strip it opens from) is covered by a provider in dark mode; other forms on the
+/// thread keep their tooltips, e.g. the host's forms when FormWind is used by a plugin. A tooltip whose owner is not a
+/// WinForms control is dark while any provider on the thread is dark. The hook is installed only while in dark mode.
 /// </summary>
 internal static class TwNativeToolTips
 {
@@ -47,13 +49,37 @@ internal static class TwNativeToolTips
     public static void SetDark(object owner, bool dark)
     {
         _darkOwners ??= new HashSet<object>();
-        bool before = IsDark;
-        if (dark) _darkOwners.Add(owner);
-        else _darkOwners.Remove(owner);
+        bool changed = dark ? _darkOwners.Add(owner) : _darkOwners.Remove(owner);
 
         if (IsDark) EnsureHook();
         else RemoveHook();
-        if (before != IsDark) ApplyToExisting();
+        if (changed) ApplyToExisting();
+    }
+
+    /// <summary>Whether this tooltip window should be dark: its owner form is covered by a dark provider.</summary>
+    internal static bool ShouldBeDark(IntPtr hwnd)
+    {
+        if (!IsDark) return false;
+        var top = OwnerForm(hwnd);
+        if (top is null) return true;
+        foreach (var owner in _darkOwners!)
+            if (owner is not TailwindProvider provider || provider.CoversTopLevel(top)) return true;
+        return false;
+    }
+
+    // İpucunun sahibi üst düzey pencere; açılır menüde menünün açıldığı şeridin formu (açılır menü kendi üst düzey penceresi).
+    private static Control? OwnerForm(IntPtr hwnd)
+    {
+        var owner = GetWindow(hwnd, GwOwner);
+        if (owner == IntPtr.Zero) return null;
+        var control = Control.FromHandle(owner);
+        for (int depth = 0; depth < 16 && control != null; depth++)
+        {
+            var top = control.TopLevelControl ?? control;
+            if (top is not ToolStripDropDown dropDown) return top;
+            control = dropDown.OwnerItem?.Owner ?? (Control?)(dropDown as ContextMenuStrip)?.SourceControl;
+        }
+        return null;
     }
 
     private static void EnsureHook()
@@ -87,16 +113,19 @@ internal static class TwNativeToolTips
         _hook = IntPtr.Zero;
     }
 
-    // Tema değişince iş parçacığının mevcut ipucu pencereleri yeni temaya geçer.
+    // Tema değişince iş parçacığının mevcut ipucu pencereleri yeni temaya geçer; FormWind'in koyulaştırmadığı ipuçlarına
+    // (ör. eklentiyi barındıran uygulamanınkiler) dokunulmaz.
     private static void ApplyToExisting()
     {
-        _themed?.Clear();
-        bool dark = IsDark;
+        var themed = _themed;
+        _themed = null;
         try
         {
             EnumThreadWindows(GetCurrentThreadId(), (hwnd, _) =>
             {
-                if (IsToolTip(hwnd)) Apply(hwnd, dark);
+                if (!IsToolTip(hwnd)) return true;
+                if (ShouldBeDark(hwnd)) Apply(hwnd, dark: true);
+                else if (themed != null && themed.Contains(hwnd)) Apply(hwnd, dark: false);
                 return true;
             }, IntPtr.Zero);
         }
@@ -125,7 +154,7 @@ internal static class TwNativeToolTips
             if (!IsDark) return;
             // Gösterimde yalnızca henüz temalanmamış pencereler; her gösterimde yeniden temalamak boyutu yeniden hesaplatır.
             if (eventType == EventObjectShow && _themed != null && _themed.Contains(hwnd)) return;
-            if (IsToolTip(hwnd)) Apply(hwnd, dark: true);
+            if (IsToolTip(hwnd) && ShouldBeDark(hwnd)) Apply(hwnd, dark: true);
         }
         catch
         {
@@ -169,6 +198,11 @@ internal static class TwNativeToolTips
 
     [DllImport("user32.dll")]
     private static extern bool UnhookWinEvent(IntPtr hook);
+
+    private const int GwOwner = 4;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindow(IntPtr hwnd, int command);
 
     [DllImport("user32.dll")]
     private static extern bool EnumThreadWindows(uint threadId, EnumWindowsProc proc, IntPtr lParam);

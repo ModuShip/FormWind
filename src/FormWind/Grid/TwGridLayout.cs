@@ -12,6 +12,9 @@ namespace FormWind;
 
 public static partial class TwGrid
 {
+    // .NET Framework'te bağlama yönlendirmesi olmayan bir süreçte System.Text.Json'ın bağımlılıkları (bkz. TwDependencyResolver).
+    static TwGrid() => TwDependencyResolver.EnsureInstalled();
+
     /// <summary>
     /// The user's view of the grid as JSON: column order, widths and visibility, sorting, grouping, the search and (with an
     /// <see cref="ITwGridSource"/> data source) the filters. Store it in the user's settings and restore it with

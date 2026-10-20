@@ -213,7 +213,7 @@ public class InteractionTests
         existing.Show("önce", button);
         Application.DoEvents();
 
-        using var provider = new TailwindProvider();
+        using var provider = new TailwindProvider { ContainerControl = form };
         provider.DarkMode = true;
         Assert.True(TwNativeToolTips.HookInstalled);
         int themedBefore = TwNativeToolTips.Themed.Count;
@@ -241,7 +241,7 @@ public class InteractionTests
         var button = new Button();
         form.Controls.Add(button);
         form.Show();
-        using var provider = new TailwindProvider { DarkMode = true };
+        using var provider = new TailwindProvider { ContainerControl = form, DarkMode = true };
         var before = TwNativeToolTips.Themed.ToArray();
 
         var tip = new ToolTip();
