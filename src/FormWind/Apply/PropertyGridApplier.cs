@@ -14,8 +14,9 @@ namespace FormWind;
 /// <item><description><c>header:</c> category rows and the left margin (<c>LineColor</c>, <c>CategoryForeColor</c>)</description></item>
 /// <item><description><c>selected:</c> the selected property while the grid has focus</description></item>
 /// </list>
-/// Read-only properties are drawn with the text color mixed halfway toward the background. Removing the classes restores
-/// the original colors.
+/// Read-only properties are drawn with the text color mixed halfway toward the background. On dark category rows the expand
+/// glyphs are drawn as +/− in the text color (Windows draws the Explorer-style open glyph dark). Removing the classes
+/// restores the original colors and glyphs.
 /// </summary>
 internal sealed class PropertyGridApplier : WinFormsApplier
 {
@@ -57,10 +58,16 @@ internal sealed class PropertyGridApplier : WinFormsApplier
             : original.DisabledFore;
         Set(grid.DisabledItemForeColor, disabled, v => grid.DisabledItemForeColor = v);
 
+        // Açık kategorinin işareti (⌄) Explorer temasından koyu çizilir; WinForms yalnızca kapalı işareti zemine göre
+        // çevirir. Koyu kategori satırında (SetColorMode(Dark) ile de) görünmezdi: işaretler yazı renginde +/− olarak çizilir.
+        bool darkRow = (context.State & TwState.HighContrast) == 0
+            && Opaque(header.BackColor) is Color row && (row.R * 299 + row.G * 587 + row.B * 114) / 1000 < 128;
+        if (original.VisualGlyphs is bool glyphs) SetVisualGlyphs(grid, glyphs && !darkRow);
+
         // Kaydırma çubuğu iç görünümün ScrollBar alt kontrolüdür; PropertyGrid'in kendi penceresine atanan tema ona geçmez.
         if (!context.DesignMode)
         {
-            bool dark = context.DarkScrollbars && (context.State & TwState.Dark) != 0;
+            bool dark = context.DarkScrollbars && (context.State & TwState.Dark) != 0 && (context.State & TwState.HighContrast) == 0;
             foreach (var bar in ScrollBars(grid))
                 if (dark || TwNativeTheme.IsDark(bar)) TwNativeTheme.Apply(bar, dark);
         }
@@ -75,6 +82,19 @@ internal sealed class PropertyGridApplier : WinFormsApplier
         }
     }
 
+    private static readonly System.Reflection.PropertyInfo? VisualGlyphsProperty = typeof(PropertyGrid).GetProperty(
+        "CanShowVisualStyleGlyphs", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+
+    /// <summary>Whether the grid draws Explorer-style expand glyphs (<c>CanShowVisualStyleGlyphs</c>; protected on .NET Framework).</summary>
+    internal static bool? VisualGlyphs(PropertyGrid grid) => VisualGlyphsProperty?.GetValue(grid) as bool?;
+
+    private static void SetVisualGlyphs(PropertyGrid grid, bool value)
+    {
+        if (VisualGlyphsProperty is null || VisualGlyphs(grid) == value) return;
+        VisualGlyphsProperty.SetValue(grid, value);
+        grid.Refresh();
+    }
+
     private static Color? Opaque(Color? color) => color is Color c && c.A == 255 ? c : null;
 
     private static void Set(Color current, Color value, System.Action<Color> assign)
@@ -86,6 +106,7 @@ internal sealed class PropertyGridApplier : WinFormsApplier
     {
         public Color ViewBack, ViewFore, HelpBack, HelpFore, CommandsBack, CommandsFore, Line, CategoryFore;
         public Color ViewBorder, HelpBorder, CommandsBorder, CategorySplitter, SelectedBack, SelectedFore, DisabledFore;
+        public bool? VisualGlyphs;
 
         public static Original Capture(PropertyGrid grid) => new Original
         {
@@ -104,6 +125,7 @@ internal sealed class PropertyGridApplier : WinFormsApplier
             SelectedBack = grid.SelectedItemWithFocusBackColor,
             SelectedFore = grid.SelectedItemWithFocusForeColor,
             DisabledFore = grid.DisabledItemForeColor,
+            VisualGlyphs = PropertyGridApplier.VisualGlyphs(grid),
         };
     }
 }

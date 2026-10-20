@@ -58,4 +58,27 @@ public class PropertyGridTests
         Assert.Equal(Color("#1f2937").ToArgb(), grid.ViewBackColor.ToArgb());           // surface-800
         Assert.Equal(Color("#111827").ToArgb(), grid.LineColor.ToArgb());               // surface-900
     });
+
+    // Açık kategorinin Explorer işareti (⌄) koyu çizilir; koyu kategori satırında görünmüyordu (SetColorMode(Dark) ile de).
+    // Koyu satırda işaretler yazı renginde +/− olur; açık temada ve class'lar kalkınca özgün işaretlere dönülür.
+    [Fact]
+    public void Dark_category_rows_switch_to_glyphs_drawn_in_the_text_color() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider();
+        using var form = new Form();
+        var grid = new PropertyGrid { SelectedObject = new Button() };
+        form.Controls.Add(grid);
+        var original = PropertyGridApplier.VisualGlyphs(grid);
+        Assert.NotNull(original);
+
+        provider.SetClasses(grid, "properties");
+        Assert.Equal(original, PropertyGridApplier.VisualGlyphs(grid));
+        provider.DarkMode = true;
+        Assert.False(PropertyGridApplier.VisualGlyphs(grid));
+        provider.DarkMode = false;
+        Assert.Equal(original, PropertyGridApplier.VisualGlyphs(grid));
+        provider.DarkMode = true;
+        provider.SetClasses(grid, "");
+        Assert.Equal(original, PropertyGridApplier.VisualGlyphs(grid));
+    });
 }
