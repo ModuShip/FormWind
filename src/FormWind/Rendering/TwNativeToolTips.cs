@@ -16,6 +16,7 @@ internal static class TwNativeToolTips
 {
     private const string DarkTheme = "DarkMode_Explorer";
     private const uint EventObjectCreate = 0x8000;
+    private const uint EventObjectDestroy = 0x8001;
     private const uint EventObjectShow = 0x8002;
     private const uint WinEventOutOfContext = 0;
     private const int ObjIdWindow = 0;
@@ -113,7 +114,15 @@ internal static class TwNativeToolTips
         // Native geri çağrıdan kaçan istisna süreci düşürür.
         try
         {
-            if (!IsDark || idObject != ObjIdWindow || idChild != 0 || hwnd == IntPtr.Zero) return;
+            if (idObject != ObjIdWindow || idChild != 0 || hwnd == IntPtr.Zero) return;
+            // Kapanan pencerenin handle'ı unutulur: küme uzun süren uygulamada büyümez ve Windows aynı handle değerini yeni bir
+            // ipucu penceresine verirse o pencere "zaten temalandı" sanılıp açık kalmaz.
+            if (eventType == EventObjectDestroy)
+            {
+                _themed?.Remove(hwnd);
+                return;
+            }
+            if (!IsDark) return;
             // Gösterimde yalnızca henüz temalanmamış pencereler; her gösterimde yeniden temalamak boyutu yeniden hesaplatır.
             if (eventType == EventObjectShow && _themed != null && _themed.Contains(hwnd)) return;
             if (IsToolTip(hwnd)) Apply(hwnd, dark: true);

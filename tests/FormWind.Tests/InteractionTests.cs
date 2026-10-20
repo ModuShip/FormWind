@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using FormWind.Tests.Performance;
@@ -228,6 +229,35 @@ public class InteractionTests
         Assert.Empty(TwNativeToolTips.Themed);
         Assert.False(TwNativeToolTips.IsDark);
         Assert.False(TwNativeToolTips.HookInstalled, "hook should be removed when no provider is dark");
+        form.Close();
+    });
+
+    // Uzun süreli kullanım: kapanan ipucu pencereleri temalanan pencereler kümesinden çıkar (küme büyümez; Windows aynı handle
+    // değerini yeni bir ipucuna verirse o pencere "zaten temalandı" sanılıp açık kalmaz).
+    [Fact]
+    public void Destroyed_tooltip_windows_are_forgotten() => Sta.Run(() =>
+    {
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var button = new Button();
+        form.Controls.Add(button);
+        form.Show();
+        using var provider = new TailwindProvider { DarkMode = true };
+        var before = TwNativeToolTips.Themed.ToArray();
+
+        var tip = new ToolTip();
+        tip.SetToolTip(button, "geçici");
+        tip.Show("geçici", button);
+        Application.DoEvents();
+        var added = TwNativeToolTips.Themed.Except(before).ToArray();
+        Assert.NotEmpty(added);
+
+        tip.Dispose();
+        for (int i = 0; i < 20 && TwNativeToolTips.Themed.Intersect(added).Any(); i++)
+        {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(10);
+        }
+        Assert.Empty(TwNativeToolTips.Themed.Intersect(added));
         form.Close();
     });
 
