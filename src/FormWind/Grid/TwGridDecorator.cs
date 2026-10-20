@@ -107,6 +107,9 @@ internal sealed partial class TwGridDecorator
         grid.Paint += OnPaint;
         grid.CellPainting += OnCellPainting;
         grid.CellFormatting += OnCellFormatting;
+        grid.CellFormatting += OnKeptColumnFormatting;
+        grid.RowPostPaint += OnRowErrorPaint;
+        grid.CellToolTipTextNeeded += OnRowErrorToolTip;
         grid.RowPostPaint += OnRowPostPaint;
         grid.EditingControlShowing += OnEditingControlShowing;
         grid.RowsAdded += (_, e) =>
@@ -449,6 +452,73 @@ internal sealed partial class TwGridDecorator
     {
         get => _loadingText ?? TwTexts.Current.Loading;
         set => _loadingText = value;
+    }
+
+    /// <summary>
+    /// The text color the application designed its own column backgrounds for (the grid's original cell text color), while
+    /// the classes set the cell text color; <c>null</c> otherwise. See <see cref="ColumnFore"/>.
+    /// </summary>
+    public Color? KeptPairFore { get; set; }
+
+    /// <summary>
+    /// The text color of a column whose background the application set without a text color: the classes' text color was
+    /// chosen for the class background (light on a dark grid) and is unreadable on the application's background (a beige
+    /// total column), so the column keeps the text color it was designed with. <c>null</c> when the column is not affected.
+    /// </summary>
+    internal static Color? ColumnFore(DataGridView grid, DataGridViewColumn column) =>
+        TryGet(grid) is { KeptPairFore: Color fore } && !column.DefaultCellStyle.BackColor.IsEmpty && column.DefaultCellStyle.ForeColor.IsEmpty
+            ? fore
+            : null;
+
+    private void OnKeptColumnFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.CellStyle is null || KeptPairFore is null) return;
+        // Uygulama hücrenin ya da satırın yazı rengini kendisi verdiyse dokunulmaz.
+        if (e.CellStyle.ForeColor.ToArgb() != _grid.DefaultCellStyle.ForeColor.ToArgb()) return;
+        if (ColumnFore(_grid, _grid.Columns[e.ColumnIndex]) is Color fore) e.CellStyle.ForeColor = fore;
+    }
+
+    /// <summary>
+    /// Color of the row error mark: while the classes hide the row headers (<c>row-header:hidden</c>), the error icon of
+    /// <see cref="DataGridViewRow.ErrorText"/> has nowhere to go, so a row with an error gets a bar on its leading edge and the
+    /// error as its cells' tooltip. <c>null</c> when the row headers are visible.
+    /// </summary>
+    public Color? RowErrorColor
+    {
+        get => _rowErrorColor;
+        set
+        {
+            if (_rowErrorColor == value) return;
+            _rowErrorColor = value;
+            _grid.Invalidate();
+        }
+    }
+
+    private Color? _rowErrorColor;
+
+    /// <summary>The row error bar on the leading edge of a row (96 DPI: 3 px).</summary>
+    internal Rectangle RowErrorBar(Rectangle rowBounds)
+    {
+        int width = _grid.LogicalToDeviceUnits(3);
+        int x = _grid.RightToLeft == RightToLeft.Yes ? rowBounds.Right - width : rowBounds.Left;
+        return new Rectangle(x, rowBounds.Top, width, rowBounds.Height - 1);
+    }
+
+    private void OnRowErrorPaint(object? sender, DataGridViewRowPostPaintEventArgs e)
+    {
+        if (RowErrorColor is not Color color || _grid.RowHeadersVisible || !_grid.ShowRowErrors || e.Graphics is null) return;
+        if (string.IsNullOrEmpty(e.ErrorText)) return;
+        // Görünen satır alanı: yatay kaydırmada da sol kenar.
+        var bounds = Rectangle.Intersect(e.RowBounds, _grid.DisplayRectangle);
+        using var brush = new SolidBrush(color);
+        e.Graphics.FillRectangle(brush, RowErrorBar(bounds));
+    }
+
+    private void OnRowErrorToolTip(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
+    {
+        if (RowErrorColor is null || _grid.RowHeadersVisible || !_grid.ShowRowErrors || e.RowIndex < 0 || !string.IsNullOrEmpty(e.ToolTipText)) return;
+        var error = _grid.Rows.SharedRow(e.RowIndex).GetErrorText(e.RowIndex);
+        if (!string.IsNullOrEmpty(error)) e.ToolTipText = error;
     }
 
     /// <summary>Color of the sort arrow and editing controls; turned on when FormWind classes are given.</summary>

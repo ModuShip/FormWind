@@ -131,6 +131,24 @@ public static class TwContrast
         Check(issues, grid, "cell", cell.ForeColor.IsEmpty ? grid.ForeColor : cell.ForeColor, cellBack, Required(cell.Font ?? grid.Font, minimum));
         if (!cell.SelectionBackColor.IsEmpty && !cell.SelectionForeColor.IsEmpty)
             Check(issues, grid, "selected", cell.SelectionForeColor, Composite(cell.SelectionBackColor, cellBack), Required(cell.Font ?? grid.Font, minimum));
+        // Uygulamanın zemin verdiği kolonlar (örn. bej toplam kolonu); yazı rengi kolonun, yoksa korunan çiftin ya da hücrelerin.
+        foreach (DataGridViewColumn column in grid.Columns)
+        {
+            var own = column.DefaultCellStyle;
+            if (!column.Visible || own.BackColor.IsEmpty && own.ForeColor.IsEmpty) continue;
+            var columnBack = own.BackColor.IsEmpty ? cellBack : Composite(own.BackColor, controlBack);
+            var columnFore = !own.ForeColor.IsEmpty ? own.ForeColor
+                : TwGridDecorator.ColumnFore(grid, column) ?? (cell.ForeColor.IsEmpty ? grid.ForeColor : cell.ForeColor);
+            Check(issues, grid, $"column '{column.HeaderText}'", columnFore, columnBack, Required(own.Font ?? cell.Font ?? grid.Font, minimum));
+        }
+        // Alternatif satırlar boş değerleri DefaultCellStyle'dan alır.
+        var alt = grid.AlternatingRowsDefaultCellStyle;
+        if (!alt.BackColor.IsEmpty || !alt.ForeColor.IsEmpty)
+        {
+            var altBack = alt.BackColor.IsEmpty ? cellBack : Composite(alt.BackColor, controlBack);
+            var altFore = !alt.ForeColor.IsEmpty ? alt.ForeColor : cell.ForeColor.IsEmpty ? grid.ForeColor : cell.ForeColor;
+            Check(issues, grid, "alternating row", altFore, altBack, Required(alt.Font ?? cell.Font ?? grid.Font, minimum));
+        }
         if (grid.ColumnHeadersVisible && !grid.EnableHeadersVisualStyles)
         {
             var header = grid.ColumnHeadersDefaultCellStyle;
@@ -259,7 +277,8 @@ public static class TwContrast
         return false;
     }
 
-    // Olay anahtarı: .NET Framework'te EVENT_DATAGRIDVIEWCELLPAINTING, .NET'te s_cellPaintingEvent.
+    // Olay anahtarı: .NET Framework'te EVENT_DATAGRIDVIEWCELLPAINTING, .NET'te s_cellPaintingEvent. FormWind'in kendi
+    // işleyicileri (TwGridDecorator: sıralama oku, boş tablo yazısı) sayılmaz; yoksa stillenen her grid kendi çizen görünürdü.
     private static bool HasHandlers(DataGridView grid, string eventName)
     {
         const System.Reflection.BindingFlags Static = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
@@ -268,7 +287,8 @@ public static class TwContrast
         if (key is null) return false;
         var events = typeof(System.ComponentModel.Component).GetProperty("Events", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             ?.GetValue(grid) as System.ComponentModel.EventHandlerList;
-        return events?[key] != null;
+        return events?[key] is System.Delegate handlers
+            && System.Array.Exists(handlers.GetInvocationList(), d => d.Method.DeclaringType?.Assembly != typeof(TwContrast).Assembly);
     }
 }
 

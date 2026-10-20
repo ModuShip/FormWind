@@ -105,6 +105,14 @@ internal class DataGridViewApplier : WinFormsApplier
         var decorator = TwGridDecorator.For(grid);
         decorator.Accent = style.AccentColor ?? ColorTranslator.FromHtml((context.State & TwState.Dark) != 0 ? "#60a5fa" : "#2563eb");
         decorator.Styled = true;
+        // Satır başlıkları gizliyken satır hatası (ErrorText) şeritle gösterilir.
+        decorator.RowErrorColor = grid.RowHeadersVisible ? null
+            : (context.State & TwState.HighContrast) != 0 ? SystemColors.Highlight
+            : context.Theme.Parse("text-danger-600 dark:text-danger-400").Resolve(state & TwState.Dark).ForeColor;
+        // Uygulamanın kolon zeminleri özgün yazı rengiyle tasarlanmıştır (bkz. TwGridDecorator.ColumnFore).
+        decorator.KeptPairFore = cells.ForeColor.HasValue
+            ? original.DefaultCellStyle.ForeColor.IsEmpty ? SystemColors.ControlText : original.DefaultCellStyle.ForeColor
+            : null;
 
         // Arama eşleşmesi (match:), grup başlıkları (group:) ve alt toplam satırı (footer:).
         var match = parsed.ResolvePart("match", state);

@@ -367,6 +367,10 @@ public class ContrastTests
         var tree = new TreeView { Name = "tree" };
         var own = new TwDataList { Name = "own" };
         panel.Controls.AddRange(new Control[] { handled, subclassed, plain, list, box, tree, own });
+        // FormWind'in kendi grid işleyicileri (TwGridDecorator) sayılmaz; harness her stillenen grid'i kendi çizen sanıyordu.
+        using var provider = new TailwindProvider();
+        provider.SetClasses(plain, "table");
+        provider.SetClasses(handled, "table");
 
         var found = TwContrast.FindOwnerDrawn(panel).ToDictionary(f => f.Control.Name, f => f.Reason);
 
