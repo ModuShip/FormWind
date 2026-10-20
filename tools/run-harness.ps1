@@ -14,6 +14,8 @@
 .EXAMPLE
     .\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -Arguments '--file','a.txt' -Dark -Skip DataGridView
 .EXAMPLE
+    .\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -SelfTest -Dpi 192   # formları %200'e taşınmış gibi ölçekler (PerMonitorV2)
+.EXAMPLE
     .\tools\run-harness.ps1 -Exe C:\apps\MyApp.exe -Dump -ExitAfter 20   # stil uygulamadan değerleri yazar
 #>
 param(
@@ -24,6 +26,7 @@ param(
     [switch]$Dump,
     [int]$ExitAfter = 0,
     [string]$Skip = "",
+    [string]$Dpi = "",
     [string]$WorkingDirectory = ""
 )
 
@@ -42,6 +45,7 @@ $environment = @{
     FORMWIND_DUMP        = $(if ($Dump) { '1' } else { $null })
     FORMWIND_EXIT_AFTER  = $(if ($ExitAfter -gt 0) { "$ExitAfter" } else { $null })
     FORMWIND_SKIP        = $(if ($Skip) { $Skip } else { $null })
+    FORMWIND_DPI         = $(if ($Dpi) { $Dpi } else { $null })
 }
 $saved = @{}
 foreach ($key in $environment.Keys) {

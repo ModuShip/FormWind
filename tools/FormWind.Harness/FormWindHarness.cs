@@ -21,7 +21,8 @@ namespace FormWind.Harness;
 /// <item><description><c>FORMWIND_DARK=1</c> koyu temayla başlar; Ctrl+Alt+Shift+D çalışırken açar/kapatır.</description></item>
 /// <item><description><c>FORMWIND_SKIP=DataGridView,ToolStrip</c> bu tipleri stillemez.</description></item>
 /// <item><description><c>FORMWIND_SELFTEST=1</c> her yeni formun açık ve koyu temada ekran görüntüsünü alır (PrintWindow), kontrastını
-/// class renklerinden ve görüntüden (<see cref="ScreenContrast"/>) denetler.</description></item>
+/// class renklerinden ve görüntüden (<see cref="ScreenContrast"/>) denetler. <c>FORMWIND_SELFTEST_DELAY=30000</c> ilk görüntüden önce
+/// bekler (ms, varsayılan 1500; açılışta uzun yükleme yapan uygulamalar için).</description></item>
 /// <item><description><c>FORMWIND_EXIT_AFTER=60</c> verilen saniye sonra süreci sonlandırır (gözetimsiz çalıştırma). Süre arka plan
 /// iş parçacığında tutulur; UI zamanlayıcıları dursa da (bkz. <c>TIMER STARVATION</c>) süreç sonlanır.</description></item>
 /// <item><description><c>FORMWIND_DUMP=1</c> hiç stil uygulamaz; her formun kontrollerinin renk, font ve padding değerlerini
@@ -35,6 +36,12 @@ namespace FormWind.Harness;
 /// <item><description><c>FORMWIND_OPEN=SettingsForm,AboutForm</c> bu form tiplerini (kısa ya da tam ad) yüklü derlemelerde bulur,
 /// parametresiz constructor'la sırayla açar, işler ve <c>FORMWIND_WALK_WAIT</c> ms sonra kapatır; bitince süreci sonlandırır.
 /// Menüden ya da tepsiden açılan formlara gözetimsiz ulaşmak için (test amaçlı yansıma).</description></item>
+/// <item><description><c>FORMWIND_MENU=m_menuEntryAdd,m_menuToolsOptions</c> ilk formun menülerinde bu adlı öğelere sırayla
+/// tıklar; açılan her formu işler (ya da döker), <c>FORMWIND_WALK_WAIT</c> ms sonra kapatır; bitince süreci sonlandırır
+/// (formları uygulamanın kendi akışıyla, InitEx gibi hazırlıklarıyla açmak için).</description></item>
+/// <item><description><c>FORMWIND_DPI=144</c> her formu stillendikten sonra bu DPI'lı bir ekrana taşınmış gibi ölçekler
+/// (WM_DPICHANGED; yalnızca PerMonitorV2 uygulamalarda etkili). <c>FORMWIND_DPI=screen</c> formu DPI'ı farklı gerçek bir
+/// ekrana taşır.</description></item>
 /// </list>
 /// Log ve görüntüler: <c>%TEMP%\FormWind-Harness\&lt;süreç&gt;-&lt;zaman&gt;</c>.
 /// </summary>
@@ -43,7 +50,7 @@ public static class FormWindHarness
     // Sıra önemli: ilk eşleşen kazanır, türetilmiş tipler tabanlarından önce gelir. DataGridView'a "table" bileşeninin
     // divide-y ve row:h-* içermeyen hâli verilir: kendi çizen grid'ler (örn. Git Extensions) CellBorderStyle.None ve
     // kendi satır yüksekliklerini varsayabilir.
-    private static readonly (Type Type, string Classes)[] Map =
+    internal static readonly (Type Type, string Classes)[] Map =
     {
         (typeof(DataGridView), "bg-white text-sm text-gray-700 border border-gray-200 header:bg-gray-50 header:text-gray-500 cell:px-3 "
             + "row:hover:bg-gray-50 selected:bg-blue-50 selected:text-blue-900 row-header:hidden "
@@ -53,6 +60,7 @@ public static class FormWindHarness
         (typeof(TextBoxBase), "bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"),
         (typeof(ComboBox), "bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"),
         (typeof(UpDownBase), "bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"),
+        (typeof(DateTimePicker), "bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"),
         (typeof(CheckBox), "text-gray-800 dark:text-gray-200"),
         (typeof(RadioButton), "text-gray-800 dark:text-gray-200"),
         (typeof(LinkLabel), "text-gray-800 accent-blue-600 dark:text-gray-200 dark:accent-blue-400"),
@@ -85,14 +93,19 @@ public static class FormWindHarness
     private static string _logPath = "";
     private static bool _dark;
     private static bool _selfTest;
+    private static int _selfTestDelay = 1500;
     private static bool _dump;
     private static HashSet<string> _close = new(StringComparer.OrdinalIgnoreCase);
     private static string? _walkText;
     private static int _walkWait = 4000;
     private static Form? _walkRoot;
     private static HashSet<int> _walkSkip = new();
+    private static string[]? _menuNames;
+    private static Form? _menuRoot;
+    private static readonly HashSet<Form> MenuClosing = new();
     private static Form? _opened;
     private static HashSet<string> _skip = new(StringComparer.OrdinalIgnoreCase);
+    private static string? _dpi;
     private static int _forms;
     [ThreadStatic] private static int _inherited;
     private static bool _installed;
@@ -116,6 +129,7 @@ public static class FormWindHarness
             _dark = Environment.GetEnvironmentVariable("FORMWIND_DARK") == "1";
             _selfTest = Environment.GetEnvironmentVariable("FORMWIND_SELFTEST") == "1";
             _dump = Environment.GetEnvironmentVariable("FORMWIND_DUMP") == "1";
+            if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_SELFTEST_DELAY"), out int delay) && delay > 0) _selfTestDelay = delay;
             _walkText = Environment.GetEnvironmentVariable("FORMWIND_WALK") is { Length: > 0 } walk ? walk : null;
             if (int.TryParse(Environment.GetEnvironmentVariable("FORMWIND_WALK_WAIT"), out int wait) && wait > 0) _walkWait = wait;
             _walkSkip = new HashSet<int>((Environment.GetEnvironmentVariable("FORMWIND_WALK_SKIP") ?? "")
@@ -127,12 +141,16 @@ public static class FormWindHarness
             _skip = new HashSet<string>(
                 (Environment.GetEnvironmentVariable("FORMWIND_SKIP") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
                 StringComparer.OrdinalIgnoreCase);
+            _dpi = Environment.GetEnvironmentVariable("FORMWIND_DPI") is { Length: > 0 } dpi ? dpi : null;
+            _menuNames = Environment.GetEnvironmentVariable("FORMWIND_MENU") is { Length: > 0 } menu
+                ? menu.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray()
+                : null;
 
             string process = Process.GetCurrentProcess().ProcessName;
             _directory = Path.Combine(Path.GetTempPath(), "FormWind-Harness", $"{process}-{DateTime.Now:yyyyMMdd-HHmmss}");
             Directory.CreateDirectory(_directory);
             _logPath = Path.Combine(_directory, "log.txt");
-            Log($"STARTED {process} FormWind {typeof(TailwindProvider).Assembly.GetName().Version} dark={_dark} selftest={_selfTest} dump={_dump} skip=[{string.Join(",", _skip)}]");
+            Log($"STARTED {process} FormWind {typeof(TailwindProvider).Assembly.GetName().Version} dark={_dark} selftest={_selfTest} dump={_dump} skip=[{string.Join(",", _skip)}]{(_dpi != null ? " dpi=" + _dpi : "")}");
 
             // WinForms zamanlayıcısı değil: Windows WM_TIMER'ı yalnızca kuyrukta başka mesaj yokken üretir. Her OnPaint'te
             // Invalidate eden bir form (örn. ShareX'in bölge yakalaması) UI zamanlayıcılarını süresiz durdurur.
@@ -331,6 +349,18 @@ public static class FormWindHarness
         foreach (Form form in Application.OpenForms.Cast<Form>().ToList())
         {
             if (form.IsDisposed || !form.Visible || form.InvokeRequired) continue;
+            if (_menuNames != null)
+            {
+                if (_menuRoot is null)
+                {
+                    _menuRoot = form;
+                    StartMenuWalk(form);
+                }
+                else if (form != _menuRoot && MenuClosing.Add(form))
+                {
+                    CloseLater(form, _walkWait);
+                }
+            }
             if (_dump)
             {
                 if (thread.Dumped.Add(form)) ScheduleDump(form);
@@ -371,7 +401,12 @@ public static class FormWindHarness
 
     private static void Attach(Form form)
     {
-        var provider = new TailwindProvider { DarkMode = _dark };
+        // FormWind'i zaten kullanan uygulama (formwind-app şablonu): harness kendi class'larını basarsa uygulamanın flex
+        // yerleşimini ve bileşenlerini ezer, sahte kontrast sorunları raporlardı. Uygulamanın sağlayıcısı kullanılır; harness
+        // yeniden stillemez, onun class'larını denetler ve tema geçişini onunla yapar.
+        var own = AppProvider(form);
+        var provider = own ?? new TailwindProvider();
+        provider.DarkMode = _dark;
         provider.UnknownClasses += (_, e) =>
         {
             foreach (string cls in e.Unknown)
@@ -382,8 +417,9 @@ public static class FormWindHarness
         form.Disposed += (_, _) =>
         {
             thread.Providers.Remove(form);
-            provider.Dispose();
+            if (own is null) provider.Dispose();
         };
+        if (own != null) Log($"OWN PROVIDER {form.GetType().FullName}: not restyled, its classes are audited");
         Interlocked.Increment(ref _forms);
 
         var sw = Stopwatch.StartNew();
@@ -392,8 +428,11 @@ public static class FormWindHarness
         form.SuspendLayout();
         try
         {
-            if (!_skip.Contains("*")) _inherited = TailwindProvider.InheritCopiedBackColors(form, CanInheritBackColor);
-            Walk(provider, form, counts, unstyled);
+            if (own is null)
+            {
+                if (!_skip.Contains("*")) _inherited = TailwindProvider.InheritCopiedBackColors(form, CanInheritBackColor);
+                Walk(provider, form, counts, unstyled);
+            }
         }
         finally
         {
@@ -433,6 +472,7 @@ public static class FormWindHarness
         {
             CloseLater(form, _walkWait);
         }
+        if (_dpi != null && form.TopLevel) ChangeDpi(form, _dpi);
         if (_selfTest) SelfTest(form, provider);
         else if (_close.Contains(form.GetType().Name))
         {
@@ -445,6 +485,62 @@ public static class FormWindHarness
             timer.Start();
         }
     }
+
+    // Stillenmiş form başka DPI'lı bir ekrana taşınır: "screen" DPI'ı farklı gerçek bir ekrana (Windows WM_DPICHANGED'i
+    // bütün pencerelere gönderir), sayı ise o DPI'a taşınmış gibi WM_DPICHANGED'le (ekrandaki pencere yerinde kalır; native
+    // kontrollerin Windows'un kendi ölçtüğü parçaları ekranın DPI'ında kalabilir).
+    private static void ChangeDpi(Form form, string target)
+    {
+        int before = form.DeviceDpi;
+        try
+        {
+            if (target.Equals("screen", StringComparison.OrdinalIgnoreCase))
+            {
+                var current = Screen.FromControl(form);
+                var other = Screen.AllScreens.FirstOrDefault(s => !s.Equals(current) && MonitorDpi(s) != MonitorDpi(current));
+                if (other is null)
+                {
+                    Log($"DPI {form.GetType().Name}: no screen with another DPI");
+                    return;
+                }
+                form.Location = new Point(other.WorkingArea.Left + 40, other.WorkingArea.Top + 40);
+            }
+            else if (int.TryParse(target, out int dpi) && dpi != before)
+            {
+                float factor = dpi / (float)before;
+                var rect = new[] { form.Left, form.Top, form.Left + (int)(form.Width * factor), form.Top + (int)(form.Height * factor) };
+                var pinned = System.Runtime.InteropServices.GCHandle.Alloc(rect, System.Runtime.InteropServices.GCHandleType.Pinned);
+                try
+                {
+                    SendMessage(form.Handle, 0x02E0 /* WM_DPICHANGED */, (IntPtr)((dpi << 16) | dpi), pinned.AddrOfPinnedObject());
+                }
+                finally
+                {
+                    pinned.Free();
+                }
+            }
+            Log($"DPI {form.GetType().Name} {before} -> {form.DeviceDpi}{(form.DeviceDpi == before ? " (unchanged: the process is not PerMonitorV2?)" : "")}");
+        }
+        catch (Exception ex)
+        {
+            Log($"DPI change failed for {form.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private static uint MonitorDpi(Screen screen)
+    {
+        var center = new Point(screen.Bounds.Left + screen.Bounds.Width / 2, screen.Bounds.Top + screen.Bounds.Height / 2);
+        return GetDpiForMonitor(MonitorFromPoint(center, 2), 0, out uint x, out _) == 0 ? x : 0;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(Point point, int flags);
+
+    [System.Runtime.InteropServices.DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr monitor, int type, out uint x, out uint y);
 
     // Formlar sırayla açılır: bir sonraki, öncekinin kapanmasını bekler.
     private static void StartOpening(string list)
@@ -487,6 +583,65 @@ public static class FormWindHarness
             }
         };
         timer.Start();
+    }
+
+    // FORMWIND_MENU: menü öğeleri adlarıyla bulunur ve sırayla tıklanır. Tıklama modal bir form açarsa adım o form kapanana
+    // kadar sürer (modal döngü zamanlayıcıları çalıştırır; form CloseLater ile kapanır).
+    private static void StartMenuWalk(Form root)
+    {
+        var start = new Timer { Interval = Math.Max(3000, _walkWait) }; // uygulama açılışta veri yükleyebilir (KeePass veritabanını açar)
+        start.Tick += (_, _) =>
+        {
+            start.Dispose();
+            var items = new Dictionary<string, ToolStripMenuItem>(StringComparer.Ordinal);
+            void Collect(ToolStripItemCollection collection)
+            {
+                foreach (ToolStripItem item in collection)
+                {
+                    if (item is ToolStripMenuItem menuItem && menuItem.Name is { Length: > 0 } && !items.ContainsKey(menuItem.Name)) items[menuItem.Name] = menuItem;
+                    if (item is ToolStripDropDownItem { HasDropDownItems: true } owner) Collect(owner.DropDownItems);
+                }
+            }
+            foreach (var strip in Descendants(root).OfType<ToolStrip>()) Collect(strip.Items);
+            if (root.MainMenuStrip is ToolStrip main) Collect(main.Items);
+            Log($"MENU {_menuNames!.Length} items, {items.Count} menu items found");
+            int index = 0;
+            bool busy = false;
+            var step = new Timer { Interval = 700 };
+            step.Tick += (_, _) =>
+            {
+                if (busy) return;
+                if (index >= _menuNames!.Length)
+                {
+                    step.Dispose();
+                    Log($"MENU done: {_forms} forms styled");
+                    Exit();
+                    return;
+                }
+                var name = _menuNames[index++];
+                if (!items.TryGetValue(name, out var item))
+                {
+                    Log($"MENU {index}/{_menuNames.Length} '{name}' not found");
+                    return;
+                }
+                busy = true;
+                Log($"MENU {index}/{_menuNames.Length} click {name} ('{item.Text}')");
+                try
+                {
+                    item.PerformClick();
+                }
+                catch (Exception ex)
+                {
+                    Log($"EXCEPTION clicking menu item {name}: {ex.GetType().Name}: {ex.Message}");
+                }
+                finally
+                {
+                    busy = false;
+                }
+            };
+            step.Start();
+        };
+        start.Start();
     }
 
     private static void CloseLater(Form form, int milliseconds)
@@ -623,6 +778,18 @@ public static class FormWindHarness
         return match.Type is null || !_skip.Contains(match.Type.Name);
     }
 
+    // Formun (ya da temel sınıflarının) TailwindProvider tipindeki alanı ya da TwAutoTheme'in verdiği: uygulamanın kendi sağlayıcısı.
+    internal static TailwindProvider? AppProvider(Form form)
+    {
+        if (TwAutoTheme.GetProvider(form) is { } automatic) return automatic;
+        const System.Reflection.BindingFlags Fields = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly;
+        for (var type = form.GetType(); type != null && type != typeof(Form); type = type.BaseType)
+            foreach (var field in type.GetFields(Fields))
+                if (typeof(TailwindProvider).IsAssignableFrom(field.FieldType) && field.GetValue(form) is TailwindProvider provider) return provider;
+        return null;
+    }
+
     private static void Style(TailwindProvider provider, Control control, Dictionary<string, int> counts, List<string>? unstyled)
     {
         if (provider.GetClasses(control).Length > 0) return;
@@ -700,7 +867,7 @@ public static class FormWindHarness
     private static void SelfTest(Form form, TailwindProvider provider)
     {
         int index = _forms;
-        var timer = new Timer { Interval = 1500 };
+        var timer = new Timer { Interval = _selfTestDelay };
         int phase = 0;
         timer.Tick += (_, _) =>
         {
@@ -712,6 +879,7 @@ public static class FormWindHarness
             string mode = provider.DarkMode ? "dark" : "light";
             using (var image = Snapshot(form, $"{index:00}-{form.GetType().Name}-{mode}"))
                 if (image != null) AuditScreen(form, image, mode);
+            timer.Interval = 1500;
             if (phase++ == 1)
             {
                 timer.Dispose();
@@ -837,6 +1005,67 @@ internal static class ScreenContrast
     /// </summary>
     public static Bitmap? Capture(Control window)
     {
+        // PW_RENDERFULLCONTENT DWM'nin yüzeyini okur; az önce yapılan çizim (Refresh, yeni gösterilen form) henüz yüzeye
+        // geçmemişse alt kontrolleri çizilmemiş bir kare gelir ve yazılar görüntüde yoktur (sahte SCREEN uyarısı; testte 5
+        // denemenin 2'sinde). Art arda iki kare aynı olana kadar (en çok 4 kez) yeniden alınır.
+        Bitmap? previous = null;
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            try
+            {
+                DwmFlush();
+            }
+            catch (DllNotFoundException)
+            {
+            }
+            catch (EntryPointNotFoundException)
+            {
+            }
+            var current = CaptureOnce(window);
+            if (current is null)
+            {
+                previous?.Dispose();
+                return null;
+            }
+            if (previous != null && SameImage(previous, current))
+            {
+                previous.Dispose();
+                return current;
+            }
+            previous?.Dispose();
+            previous = current;
+            Thread.Sleep(16);
+        }
+        return previous;
+    }
+
+    private static bool SameImage(Bitmap a, Bitmap b)
+    {
+        if (a.Size != b.Size) return false;
+        var area = new Rectangle(Point.Empty, a.Size);
+        var da = a.LockBits(area, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        var db = b.LockBits(area, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        try
+        {
+            int length = da.Stride * a.Height;
+            var ba = new byte[length];
+            var bb = new byte[length];
+            System.Runtime.InteropServices.Marshal.Copy(da.Scan0, ba, 0, length);
+            System.Runtime.InteropServices.Marshal.Copy(db.Scan0, bb, 0, length);
+            // .NET Framework uygulamalarına kaynak olarak da eklenir: Span kullanılmaz.
+            for (int i = 0; i < length; i++)
+                if (ba[i] != bb[i]) return false;
+            return true;
+        }
+        finally
+        {
+            a.UnlockBits(da);
+            b.UnlockBits(db);
+        }
+    }
+
+    private static Bitmap? CaptureOnce(Control window)
+    {
         if (window is Form { TopLevel: false }) return null;
         if (!window.IsHandleCreated || !GetWindowRect(window.Handle, out var rect)) return null;
         int width = rect.Right - rect.Left, height = rect.Bottom - rect.Top;
@@ -856,6 +1085,9 @@ internal static class ScreenContrast
             }
             // Pencerenin DWM yüzeyi henüz hazır değilken (örn. yeni gösterilmiş) PrintWindow başarılı dönüp istemci alanını
             // düz siyah verebilir; zemini siyah olmayan pencerede böyle bir görüntü başarısız sayılır.
+            // RightToLeftLayout'lu (WS_EX_LAYOUTRTL) pencerenin görüntüsü aynalı gelir; ekrandaki gibi çevrilir. Yoksa yazılar ters
+            // okunur ve kontrollerin ekran dikdörtgenleri görüntüde yanlış yere düşer (sahte SCREEN uyarıları).
+            if (ok && window is Form { RightToLeftLayout: true, RightToLeft: RightToLeft.Yes }) bitmap.RotateFlip(RotateFlipType.RotateNoneFlipX);
             if (ok && !(window.BackColor.ToArgb() != Color.Black.ToArgb() && ClientIsBlack(window, bitmap, new Point(rect.Left, rect.Top)))) return bitmap;
         }
         bitmap.Dispose();
@@ -946,4 +1178,7 @@ internal static class ScreenContrast
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmFlush();
 }
