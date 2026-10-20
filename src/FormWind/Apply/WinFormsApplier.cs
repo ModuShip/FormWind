@@ -32,6 +32,8 @@ public class WinFormsApplier : IStyleApplier
 
         var (back, fore) = ColorTargets(control, style, context);
         ApplyColors(control, back, fore, original, applied, TransitionDuration(control, style, context), context.DesignMode);
+        // RTF olarak yüklenen metnin "otomatik" rengi ForeColor yerine sistem yazı rengiyle çizilir (bkz. TwRichTextColor).
+        if (!context.DesignMode && control is RichTextBox rich) TwRichTextColor.Update(rich, fore.HasValue);
         ApplyFont(control, style, original, applied, context.Theme);
         ApplySpacing(control, style, original, applied, context.Scale);
         if (!context.DesignMode) WatchSpacing(control, applied);
