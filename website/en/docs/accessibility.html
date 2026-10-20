@@ -25,7 +25,7 @@ description: UI Automation for owner-drawn controls, Windows High Contrast suppo
 <p>When a Windows contrast theme is on, FormWind uses system colors instead of class colors:</p>
 <ul>
   <li>Backgrounds and text return to their system values; selected and hovered parts get the highlight color.</li>
-  <li>Borders and separators are drawn in the text color; shadows, gradients and transitions are not drawn. Borderless <code>TwButton</code>s get a 1 px border.</li>
+  <li>Borders and separators are drawn in the text color; shadows, gradients and transitions are not drawn. Borderless <code>TwButton</code>s get a 1 px border. Standard buttons with a background class also get a border in the system text color (before, they looked like plain text).</li>
   <li>Spacing, font size, corners and layout stay. Styles are reapplied when the mode changes.</li>
   <li>Use <code>forced-colors:</code> for colors specific to this mode, as in Tailwind: <code>forced-colors:border-2</code>.</li>
   <li>Opt out with <code>RespectHighContrast = false</code>; read the state from <code>HighContrastActive</code> in code that draws itself.</li>

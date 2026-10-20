@@ -38,6 +38,9 @@ public sealed class TwOriginal
     public FlatStyle? FlatStyle { get; private set; }
     public int? FlatBorderSize { get; private set; }
 
+    /// <summary>A button's <c>FlatAppearance.BorderColor</c> (empty = the default).</summary>
+    internal Color FlatBorderColor { get; private set; }
+
     /// <summary>A button's <c>UseVisualStyleBackColor</c>; <c>null</c> when it is not set explicitly.</summary>
     public bool? UseVisualStyleBackColor { get; private set; }
 
@@ -70,6 +73,7 @@ public sealed class TwOriginal
         {
             original.FlatStyle = button.FlatStyle;
             original.FlatBorderSize = button.FlatAppearance.BorderSize;
+            original.FlatBorderColor = button.FlatAppearance.BorderColor;
             if (IsExplicit(control, null, nameof(ButtonBase.UseVisualStyleBackColor))) original.UseVisualStyleBackColor = button.UseVisualStyleBackColor;
         }
 

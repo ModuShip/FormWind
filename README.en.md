@@ -751,7 +751,7 @@ $env:FORMWIND_UIA = "1"; dotnet test tests/FormWind.Tests -f net472 --filter Cat
 When High Contrast is on in Windows (Settings → Accessibility → Contrast themes), FormWind uses system colors instead of class colors:
 
 - Control backgrounds and text return to their original (system) values; selected and hovered parts (`selected:`, `item:hover:`, `row:hover:`) get the highlight color (`Highlight`).
-- Borders and separators from classes are drawn in the text color; shadows, gradients and color transitions are not drawn. `TwButton`s without a border get a 1 px border.
+- Borders and separators from classes are drawn in the text color; shadows, gradients and color transitions are not drawn. `TwButton`s without a border get a 1 px border. Standard buttons with a background class (FormWind makes them flat) also get a border in the system text color; before, once the background returned to the system color they looked like plain text.
 - Spacing, font size, corners and layout do not change. If the mode changes while the application runs, styles are reapplied.
 - Colors specific to this mode are given with the `forced-colors:` variant (as in Tailwind): `forced-colors:border-2`.
 - To turn this off, set `TailwindProvider.RespectHighContrast = false`. Whether the mode is active can be read from `HighContrastActive`; code that draws by itself (e.g. badge colors in `DrawItem`) should check it.

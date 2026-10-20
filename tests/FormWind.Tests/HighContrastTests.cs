@@ -139,4 +139,34 @@ public class HighContrastTests
             TwHighContrast.Override = null;
         }
     });
+
+    // Görsel stiller kapalı ve Yüksek Karşıtlık denemesinde bulundu: zemin class'ı olan standart buton düz stile geçip
+    // kenarlığını kaybediyordu; Yüksek Karşıtlık'ta zemin sistem rengine dönünce düz yazıya benziyordu. Sistem yazı renginde
+    // kenarlık alır; Yüksek Karşıtlık kapanınca özgün kenarlık döner.
+    [Fact]
+    public void Flat_standard_buttons_keep_a_border_in_high_contrast() => Sta.Run(() =>
+    {
+        try
+        {
+            using var provider = new TailwindProvider();
+            using var button = new Button { Text = "Kaydet" };
+            provider.SetClasses(button, "btn-primary");
+            Assert.Equal(0, button.FlatAppearance.BorderSize);
+
+            TwHighContrast.Override = true;
+            TwHighContrast.NotifyChanged();
+            Assert.Equal(FlatStyle.Flat, button.FlatStyle);
+            Assert.True(button.FlatAppearance.BorderSize >= 1);
+            Assert.Equal(SystemColors.ControlText.ToArgb(), button.FlatAppearance.BorderColor.ToArgb());
+
+            TwHighContrast.Override = false;
+            TwHighContrast.NotifyChanged();
+            Assert.Equal(0, button.FlatAppearance.BorderSize);
+            Assert.True(button.FlatAppearance.BorderColor.IsEmpty);
+        }
+        finally
+        {
+            TwHighContrast.Override = null;
+        }
+    });
 }

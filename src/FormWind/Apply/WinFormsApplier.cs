@@ -42,7 +42,7 @@ public class WinFormsApplier : IStyleApplier
         ApplyTextAlign(control, style);
         ApplyCursor(control, style, original, applied);
         if (!context.DesignMode) ApplyHidden(control, style, applied);
-        ApplyFlatButton(control, style, original, applied);
+        ApplyFlatButton(control, style, original, applied, (context.State & TwState.HighContrast) != 0, context.Scale);
         if (control is Button || control is CheckBox || control is RadioButton || control is Label and not LinkLabel || control is GroupBox)
         {
             var disabledState = (context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible)) | TwState.Disabled;
@@ -724,14 +724,17 @@ public class WinFormsApplier : IStyleApplier
     }
 
     // Flat buton hover'da kendi rengini üretir; hesapladığımız renge sabitlenir.
-    private static void ApplyFlatButton(Control control, TwStyle style, TwOriginal original, Applied applied)
+    private static void ApplyFlatButton(Control control, TwStyle style, TwOriginal original, Applied applied, bool highContrast, float scale)
     {
         if (control is not Button button || control is ITwChrome) return;
 
         if (style.BackColor.HasValue || style.HasChrome)
         {
             button.FlatStyle = FlatStyle.Flat;
-            button.FlatAppearance.BorderSize = 0;
+            // Yüksek Karşıtlık'ta zemin sistem rengine döner; kenarlıksız düz buton düz yazıya benziyordu (TwButton'daki gibi
+            // sistem yazı renginde kenarlık alır).
+            button.FlatAppearance.BorderSize = highContrast ? Math.Max(1, (int)Math.Floor(scale)) : 0;
+            button.FlatAppearance.BorderColor = highContrast ? SystemColors.ControlText : original.FlatBorderColor;
             button.FlatAppearance.MouseOverBackColor = button.BackColor;
             button.FlatAppearance.MouseDownBackColor = button.BackColor;
             applied.FlatButton = true;
@@ -740,6 +743,7 @@ public class WinFormsApplier : IStyleApplier
         {
             button.FlatStyle = original.FlatStyle ?? FlatStyle.Standard;
             button.FlatAppearance.BorderSize = original.FlatBorderSize ?? 1;
+            button.FlatAppearance.BorderColor = original.FlatBorderColor;
             button.FlatAppearance.MouseOverBackColor = Color.Empty;
             button.FlatAppearance.MouseDownBackColor = Color.Empty;
             applied.FlatButton = false;
