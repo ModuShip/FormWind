@@ -26,6 +26,12 @@ internal sealed class TabControlApplier : WinFormsApplier
     /// <summary>Whether FormWind draws the tabs (not reported by <see cref="TwContrast.FindOwnerDrawn"/>).</summary>
     internal static bool IsPainted(TabControl tabs) => Painters.TryGetValue(tabs, out var painter) && painter.Active;
 
+    /// <summary>Paints FormWind's tab strip into <paramref name="graphics"/> (tests; the window paints after Windows).</summary>
+    internal static void PaintTo(TabControl tabs, Graphics graphics)
+    {
+        if (Painters.TryGetValue(tabs, out var painter) && painter.Active) painter.PaintChrome(graphics);
+    }
+
     public override void Apply(Control control, TwStyle style, TwApplyContext context)
     {
         var tabs = (TabControl)control;
@@ -112,7 +118,7 @@ internal sealed class TabControlApplier : WinFormsApplier
             }
         }
 
-        private void PaintChrome(Graphics graphics)
+        public void PaintChrome(Graphics graphics)
         {
             var client = _tabs.ClientRectangle;
             var display = _tabs.DisplayRectangle;
@@ -128,7 +134,14 @@ internal sealed class TabControlApplier : WinFormsApplier
                 graphics.FillRectangle(brush, strip);
             for (int i = 0; i < _tabs.TabCount; i++)
                 if (i != _tabs.SelectedIndex) DrawTab(graphics, i, _tabs.GetTabRect(i));
-            if (_tabs.SelectedIndex >= 0) DrawTab(graphics, _tabs.SelectedIndex, _tabs.GetTabRect(_tabs.SelectedIndex));
+            if (_tabs.SelectedIndex >= 0)
+            {
+                var selected = _tabs.GetTabRect(_tabs.SelectedIndex);
+                DrawTab(graphics, _tabs.SelectedIndex, selected);
+                // Windows'un odak çerçevesi şeritle birlikte örtülür; klavye ipuçları açıkken yeniden çizilir.
+                if (_tabs.Focused && TwFocusCues.Shown(_tabs))
+                    ControlPaint.DrawFocusRectangle(graphics, Rectangle.Inflate(selected, -3, -3), SelectedFore ?? Fore ?? _tabs.ForeColor, SelectedBack ?? Back ?? Under);
+            }
         }
 
         // Sekmelerin bulunduğu şerit: hizalamaya göre sayfa alanının dışındaki bant.
@@ -156,17 +169,19 @@ internal sealed class TabControlApplier : WinFormsApplier
             using (var brush = new SolidBrush(back))
                 graphics.FillRectangle(brush, bounds);
 
-            var text = tab;
-            if (_tabs.ImageList is ImageList images && ImageIndex(page, images) is int image)
-            {
-                var picture = images.Images[image];
-                int y = text.Top + (text.Height - picture.Height) / 2;
-                graphics.DrawImage(picture, text.Left + 4, y, picture.Width, picture.Height);
-                text = Rectangle.FromLTRB(text.Left + 4 + picture.Width, text.Top, text.Right, text.Bottom);
-            }
-            var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine
+            // Windows'un yerleşimi: ikon, Padding.X kadar boşluk ve yazı birlikte sekmeye ortalanır; yazı iç boşluksuz
+            // çizilir. TextRenderer'ın varsayılan boşluğu Windows'un sığdırdığı yazıyı yüksek DPI'da "…" ile kısaltıyordu.
+            var flags = TextFormatFlags.SingleLine | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding
                 | TextFormatFlags.EndEllipsis | TextFormatFlags.HidePrefix;
+            // RTL'de de (aynalanmamış pencerede Windows sırayı ve ikonun yerini değiştirmez) ikon yazının solundadır.
             if (_tabs.RightToLeft == RightToLeft.Yes) flags |= TextFormatFlags.RightToLeft;
+            var picture = _tabs.ImageList is ImageList images && ImageIndex(page, images) is int image ? images.Images[image] : null;
+            int gap = picture is null ? 0 : picture.Width + _tabs.Padding.X;
+            int content = gap + TextRenderer.MeasureText(graphics, page.Text, _tabs.Font, new Size(int.MaxValue, int.MaxValue), flags & ~TextFormatFlags.EndEllipsis).Width;
+            int start = tab.Left + System.Math.Max(0, (tab.Width - content) / 2);
+            if (picture != null)
+                graphics.DrawImage(picture, start, tab.Top + (tab.Height - picture.Height) / 2, picture.Width, picture.Height);
+            var text = Rectangle.FromLTRB(start + gap, tab.Top, tab.Right, tab.Bottom);
             TextRenderer.DrawText(graphics, page.Text, _tabs.Font, text, fore, flags);
 
             if (selected && Accent is Color accent)

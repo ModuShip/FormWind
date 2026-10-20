@@ -117,6 +117,14 @@ internal sealed class TwComboPainter : NativeWindow
         int em = TwIconRenderer.EmPixels(combo.Font.SizeInPoints * 0.85f, TwDpi.DeviceDpi(combo));
         var chevronBounds = new Rectangle(bounds.Width - chevron - (int)Math.Ceiling(_chrome.BorderRight), 0, chevron, bounds.Height);
         TwIconRenderer.DrawIcon(g, "chevron-down", em, chevronBounds, fore);
+
+        // Native kutu odaktayken seçili metni vurgular; FormWind'in kutusunda klavye ipuçları açıkken odak çerçevesi çizilir.
+        if (combo.Focused && !combo.DroppedDown && TwFocusCues.Shown(combo))
+        {
+            int inset = (int)Math.Ceiling(_chrome.BorderLeft) + (int)Math.Round(3 * scale);
+            var focus = Rectangle.FromLTRB(inset, inset, chevronBounds.Left, bounds.Height - inset);
+            ControlPaint.DrawFocusRectangle(g, focus, combo.ForeColor, combo.BackColor);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
