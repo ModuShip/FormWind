@@ -5,7 +5,29 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.1-preview.1] - 2026-10-20
+
 ### Added
+
+- `TwAutoTheme.Install` styles an existing application with one call in `Program.Main`: every form that opens gets a
+  provider with `AutoStyle` (`DarkMode`, `FollowWindowsTheme`, `Filter`, `FormAttached`, `GetProvider`); forms that
+  already have a provider are left to it.
+- `text-*` sizes follow Windows' text size setting (Accessibility → Text size), like `rem` sizes in a browser
+  (`TwFonts.RespectTextScale`, on by default).
+- Standard `DateTimePicker` is painted dark on a dark background (edit area, buttons and drop-down calendar) and gets the
+  `select` component from `AutoStyle`; `NumericUpDown`/`DomainUpDown` get `input`.
+- A dark `DropDownList` `ComboBox` without border classes is painted with a 1 px border instead of staying light.
+- Keyboard focus rectangles are drawn on FormWind's tab strip and `DropDownList` box while Windows shows focus cues.
+- `formwind-convert <folder> --audit [--report file.md]`: a read-only scan before migrating that lists code to check by
+  hand (colors set in code, list item colors, owner-drawn controls, fixed-size buttons with images, `SetWindowTheme`,
+  RTF).
+- `build/FormWind.targets` copies the theme file to the output and publish folders (`FormWindCopyTheme`) and turns on
+  binding redirects for old-style .NET Framework projects, which failed at startup without them.
+- Harness: `FORMWIND_MENU` opens forms through the application's own menu items, `FORMWIND_DPI` (`-Dpi`) moves styled
+  forms to another DPI, `FORMWIND_SELFTEST_DELAY` waits before the first capture; applications that already use FormWind
+  keep their own provider and are audited instead of restyled.
+- FormWind can be used by an application's plugin (e.g. KeePass): on .NET Framework, dependencies that the host has no
+  binding redirects for are loaded from FormWind's folder (see "Plugins and shared processes" in the README).
 
 - `AutoStyle` leaves controls whose background was copied from their parent (typical of application theme engines) to
   follow the parent's new background (`FollowParentBackColor`, on by default); `TailwindProvider.InheritCopiedBackColors`
@@ -24,8 +46,33 @@ All notable changes to FormWind are documented in this file. The format follows
 ### Changed
 
 - `transition` no longer animates the first application of classes; theme, state and class changes still animate.
+- Disabled `TextBox` and `MaskedTextBox` keep the classes' colors (Windows follows their background while disabled);
+  only `RichTextBox` falls back to Windows' disabled look.
+- `DarkToolTips` darkens only the tooltips of forms the provider styles; it was thread-wide, so a plugin also darkened
+  the host's tooltips.
+- In High Contrast, Windows draws tab strips, progress bars, title bars, tooltips, link colors and native themes again.
+- Invalid theme files throw `FormatException` (the cause is in `InnerException`) instead of `JsonException` or
+  `InvalidOperationException`.
 
 ### Fixed
+
+- The design-time preview no longer writes its values (flat style, `UseVisualStyleBackColor`, link colors, grid cell
+  styles and fonts) to Designer.cs, and turning the preview off restores the controls.
+- Standard buttons with a background class keep a border in High Contrast (they looked like plain text).
+- With visual styles off, the dark ListView header text is left alone (it was light text on the classic light header).
+- Colors the application resets to their default (`ResetBackColor`) go back to the classes.
+- Disabled `GroupBox` captions, `ListView`s and editable `ComboBox`es are drawn in readable colors in dark mode.
+- RTF text without a color table in `RichTextBox` takes the class text color instead of black.
+- ListView and TreeView keep the dark theme when the application sets its own (`SetWindowTheme`); ListView header cells
+  left to Windows in owner-drawn lists get the text color.
+- PropertyGrid expand glyphs are visible on dark category rows.
+- DataGridView: columns with the application's own background keep a readable text color; row errors are shown when
+  row headers are hidden; the contrast audit no longer treats FormWind's own grid handlers as owner drawing.
+- Button padding leaves room for an image beside the text and for docked `AutoSize` buttons.
+- `AutoStyle` follows copied backgrounds when the container got its classes first.
+- Very large arbitrary values (`w-[99999999999px]`) and `text-[0px]` are ignored instead of throwing.
+- Destroyed native tooltip windows are forgotten, so a reused handle is themed again.
+- Adding many controls one by one with `AutoStyle` no longer slows down quadratically.
 
 - Disabled standard `Label` text is redrawn in a readable color when the classes set the text color.
 - Disabled standard `CheckBox` and `RadioButton` text is redrawn in a readable color when the classes set the text
@@ -108,5 +155,6 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.0-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.1-preview.1...HEAD
+[0.1.1-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.0-preview.1...v0.1.1-preview.1
 [0.1.0-preview.1]: https://github.com/ModuShip/FormWind/releases/tag/v0.1.0-preview.1
