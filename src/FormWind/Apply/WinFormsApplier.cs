@@ -608,20 +608,39 @@ public class WinFormsApplier : IStyleApplier
         control.SizeChanged += refit;
         control.FontChanged += refit;
         control.TextChanged += refit;
+        // Görselin değiştiğini bildiren olay yok; KeePass görseli form yüklenirken atar. Form görünür olunca yeniden ölçülür.
+        control.VisibleChanged += refit;
     }
 
     internal static Padding FitToText(Control control, Padding desired)
     {
-        if (control.AutoSize || string.IsNullOrEmpty(control.Text)) return desired;
+        // AutoSize kontrol padding'e göre büyür; ama kenetlendiği (Dock) eksende boyutunu ebeveyn belirler. Bulk Crap
+        // Uninstaller'ın sihirbazında Dock=Right, AutoSize butonlar 28 px'te kaldı ve btn'in dikey boşluğu yazıyı kırptı.
+        bool fixedWidth = !control.AutoSize || control.Dock is DockStyle.Top or DockStyle.Bottom or DockStyle.Fill;
+        bool fixedHeight = !control.AutoSize || control.Dock is DockStyle.Left or DockStyle.Right or DockStyle.Fill;
+        if (!fixedWidth && !fixedHeight || string.IsNullOrEmpty(control.Text)) return desired;
 
         var text = MeasureSingleLine(control);
         // Buton yazıyı kenarlık ve odak çerçevesi kadar içeriden çizer (flat butonda her eksende ~8 px).
         bool button = control is ButtonBase;
         int roomX = control.ClientSize.Width - text.Width - (button ? 8 : 0);
         int roomY = control.ClientSize.Height - Math.Max(text.Height, control.Font.Height) - (button ? 8 : 0);
-        var (left, right) = Shrink(desired.Left, desired.Right, roomX);
-        var (top, bottom) = Shrink(desired.Top, desired.Bottom, roomY);
+        // Görsel yazının yanında ya da üstündeyse onun yeri de ayrılır (KeePass'in görselli "Araçlar" butonunda yazı kesiliyordu).
+        if (control is ButtonBase { TextImageRelation: not TextImageRelation.Overlay } withImage && ImageSize(withImage) is { IsEmpty: false } image)
+        {
+            if (withImage.TextImageRelation is TextImageRelation.ImageBeforeText or TextImageRelation.TextBeforeImage) roomX -= image.Width;
+            else roomY -= image.Height;
+        }
+        var (left, right) = fixedWidth ? Shrink(desired.Left, desired.Right, roomX) : (desired.Left, desired.Right);
+        var (top, bottom) = fixedHeight ? Shrink(desired.Top, desired.Bottom, roomY) : (desired.Top, desired.Bottom);
         return new Padding(left, top, right, bottom);
+    }
+
+    private static Size ImageSize(ButtonBase button)
+    {
+        if (button.Image != null) return button.Image.Size;
+        if (button.ImageList != null && (button.ImageIndex >= 0 || !string.IsNullOrEmpty(button.ImageKey))) return button.ImageList.ImageSize;
+        return Size.Empty;
     }
 
     private static readonly ConditionalWeakTable<Control, TextMeasure> Measures = new ConditionalWeakTable<Control, TextMeasure>();

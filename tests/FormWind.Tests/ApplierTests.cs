@@ -561,6 +561,25 @@ public class ApplierTests
         Assert.Equal(4, button.Padding.Top);
     }
 
+    // KeePass 2.61.1 denemesi: giriş penceresindeki 80 px'lik görselli "Araçlar" butonunda yazı "To" olarak kesiliyordu;
+    // görsel yazının yanında yer kaplar. Görsel form yüklenirken atanır: form görünür olunca yeniden ölçülür.
+    [Fact]
+    public void Button_padding_leaves_room_for_the_image_beside_the_text() => Sta.Run(() =>
+    {
+        using var image = new Bitmap(16, 16);
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var button = new Button { Text = "T&ools", Size = new Size(80, 23), TextImageRelation = TextImageRelation.ImageBeforeText };
+        form.Controls.Add(button);
+        Apply(button, TwOriginal.Capture(button, false), "px-4 py-2 text-sm");
+        button.Image = image;
+        form.Show();
+
+        var text = TextRenderer.MeasureText(button.Text, button.Font, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.SingleLine);
+        Assert.True(button.ClientSize.Width - button.Padding.Horizontal - 8 >= text.Width + image.Width,
+            $"padding {button.Padding} leaves less than text {text.Width} + image {image.Width}");
+        form.Close();
+    });
+
     [Fact]
     public void Trimmed_padding_returns_when_button_grows()
     {
@@ -571,6 +590,23 @@ public class ApplierTests
         button.Height = 60;
 
         Assert.Equal(new Padding(16, 8, 16, 8), button.Padding);
+    }
+
+    // Bulk Crap Uninstaller'ın sihirbazı: Dock=Right, AutoSize butonun yüksekliğini panel belirler (28 px); btn'in dikey
+    // boşluğu yazıyı alttan kırpıyordu. Genişlik AutoSize'a kalır, yükseklikteki boşluk kısılır.
+    [Fact]
+    public void Docked_auto_size_buttons_trim_padding_on_the_axis_the_parent_sets()
+    {
+        using var panel = new Panel { Size = new Size(400, 54), Padding = new Padding(13) };
+        var button = new Button { Text = "Devam", AutoSize = true, Dock = DockStyle.Right };
+        panel.Controls.Add(button);
+        Apply(button, TwOriginal.Capture(button, false), "px-4 py-2 text-sm");
+
+        Assert.Equal(28, button.Height);
+        Assert.Equal(16, button.Padding.Left);                                              // genişlik AutoSize
+        Assert.True(button.Padding.Vertical < 16, $"padding {button.Padding}");
+        var text = TextRenderer.MeasureText(button.Text, button.Font, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.SingleLine);
+        Assert.True(button.ClientSize.Height - button.Padding.Vertical >= Math.Max(text.Height, button.Font.Height) + 8 - 1);
     }
 
     [Fact]
