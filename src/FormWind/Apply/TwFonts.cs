@@ -82,6 +82,25 @@ public static class TwFonts
         return Installed.Value.Contains(family);
     }
 
+    private static bool _respectTextScale = true;
+
+    /// <summary>
+    /// Multiplies <c>text-*</c> sizes by Windows' text size setting (Settings → Accessibility → Text size, 100–225 %), like
+    /// <c>rem</c> sizes in a browser. Windows enlarges the system fonts by it, so controls keeping WinForms' default font
+    /// already grow; without this, a <c>text-*</c> class would shrink the user's larger text back. Spacing and sizes are not
+    /// multiplied. On by default; changing it reapplies the styles of every provider.
+    /// </summary>
+    public static bool RespectTextScale
+    {
+        get => _respectTextScale;
+        set
+        {
+            if (_respectTextScale == value) return;
+            _respectTextScale = value;
+            TwTextScale.NotifyChanged();
+        }
+    }
+
     /// <summary>The system UI font used when no family is found (usually Segoe UI).</summary>
     public static string DefaultFamily { get; } = SystemFonts.MessageBoxFont?.FontFamily.Name ?? "Segoe UI";
 
@@ -134,13 +153,14 @@ public static class TwFonts
     /// <param name="theme">The theme for weight families.</param>
     /// <param name="pixelScale">
     /// Multiplier for <c>text-*</c> sizes: <see cref="TwDpi.FontScale"/> when, under PerMonitorV2, the control's screen differs
-    /// from the system DPI. A size taken from the base font already matches that screen and is not multiplied.
+    /// from the system DPI. A size taken from the base font already matches that screen and is not multiplied. <c>text-*</c>
+    /// sizes are also multiplied by Windows' text size setting (<see cref="RespectTextScale"/>).
     /// </param>
     [Experimental(TwExperimental.DiagnosticId, UrlFormat = TwExperimental.UrlFormat)]
     public static Font Create(TwStyle style, Font baseFont, TwTheme theme, float pixelScale)
     {
         var family = ResolveFamily(style.FontFamily ?? baseFont.FontFamily.Name);
-        var size = style.FontSizePx is float px ? px * 0.75f * pixelScale : baseFont.SizeInPoints;
+        var size = style.FontSizePx is float px ? px * 0.75f * pixelScale * TwTextScale.Factor : baseFont.SizeInPoints;
         var weight = style.FontWeight ?? (baseFont.Bold ? 700 : 400);
         var (face, bold) = theme.ResolveFontWeight(family, weight);
 

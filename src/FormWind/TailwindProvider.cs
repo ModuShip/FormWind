@@ -47,6 +47,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         _hoverTimer.Tick += OnHoverTick;
         TwTheme.CurrentChanged += OnCurrentThemeChanged;
         TwHighContrast.Changed += OnHighContrastChanged;
+        TwTextScale.Changed += OnTextScaleChanged;
         TwFocusVisible.EnsureInstalled();
     }
 
@@ -144,6 +145,9 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     /// <summary>Control-independent state: dark mode and High Contrast.</summary>
     internal TwState BaseState =>
         (_darkMode ? TwState.Dark : TwState.None) | (HighContrastActive ? TwState.HighContrast : TwState.None);
+
+    // Windows'un metin boyutu değişti (ya da TwFonts.RespectTextScale): text-* boyutları yeniden hesaplanır.
+    private void OnTextScaleChanged(object? sender, EventArgs e) => RefreshAll();
 
     private void OnHighContrastChanged(object? sender, EventArgs e)
     {
@@ -739,6 +743,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         {
             TwTheme.CurrentChanged -= OnCurrentThemeChanged;
             TwHighContrast.Changed -= OnHighContrastChanged;
+            TwTextScale.Changed -= OnTextScaleChanged;
             TwNativeToolTips.SetDark(this, false);
             _hoverTimer.Dispose();
             UnhookAutoContainers();

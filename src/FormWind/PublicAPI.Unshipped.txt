@@ -15,3 +15,5 @@ FormWind.TwColors.Border.get -> System.Drawing.Color?
 FormWind.TwColors.Fill.get -> System.Drawing.Color?
 FormWind.TwColors.Fore.get -> System.Drawing.Color?
 override FormWind.TwColors.ToString() -> string!
+static FormWind.TwFonts.RespectTextScale.get -> bool
+static FormWind.TwFonts.RespectTextScale.set -> void
