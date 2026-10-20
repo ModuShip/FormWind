@@ -17,3 +17,20 @@ FormWind.TwColors.Fore.get -> System.Drawing.Color?
 override FormWind.TwColors.ToString() -> string!
 static FormWind.TwFonts.RespectTextScale.get -> bool
 static FormWind.TwFonts.RespectTextScale.set -> void
+FormWind.TwAutoTheme
+static FormWind.TwAutoTheme.DarkMode.get -> bool
+static FormWind.TwAutoTheme.DarkMode.set -> void
+static FormWind.TwAutoTheme.DarkModeChanged -> System.EventHandler?
+static FormWind.TwAutoTheme.Filter.get -> System.Func<System.Windows.Forms.Form!, bool>?
+static FormWind.TwAutoTheme.Filter.set -> void
+static FormWind.TwAutoTheme.FollowWindowsTheme.get -> bool
+static FormWind.TwAutoTheme.FollowWindowsTheme.set -> void
+static FormWind.TwAutoTheme.FormAttached -> System.EventHandler<FormWind.TwAutoThemeEventArgs!>?
+static FormWind.TwAutoTheme.GetProvider(System.Windows.Forms.Form! form) -> FormWind.TailwindProvider?
+static FormWind.TwAutoTheme.Install(string? themeFile = null) -> void
+static FormWind.TwAutoTheme.IsInstalled.get -> bool
+static FormWind.TwAutoTheme.Uninstall() -> void
+static FormWind.TwAutoTheme.WindowsUsesDarkMode() -> bool
+FormWind.TwAutoThemeEventArgs
+FormWind.TwAutoThemeEventArgs.Form.get -> System.Windows.Forms.Form!
+FormWind.TwAutoThemeEventArgs.Provider.get -> FormWind.TailwindProvider!
