@@ -59,6 +59,17 @@ jobs:
         env:
           FORMWIND_UIA: "1"
 
+      # WPF ile birlikte çalışma: .NET Framework'te ilk WPF penceresi süreci DPI farkında yapar; ayrı süreçte çalışır.
+      - name: Test (WPF interop, net472)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net472 --filter Category=Wpf
+        env:
+          FORMWIND_WPF: "1"
+
+      - name: Test (WPF interop, net10.0-windows)
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net10.0-windows --filter Category=Wpf
+        env:
+          FORMWIND_WPF: "1"
+
       - name: Check visual baselines
         if: always()
         shell: pwsh

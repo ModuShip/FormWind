@@ -4,6 +4,8 @@
     <!-- Kütüphane net8.0-windows ile derlenir; testler .NET 9 ve 10 çalışma zamanlarında da çalışır. -->
     <TargetFrameworks>net472;net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- WPF ile birlikte çalışma testleri (WindowsFormsHost, ElementHost, WPF Dispatcher'ı altında WinForms). -->
+    <UseWPF>true</UseWPF>
     <IsTestProject>true</IsTestProject>
     <!-- FW9001: testler deneysel genişletme noktalarını (TwStyle, IStyleApplier …) doğrudan kullanır. -->
     <NoWarn>$(NoWarn);FW9001</NoWarn>
