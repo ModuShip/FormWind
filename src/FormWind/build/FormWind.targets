@@ -5,16 +5,60 @@
     Designer) previews the forms with the project's colors and components. The application keeps loading the file at run time
     (TwTheme.LoadIfExists); the embedded copy is only read by the Designer.
 
+    The theme file is also copied to the output and publish folders as tw.config.json, unless the project already copies it
+    (a None or Content item for the file with CopyToOutputDirectory).
+
     FormWindThemeFile: path of the theme file (default: tw.config.json in the project folder).
     FormWindEmbedTheme: false turns the embedding off.
+    FormWindCopyTheme: false turns the copying off.
   -->
   <PropertyGroup>
     <FormWindEmbedTheme Condition="'$(FormWindEmbedTheme)' == ''">true</FormWindEmbedTheme>
+    <FormWindCopyTheme Condition="'$(FormWindCopyTheme)' == ''">true</FormWindCopyTheme>
     <FormWindThemeFile Condition="'$(FormWindThemeFile)' == ''">$(MSBuildProjectDirectory)\tw.config.json</FormWindThemeFile>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(FormWindEmbedTheme)' == 'true' and Exists('$(FormWindThemeFile)')">
     <EmbeddedResource Include="$(FormWindThemeFile)" LogicalName="FormWind.tw.config.json" WithCulture="false" Visible="false" />
   </ItemGroup>
+
+  <!--
+    .NET Framework: FormWind's dependencies (System.Text.Json …) need binding redirects. SDK-style projects generate them for
+    applications; old-style projects (KeePass) did not, and the application failed at startup. The GenerateBindingRedirects
+    target reads this property when it runs, so setting it here (after the project) is enough; a project that sets it keeps
+    its value.
+  -->
+  <PropertyGroup Condition="'$(AutoGenerateBindingRedirects)' == ''">
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <!--
+    The generated redirects go into the project's app.config (AppConfig), or into a new <app>.exe.config. An application that
+    ships its own config file from another folder (KeePass: ..\Ext\KeePass.exe.config, copied after the build) and has no
+    AppConfig got a config without its own settings. Warn when such a file is found next to the project.
+  -->
+  <Target Name="_FormWindCheckAppConfig" BeforeTargets="GenerateBindingRedirects"
+          Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(AutoGenerateBindingRedirects)' == 'true' and '$(AppConfig)' == '' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe')">
+    <ItemGroup>
+      <_FormWindOwnConfig Include="$(MSBuildProjectDirectory)\*\$(TargetFileName).config;$(MSBuildProjectDirectory)\..\*\$(TargetFileName).config"
+                          Exclude="$(MSBuildProjectDirectory)\bin\**;$(MSBuildProjectDirectory)\obj\**;$(OutDir)**" />
+    </ItemGroup>
+    <Warning Condition="'@(_FormWindOwnConfig)' != ''" Code="FW100"
+             Text="FormWind: '@(_FormWindOwnConfig->'%(FullPath)')' looks like the application's own config file, but the project has no AppConfig. Binding redirects for FormWind's dependencies are written to a new $(TargetFileName).config, which does not have the application's settings. Point AppConfig at the file: &lt;AppConfig&gt;path\$(TargetFileName).config&lt;/AppConfig&gt;." />
+  </Target>
+
+  <Target Name="_FormWindCopyTheme" BeforeTargets="AssignTargetPaths" Condition="'$(FormWindCopyTheme)' == 'true' and Exists('$(FormWindThemeFile)')">
+    <PropertyGroup>
+      <_FormWindThemeFullPath>$([System.IO.Path]::GetFullPath('$(FormWindThemeFile)'))</_FormWindThemeFullPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_FormWindThemeCopied Include="@(None)" Condition="'%(None.FullPath)' == '$(_FormWindThemeFullPath)' and '%(None.CopyToOutputDirectory)' != '' and '%(None.CopyToOutputDirectory)' != 'Never'" />
+      <_FormWindThemeCopied Include="@(Content)" Condition="'%(Content.FullPath)' == '$(_FormWindThemeFullPath)' and '%(Content.CopyToOutputDirectory)' != '' and '%(Content.CopyToOutputDirectory)' != 'Never'" />
+    </ItemGroup>
+    <ItemGroup Condition="'@(_FormWindThemeCopied)' == ''">
+      <None Remove="$(FormWindThemeFile)" />
+      <None Include="$(FormWindThemeFile)" Link="tw.config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" Visible="false" />
+    </ItemGroup>
+  </Target>
 
 </Project>
