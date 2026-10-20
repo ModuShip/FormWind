@@ -124,7 +124,8 @@ public class PackageTargetsTests
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         Assert.True(process.ExitCode == 0, output + error.Result);
-        if (!expectWarnings) Assert.DoesNotContain("warning", output + error.Result, StringComparison.OrdinalIgnoreCase);
+        // MSBuild uyarı satırları ": warning XX123:" biçimindedir; İngilizce özetteki "0 Warning(s)" uyarı değildir.
+        if (!expectWarnings) Assert.DoesNotContain(": warning ", output + error.Result, StringComparison.OrdinalIgnoreCase);
         return output + error.Result;
     }
 
