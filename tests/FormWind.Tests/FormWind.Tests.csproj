@@ -60,6 +60,8 @@
     <None Update="Fonts\*" CopyToOutputDirectory="PreserveNewest" />
     <!-- GoldenParseTests: CI'da kaynak yolu /_/ olarak eşlendiğinden dosya çıktıdan okunur. -->
     <None Update="Golden\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- LlmsTxtTests: ajanlara verilen class listesi kodla aynı kalmalı. -->
+    <None Include="..\..\website\llms.txt" Link="llms.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

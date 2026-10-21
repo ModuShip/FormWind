@@ -1,0 +1,69 @@
+# FormWind
+
+> A Tailwind-style styling layer for existing WinForms applications (.NET Framework 4.7.2+ and .NET 8+). Controls stay as they are; a `TailwindProvider` component gives every control a `Classes` string such as `"bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"`. Works with standard controls and Krypton Toolkit (`FormWind.Krypton`).
+
+This file is for coding agents. The class syntax follows Tailwind CSS v3, but only the subset below is recognized. Anything else is reported as an unknown class and ignored. Do not invent classes; check them as described in "Verifying your work".
+
+## Choosing an approach (in this order)
+
+1. **Whole application, no form changes:** in `Program.Main`, before the first form is created, call `TwAutoTheme.Install();`. Every form that opens gets a provider with `AutoStyle` on. Use `TwAutoTheme.DarkMode = true` or `TwAutoTheme.FollowWindowsTheme = true` for dark mode, and `TwAutoTheme.Filter = f => f is not LogForm;` to leave forms out. Do not use this inside plugins hosted by another application.
+2. **One form:** add a `TailwindProvider`, set `provider.ContainerControl = this;` and `provider.AutoStyle = true;`. Each control gets the component mapped to its type (Button → `btn`, TextBox → `input` …).
+3. **Per control:** `provider.SetClasses(control, "…")`. Prefer a component (`btn-primary`, `card`) and add utilities after it. Utilities that come later override earlier ones.
+
+The look comes from a preset in `tw.config.json` next to the exe: `{ "preset": "fluent" }` (`tailwind` (default), `fluent`, `antd`, `material`). Load it before forms open: `TwTheme.Current = TwTheme.LoadIfExists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tw.config.json"));` (`TwAutoTheme.Install` does this for you).
+
+## Components (same names in every preset)
+
+- Buttons: `btn`, `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`, `link`, `link-label`
+- Forms: `input`, `select`, `field`, `toggle`, `range`
+- Surfaces and text: `page`, `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`
+- Data and navigation: `table`, `table-sm`, `table-lg`, `table-striped`, `table-bordered`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties`, `chart`, `stat`
+
+Prefer components over long utility strings: switching presets then restyles the application without touching its classes.
+
+## Utilities
+
+- Colors: `{bg|text|border|divide|ring|ring-offset|shadow|from|via|to|fill|accent}-{color}-{shade}`, optional opacity `/0`–`/100`, arbitrary `bg-[#1e3f6e]`. Colors: slate gray zinc neutral stone red orange amber yellow lime green emerald teal cyan sky blue indigo violet purple fuchsia pink rose, plus `white`, `black`, `transparent`. Shades: 50 100 200 … 900 950. Semantic ramps that follow the preset: `primary`, `surface`, `danger`, `success`, `warning` (prefer these over fixed colors).
+- Typography: `text-xs|sm|base|lg|xl|2xl|3xl|4xl`, `text-[13px]`, `font-thin` … `font-black`, `font-sans`, `font-mono`, `italic`, `underline`, `text-left|center|right`, `truncate`, `whitespace-nowrap`.
+- Spacing: `p-*`, `px-*`, `py-*`, `pt|pr|pb|pl-*` → Padding; `m-*` (used by flex and grid). Units of 4 px: `0 0.5 1 1.5 2 … 12 14 16 20 24`, `px`, `[12px]`.
+- Size: `w-*`, `h-*` (units, `full`, fractions like `1/2`), `min-w-*`, `max-w-*` (units or `xs` … `7xl`).
+- Borders and corners: `border`, `border-0|2|4|8`, `border-x|y|t|r|b|l`, `rounded`, `rounded-none|sm|md|lg|xl|2xl|3xl|full|[10px]`.
+- Effects: `shadow`, `shadow-sm|md|lg|xl|2xl|none`, `ring`, `ring-0|1|2|4|8`, `ring-offset-*`, `bg-gradient-to-r` with `from-*` `via-*` `to-*`, `transition`, `duration-150`, `backdrop-mica|acrylic|tabbed` (forms).
+- Layout (inside `TwPanel`): `flex`, `flex-row`, `flex-col`, `flex-wrap`, `gap-*`, `justify-start|end|center|between|around|evenly`, `items-start|end|center|stretch`, `flex-1`, `flex-none`, `grow`, `shrink-0`, `basis-*`, `self-*`, `grid`, `grid-cols-1`…`12`, `col-span-*`, `grid-rows-*`, `row-span-*`. `Dock` and `Anchor` are ignored inside a flex or grid container.
+- Other: `hidden`, `visible`, `cursor-pointer|default|text`, `group`, `object-cover|contain|fill`, `divide-x`, `divide-y`.
+
+Not supported (do not use): rem values, `opacity-*`, `z-*`, `absolute`/`relative`, `space-x-*`, `leading-*`, `tracking-*`, `text-md`, Tailwind v4-only syntax.
+
+## Variants
+
+States: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `checked:`, `invalid:`, `group-hover:`, `dark:`, `forced-colors:`, `rtl:`, `ltr:`; breakpoints (the form's client width, not the screen's): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`. They combine: `dark:hover:bg-gray-800`.
+
+Parts: `header:`, `cell:`, `row:`, `row-header:`, `alt:`, `selected:`, `match:`, `group:`, `footer:` (DataGridView); `item:`, `menu:` (ToolStrip, MenuStrip, TwSelect); `caption:` (form title bar); `placeholder:` (TwTextBox); `label:`, `hint:`, `error:` (TwField). At most one part per class: `dark:header:bg-gray-800`.
+
+Every light color needs a `dark:` counterpart unless the class is a component (components already have one).
+
+## Controls
+
+Use standard controls first. `Tw*` controls exist where a native control cannot be styled well: `TwButton`, `TwPanel` (also the flex and grid host), `TwTextBox`, `TwField`, `TwSelect`, `TwDatePicker`, `TwCalendar`, `TwNumberBox`, `TwSlider`, `TwSwitch`, `TwCheckBox`, `TwRadioButton`, `TwListBox`, `TwCheckedListBox`, `TwDataList`, `TwTreeView`, `TwTabControl`, `TwTabStrip`, `TwPager`, `TwStepper`, `TwProgress`, `TwPictureBox`, `TwToolTip`; charts `TwChart`, `TwDonutChart`, `TwRingChart`, `TwSparkline`, `TwStat`, `TwHeatmap`, `TwTimeline`; dialogs and toasts through the static `TwDialog` and `TwToast` classes.
+
+## Rules that prevent common mistakes
+
+- Do not assign `BackColor`, `ForeColor`, `Font`, `Padding`, `Margin` or `Cursor` in code on a control that has classes: classes are reapplied on every state change. Analyzer `FW001` warns about this. Express the value as a class instead.
+- On .NET Framework, forms that use `AutoScaleMode.Font` and assign `Font` after `AutoScaleDimensions` are not scaled under PerMonitorV2 (analyzer `FW002`). Use `AutoScaleMode.Dpi`, and `text-*` for font sizes.
+- In `Designer.cs` the generated call is `this.tailwindProvider1.SetClasses(this.btnSave, "btn-primary");`. Keep class strings constant so the analyzers can check them.
+- Colors the application assigns itself are preserved by FormWind; leftover theme code that copies the form's background into every control is handled by `AutoStyle` (`FollowParentBackColor`).
+
+## Verifying your work
+
+- With the `formwind-mcp` server (`dotnet tool install -g FormWind.Mcp --prerelease`): `validate_classes` after writing classes, `explain_classes` to check what dark, hover or disabled resolve to, `render` to look at the control in light and dark mode.
+- `provider.UnknownClasses += (s, e) => …` reports unknown classes; `provider.Theme.SuggestClass("bg-blu-600")` returns the closest known class (`"bg-blue-600"`), variant prefixes included. Without a listener, unknown classes and suggestions go to the Debug output.
+- `provider.Theme.Parse(classes).Unknown` is empty when every class is recognized (experimental API, diagnostic `FW9001`).
+- `TwContrast` audits a form for WCAG contrast in light and dark mode.
+- `tools/run-harness.ps1` runs a real application with FormWind and takes screenshots without changing its source.
+- `formwind-convert --audit` lists the places in an existing application to fix by hand (colors assigned in code, owner-drawn controls).
+
+## Docs
+
+- [README](https://github.com/ModuShip/FormWind/blob/main/README.en.md): full class reference and features
+- [Architecture](https://github.com/ModuShip/FormWind/blob/main/ARCHITECTURE.md): how a class string becomes a style
+- [Presets](https://github.com/ModuShip/FormWind/tree/main/src/FormWind/Presets): theme files in the `tw.config.json` format

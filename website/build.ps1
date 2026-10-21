@@ -108,6 +108,8 @@ foreach ($dir in "assets", "img") { New-Item -ItemType Directory -Force (Join-Pa
 Copy-Item (Join-Path $site "assets/*") (Join-Path $Output "assets") -Recurse
 Copy-Item (Join-Path $repo "docs/*.png") (Join-Path $Output "img")
 Write-Text (Join-Path $Output ".nojekyll") ""
+# Kodlama ajanları için özet (llmstxt.org); LlmsTxtTests class'larını kodla karşılaştırır.
+Copy-Item (Join-Path $site "llms.txt") $Output
 
 $strings = (Read-Text (Join-Path $site "strings.json")) | ConvertFrom-Json
 $header = Read-Text (Join-Path $site "partials/header.html")

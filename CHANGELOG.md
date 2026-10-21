@@ -10,6 +10,8 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwTheme.SuggestClass` returns the closest recognized class for an unknown one, variant prefixes included
   (`hovr:bg-blu-600` → `hover:bg-blue-600`). The Debug output for unknown classes, the class editor and the smart tag
   show the suggestions.
+- `website/llms.txt`: a summary of the classes, components, variants and rules for coding agents, served at the site
+  root and checked against the parser by tests.
 
 ## [0.1.1-preview.1] - 2026-10-20
 
