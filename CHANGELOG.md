@@ -20,6 +20,11 @@ All notable changes to FormWind are documented in this file. The format follows
 - `website/llms.txt`: a summary of the classes, components, variants and rules for coding agents, served at the site
   root and checked against the parser by tests.
 
+### Changed
+
+- `TwDatePicker` opens its calendar in a `TwPopover`: it flips above the field near the bottom of the screen, follows
+  right-to-left layout, and a click on the calendar icon while the calendar is open closes it instead of reopening it.
+
 ## [0.1.1-preview.1] - 2026-10-20
 
 ### Added

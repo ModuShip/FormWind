@@ -8,7 +8,7 @@ namespace FormWind;
 
 /// <summary>
 /// Date picker: a <see cref="TwTextBox"/>-style field with a calendar icon on the right; clicking it (or Alt+↓ / F4) shows a
-/// <see cref="TwCalendar"/> in a drop-down. The date can be typed too; it is parsed with <see cref="Culture"/> on focus loss or Enter.
+/// <see cref="TwCalendar"/> in a <see cref="TwPopover"/>. The date can be typed too; it is parsed with <see cref="Culture"/> on focus loss or Enter.
 /// The field is styled with classes such as <c>input</c>; the calendar with <c>menu:bg-* menu:border-*</c> (window),
 /// <c>selected:bg-* selected:text-*</c> (selected day), <c>item:hover:bg-*</c> (hover), <c>accent-*</c> (today's ring).
 /// </summary>
@@ -22,7 +22,7 @@ public class TwDatePicker : TwTextBox
     private string _format = "d";
     private CultureInfo _culture = CultureInfo.CurrentCulture;
     private TwCalendarColors _calendarColors = new TwCalendarColors();
-    private ToolStripDropDown? _dropDown;
+    private TwPopover? _popover;
     private TwCalendar? _calendar;
 
     public TwDatePicker()
@@ -86,7 +86,7 @@ public class TwDatePicker : TwTextBox
     }
 
     [Browsable(false)]
-    public bool DroppedDown => _dropDown?.Visible == true;
+    public bool DroppedDown => _popover?.IsOpen == true;
 
     /// <summary>The open calendar (<c>null</c> when closed).</summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -103,38 +103,35 @@ public class TwDatePicker : TwTextBox
         }
     }
 
-    public void ShowCalendar()
+    public void ShowCalendar() => EnsurePopover().Show(this);
+
+    private TwPopover EnsurePopover()
+    {
+        if (_popover is not null) return _popover;
+        var calendar = _calendar = new TwCalendar();
+        var popover = _popover = new TwPopover { Content = calendar };
+        popover.Opening += (_, _) => PrepareCalendar(calendar);
+        calendar.DateSelected += (_, _) =>
+        {
+            Value = calendar.SelectedDate;
+            popover.Close();
+            InnerTextBox.Focus();
+        };
+        calendar.Cancelled += (_, _) => popover.Close();
+        return popover;
+    }
+
+    private void PrepareCalendar(TwCalendar calendar)
     {
         Commit();
-        _calendar ??= new TwCalendar();
-        _calendar.Font = Font;
-        _calendar.Culture = _culture;
-        _calendar.Colors = _calendarColors;
-        _calendar.MinDate = MinDate;
-        _calendar.MaxDate = MaxDate;
-        _calendar.Size = _calendar.GetPreferredSize(Size.Empty);
-        _calendar.SelectedDate = _value;
-        if (_value is null) _calendar.DisplayMonth = DateTime.Today;
-
-        if (_dropDown is null)
-        {
-            _dropDown = new ToolStripDropDown { Padding = Padding.Empty, AutoClose = true, DropShadowEnabled = true };
-            _dropDown.Items.Add(new ToolStripControlHost(_calendar) { Margin = Padding.Empty, Padding = Padding.Empty, AutoSize = false, Size = _calendar.Size });
-            _calendar.DateSelected += (_, _) =>
-            {
-                Value = _calendar.SelectedDate;
-                _dropDown.Close();
-                InnerTextBox.Focus();
-            };
-            _calendar.Cancelled += (_, _) => _dropDown.Close();
-        }
-        else
-        {
-            _dropDown.Items[0].Size = _calendar.Size;
-        }
-
-        _dropDown.Show(this, new Point(0, Height + (int)Math.Round(4 * TwDpi.DeviceDpi(this) / 96f)));
-        _calendar.Focus();
+        calendar.Font = Font;
+        calendar.Culture = _culture;
+        calendar.Colors = _calendarColors;
+        calendar.MinDate = MinDate;
+        calendar.MaxDate = MaxDate;
+        calendar.Size = calendar.GetPreferredSize(Size.Empty);
+        calendar.SelectedDate = _value;
+        if (_value is null) calendar.DisplayMonth = DateTime.Today;
     }
 
     /// <summary>Converts the text to a date; if invalid or empty the previous value is written back (empty text clears the value).</summary>
@@ -165,7 +162,8 @@ public class TwDatePicker : TwTextBox
     {
         if (e.Button == MouseButtons.Left && IconBounds().Contains(e.Location))
         {
-            ShowCalendar();
+            // Açıkken simgeye tıklamak takvimi kapatır; tıklama onu zaten kapattıysa yeniden açılmaz.
+            EnsurePopover().Toggle(this);
             return;
         }
         base.OnMouseDown(e);
@@ -181,8 +179,8 @@ public class TwDatePicker : TwTextBox
     {
         if (disposing)
         {
-            _dropDown?.Dispose();
-            _calendar?.Dispose();
+            // Popover içeriği olan takvimi de atar.
+            _popover?.Dispose();
         }
         base.Dispose(disposing);
     }
