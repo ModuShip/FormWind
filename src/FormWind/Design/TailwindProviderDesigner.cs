@@ -326,7 +326,7 @@ internal class TailwindProviderDesigner : ComponentDesigner
             // ClassesEditor'ün uyarısı; metin satırı süreç dışı Designer'da da görünür.
             var unknown = _provider.Theme.Parse(Classes).Unknown;
             if (unknown.Count > 0)
-                items.Add(new DesignerActionTextItem("Unknown classes: " + string.Join(", ", unknown), Section));
+                items.Add(new DesignerActionTextItem("Unknown classes: " + TwSuggestions.Describe(unknown, _provider.Theme), Section));
 
             items.Add(new DesignerActionHeaderItem(ColorsSection));
             items.Add(Field(nameof(Background), "Background", ColorsSection, "bg-*"));

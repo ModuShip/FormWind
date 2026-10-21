@@ -488,6 +488,12 @@ public sealed class TwTheme
 
     public string? GetComponent(string name) => _components.TryGetValue(name, out var classes) ? classes : null;
 
+    /// <summary>
+    /// The closest class this theme recognizes for an unknown one ("did you mean"), variant prefixes included:
+    /// <c>hovr:bg-blu-600</c> → <c>hover:bg-blue-600</c>. <c>null</c> when the class is recognized or nothing is close enough.
+    /// </summary>
+    public string? SuggestClass(string unknownClass) => TwSuggestions.For(unknownClass, this);
+
     /// <summary>Parses a class string. Returns the same result instance for the same (normalized) string.</summary>
     [Experimental(TwExperimental.DiagnosticId, UrlFormat = TwExperimental.UrlFormat)]
     public TwParsed Parse(string? classes)

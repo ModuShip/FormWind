@@ -772,7 +772,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
             handler(this, new TwUnknownClassesEventArgs(control, parsed.Unknown));
             return;
         }
-        Debug.WriteLine($"FormWind: unknown classes on '{control.Name}': {string.Join(", ", parsed.Unknown)}");
+        Debug.WriteLine($"FormWind: unknown classes on '{control.Name}': {TwSuggestions.Describe(parsed.Unknown, Theme)}");
     }
 
     protected override void Dispose(bool disposing)

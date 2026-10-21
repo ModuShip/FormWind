@@ -35,3 +35,4 @@ static FormWind.TwAutoTheme.WindowsUsesDarkMode() -> bool
 FormWind.TwAutoThemeEventArgs
 FormWind.TwAutoThemeEventArgs.Form.get -> System.Windows.Forms.Form!
 FormWind.TwAutoThemeEventArgs.Provider.get -> FormWind.TailwindProvider!
+FormWind.TwTheme.SuggestClass(string! unknownClass) -> string?

@@ -107,7 +107,7 @@ internal sealed class ClassesEditorForm : Form
         }
         else
         {
-            _status.Text = "Unknown: " + string.Join(", ", parsed.Unknown);
+            _status.Text = "Unknown: " + TwSuggestions.Describe(parsed.Unknown, _theme);
             _status.ForeColor = Color.Firebrick;
         }
     }
