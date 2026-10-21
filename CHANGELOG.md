@@ -5,6 +5,8 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.2-preview.1] - 2026-10-21
+
 ### Added
 
 - `TwTheme.SuggestClass` returns the closest recognized class for an unknown one, variant prefixes included
@@ -175,6 +177,7 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.1-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.2-preview.1...HEAD
+[0.1.2-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.1-preview.1...v0.1.2-preview.1
 [0.1.1-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.0-preview.1...v0.1.1-preview.1
 [0.1.0-preview.1]: https://github.com/ModuShip/FormWind/releases/tag/v0.1.0-preview.1
