@@ -281,6 +281,12 @@ internal sealed class TwBinding
         OnStateChanged(sender, e);
     }
 
+    /// <summary>
+    /// States added regardless of the mouse and focus (hover, focus, active …), so a control can be drawn in a state without
+    /// input (formwind-mcp's render). Not applied to a disabled control, like the real interaction states.
+    /// </summary>
+    public TwState ForcedState { get; set; }
+
     /// <summary>The control's current state (dark, hover, focus, disabled …) as the classes are resolved with it.</summary>
     public TwState State => CurrentState();
 
@@ -302,6 +308,7 @@ internal sealed class TwBinding
             if (_focusVisible) state |= TwState.FocusVisible;
         }
         if (_owner.IsInHoveredGroup(_control)) state |= TwState.GroupHover;
+        state |= ForcedState;
         // hover:/active: varyantı yoksa fare durumu stili değiştirmez; her girip çıkışta yeniden uygulanmaz
         // (ToolStrip gibi kontrollerde bu, fare üzerindeyken yeniden yerleşim ve takılı kalan tooltip demekti).
         if (_hovered && _parsed.HasCondition(TwState.Hover)) state |= TwState.Hover;

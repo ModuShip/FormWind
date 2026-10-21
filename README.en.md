@@ -956,6 +956,20 @@ tw.SetClasses(pnlForm, "flex flex-col gap-4 md:flex-row lg:gap-8");
 tw.SetClasses(lblTitle, "text-lg lg:text-2xl");
 ```
 
+## Coding agents (MCP)
+
+[`website/llms.txt`](website/llms.txt) summarizes FormWind for coding agents. The `formwind-mcp` server ([`tools/FormWind.Mcp`](tools/FormWind.Mcp/README.md)) lets an agent check its work: `validate_classes` (unknown classes with suggestions), `explain_classes` (the values each state resolves to), `list_components`, `list_vocabulary` and `render` (a PNG of the control in light and dark mode, per state). It is read-only and runs no application code.
+
+```bash
+dotnet tool install -g FormWind.Mcp --prerelease
+```
+
+```bash
+claude mcp add formwind -- formwind-mcp
+```
+
+The server uses `tw.config.json` in the folder the agent starts it in; every tool also takes `preset` and `themeFile`.
+
 ## Project structure
 
 ```
@@ -968,6 +982,7 @@ samples/FormWind.Krypton.Showcase/ Sample with Krypton Toolkit (net8.0-windows)
 tools/FormWind.Convert/   Command-line tool that converts Designer files to classes (net8.0-windows)
 tools/FormWind.Harness/   Startup hook and harness for trying FormWind on real applications (net8.0-windows)
 tools/FormWind.Docs/      Generates the class reference site with previews (net8.0-windows)
+tools/FormWind.Mcp/       MCP server for coding agents: validates, explains and renders classes (net8.0-windows)
 website/                  Landing page and documentation site in English and Turkish (static HTML; website/build.ps1)
 templates/                dotnet new template (formwind-app)
 tools/run-harness.ps1     Runs a .NET WinForms application with the harness and prints a log summary

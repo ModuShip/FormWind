@@ -10,6 +10,9 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwTheme.SuggestClass` returns the closest recognized class for an unknown one, variant prefixes included
   (`hovr:bg-blu-600` → `hover:bg-blue-600`). The Debug output for unknown classes, the class editor and the smart tag
   show the suggestions.
+- `formwind-mcp` (`FormWind.Mcp` dotnet tool): an MCP server for coding agents with the tools `validate_classes`,
+  `explain_classes`, `list_components`, `list_vocabulary` and `render` (light and dark PNGs per state), and `llms.txt`
+  and the presets as resources. Read-only; runs no application code.
 - `website/llms.txt`: a summary of the classes, components, variants and rules for coding agents, served at the site
   root and checked against the parser by tests.
 

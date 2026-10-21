@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!--
+      dotnet tool paketleri -windows hedefini ve UseWindowsForms'u kabul etmez (NETSDK1146). Araç net8.0 hedefler, WinForms'u
+      FrameworkReference ile alır ve FormWind'in net8.0-windows derlemesine başvurur; yalnızca Windows'ta çalışır.
+    -->
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>formwind-mcp</AssemblyName>
+    <RootNamespace>FormWind.Mcp</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- FW9001: TwParsed ve TwStyle deneysel; sunucu FormWind ile aynı sürümde dağıtılır. -->
+    <NoWarn>$(NoWarn);FW9001</NoWarn>
+    <!-- dotnet tool olarak paketlenir; formwind-mcp komutu stdio üzerinden MCP sunucusunu çalıştırır. -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>formwind-mcp</ToolCommandName>
+    <PackageId>FormWind.Mcp</PackageId>
+    <Description>MCP server for FormWind: lets coding agents validate and explain FormWind classes, list components and render controls in light and dark mode.</Description>
+    <PackageTags>winforms;tailwind;mcp;ai;agents</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" SetTargetFramework="TargetFramework=net8.0-windows" SkipGetTargetFrameworkProperties="true" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ajanlara MCP kaynağı olarak sunulur (formwind://llms.txt). -->
+    <EmbeddedResource Include="..\..\website\llms.txt" LogicalName="FormWind.Mcp.llms.txt" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <InternalsVisibleTo Include="FormWind.Tests" />
+  </ItemGroup>
+
+</Project>

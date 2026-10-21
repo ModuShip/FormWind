@@ -168,7 +168,7 @@ internal static class TwParser
         "label", "hint", "error",                                  // TwField
     };
 
-    private static bool TryParseConditions(string name, out TwState conditions, out string? part)
+    internal static bool TryParseConditions(string name, out TwState conditions, out string? part)
     {
         conditions = TwState.None;
         part = null;

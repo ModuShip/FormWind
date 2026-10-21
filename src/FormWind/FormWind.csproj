@@ -40,6 +40,7 @@
     <!-- NuGet okuyucuları için kısa İngilizce README (görseller ve bağlantılar mutlak URL), paket içinde README.md adıyla. -->
     <None Include="..\..\docs\nuget\FormWind.md" Pack="true" PackagePath="\README.md" />
     <InternalsVisibleTo Include="FormWind.Tests" />
+    <InternalsVisibleTo Include="formwind-mcp" />
   </ItemGroup>
 
   <!-- Hazır görünümler (TwPreset): tw.config.json biçiminde, kütüphaneye gömülü. -->

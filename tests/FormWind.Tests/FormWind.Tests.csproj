@@ -45,6 +45,8 @@
     <ProjectReference Include="..\..\tools\FormWind.Convert\FormWind.Convert.csproj" />
     <!-- Harness'in ekran görüntüsü ölçümü (ScreenContrast). -->
     <ProjectReference Include="..\..\tools\FormWind.Harness\FormWind.Harness.csproj" />
+    <!-- MCP sunucusunun araçları doğrudan, uçtan uca testi stdio üzerinden çağrılır. -->
+    <ProjectReference Include="..\..\tools\FormWind.Mcp\FormWind.Mcp.csproj" />
     <!-- FW001 çözümleyicisi derlenen örnek kodla test edilir. -->
     <ProjectReference Include="..\..\src\FormWind.Analyzers\FormWind.Analyzers.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />

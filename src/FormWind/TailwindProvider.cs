@@ -517,6 +517,16 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         _backColorsChecked.Remove(container);
     }
 
+    /// <summary>Draws the control in <paramref name="state"/> without mouse or keyboard input (see <see cref="TwBinding.ForcedState"/>).</summary>
+    internal void ForceState(Control control, TwState state)
+    {
+        if (!_bindings.TryGetValue(control, out var binding)) return;
+        binding.ForcedState = state;
+        binding.Refresh(force: true);
+        // group: zorlanan hover, group-hover: kullanan alt kontrollere de yansır.
+        if (binding.IsGroup) RefreshGroupDescendants(control);
+    }
+
     internal TwParsed? GetParsed(Control control) =>
         _bindings.TryGetValue(control, out var binding) ? binding.Parsed : null;
 
@@ -739,7 +749,8 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     {
         for (var parent = control.Parent; parent != null; parent = parent.Parent)
         {
-            if (_bindings.TryGetValue(parent, out var binding) && binding.IsGroup && binding.Hovered) return true;
+            if (_bindings.TryGetValue(parent, out var binding) && binding.IsGroup
+                && (binding.Hovered || (binding.ForcedState & TwState.Hover) != 0)) return true;
         }
         return false;
     }

@@ -956,6 +956,20 @@ tw.SetClasses(pnlForm, "flex flex-col gap-4 md:flex-row lg:gap-8");
 tw.SetClasses(lblTitle, "text-lg lg:text-2xl");
 ```
 
+## Kodlama ajanları (MCP)
+
+[`website/llms.txt`](website/llms.txt), FormWind'i kodlama ajanları için özetler. `formwind-mcp` sunucusu ([`tools/FormWind.Mcp`](tools/FormWind.Mcp/README.md)) ajanın yaptığı işi denetlemesini sağlar: `validate_classes` (öneriyle birlikte bilinmeyen class'lar), `explain_classes` (her durumun çözümlendiği değerler), `list_components`, `list_vocabulary` ve `render` (kontrolün açık ve koyu temada, durum başına PNG'si). Yalnızca okur ve uygulama kodu çalıştırmaz.
+
+```bash
+dotnet tool install -g FormWind.Mcp --prerelease
+```
+
+```bash
+claude mcp add formwind -- formwind-mcp
+```
+
+Sunucu, ajanın onu başlattığı klasördeki `tw.config.json` dosyasını kullanır; her araç ayrıca `preset` ve `themeFile` alır.
+
 ## Proje yapısı
 
 ```
@@ -968,6 +982,7 @@ samples/FormWind.Krypton.Showcase/ Krypton Toolkit ile örnek (net8.0-windows)
 tools/FormWind.Convert/   Designer dosyalarını class'lara çeviren komut satırı aracı (net8.0-windows)
 tools/FormWind.Harness/   Gerçek uygulamalarda deneme için startup hook ve harness (net8.0-windows)
 tools/FormWind.Docs/      Önizlemeli class referansı sitesini üretir (net8.0-windows)
+tools/FormWind.Mcp/       Kodlama ajanları için MCP sunucusu: class'ları doğrular, açıklar ve çizer (net8.0-windows)
 website/                  Tanıtım ve belge sitesi, Türkçe ve İngilizce (statik HTML; website/build.ps1)
 templates/                dotnet new şablonu (formwind-app)
 tools/run-harness.ps1     Bir .NET WinForms uygulamasını harness'le çalıştırıp log özetini yazar
