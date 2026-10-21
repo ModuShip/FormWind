@@ -13,6 +13,10 @@ All notable changes to FormWind are documented in this file. The format follows
 - `formwind-mcp` (`FormWind.Mcp` dotnet tool): an MCP server for coding agents with the tools `validate_classes`,
   `explain_classes`, `list_components`, `list_vocabulary` and `render` (light and dark PNGs per state), and `llms.txt`
   and the presets as resources. Read-only; runs no application code.
+- `TwPopover`: a panel that opens next to a control and closes on a click outside or Esc. It shows any control as
+  `Content` on the `Placement` side of the anchor (or of an area of it, such as a grid cell), flips to the opposite side
+  and stays inside the screen when it does not fit, focuses the content and returns the focus to the anchor
+  (`RestoreFocus`). `Toggle` does not reopen a popover that the same click on the anchor just closed.
 - `website/llms.txt`: a summary of the classes, components, variants and rules for coding agents, served at the site
   root and checked against the parser by tests.
 

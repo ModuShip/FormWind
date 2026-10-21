@@ -609,6 +609,7 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwTextBox` | Kenarlıksız TextBox'ı yuvarlak bir panel içine alır; `input` stili için. |
 | `TwNumberBox` | Sayı kutusu (`TwTextBox` + sağda ▲▼). `Minimum`, `Maximum`, `Increment`, `DecimalPlaces`; ok tuşları, fare tekeri ve kültüre göre ayrıştırma. |
 | `TwDatePicker` | Tarih alanı + açılır `TwCalendar`. Tarih yazılabilir (`Culture`/`Format`'a göre çözülür), F4 / Alt+↓ takvimi açar. Takvim `menu:bg-* menu:border-*`, `selected:bg-* selected:text-*`, `item:hover:bg-*` ile stillenir. |
+| `TwPopover` | Bir kontrole bağlı açılan panel (bileşen): `Content` kontrolünü `Placement` tarafında (`BottomStart`, `TopEnd`, `Right` …) gösterir, ekrana sığmazsa karşı tarafa geçer. Dışarı tıklama ve Esc kapatır; `Toggle(anchor)` açıkken kapatır, `RestoreFocus` odağı çapaya geri verir. `TwDatePicker`'ın takvimi bununla açılır. |
 | `TwCalendar` | Tek başına ay takvimi: kültürün ilk günü ve gün adları, bugün halkası, `MinDate`/`MaxDate`, klavye (oklar, PageUp/PageDown, Home/End, Enter, Esc). |
 | `TwTabStrip` | Sekme şeridi: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented zemini), `gap-*`. Yalnızca şerittir; sayfalı kullanım için `TwTabControl`. |
 | `TwTabControl` | Sayfalı sekme kontrolü (TabControl yerine): `AddPage("Genel")` ya da `TwTabPage` ekleyin, seçili sayfa gösterilir. Şerit `Strip` üzerinden stillenir (`provider.SetClasses(tabs.Strip, "...")`); Ctrl+Tab / Ctrl+PageDown sayfalar arasında gezer. |

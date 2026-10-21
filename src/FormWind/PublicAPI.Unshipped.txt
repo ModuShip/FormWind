@@ -36,3 +36,40 @@ FormWind.TwAutoThemeEventArgs
 FormWind.TwAutoThemeEventArgs.Form.get -> System.Windows.Forms.Form!
 FormWind.TwAutoThemeEventArgs.Provider.get -> FormWind.TailwindProvider!
 FormWind.TwTheme.SuggestClass(string! unknownClass) -> string?
+FormWind.TwPopover
+FormWind.TwPopover.Anchor.get -> System.Windows.Forms.Control?
+FormWind.TwPopover.Close() -> void
+FormWind.TwPopover.Closed -> System.Windows.Forms.ToolStripDropDownClosedEventHandler?
+FormWind.TwPopover.Content.get -> System.Windows.Forms.Control?
+FormWind.TwPopover.Content.set -> void
+FormWind.TwPopover.FocusContent.get -> bool
+FormWind.TwPopover.FocusContent.set -> void
+FormWind.TwPopover.IsOpen.get -> bool
+FormWind.TwPopover.Offset.get -> int
+FormWind.TwPopover.Offset.set -> void
+FormWind.TwPopover.Opened -> System.EventHandler?
+FormWind.TwPopover.Opening -> System.ComponentModel.CancelEventHandler?
+FormWind.TwPopover.Placement.get -> FormWind.TwPopoverPlacement
+FormWind.TwPopover.Placement.set -> void
+FormWind.TwPopover.RestoreFocus.get -> bool
+FormWind.TwPopover.RestoreFocus.set -> void
+FormWind.TwPopover.Show(System.Windows.Forms.Control! anchor) -> void
+FormWind.TwPopover.Show(System.Windows.Forms.Control! anchor, System.Drawing.Rectangle? anchorBounds) -> void
+FormWind.TwPopover.Toggle(System.Windows.Forms.Control! anchor) -> void
+FormWind.TwPopover.Toggle(System.Windows.Forms.Control! anchor, System.Drawing.Rectangle? anchorBounds) -> void
+FormWind.TwPopover.TwPopover() -> void
+FormWind.TwPopover.TwPopover(System.ComponentModel.IContainer! container) -> void
+override FormWind.TwPopover.Dispose(bool disposing) -> void
+FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.Bottom = 1 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.BottomEnd = 2 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.BottomStart = 0 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.Left = 10 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.LeftEnd = 11 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.LeftStart = 9 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.Right = 7 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.RightEnd = 8 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.RightStart = 6 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.Top = 4 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.TopEnd = 5 -> FormWind.TwPopoverPlacement
+FormWind.TwPopoverPlacement.TopStart = 3 -> FormWind.TwPopoverPlacement

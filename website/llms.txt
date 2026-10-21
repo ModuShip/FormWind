@@ -44,7 +44,7 @@ Every light color needs a `dark:` counterpart unless the class is a component (c
 
 ## Controls
 
-Use standard controls first. `Tw*` controls exist where a native control cannot be styled well: `TwButton`, `TwPanel` (also the flex and grid host), `TwTextBox`, `TwField`, `TwSelect`, `TwDatePicker`, `TwCalendar`, `TwNumberBox`, `TwSlider`, `TwSwitch`, `TwCheckBox`, `TwRadioButton`, `TwListBox`, `TwCheckedListBox`, `TwDataList`, `TwTreeView`, `TwTabControl`, `TwTabStrip`, `TwPager`, `TwStepper`, `TwProgress`, `TwPictureBox`, `TwToolTip`; charts `TwChart`, `TwDonutChart`, `TwRingChart`, `TwSparkline`, `TwStat`, `TwHeatmap`, `TwTimeline`; dialogs and toasts through the static `TwDialog` and `TwToast` classes.
+Use standard controls first. `Tw*` controls exist where a native control cannot be styled well: `TwButton`, `TwPanel` (also the flex and grid host), `TwTextBox`, `TwField`, `TwSelect`, `TwDatePicker`, `TwCalendar`, `TwNumberBox`, `TwSlider`, `TwSwitch`, `TwCheckBox`, `TwRadioButton`, `TwListBox`, `TwCheckedListBox`, `TwDataList`, `TwTreeView`, `TwTabControl`, `TwTabStrip`, `TwPager`, `TwStepper`, `TwProgress`, `TwPictureBox`, `TwToolTip`; charts `TwChart`, `TwDonutChart`, `TwRingChart`, `TwSparkline`, `TwStat`, `TwHeatmap`, `TwTimeline`; dialogs and toasts through the static `TwDialog` and `TwToast` classes; panels that open next to a control (menus, pickers, filters) through the `TwPopover` component (`Content`, `Placement`, `Show`/`Toggle(anchor)`).
 
 ## Rules that prevent common mistakes
 
