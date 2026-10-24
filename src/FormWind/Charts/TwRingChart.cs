@@ -73,6 +73,9 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
     private bool _showLegend = true;
     private int _hover = -1;
     private TwChartColors _colors = new TwChartColors();
+    private TwChartMotion? _motion;
+    private Dictionary<int, float> _shownFractions = new Dictionary<int, float>();
+    private Dictionary<int, float> _fromFractions = new Dictionary<int, float>();
 
     public TwRingChart()
     {
@@ -210,6 +213,8 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
     private void OnDataChanged()
     {
         if (_hover >= Rings.Count) _hover = -1;
+        Motion.DataChanged(AnimateOnShow, AnimateChanges, Rings.Count > 0, Rings.Count,
+            () => _fromFractions = new Dictionary<int, float>(_shownFractions));
         Invalidate();
         AccessibilityNotifyClients(AccessibleEvents.Reorder, -1);
     }
@@ -218,6 +223,63 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
     {
         _colors = colors;
         Invalidate();
+    }
+
+    // ---- Animasyon ----
+
+    private TwChartMotion Motion => _motion ??= new TwChartMotion(this);
+
+    /// <summary>
+    /// The first time the chart is shown with data, the rings fill from zero one after another (600 ms each, 35 ms apart).
+    /// Not when animations are off. <see cref="AnimateIn"/> plays it again.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateOnShow { get; set; } = true;
+
+    /// <summary>
+    /// When a value changes after the chart was shown, the ring moves from its old fill to the new one (350 ms).
+    /// Not when animations are off.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateChanges { get; set; } = true;
+
+    /// <summary>Plays the opening animation now (e.g. after loading new data); nothing happens when animations are off.</summary>
+    public void AnimateIn()
+    {
+        Motion.PlayIntro(Rings.Count);
+        Invalidate();
+    }
+
+    /// <summary>Share (0–1) of the opening animation that has passed; 1 when none runs.</summary>
+    internal float IntroProgress => Motion.IntroOverall;
+
+    /// <summary>Progress of the move to new data; 1 when none runs.</summary>
+    internal float ChangeProgress => Motion.ChangeProgress;
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        Motion.TryIntro(AnimateOnShow, Rings.Count > 0, Rings.Count);
+    }
+
+    /// <summary>Filled share of a ring as the last paint drew it.</summary>
+    internal float PaintedFraction(int index) => _shownFractions.TryGetValue(index, out var shown) ? shown : float.NaN;
+
+    /// <summary>Filled share (0–1) of a ring as painted now: filling while opening, moving while the value changes.</summary>
+    private float ShownFraction(int index)
+    {
+        float target = (float)Rings[index].Fraction;
+        float shown = Motion.IntroRunning ? target * Motion.IntroProgress(index)
+            : Motion.ChangeRunning ? TwChartMotion.Lerp(_fromFractions.TryGetValue(index, out var from) ? from : 0f, target, Motion.ChangeProgress)
+            : target;
+        _shownFractions[index] = shown;
+        return shown;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _motion?.Dispose();
+        base.Dispose(disposing);
     }
 
     // ---- Yerleşim ----
@@ -272,6 +334,8 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
         var g = e.Graphics;
         TwPainter.PaintParentBackground(this, g);
         if (BackColor.A > 0) using (var brush = new SolidBrush(BackColor)) g.FillRectangle(brush, ClientRectangle);
+        _shownFractions.Clear();
+        Motion.MarkPainted(Rings.Count > 0);
         float s = DpiScale;
         var (ring, legend) = ComputeLayout();
         var surface = TwCharts.Surface(this);
@@ -288,7 +352,7 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
             if (r <= 0) continue;
             var box = new RectangleF(center.X - r, center.Y - r, r * 2, r * 2);
             using (var pen = new Pen(track, w)) g.DrawEllipse(pen, box);
-            float sweep = (float)(Rings[i].Fraction * 360);
+            float sweep = ShownFraction(i) * 360;
             if (sweep <= 0) continue;
             var color = GetRingColor(i);
             if (!Enabled) color = TwCharts.Blend(color, surface, 0.5f);

@@ -23,8 +23,14 @@ All notable changes to FormWind are documented in this file. The format follows
 - A new `TwProgress.Value` slides the fill to its place (300 ms; `duration-*`, `ease-*`, `transition-none`).
 - `TwStat` counts a new value up from the previous one, or from zero when it first appears (800 ms), keeping the text's
   form (`₺12.400`, `98,4%`); `AnimateValue = false` turns it off. Only a value with a single number is counted.
-- `TwChart` opens from left to right the first time it is shown with data (600 ms); `AnimateOnShow = false` turns it
-  off and `AnimateIn()` plays it again, for example after loading new data.
+- `TwChart`, `TwRingChart`, `TwHeatmap`, `TwTimeline` and `TwSparkline` open the first time they are shown with data
+  (600 ms per item, 35 ms apart, the delays adding up to 400 ms at most): bars grow from the baseline, lines and areas
+  draw from left to right, rings fill from zero, heatmap cells fade in diagonally and timeline dots pop up with a spring
+  while the joining line extends. `AnimateOnShow = false` turns it off and `AnimateIn()` plays it again, for example
+  after loading new data.
+- After a chart was shown, a data change moves the bars, points, ring fills, cell shades and dots on screen to the new
+  data in 350 ms instead of redrawing at once; calls that clear and re-add, such as `SetData`, start from what is on
+  screen too. `AnimateChanges = false` turns it off. A sparkline with a different number of values is drawn at once.
 - `TwPanel.Expanded` (`Expand()`, `Collapse()`, `ExpandedChanged`) slides the panel's height to zero and hides it, or
   shows it and slides it back to its height (its preferred height when `AutoSize`), in 200 ms (`duration-*`, `ease-*`).
   The children keep their places meanwhile.

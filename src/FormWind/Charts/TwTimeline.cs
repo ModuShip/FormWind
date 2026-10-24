@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -68,6 +69,9 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
     private string? _valueFormat;
     private int _hover = -1;
     private TwChartColors _colors = new TwChartColors();
+    private TwChartMotion? _motion;
+    private Dictionary<int, (PointF Center, float Radius)> _shownDots = new Dictionary<int, (PointF, float)>();
+    private Dictionary<int, (PointF Center, float Radius)> _fromDots = new Dictionary<int, (PointF, float)>();
 
     public TwTimeline()
     {
@@ -161,6 +165,8 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
     private void OnDataChanged()
     {
         if (_hover >= Items.Count) _hover = -1;
+        Motion.DataChanged(AnimateOnShow, AnimateChanges, Items.Count > 0, Items.Count,
+            () => _fromDots = new Dictionary<int, (PointF, float)>(_shownDots), TwEasing.Spring);
         Invalidate();
         AccessibilityNotifyClients(AccessibleEvents.Reorder, -1);
     }
@@ -173,6 +179,79 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
 
     /// <summary>Indexes of <see cref="Items"/> in time order.</summary>
     private System.Collections.Generic.List<int> Order() => Enumerable.Range(0, Items.Count).OrderBy(i => Items[i].Time).ThenBy(i => i).ToList();
+
+    // ---- Animasyon ----
+
+    private TwChartMotion Motion => _motion ??= new TwChartMotion(this);
+
+    /// <summary>
+    /// The first time the timeline is shown with events, the dots pop up in time order with a spring (35 ms apart) and the line
+    /// joining them draws from left to right.
+    /// Not when animations are off. <see cref="AnimateIn"/> plays it again.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateOnShow { get; set; } = true;
+
+    /// <summary>
+    /// When the events change after the timeline was shown, the dots move and resize from where they are to their new place
+    /// (350 ms); new dots grow from nothing.
+    /// Not when animations are off.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateChanges { get; set; } = true;
+
+    /// <summary>Plays the opening animation now (e.g. after loading new data); nothing happens when animations are off.</summary>
+    public void AnimateIn()
+    {
+        Motion.PlayIntro(Items.Count, TwEasing.Spring);
+        Invalidate();
+    }
+
+    /// <summary>Share (0–1) of the opening animation that has passed; 1 when none runs.</summary>
+    internal float IntroProgress => Motion.IntroOverall;
+
+    /// <summary>Progress of the move to new data; 1 when none runs.</summary>
+    internal float ChangeProgress => Motion.ChangeProgress;
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        Motion.TryIntro(AnimateOnShow, Items.Count > 0, Items.Count, TwEasing.Spring);
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        // Eski konumlar başka bir boyuta aittir; kayma yerine yeni hâl hemen çizilir.
+        if (Motion.ChangeRunning) Motion.Stop();
+    }
+
+    /// <summary>An event's dot as the last paint drew it.</summary>
+    internal (PointF Center, float Radius)? PaintedDot(int index) => _shownDots.TryGetValue(index, out var dot) ? dot : null;
+
+    /// <summary>Turns the target dots into the ones painted now: popping up while opening, moving while the events change.</summary>
+    private void ApplyShownDots(List<int> order, PointF[] centers, float[] radii)
+    {
+        for (int k = 0; k < order.Count; k++)
+        {
+            int i = order[k];
+            if (Motion.IntroRunning) radii[i] *= Math.Max(0f, Motion.IntroProgress(k));
+            else if (Motion.ChangeRunning)
+            {
+                float p = Motion.ChangeProgress;
+                var (center, radius) = _fromDots.TryGetValue(i, out var from) ? from : (centers[i], 0f);
+                centers[i] = TwChartMotion.Lerp(center, centers[i], p);
+                radii[i] = TwChartMotion.Lerp(radius, radii[i], p);
+            }
+            _shownDots[i] = (centers[i], radii[i]);
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _motion?.Dispose();
+        base.Dispose(disposing);
+    }
 
     // ---- Yerleşim ----
 
@@ -226,6 +305,9 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
         var surface = TwCharts.Surface(this);
         var muted = TwCharts.Muted(this, _colors);
         var order = Order();
+        _shownDots.Clear();
+        Motion.MarkPainted(Items.Count > 0);
+        ApplyShownDots(order, centers, radii);
 
         var state = g.Save();
         g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -234,12 +316,14 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
         {
             var color = GetEventColor(order[order.Count - 1]);
             using var link = new Pen(Color.FromArgb(150, Enabled ? color : TwCharts.Blend(color, surface, 0.5f)), 2 * s);
-            g.DrawLine(link, centers[order[0]], centers[order[order.Count - 1]]);
+            // Açılışta birleştiren çizgi soldan sağa uzar.
+            g.DrawLine(link, centers[order[0]], TwChartMotion.Lerp(centers[order[0]], centers[order[order.Count - 1]], Motion.IntroOverall));
         }
         foreach (int i in order)
         {
             var color = GetEventColor(i);
             if (!Enabled) color = TwCharts.Blend(color, surface, 0.5f);
+            if (radii[i] < 0.5f) continue;
             float r = radii[i] + (i == _hover ? 2 * s : 0);
             using (var ring = new SolidBrush(surface)) g.FillEllipse(ring, centers[i].X - r - 2 * s, centers[i].Y - r - 2 * s, (r + 2 * s) * 2, (r + 2 * s) * 2);
             using (var fill = new SolidBrush(color)) g.FillEllipse(fill, centers[i].X - r, centers[i].Y - r, r * 2, r * 2);
@@ -251,6 +335,8 @@ public class TwTimeline : Control, ITwChartControl, ITwChartItems
         using var bold = new Font(Font, FontStyle.Bold);
         foreach (int i in order)
         {
+            // Etiketler noktası açıldıkça yazılır.
+            if (Motion.IntroRunning && Motion.IntroProgress(order.IndexOf(i)) < 0.9f) continue;
             var date = DateText(Items[i].Time);
             var value = TwCharts.Format(Items[i].Value, _valueFormat);
             var dateSize = TextRenderer.MeasureText(date, Font, Size.Empty, Flags);

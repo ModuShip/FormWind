@@ -161,12 +161,14 @@ public partial class TwChart
 
         var state = g.Save();
         g.SetClip(Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
+        // Açılışta çubuklar sıfırdan sırayla büyür; veri değişince ekrandaki uzunluktan yenisine kayar.
+        float zero = layout.X(Math.Max(layout.Min, Math.Min(layout.Max, 0)));
         for (int c = 0; c < count; c++)
         {
             for (int i = 0; i < Series.Count; i++)
             {
-                var bar = HorizontalBarBounds(layout, i, c);
-                if (bar.IsEmpty) continue;
+                var bar = ShownBar(HorizontalBarBounds(layout, i, c), i, c, zero, horizontal: true);
+                if (bar.Width < 0.5f || bar.Height < 0.5f) continue;
                 double value = Series[i].ValueAt(c);
                 bool outer = !_stacked || Enumerable.Range(i + 1, Series.Count - i - 1).All(b =>
                 {
@@ -198,8 +200,8 @@ public partial class TwChart
             TextRenderer.DrawText(g, reference.Label, Font, new Point(x, plot.Top), reference.Color.IsEmpty ? muted : reference.Color, HorizontalFlags);
         }
 
-        // Değer etiketleri çubuğun ucunda (yığında satırın sonunda bir kez).
-        for (int c = 0; c < count; c++)
+        // Değer etiketleri çubuğun ucunda (yığında satırın sonunda bir kez); açılış bitince görünür.
+        for (int c = 0; c < count && !Motion.IntroRunning; c++)
         {
             for (int i = 0; i < Series.Count; i++)
             {
@@ -207,10 +209,10 @@ public partial class TwChart
                 RectangleF bar;
                 if (_stacked)
                 {
-                    bar = Enumerable.Range(0, Series.Count).Select(j => HorizontalBarBounds(layout, j, c)).Where(b => !b.IsEmpty)
+                    bar = Enumerable.Range(0, Series.Count).Select(j => PaintedBar(HorizontalBarBounds(layout, j, c), j, c)).Where(b => !b.IsEmpty)
                         .Aggregate(RectangleF.Empty, (a, b) => a.IsEmpty ? b : RectangleF.Union(a, b));
                 }
-                else bar = HorizontalBarBounds(layout, i, c);
+                else bar = PaintedBar(HorizontalBarBounds(layout, i, c), i, c);
                 if (bar.IsEmpty) continue;
                 double value = _stacked ? StackTotal(c) : Series[i].ValueAt(c);
                 var text = ValueLabel(i, c);

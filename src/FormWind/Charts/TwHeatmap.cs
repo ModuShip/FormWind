@@ -78,6 +78,9 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private int _hover = -1;
     private Point? _mouse;
     private TwChartColors _colors = new TwChartColors();
+    private TwChartMotion? _motion;
+    private Dictionary<(int Row, int Column), Color> _shownColors = new Dictionary<(int, int), Color>();
+    private Dictionary<(int Row, int Column), Color> _fromColors = new Dictionary<(int, int), Color>();
 
     public TwHeatmap()
     {
@@ -345,6 +348,8 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private void OnDataChanged()
     {
         if (_hover >= RowCount * ColumnCount) _hover = -1;
+        Motion.DataChanged(AnimateOnShow, AnimateChanges, _values.Length > 0, IntroCount,
+            () => _fromColors = new Dictionary<(int, int), Color>(_shownColors));
         Invalidate();
         AccessibilityNotifyClients(AccessibleEvents.Reorder, -1);
     }
@@ -353,6 +358,65 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     {
         _colors = colors;
         Invalidate();
+    }
+
+    // ---- Animasyon ----
+
+    private TwChartMotion Motion => _motion ??= new TwChartMotion(this);
+
+    /// <summary>
+    /// The first time the heatmap is shown with data, the cells fade in from the top left corner to the bottom right (600 ms each).
+    /// Not when animations are off. <see cref="AnimateIn"/> plays it again.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateOnShow { get; set; } = true;
+
+    /// <summary>
+    /// When the values change after the heatmap was shown, each cell moves from its old shade to the new one (350 ms).
+    /// Not when animations are off.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateChanges { get; set; } = true;
+
+    /// <summary>Plays the opening animation now (e.g. after loading new data); nothing happens when animations are off.</summary>
+    public void AnimateIn()
+    {
+        Motion.PlayIntro(IntroCount);
+        Invalidate();
+    }
+
+    /// <summary>Share (0–1) of the opening animation that has passed; 1 when none runs.</summary>
+    internal float IntroProgress => Motion.IntroOverall;
+
+    /// <summary>Progress of the move to new data; 1 when none runs.</summary>
+    internal float ChangeProgress => Motion.ChangeProgress;
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        Motion.TryIntro(AnimateOnShow, _values.Length > 0, IntroCount);
+    }
+
+    // Hücreler köşegen sırasıyla açılır: aynı köşegendekiler (satır + sütun) birlikte.
+    private int IntroCount => Math.Max(1, RowCount + ColumnCount - 1);
+
+    /// <summary>The shade of a cell as the last paint drew it.</summary>
+    internal Color? PaintedCellColor(int row, int column) => _shownColors.TryGetValue((row, column), out var shown) ? shown : null;
+
+    /// <summary>The shade of a cell as painted now: moving from its old shade while the values change (new cells fade in).</summary>
+    private Color ShownCellColor(int row, int column, Color target, Color surface)
+    {
+        var shown = Motion.ChangeRunning
+            ? TwMotion.Blend(_fromColors.TryGetValue((row, column), out var from) ? from : surface, target, Motion.ChangeProgress)
+            : target;
+        _shownColors[(row, column)] = shown;
+        return shown;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _motion?.Dispose();
+        base.Dispose(disposing);
     }
 
     // ---- Renk ölçeği ----
@@ -483,6 +547,8 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         var g = e.Graphics;
         TwPainter.PaintParentBackground(this, g);
         if (BackColor.A > 0) using (var brush = new SolidBrush(BackColor)) g.FillRectangle(brush, ClientRectangle);
+        _shownColors.Clear();
+        Motion.MarkPainted(_values.Length > 0);
         float s = DpiScale;
         var layout = ComputeLayout();
         var muted = TwCharts.Muted(this, _colors);
@@ -524,6 +590,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                 double value = GetValue(r, c);
                 var color = GetCellColor(value);
                 if (!Enabled) color = TwCharts.Blend(color, surface, 0.5f);
+                if (!double.IsNaN(value)) color = ShownCellColor(r, c, color, surface);
                 if (double.IsNaN(value)) PaintEmptyCell(g, box, radius, s, surface);
                 else TwPainter.FillRounded(g, box, radius, color);
                 if (r * columns + c == _hover)
@@ -535,6 +602,10 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                     if (size.Width <= box.Width - 2 && size.Height <= box.Height)
                         TextRenderer.DrawText(g, text, Font, box, TwCharts.ReadableOn(color), Flags | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
+                // Açılışta hücre yüzey renginde bir örtünün altından belirir.
+                float opened = Motion.IntroProgress(r + c);
+                if (opened < 1f)
+                    TwPainter.FillRounded(g, Rectangle.Inflate(box, (int)Math.Ceiling(s), (int)Math.Ceiling(s)), radius + s, Color.FromArgb((int)(255 * (1 - Math.Max(0f, opened))), surface));
             }
         }
 

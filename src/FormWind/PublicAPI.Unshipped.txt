@@ -325,3 +325,35 @@ static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string
 static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwEasing easing, int delayMs, System.Action? completed) -> void
 static FormWind.TwAnimator.Cancel(System.Windows.Forms.Control! control, string! name) -> void
 static FormWind.TwAnimator.IsAnimating(System.Windows.Forms.Control! control, string! name) -> bool
+FormWind.TwChart.AnimateChanges.get -> bool
+FormWind.TwChart.AnimateChanges.set -> void
+override FormWind.TwChart.OnSizeChanged(System.EventArgs! e) -> void
+FormWind.TwRingChart.AnimateChanges.get -> bool
+FormWind.TwRingChart.AnimateChanges.set -> void
+FormWind.TwRingChart.AnimateIn() -> void
+FormWind.TwRingChart.AnimateOnShow.get -> bool
+FormWind.TwRingChart.AnimateOnShow.set -> void
+override FormWind.TwRingChart.Dispose(bool disposing) -> void
+override FormWind.TwRingChart.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwHeatmap.AnimateChanges.get -> bool
+FormWind.TwHeatmap.AnimateChanges.set -> void
+FormWind.TwHeatmap.AnimateIn() -> void
+FormWind.TwHeatmap.AnimateOnShow.get -> bool
+FormWind.TwHeatmap.AnimateOnShow.set -> void
+override FormWind.TwHeatmap.Dispose(bool disposing) -> void
+override FormWind.TwHeatmap.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwTimeline.AnimateChanges.get -> bool
+FormWind.TwTimeline.AnimateChanges.set -> void
+FormWind.TwTimeline.AnimateIn() -> void
+FormWind.TwTimeline.AnimateOnShow.get -> bool
+FormWind.TwTimeline.AnimateOnShow.set -> void
+override FormWind.TwTimeline.Dispose(bool disposing) -> void
+override FormWind.TwTimeline.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwSparkline.AnimateChanges.get -> bool
+FormWind.TwSparkline.AnimateChanges.set -> void
+FormWind.TwSparkline.AnimateIn() -> void
+FormWind.TwSparkline.AnimateOnShow.get -> bool
+FormWind.TwSparkline.AnimateOnShow.set -> void
+override FormWind.TwSparkline.Dispose(bool disposing) -> void
+override FormWind.TwSparkline.OnVisibleChanged(System.EventArgs! e) -> void
+override FormWind.TwTimeline.OnSizeChanged(System.EventArgs! e) -> void

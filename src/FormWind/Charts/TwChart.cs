@@ -514,7 +514,7 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
     private void OnDataChanged()
     {
         if (_hover >= CategoryCount) _hover = -1;
-        TryPlayIntro();
+        AnimateDataChange();
         Invalidate();
         AccessibilityNotifyClients(AccessibleEvents.Reorder, -1);
     }
@@ -678,10 +678,9 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
         var g = e.Graphics;
         TwPainter.PaintParentBackground(this, g);
         if (BackColor.A > 0) using (var brush = new SolidBrush(BackColor)) g.FillRectangle(brush, ClientRectangle);
+        BeginShownFrame();
         if (IsHorizontal)
         {
-            // Giriş animasyonunda çubuklar soldan büyür (etiketler de soldan açılır).
-            ClipIntro(g, ClientRectangle);
             PaintHorizontal(g);
             return;
         }
@@ -748,8 +747,9 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
 
         var state = g.Save();
         g.SetClip(Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
-        ClipIntro(g, Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
+        // Açılışta çubuklar tabandan büyür; çizgiler, kılavuzlar ve işaretler soldan sağa açılır.
         PaintBars(g, layout, surface, s);
+        ClipIntro(g, Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
         PaintGuideLines(g, layout, muted, s);
         for (int i = 0; i < Series.Count; i++)
             if (KindOf(Series[i]) == TwChartKind.Area) PaintLine(g, layout, i, area: true, s);
@@ -814,6 +814,15 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
         return new RectangleF(x, Math.Min(y, zero), width, Math.Max(1, Math.Abs(zero - y)));
     }
 
+    /// <summary>The y of the baseline a series' bars grow from.</summary>
+    private float BarZero(ChartLayout layout, int seriesIndex)
+    {
+        var axis = _stacked ? TwChartAxis.Primary : AxisOf(Series[seriesIndex].Axis);
+        return axis == TwChartAxis.Secondary
+            ? layout.Y(Math.Max(layout.Min2, Math.Min(layout.Max2, 0)), axis)
+            : layout.Y(Math.Max(layout.Min, Math.Min(layout.Max, 0)));
+    }
+
     private void PaintBars(Graphics g, ChartLayout layout, Color surface, float s)
     {
         int count = CategoryCount;
@@ -822,8 +831,8 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
         {
             foreach (int i in bars)
             {
-                var bar = BarBounds(layout, i, c);
-                if (bar.IsEmpty) continue;
+                var bar = ShownBar(BarBounds(layout, i, c), i, c, BarZero(layout, i), horizontal: false);
+                if (bar.Width < 0.5f || bar.Height < 0.5f) continue;
                 double value = Series[i].ValueAt(c);
                 // Yığında yalnızca dış uç yuvarlanır; iç segmentler köşesizdir.
                 bool outer = !_stacked || bars.SkipWhile(b => b != i).Skip(1).All(b =>
@@ -855,7 +864,7 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
                 continue;
             }
             if (current is null) segments.Add(current = new List<PointF>());
-            current.Add(new PointF(layout.X(i), YOf(layout, series, v)));
+            current.Add(ShownPoint(new PointF(layout.X(i), YOf(layout, series, v)), index, i));
         }
         var state = g.Save();
         g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -906,16 +915,23 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
             {
                 for (int c = 0; c < CategoryCount; c++)
                     if (c != _hover && !double.IsNaN(Series[i].ValueAt(c)))
-                        TwCharts.DrawMarker(g, new PointF(layout.X(c), YOf(layout, Series[i], Series[i].ValueAt(c))), s * 0.75f, color, surface);
+                        TwCharts.DrawMarker(g, PaintedPoint(layout, i, c), s * 0.75f, color, surface);
             }
             else if (points == TwChartPoints.Last && last >= 0)
-                TwCharts.DrawMarker(g, new PointF(layout.X(last), YOf(layout, Series[i], Series[i].ValueAt(last))), s, color, surface);
+                TwCharts.DrawMarker(g, PaintedPoint(layout, i, last), s, color, surface);
             if (_hover >= 0 && (_hover != last || points != TwChartPoints.Last) && !double.IsNaN(Series[i].ValueAt(_hover)))
-                TwCharts.DrawMarker(g, new PointF(layout.X(_hover), YOf(layout, Series[i], Series[i].ValueAt(_hover))), s, color, surface);
+                TwCharts.DrawMarker(g, PaintedPoint(layout, i, _hover), s, color, surface);
         }
     }
 
     private float YOf(ChartLayout layout, TwChartSeries series, double value) => layout.Y(value, AxisOf(series.Axis));
+
+    /// <summary>A point of a line series as painted in this frame (moving while the data changes).</summary>
+    private PointF PaintedPoint(ChartLayout layout, int series, int category)
+    {
+        if (_shownPoints.TryGetValue((series, category), out var shown)) return shown;
+        return new PointF(layout.X(category), YOf(layout, Series[series], Series[series].ValueAt(category)));
+    }
 
     private static Pen GuidePen(Color color, float s) => new Pen(color, Math.Max(1f, s)) { DashPattern = new[] { 4f, 3f } };
 
@@ -980,7 +996,7 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
             {
                 for (int c = 0; c < CategoryCount; c++)
                 {
-                    var bar = BarBounds(layout, i, c);
+                    var bar = PaintedBar(BarBounds(layout, i, c), i, c);
                     if (bar.IsEmpty) continue;
                     double value = series.ValueAt(c);
                     var text = TwCharts.Format(value, _valueFormat);
@@ -997,7 +1013,7 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
             var label = TwCharts.Format(series.ValueAt(last), _valueFormat);
             var labelSize = TextRenderer.MeasureText(g, label, Font, Size.Empty, flags);
             int padX = (int)(6 * s), padY = (int)(2 * s);
-            var point = new PointF(layout.X(last), YOf(layout, series, series.ValueAt(last)));
+            var point = PaintedPoint(layout, i, last);
             var badge = new Rectangle((int)point.X - labelSize.Width - padX * 2 - (int)(8 * s), (int)point.Y - labelSize.Height / 2 - padY,
                 labelSize.Width + padX * 2, labelSize.Height + padY * 2);
             badge.X = Math.Max(0, badge.X);

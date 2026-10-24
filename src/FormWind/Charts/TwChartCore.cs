@@ -223,16 +223,25 @@ internal static class TwCharts
     }
 
     /// <summary>A small chart without axes (sparkline): a 2 px line, a 10% area or bars; lines end with a marker.</summary>
-    public static void DrawSparkline(Graphics g, Rectangle area, IReadOnlyList<double> numbers, TwSparklineKind kind, Color color, Color negative, Color surface, float scale, bool marker = true)
+    /// <summary>The scale of a sparkline: its lowest and highest value (bars include zero); <c>null</c> without values.</summary>
+    public static (double Min, double Max)? SparklineRange(IReadOnlyList<double> numbers, TwSparklineKind kind)
     {
         var values = numbers.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).ToList();
-        if (values.Count == 0 || area.Width < 4 || area.Height < 4) return;
+        if (values.Count == 0) return null;
         double min = values.Min(), max = values.Max();
         if (kind == TwSparklineKind.Bar)
         {
             min = Math.Min(0, min);
             max = Math.Max(0, max);
         }
+        return (min, max);
+    }
+
+    public static void DrawSparkline(Graphics g, Rectangle area, IReadOnlyList<double> numbers, TwSparklineKind kind, Color color, Color negative, Color surface, float scale, bool marker = true,
+        (double Min, double Max)? range = null)
+    {
+        if (area.Width < 4 || area.Height < 4) return;
+        if ((range ?? SparklineRange(numbers, kind)) is not (double min, double max)) return;
         double span = max - min;
         float Y(double v) => span == 0 ? area.Y + area.Height / 2f : (float)(area.Bottom - (v - min) / span * area.Height);
 

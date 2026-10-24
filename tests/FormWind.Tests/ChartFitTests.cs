@@ -92,7 +92,8 @@ public class ChartFitTests
     public void Heatmap_draws_missing_values_hatched_and_names_them() => Sta.Run(() => WithCulture("tr-TR", () =>
     {
         using var form = NewForm();
-        var heatmap = new TwHeatmap { Dock = DockStyle.Fill, HighColor = Color.FromArgb(220, 60, 20), LowColor = Color.FromArgb(250, 240, 230) };
+        // Pikseller okunur: açılış animasyonu yok.
+        var heatmap = new TwHeatmap { Dock = DockStyle.Fill, HighColor = Color.FromArgb(220, 60, 20), LowColor = Color.FromArgb(250, 240, 230), AnimateOnShow = false };
         form.Controls.Add(heatmap);
         heatmap.SetData(new[] { "Hat 1" }, new[] { "Pzt", "Sal", "Çar" }, new double[,] { { 0, double.NaN, 120 } });
         form.Show();
