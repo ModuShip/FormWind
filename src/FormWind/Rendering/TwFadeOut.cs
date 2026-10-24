@@ -42,7 +42,15 @@ internal static class TwFadeOut
         {
             return; // kilitli ekran, uzak masaüstü bağlantısı kesik …
         }
+        PlayPicture(picture, bounds, owner, durationMs, roundCorners, TwEasing.In);
+    }
 
+    /// <summary>
+    /// Shows <paramref name="picture"/> (which it then owns) in a click-through window at <paramref name="bounds"/> (screen
+    /// coordinates) and fades it out; <c>false</c> when the window cannot be shown (the picture is then disposed).
+    /// </summary>
+    public static bool PlayPicture(Bitmap picture, Rectangle bounds, Form? owner, int durationMs, bool roundCorners, TwEasing easing)
+    {
         var ghost = new Ghost(picture, bounds, roundCorners);
         try
         {
@@ -52,11 +60,14 @@ internal static class TwFadeOut
         catch (Exception ex) when (!TwErrors.IsCritical(ex))
         {
             ghost.Dispose();
-            return;
+            return false;
         }
+        // Görüntü hemen ekrana çıkar; altındaki değişiklik ancak ondan sonra çizilir.
+        ghost.Update();
         _active++;
         ghost.FormClosed += (_, _) => _active--;
-        ghost.Fade(durationMs);
+        ghost.Fade(durationMs, easing);
+        return true;
     }
 
     private sealed class Ghost : Form
@@ -105,12 +116,12 @@ internal static class TwFadeOut
 
         protected override void OnPaintBackground(PaintEventArgs e) { }
 
-        public void Fade(int durationMs)
+        public void Fade(int durationMs, TwEasing easing)
         {
             _tween = new TwTween(this);
             _tween.Tick += (_, _) => Opacity = Math.Max(0, 0.99 * (1 - _tween.Progress));
             _tween.Completed += (_, _) => Close();
-            _tween.Start(durationMs, TwEasing.In);
+            _tween.Start(durationMs, easing);
             if (!_tween.Running) Close();
         }
 

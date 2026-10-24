@@ -383,3 +383,6 @@ FormWind.TwLoadingStyle.Shimmer = 1 -> FormWind.TwLoadingStyle
 static FormWind.TwGrid.GetLoadingStyle(System.Windows.Forms.DataGridView! grid) -> FormWind.TwLoadingStyle
 static FormWind.TwGrid.SetLoading(System.Windows.Forms.DataGridView! grid, bool loading, FormWind.TwLoadingStyle style) -> void
 static FormWind.TwGrid.SetLoadingStyle(System.Windows.Forms.DataGridView! grid, FormWind.TwLoadingStyle style) -> void
+FormWind.TwTransition
+static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change) -> void
+static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change, int durationMs) -> void

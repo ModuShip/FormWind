@@ -71,7 +71,7 @@ public class MotionCurveTests
     [Fact]
     public void Transition_uses_the_custom_curve_after_the_delay()
     {
-        var timing = new TwTransition(100, 50, new TwCubicBezier(0.25, 0.1, 0.25, 1));
+        var timing = new TwTiming(100, 50, new TwCubicBezier(0.25, 0.1, 0.25, 1));
         Assert.Equal(0f, timing.Progress(30));
         Assert.Equal(0.8024f, timing.Progress(100), 3);
         Assert.Equal(1f, timing.Progress(150));

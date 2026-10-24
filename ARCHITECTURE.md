@@ -122,7 +122,7 @@ WinForms has no anti-aliased corners, shadows or focus rings, so FormWind draws 
 Other files in this folder are thin wrappers around a single Windows feature: DWM title bars and backdrops
 (`TwTitleBar`), dark native scrollbars and tooltips (`TwNativeTheme`, `TwNativeToolTips`), High Contrast
 (`TwHighContrast`), keyboard and mouse focus tracking (`TwFocusVisible`), RTL mirroring (`TwRtl`), DPI (`TwDpi`),
-color and number transitions (`TwAnimator`, timing and curves in `TwTransition`, `TwCubicBezier`), in-control animations (`TwMotion`, `TwTween`) and repeating
+color and number transitions (`TwAnimator`, timing and curves in `TwTiming`, `TwCubicBezier`), in-control animations (`TwMotion`, `TwTween`) and repeating
 `animate-*` animations (`TwAnimations`). Undocumented Windows APIs (for example, `DarkMode_Explorer`) fail silently on
 systems that do not support them.
 

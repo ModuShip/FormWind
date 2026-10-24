@@ -1091,6 +1091,12 @@ try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
 - **Popovers and menus:** `TwPopover` and the menus FormWind draws grow from 95% and fade in from the anchor's side (the owner item for a submenu, the cursor for a context menu) in 140 ms, and fade out in 120 ms when they close. A window's content cannot be scaled, so during the opening the real window is invisible (it already takes clicks and keys) and a click-through picture of it grows in its place.
 - **Focus ring:** a ring that appears for keyboard focus (`focus-visible:ring-*`, `focus:ring-*`) starts 6 px outside and closes in onto the control in 180 ms; for mouse focus it appears in place.
 - **Grid loading:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` sweeps a light band across the skeleton bars from left to right (the default `Pulse` fades them; `SetLoadingStyle` changes it later).
+- **Transitions:** `TwTransition.CrossFade(host, change)` first puts a picture of `host` over it, applies `change` and fades the old picture away in 250 ms. For page and theme switches:
+
+```csharp
+TwTransition.CrossFade(pnlPage, () => ShowPage(next));
+TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // the whole form, title bar included
+```
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 

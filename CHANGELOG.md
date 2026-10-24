@@ -55,6 +55,8 @@ All notable changes to FormWind are documented in this file. The format follows
 - A focus ring that appears for keyboard focus closes in from 6 px outside onto the control (180 ms).
 - `TwGrid.SetLoading(grid, loading, TwLoadingStyle)` and `TwGrid.SetLoadingStyle`: `TwLoadingStyle.Shimmer` sweeps a
   light band across the skeleton rows instead of the pulse.
+- `TwTransition.CrossFade(host, change)` applies a change (a page switch, a theme change) under a picture of the old
+  look that fades away (250 ms, or a given duration).
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each

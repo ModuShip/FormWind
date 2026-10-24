@@ -32,7 +32,7 @@ public class WinFormsApplier : IStyleApplier
 
         var (back, fore) = ColorTargets(control, style, context);
         var timing = TransitionTiming(control, style, context);
-        ApplyColors(control, back, fore, original, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTransition.None, context.DesignMode);
+        ApplyColors(control, back, fore, original, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTiming.None, context.DesignMode);
         // RTF olarak yüklenen metnin "otomatik" rengi ForeColor yerine sistem yazı rengiyle çizilir (bkz. TwRichTextColor).
         if (!context.DesignMode && control is RichTextBox rich) TwRichTextColor.Update(rich, fore.HasValue);
         ApplyFont(control, style, original, applied, context.Theme);
@@ -273,13 +273,13 @@ public class WinFormsApplier : IStyleApplier
     }
 
     // transition yalnızca çalışma zamanında ve görünen (handle'ı oluşmuş) kontrollerde anlamlıdır.
-    internal static TwTransition TransitionTiming(Control control, TwStyle style, TwApplyContext context) =>
+    internal static TwTiming TransitionTiming(Control control, TwStyle style, TwApplyContext context) =>
         style.Transition == true && TwMotion.Enabled && !context.DesignMode && control.IsHandleCreated
-            ? new TwTransition(style.DurationMs ?? TwTransition.DefaultDuration, style.DelayMs ?? 0, style.Easing ?? TwEasing.Out,
+            ? new TwTiming(style.DurationMs ?? TwTiming.DefaultDuration, style.DelayMs ?? 0, style.Easing ?? TwEasing.Out,
                 style.TransitionProperty ?? TwTransitionProperty.All)
-            : TwTransition.None;
+            : TwTiming.None;
 
-    private static void ApplyColors(Control control, Color? back, Color? fore, TwOriginal original, Applied applied, TwTransition duration, bool designMode)
+    private static void ApplyColors(Control control, Color? back, Color? fore, TwOriginal original, Applied applied, TwTiming duration, bool designMode)
     {
         bool backApplied = applied.Back.Applied;
         ApplyColor(control, TwColorChannel.Back, back, original.BackColor, applied.Back, duration, designMode);
@@ -352,7 +352,7 @@ public class WinFormsApplier : IStyleApplier
     // Renk kanalı: FormWind'in kontrolde bıraktığı değer izlenir. Bir sonraki uygulamada değer farklıysa (ya da
     // kalıtıma bırakılmışken açıkça atanmışsa) uygulama kodu değiştirmiştir; kanal uygulamaya geçer ve hover:/dark:
     // varyantları bu rengi ezmez. Ebeveynden kalıtılan renk değişimleri değişiklik sayılmaz.
-    private static void ApplyColor(Control control, TwColorChannel channel, Color? target, Color? original, ChannelState state, TwTransition duration, bool designMode)
+    private static void ApplyColor(Control control, TwColorChannel channel, Color? target, Color? original, ChannelState state, TwTiming duration, bool designMode)
     {
         bool back = channel == TwColorChannel.Back;
         string property = back ? nameof(Control.BackColor) : nameof(Control.ForeColor);
@@ -370,7 +370,7 @@ public class WinFormsApplier : IStyleApplier
         // uygulamanın kendi renginden başlar, açılışta renk kayar ve geçiş süresince ara renkler görünürdü.
         if (!state.Tracked && !designMode)
         {
-            duration = TwTransition.None;
+            duration = TwTiming.None;
             state.Tracked = true;
             state.Left = original;
         }
@@ -485,7 +485,7 @@ public class WinFormsApplier : IStyleApplier
     }
 
     // Geçiş bitince miras değere dönmek için completed ile Reset çağrılır.
-    private static void SetColor(Control control, TwColorChannel channel, Color target, TwTransition duration, Action? completed)
+    private static void SetColor(Control control, TwColorChannel channel, Color target, TwTiming duration, Action? completed)
     {
         if (duration.TotalMs > 0)
         {
@@ -788,7 +788,7 @@ public class WinFormsApplier : IStyleApplier
         }
     }
 
-    private static void ApplyChrome(Control control, TwStyle style, TwApplyContext context, Applied applied, TwTransition timing)
+    private static void ApplyChrome(Control control, TwStyle style, TwApplyContext context, Applied applied, TwTiming timing)
     {
         var chrome = TwChrome.FromStyle(style, context.Scale, context.Theme.DefaultBorderColor);
         var outset = TwOutsetSpec.FromStyle(style, context.Scale);
@@ -803,7 +803,7 @@ public class WinFormsApplier : IStyleApplier
         Action<TwChrome>? show = control is ITwChrome owner ? owner.SetChrome
             : (style.HasChrome || style.HasGradient || TwDecorator.IsAttached(control)) && SupportsDecoration(control) ? TwDecorator.For(control).Update
             : null;
-        if (show != null) ShowChrome(control, chrome, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTransition.None, show);
+        if (show != null) ShowChrome(control, chrome, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTiming.None, show);
 
         // Gölge ve halka ebeveyn tarafından çizilir; native kontrollerde de çalışır (TextBox'ın focus halkası gibi).
         // TextBox kendi kenarlığını çizer ve Paint olayı çalışmaz: native kenarlık kapatılır, class'ların kenarlığı ve
@@ -840,12 +840,12 @@ public class WinFormsApplier : IStyleApplier
         }
 
         if (style.HasOutset || !outset.IsEmpty || TwOutset.IsAttached(control))
-            TwOutset.For(control).Update(outset, timing.Animates(TwTransitionProperty.Shadow) ? timing : TwTransition.None);
+            TwOutset.For(control).Update(outset, timing.Animates(TwTransitionProperty.Shadow) ? timing : TwTiming.None);
     }
 
     // Kenarlık rengi transition-colors ile geçer; kalınlık, köşe ve gradyan hemen yeni değerini alır. Geçiş, o an gösterilen
     // renkten başlar (önceki geçiş sürüyorsa onun ara renginden).
-    private static void ShowChrome(Control control, TwChrome chrome, Applied applied, TwTransition timing, Action<TwChrome> show)
+    private static void ShowChrome(Control control, TwChrome chrome, Applied applied, TwTiming timing, Action<TwChrome> show)
     {
         var shown = applied.Chrome;
         // Geçiş aynı hedefe sürüyorsa (hover sırasında yenileme) baştan başlatılmaz.

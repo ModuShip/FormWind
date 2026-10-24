@@ -44,12 +44,12 @@ public static class TwAnimator
     /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="set">Applies a value (called on the UI thread every frame).</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set) =>
-        Animate(control, name, from, to, new TwTransition(durationMs), set, null);
+        Animate(control, name, from, to, new TwTiming(durationMs), set, null);
 
     /// <summary>Animates a number with a timing curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
     /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwEasing easing) =>
-        Animate(control, name, from, to, new TwTransition(durationMs, 0, easing), set, null);
+        Animate(control, name, from, to, new TwTiming(durationMs, 0, easing), set, null);
 
     /// <summary>Animates a number with a timing curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
     /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
@@ -57,12 +57,12 @@ public static class TwAnimator
     /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set,
         TwEasing easing, int delayMs, Action? completed) =>
-        Animate(control, name, from, to, new TwTransition(durationMs, delayMs, easing), set, completed);
+        Animate(control, name, from, to, new TwTiming(durationMs, delayMs, easing), set, completed);
 
     /// <summary>Animates a number with a custom curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwCubicBezier curve) =>
-        Animate(control, name, from, to, new TwTransition(durationMs, 0, curve), set, null);
+        Animate(control, name, from, to, new TwTiming(durationMs, 0, curve), set, null);
 
     /// <summary>Animates a number with a custom curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
@@ -70,9 +70,9 @@ public static class TwAnimator
     /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set,
         TwCubicBezier curve, int delayMs, Action? completed) =>
-        Animate(control, name, from, to, new TwTransition(durationMs, delayMs, curve), set, completed);
+        Animate(control, name, from, to, new TwTiming(durationMs, delayMs, curve), set, completed);
 
-    private static void Animate(Control control, string name, double from, double to, TwTransition timing, Action<double> set, Action? completed)
+    private static void Animate(Control control, string name, double from, double to, TwTiming timing, Action<double> set, Action? completed)
     {
         if (control is null) throw new ArgumentNullException(nameof(control));
         if (name is null) throw new ArgumentNullException(nameof(name));
@@ -99,17 +99,17 @@ public static class TwAnimator
 
     /// <summary>Animates the control's BackColor or ForeColor with an ease-out curve.</summary>
     internal static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null) =>
-        Animate(control, channel, target, new TwTransition(durationMs), completed);
+        Animate(control, channel, target, new TwTiming(durationMs), completed);
 
     /// <summary>Animates the control's BackColor or ForeColor.</summary>
-    internal static void Animate(Control control, TwColorChannel channel, Color target, TwTransition timing, Action? completed = null)
+    internal static void Animate(Control control, TwColorChannel channel, Color target, TwTiming timing, Action? completed = null)
     {
         var current = channel == TwColorChannel.Back ? control.BackColor : control.ForeColor;
         Animate(control, channel, current, target, timing, color => Set(control, channel, color), completed);
     }
 
     /// <summary>Animates a color shown by <paramref name="set"/> (e.g. the border of the control's chrome).</summary>
-    internal static void Animate(Control control, TwColorChannel channel, Color from, Color target, TwTransition timing, Action<Color> set, Action? completed = null)
+    internal static void Animate(Control control, TwColorChannel channel, Color from, Color target, TwTiming timing, Action<Color> set, Action? completed = null)
     {
         if (timing.TotalMs <= 0 || from.ToArgb() == target.ToArgb())
         {
@@ -135,7 +135,7 @@ public static class TwAnimator
         return false;
     }
 
-    private static void Start(Control control, object key, object target, TwTransition timing, Action<float> apply, Action? completed)
+    private static void Start(Control control, object key, object target, TwTiming timing, Action<float> apply, Action? completed)
     {
         _active ??= new Dictionary<(Control, object), Animation>();
         _active[(control, key)] = new Animation(target, DateTime.UtcNow, timing, apply, completed);
@@ -206,7 +206,7 @@ public static class TwAnimator
 
     private sealed class Animation
     {
-        public Animation(object target, DateTime start, TwTransition timing, Action<float> apply, Action? completed)
+        public Animation(object target, DateTime start, TwTiming timing, Action<float> apply, Action? completed)
         {
             Target = target;
             Start = start;
@@ -217,7 +217,7 @@ public static class TwAnimator
 
         public object Target { get; }
         public DateTime Start { get; }
-        public TwTransition Timing { get; }
+        public TwTiming Timing { get; }
         public Action<float> Apply { get; }
         public Action? Completed { get; }
     }

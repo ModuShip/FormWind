@@ -159,7 +159,7 @@ internal sealed class TwOutset
     private TwOutsetSpec? _fromRing;
     private int _fromExtent;
     private DateTime _start;
-    private TwTransition _timing;
+    private TwTiming _timing;
     // Geçişte belirerek çizilenler; değişmeyen tam opak kalır.
     private bool _shadowsFade, _ringFade;
     // Klavye odağıyla beliren halka dışarıdan yerine daralır.
@@ -226,11 +226,11 @@ internal sealed class TwOutset
 
     public static TwOutset For(Control control) => Table.GetValue(control, c => new TwOutset(c));
 
-    public void Update(TwOutsetSpec spec) => Update(spec, TwTransition.None);
+    public void Update(TwOutsetSpec spec) => Update(spec, TwTiming.None);
 
     /// <param name="spec">New shadow, ring and frame.</param>
     /// <param name="timing">Transition of the shadow and ring change (<c>transition</c>); none = immediate.</param>
-    public void Update(TwOutsetSpec spec, TwTransition timing)
+    public void Update(TwOutsetSpec spec, TwTiming timing)
     {
         if (Spec != null && Spec.Equals(spec)) return;
         var old = Spec;
@@ -263,7 +263,7 @@ internal sealed class TwOutset
         }
         else
         {
-            _timing = TwTransition.None;
+            _timing = TwTiming.None;
             if (!_ringIn) _timer.Stop();
             _fromShadows = Array.Empty<TwShadowLayer>();
             _fromRing = null;

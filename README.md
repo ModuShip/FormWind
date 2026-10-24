@@ -1091,6 +1091,12 @@ try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
 - **Popover ve menüler:** `TwPopover` ve FormWind'in çizdiği menüler açılırken çapanın (alt menüde sahip öğenin, bağlam menüsünde imlecin) tarafından %95'ten büyüyüp solarak belirir (140 ms), kapanırken solar (120 ms). Pencere içeriği ölçeklenemediği için açılış boyunca gerçek pencere görünmezdir (tıklama ve tuşları alır), yerinde tıklamayı geçiren bir görüntüsü büyür.
 - **Odak halkası:** klavyeyle gelen odakta beliren halka (`focus-visible:ring-*`, `focus:ring-*`) 6 px dışarıdan başlayıp 180 ms'de yerine daralır; fareyle verilen odakta yerinde belirir.
 - **Grid yükleme:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` iskelet çubuklar üzerinden soldan sağa açık bir bant geçirir (varsayılan `Pulse` nabızdır; `SetLoadingStyle` sonradan değiştirir).
+- **Geçişler:** `TwTransition.CrossFade(host, change)` önce `host`'un görüntüsünü üstüne koyar, `change`'i uygular ve eski görüntüyü 250 ms'de soldurur. Sayfa değişimi ve tema değişimi için:
+
+```csharp
+TwTransition.CrossFade(pnlPage, () => ShowPage(next));
+TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // başlık çubuğu dahil tüm form
+```
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 

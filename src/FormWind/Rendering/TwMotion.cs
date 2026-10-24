@@ -173,7 +173,7 @@ public sealed class TwTween : IDisposable
     private readonly Control _owner;
     private readonly Timer _timer = new Timer { Interval = 16 };
     private DateTime _start;
-    private TwTransition _timing;
+    private TwTiming _timing;
 
     public TwTween(Control owner)
     {
@@ -206,31 +206,31 @@ public sealed class TwTween : IDisposable
     private double Elapsed => (DateTime.UtcNow - _start).TotalMilliseconds;
 
     /// <summary>Starts a new ease-out animation; finishes immediately if the owner cannot animate.</summary>
-    public void Start(int durationMs) => Start(new TwTransition(durationMs));
+    public void Start(int durationMs) => Start(new TwTiming(durationMs));
 
     /// <summary>Starts a new animation; finishes immediately if the owner cannot animate.</summary>
     /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="easing">Timing curve.</param>
-    public void Start(int durationMs, TwEasing easing) => Start(new TwTransition(durationMs, 0, easing));
+    public void Start(int durationMs, TwEasing easing) => Start(new TwTiming(durationMs, 0, easing));
 
     /// <summary>Starts a new animation; finishes immediately if the owner cannot animate.</summary>
     /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="easing">Timing curve.</param>
     /// <param name="delayMs">Wait before it starts moving (ms); <see cref="Progress"/> is 0 meanwhile.</param>
-    public void Start(int durationMs, TwEasing easing, int delayMs) => Start(new TwTransition(durationMs, delayMs, easing));
+    public void Start(int durationMs, TwEasing easing, int delayMs) => Start(new TwTiming(durationMs, delayMs, easing));
 
     /// <summary>Starts a new animation with a custom curve; finishes immediately if the owner cannot animate.</summary>
     /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
-    public void Start(int durationMs, TwCubicBezier curve) => Start(new TwTransition(durationMs, 0, curve));
+    public void Start(int durationMs, TwCubicBezier curve) => Start(new TwTiming(durationMs, 0, curve));
 
     /// <summary>Starts a new animation with a custom curve; finishes immediately if the owner cannot animate.</summary>
     /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
     /// <param name="delayMs">Wait before it starts moving (ms); <see cref="Progress"/> is 0 meanwhile.</param>
-    public void Start(int durationMs, TwCubicBezier curve, int delayMs) => Start(new TwTransition(durationMs, delayMs, curve));
+    public void Start(int durationMs, TwCubicBezier curve, int delayMs) => Start(new TwTiming(durationMs, delayMs, curve));
 
-    internal void Start(TwTransition timing)
+    internal void Start(TwTiming timing)
     {
         if (!TwMotion.CanAnimate(_owner) || timing.TotalMs <= 0)
         {
@@ -245,7 +245,7 @@ public sealed class TwTween : IDisposable
     /// <summary>Ends the animation; <see cref="Progress"/> becomes 1.</summary>
     public void Stop()
     {
-        _timing = TwTransition.None;
+        _timing = TwTiming.None;
         _timer.Stop();
     }
 

@@ -87,13 +87,13 @@ public class AnimationClassTests
     [Fact]
     public void Transition_waits_for_the_delay_and_uses_the_curve()
     {
-        var timing = new TwTransition(100, 50, TwEasing.Linear);
+        var timing = new TwTiming(100, 50, TwEasing.Linear);
         Assert.Equal(0f, timing.Progress(30));
         Assert.Equal(0.5f, timing.Progress(100), 3);
         Assert.Equal(1f, timing.Progress(200));
         Assert.Equal(150, timing.TotalMs);
         Assert.True(timing.Animates(TwTransitionProperty.Colors));
-        Assert.False(new TwTransition(100, properties: TwTransitionProperty.Shadow).Animates(TwTransitionProperty.Colors));
+        Assert.False(new TwTiming(100, properties: TwTransitionProperty.Shadow).Animates(TwTransitionProperty.Colors));
     }
 
     [Fact]
