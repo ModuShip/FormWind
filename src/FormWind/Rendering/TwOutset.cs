@@ -162,6 +162,15 @@ internal sealed class TwOutset
     private TwTransition _timing;
     // Geçişte belirerek çizilenler; değişmeyen tam opak kalır.
     private bool _shadowsFade, _ringFade;
+    // Klavye odağıyla beliren halka dışarıdan yerine daralır.
+    private DateTime _ringInStart;
+    private bool _ringIn;
+
+    /// <summary>Time (ms) a focus ring takes to close in onto the control.</summary>
+    internal const int RingInDuration = 180;
+
+    /// <summary>How far (96 DPI px) outside its place a focus ring starts.</summary>
+    internal const int RingInDistance = 6;
 
     private TwOutset(Control control)
     {
@@ -175,7 +184,11 @@ internal sealed class TwOutset
         _control.Disposed += (_, _) => _timer.Dispose();
         _timer.Tick += (_, _) =>
         {
-            if (Progress >= 1f) _timer.Stop();
+            if (Progress >= 1f && RingInProgress >= 1f)
+            {
+                _timer.Stop();
+                _ringIn = false;
+            }
             InvalidateParent();
         };
         Reattach();
@@ -191,7 +204,21 @@ internal sealed class TwOutset
         }
     }
 
-    internal bool Animating => Progress < 1f;
+    internal bool Animating => Progress < 1f || RingInProgress < 1f;
+
+    /// <summary>Progress of a focus ring closing in (eased); 1 when none runs.</summary>
+    internal float RingInProgress
+    {
+        get
+        {
+            if (!_ringIn) return 1f;
+            double elapsed = (DateTime.UtcNow - _ringInStart).TotalMilliseconds;
+            return elapsed >= RingInDuration ? 1f : TwMotion.Ease(TwEasing.Out, (float)(elapsed / RingInDuration));
+        }
+    }
+
+    /// <summary>How far (device px) outside its place the ring is drawn now.</summary>
+    internal int RingInSpread => (int)Math.Round(RingInDistance * TwDpi.DeviceDpi(_control) / 96f * (1 - RingInProgress));
 
     public TwOutsetSpec? Spec { get; private set; }
 
@@ -213,6 +240,15 @@ internal sealed class TwOutset
 
         bool shadowsChanged = !SameShadows(oldShadows, spec.Shadows);
         bool ringChanged = !SameRing(old, spec);
+        // Odak klavyeyle geldiyse beliren halka dıştan içe daralır (transition sınıfı olmasa da).
+        if ((old?.RingWidth ?? 0) <= 0 && spec.RingWidth > 0 && _control.Focused && TwFocusVisible.LastInputWasKeyboard
+            && TwMotion.CanAnimate(_control))
+        {
+            _ringIn = true;
+            _ringInStart = DateTime.UtcNow;
+            _timer.Start();
+        }
+        else if (spec.RingWidth <= 0) _ringIn = false;
         if (timing.TotalMs > 0 && TwMotion.CanAnimate(_control) && (shadowsChanged || ringChanged))
         {
             // Geçiş sürerken yeniden değişirse o anki görüntü yerine eski hedeften başlanır (kısa geçişte fark edilmez).
@@ -228,7 +264,7 @@ internal sealed class TwOutset
         else
         {
             _timing = TwTransition.None;
-            _timer.Stop();
+            if (!_ringIn) _timer.Stop();
             _fromShadows = Array.Empty<TwShadowLayer>();
             _fromRing = null;
             _fromExtent = 0;
@@ -262,7 +298,8 @@ internal sealed class TwOutset
         if (!_control.Visible || spec is null && (progress >= 1f || _fromShadows.Count == 0 && _fromRing is null)) return;
 
         var bounds = _control.Bounds;
-        int extent = Math.Max(spec?.Extent ?? 0, progress < 1f ? _fromExtent : 0);
+        int spread = RingInSpread;
+        int extent = Math.Max((spec?.Extent ?? 0) + spread, progress < 1f ? _fromExtent : 0);
         _paintedBounds = Rectangle.Inflate(bounds, extent, extent);
         // Bir kontrolün geçersiz kılması ebeveyni yalnızca o bölgede yeniden çizer; diğer gölge ve çerçeveler atlanır.
         if (clip is Rectangle area && !area.IntersectsWith(_paintedBounds)) return;
@@ -289,7 +326,13 @@ internal sealed class TwOutset
             TwPainter.StrokeChrome(graphics, bounds, frame);
         }
 
-        if (spec.RingWidth > 0) DrawRing(graphics, bounds, spec, fading && _ringFade ? progress : 1f);
+        if (spec.RingWidth > 0)
+        {
+            float opacity = fading && _ringFade ? progress : 1f;
+            // Daralan halka belirerek gelir.
+            if (spread > 0) opacity *= 0.35f + 0.65f * RingInProgress;
+            DrawRing(graphics, Rectangle.Inflate(bounds, spread, spread), spec, opacity);
+        }
     }
 
     private static void DrawRing(Graphics graphics, Rectangle bounds, TwOutsetSpec spec, float opacity)
@@ -324,7 +367,9 @@ internal sealed class TwOutset
     private void InvalidateParent()
     {
         if (_parent is null) return;
-        var extent = Math.Max(Spec?.Extent ?? 0, _fromExtent);
+        // Daralan halka için en dış konumu da kapsar.
+        var ringIn = _ringIn ? (int)Math.Ceiling(RingInDistance * TwDpi.DeviceDpi(_control) / 96f) : 0;
+        var extent = Math.Max((Spec?.Extent ?? 0) + ringIn, _fromExtent);
         var area = Rectangle.Inflate(_control.Bounds, extent, extent);
         _parent.Invalidate(Rectangle.Union(area, _paintedBounds.IsEmpty ? area : _paintedBounds));
         _paintedBounds = area;
