@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 <!--#if (Framework == "net472") -->
-    <!-- .NET Framework: per-monitor DPI comes from the manifest (on .NET, Program calls Application.SetHighDpiMode). -->
+    <!-- .NET Framework: per-monitor DPI comes from the manifest and App.config (on .NET, Program calls Application.SetHighDpiMode). -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
 <!--#endif -->
   </PropertyGroup>

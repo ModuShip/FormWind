@@ -15,7 +15,7 @@
   "sources": [
     {
       "modifiers": [
-        { "condition": "(Framework != \"net472\")", "exclude": [ "app.manifest" ] }
+        { "condition": "(Framework != \"net472\")", "exclude": [ "app.manifest", "App.config" ] }
       ]
     }
   ],
