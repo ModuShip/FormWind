@@ -761,7 +761,7 @@ TwToast.Show(this, "Order saved", TwDialogKind.Success);
 
 - **`TwDialog`** (instead of MessageBox): icon, title, message and right-aligned buttons; Enter is the default, Esc cancels/answers no. Follows the owner form's dark mode. Button texts come from [`TwTexts`](#localization) and can be overridden one by one with `TwDialog.Texts[DialogResult.Yes] = "Delete"`; `TwDialog.Create(...)` allows customization before showing.
 - **Text input:** `TwDialog.Prompt(this, "Name of the saved search", "Save search", placeholder: "e.g. Line 2 · night shift", validator: name => names.Contains(name) ? "This name is taken." : null)` returns the trimmed text, or `null` when cancelled. With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
-- **`TwToast`**: a notification that stacks in the bottom-right corner of the owner form, does not steal focus, pauses while hovered and closes by itself (`DefaultDuration` 4 s). Announced to screen readers as an Alert.
+- **`TwToast`**: a notification that stacks in a corner of the owner form (bottom-right by default, `TwToast.Position`), does not steal focus, pauses while hovered and closes by itself (`DefaultDuration` 4 s). Announced to screen readers as an Alert.
 
 ## Localization
 
@@ -1079,6 +1079,8 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 ```csharp
 TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
 ```
+
+- **Notifications:** `TwToast.Position` picks the corner (`BottomRight` by default, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; at the top the newest is on top). `TwToast.MaxVisible = 1` puts each new notification in the place of the previous one (which fades out where it is; 0 = no limit). A new notification slides 12 px in from its edge (`TwToast.EnterEasing`, e.g. `TwEasing.Spring`); a success notification draws its check mark. `toast.Subtitle` adds a muted line under the message ("DR-24817 · Line 2") and rearranges the stack.
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 

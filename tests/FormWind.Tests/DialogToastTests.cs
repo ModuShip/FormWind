@@ -70,6 +70,13 @@ public class DialogToastTests
         var first = TwToast.Show(owner, "Sipariş kaydedildi", TwDialogKind.Success, "Başarılı", durationMs: 0);
         var second = TwToast.Show(owner, "Bağlantı yavaş", TwDialogKind.Warning, durationMs: 0);
         Application.DoEvents();
+        // Kayarak giriş bitince yerlerindedir.
+        var deadline = DateTime.UtcNow.AddSeconds(2);
+        while ((first.Entering || second.Entering) && DateTime.UtcNow < deadline)
+        {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(10);
+        }
         Assert.Equal(2, TwToast.OpenToasts(owner).Count);
         var client = owner.RectangleToScreen(owner.ClientRectangle);
         Assert.True(second.Bottom <= client.Bottom && second.Right <= client.Right);

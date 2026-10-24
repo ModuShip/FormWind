@@ -357,3 +357,19 @@ FormWind.TwSparkline.AnimateOnShow.set -> void
 override FormWind.TwSparkline.Dispose(bool disposing) -> void
 override FormWind.TwSparkline.OnVisibleChanged(System.EventArgs! e) -> void
 override FormWind.TwTimeline.OnSizeChanged(System.EventArgs! e) -> void
+FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomCenter = 4 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomLeft = 2 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomRight = 0 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopCenter = 5 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopLeft = 3 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopRight = 1 -> FormWind.TwToastPosition
+FormWind.TwToastForm.Subtitle.get -> string!
+FormWind.TwToastForm.Subtitle.set -> void
+FormWind.TwToastForm.SubtitleLabel.get -> System.Windows.Forms.Label!
+static FormWind.TwToast.EnterEasing.get -> FormWind.TwEasing
+static FormWind.TwToast.EnterEasing.set -> void
+static FormWind.TwToast.MaxVisible.get -> int
+static FormWind.TwToast.MaxVisible.set -> void
+static FormWind.TwToast.Position.get -> FormWind.TwToastPosition
+static FormWind.TwToast.Position.set -> void

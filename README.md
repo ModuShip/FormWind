@@ -761,7 +761,7 @@ TwToast.Show(this, "Sipariş kaydedildi", TwDialogKind.Success);
 
 - **`TwDialog`** (MessageBox yerine): ikon, başlık, mesaj, sağa dayalı düğmeler; Enter varsayılan, Esc iptal/hayır. Sahip formun koyu temasını izler. Düğme metinleri [`TwTexts`](#yerelleştirme)'ten gelir, tek tek `TwDialog.Texts[DialogResult.Yes] = "Sil"` ile ezilebilir; `TwDialog.Create(...)` göstermeden özelleştirmeye izin verir.
 - **Metin girişi:** `TwDialog.Prompt(this, "Kayıtlı arama adı", "Aramayı kaydet", placeholder: "örn. Hat 2 · gece vardiyası", validator: ad => adlar.Contains(ad) ? "Bu ad kullanılıyor." : null)` kırpılmış metni, iptalde `null` döndürür. `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
-- **`TwToast`**: sahip formun sağ alt köşesinde üst üste dizilen, odak çalmayan, fare üzerindeyken bekleyen ve kendiliğinden kapanan bildirim (`DefaultDuration` 4 sn). Ekran okuyucuya Alert olarak bildirilir.
+- **`TwToast`**: sahip formun köşesinde (varsayılan sağ alt, `TwToast.Position`) üst üste dizilen, odak çalmayan, fare üzerindeyken bekleyen ve kendiliğinden kapanan bildirim (`DefaultDuration` 4 sn). Ekran okuyucuya Alert olarak bildirilir.
 
 ## Yerelleştirme
 
@@ -1079,6 +1079,8 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 ```csharp
 TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
 ```
+
+- **Bildirimler:** `TwToast.Position` köşeyi seçer (`BottomRight` varsayılan, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; üstte en yenisi en üsttedir). `TwToast.MaxVisible = 1` her yeni bildirimi eskisinin yerine koyar (eskisi yerinde solar; 0 = sınır yok). Yeni bildirim kendi kenarından 12 px kayarak gelir (`TwToast.EnterEasing`, örn. `TwEasing.Spring`); başarı bildiriminin onay işareti kendini çizer. `toast.Subtitle` mesajın altına soluk bir satır ekler ("DR-24817 · Hat 2") ve yığını yeniden dizer.
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 

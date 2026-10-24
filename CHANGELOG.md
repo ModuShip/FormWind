@@ -45,6 +45,9 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwAnimator` is public and animates a number of a control: `Animate(control, name, from, to, durationMs, set)`, with
   overloads for the curve, a delay and a `completed` callback, and `Cancel` / `IsAnimating`. A new animation with the
   same name replaces the running one; when the control cannot animate the end value is set at once.
+- `TwToast.Position` (`TwToastPosition`: the four corners and the top and bottom centers), `TwToast.MaxVisible` (1 =
+  each notification replaces the previous) and `TwToast.EnterEasing`. Notifications slide in from their edge while they
+  fade in, a success notification draws its check mark, and `TwToastForm.Subtitle` adds a muted line under the message.
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each
