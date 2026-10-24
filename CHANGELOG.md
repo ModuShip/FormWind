@@ -50,6 +50,8 @@ All notable changes to FormWind are documented in this file. The format follows
   fade in, a success notification draws its check mark, and `TwToastForm.Subtitle` adds a muted line under the message.
 - `TwButton.IsBusy` draws a spinner before the text and ignores clicks, Enter, Space and `PerformClick` (no `Click`, no
   `DialogResult`); screen readers get the busy state.
+- `TwPopover` and the menus FormWind draws grow from 95% and fade in from the side they open from (140 ms) and fade out
+  when they close (120 ms; the popover used to fade in and out in 150 ms).
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each

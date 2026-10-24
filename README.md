@@ -1088,6 +1088,8 @@ btnSave.IsBusy = true;
 try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
 ```
 
+- **Popover ve menüler:** `TwPopover` ve FormWind'in çizdiği menüler açılırken çapanın (alt menüde sahip öğenin, bağlam menüsünde imlecin) tarafından %95'ten büyüyüp solarak belirir (140 ms), kapanırken solar (120 ms). Pencere içeriği ölçeklenemediği için açılış boyunca gerçek pencere görünmezdir (tıklama ve tuşları alır), yerinde tıklamayı geçiren bir görüntüsü büyür.
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 
 ```csharp

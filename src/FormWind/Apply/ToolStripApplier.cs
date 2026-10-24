@@ -30,6 +30,13 @@ internal class TwToolStripRenderer : ToolStripRenderer
 
     public TwMenuColors Colors { get; }
 
+    // FormWind'in çizdiği menüler açılırken büyüyüp solarak belirir, kapanırken solar (bkz. TwPopupMotion).
+    protected override void Initialize(ToolStrip toolStrip)
+    {
+        base.Initialize(toolStrip);
+        if (toolStrip is ToolStripDropDown dropDown) TwPopupMotion.Attach(dropDown);
+    }
+
     protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
     {
         var back = e.ToolStrip is ToolStripDropDown ? Colors.MenuBack : Colors.Back;
