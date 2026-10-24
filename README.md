@@ -1081,6 +1081,12 @@ TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w
 ```
 
 - **Bildirimler:** `TwToast.Position` köşeyi seçer (`BottomRight` varsayılan, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; üstte en yenisi en üsttedir). `TwToast.MaxVisible = 1` her yeni bildirimi eskisinin yerine koyar (eskisi yerinde solar; 0 = sınır yok). Yeni bildirim kendi kenarından 12 px kayarak gelir (`TwToast.EnterEasing`, örn. `TwEasing.Spring`); başarı bildiriminin onay işareti kendini çizer. `toast.Subtitle` mesajın altına soluk bir satır ekler ("DR-24817 · Hat 2") ve yığını yeniden dizer.
+- **Meşgul buton:** `TwButton.IsBusy = true` metnin önünde dönen bir gösterge çizer ve tıklamaları (Enter, Space, `PerformClick`, `AcceptButton`) yok sayar; `Click` ve `DialogResult` gelmez, ekran okuyucu Busy durumunu duyar.
+
+```csharp
+btnSave.IsBusy = true;
+try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+```
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 

@@ -1081,6 +1081,12 @@ TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w
 ```
 
 - **Notifications:** `TwToast.Position` picks the corner (`BottomRight` by default, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; at the top the newest is on top). `TwToast.MaxVisible = 1` puts each new notification in the place of the previous one (which fades out where it is; 0 = no limit). A new notification slides 12 px in from its edge (`TwToast.EnterEasing`, e.g. `TwEasing.Spring`); a success notification draws its check mark. `toast.Subtitle` adds a muted line under the message ("DR-24817 · Line 2") and rearranges the stack.
+- **Busy button:** `TwButton.IsBusy = true` draws a spinner before the text and ignores clicks (Enter, Space, `PerformClick`, `AcceptButton`); no `Click` and no `DialogResult`, and screen readers hear the busy state.
+
+```csharp
+btnSave.IsBusy = true;
+try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+```
 
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 

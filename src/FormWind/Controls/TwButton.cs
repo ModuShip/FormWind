@@ -1,13 +1,18 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace FormWind;
 
 /// <summary>
 /// A button that paints its own background, corners and text. <see cref="ButtonBase.Image"/> is not drawn yet;
-/// the <c>Paint</c> event is not raised.
+/// the <c>Paint</c> event is not raised. While <see cref="IsBusy"/> a spinner turns before the text and clicks are ignored:
+/// <code>
+/// btnSave.IsBusy = true;
+/// try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+/// </code>
 /// </summary>
 [ToolboxItem(true)]
 [Description("Owner-drawn button with rounded corners.")]
@@ -17,6 +22,7 @@ public class TwButton : Button, ITwChrome
     private string _iconName = "";
     private TwIconPosition _iconPosition = TwIconPosition.Left;
     private int _iconSpacing = 8;
+    private bool _busy;
 
     protected override void OnGotFocus(EventArgs e)
     {
@@ -89,6 +95,55 @@ public class TwButton : Button, ITwChrome
         set { _iconSpacing = Math.Max(0, value); Invalidate(); }
     }
 
+    /// <summary>
+    /// Work started by the button is running: a spinner turns before the text (in place of the icon) and further clicks,
+    /// Enter, Space and <see cref="Button.PerformClick"/> are ignored, so the work is not started twice. Screen readers
+    /// hear the button as busy. The spinner stands still when animations are off.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(false)]
+    public bool IsBusy
+    {
+        get => _busy;
+        set
+        {
+            if (_busy == value) return;
+            _busy = value;
+            TwAnimations.Track(this, value ? TwAnimation.Spin : TwAnimation.None);
+            // AutoSize düğme göstergeye yer açar (ikonu yoksa).
+            if (AutoSize) Parent?.PerformLayout(this, nameof(IsBusy));
+            Invalidate();
+            AccessibilityNotifyClients(AccessibleEvents.StateChange, -1);
+        }
+    }
+
+    /// <summary>Ignored while <see cref="IsBusy"/>: no <c>Click</c> and no <see cref="Button.DialogResult"/>.</summary>
+    protected override void OnClick(EventArgs e)
+    {
+        if (_busy) return;
+        base.OnClick(e);
+    }
+
+    protected override AccessibleObject CreateAccessibilityInstance() => new TwButtonAccessibleObject(this);
+
+    private sealed class TwButtonAccessibleObject : ButtonBaseAccessibleObject
+    {
+        private readonly TwButton _owner;
+
+        public TwButtonAccessibleObject(TwButton owner) : base(owner) => _owner = owner;
+
+        public override AccessibleRole Role => _owner.AccessibleRole != AccessibleRole.Default ? _owner.AccessibleRole : AccessibleRole.PushButton;
+
+        public override AccessibleStates State => _owner._busy ? base.State | AccessibleStates.Busy : base.State;
+
+        public override void DoDefaultAction()
+        {
+            if (!_owner._busy) base.DoDefaultAction();
+        }
+    }
+
+    /// <summary>Whether a spinner or an icon is drawn next to the text.</summary>
+    private bool HasGlyph => _busy || TwTheme.Current.HasIcon(_iconName);
+
     private bool ShouldSerializeBorderColor() => !_chrome.BorderColor.IsEmpty;
 
     private void ResetBorderColor() => BorderColor = Color.Empty;
@@ -118,7 +173,7 @@ public class TwButton : Button, ITwChrome
         if (!UseMnemonic) flags |= TextFormatFlags.NoPrefix;
         else if (!ShowKeyboardCues) flags |= TextFormatFlags.HidePrefix;
 
-        if (TwTheme.Current.HasIcon(_iconName))
+        if (HasGlyph)
             DrawIconAndText(graphics, _iconName, textBounds, flags);
         else
             TextRenderer.DrawText(graphics, Text, Font, textBounds, TwDisabledText.TextColor(this), flags);
@@ -134,7 +189,7 @@ public class TwButton : Button, ITwChrome
     /// <summary>The size for AutoSize: the text's size plus the icon and its spacing when an icon is drawn.</summary>
     public override Size GetPreferredSize(Size proposedSize)
     {
-        if (!TwTheme.Current.HasIcon(_iconName)) return base.GetPreferredSize(proposedSize);
+        if (!HasGlyph) return base.GetPreferredSize(proposedSize);
         // Boyut çizimle aynı ölçülerden hesaplanır. base.GetPreferredSize kullanılmaz: GrowOnly kipinde mevcut boyutu
         // da kattığından ikon payı her yerleşimde yeniden eklenir ve düğme durmadan büyürdü.
         const TextFormatFlags measure = TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine;
@@ -144,6 +199,20 @@ public class TwButton : Button, ITwChrome
         var text = hasText ? TextRenderer.MeasureText(Text, Font, Size.Empty, measure) : Size.Empty;
         var size = new Size(Padding.Horizontal + em + gap + text.Width + 1, Padding.Vertical + Math.Max(em, text.Height));
         return AutoSizeMode == AutoSizeMode.GrowOnly ? new Size(Math.Max(size.Width, Width), Math.Max(size.Height, Height)) : size;
+    }
+
+    // Meşgul göstergesi: soluk bir halka üstünde dönen çeyrek eksik yay (animate-spin ile aynı saat: saniyede bir tur).
+    private void DrawSpinner(Graphics graphics, Rectangle box, Color color)
+    {
+        float stroke = Math.Max(1.5f, box.Width / 8f);
+        var ring = RectangleF.Inflate(box, -stroke / 2 - 1, -stroke / 2 - 1);
+        if (ring.Width <= 0) return;
+        var state = graphics.Save();
+        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using (var track = new Pen(Color.FromArgb(color.A / 4, color), stroke)) graphics.DrawEllipse(track, ring);
+        using (var arc = new Pen(color, stroke) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+            graphics.DrawArc(arc, ring, TwAnimations.SpinAngle(this) - 90, 270);
+        graphics.Restore(state);
     }
 
     private static Rectangle AlignVertically(Rectangle column, int size, TextFormatFlags vertical)
@@ -172,12 +241,13 @@ public class TwButton : Button, ITwChrome
             : bounds.X;
 
         var vertical = textFlags & (TextFormatFlags.Top | TextFormatFlags.VerticalCenter | TextFormatFlags.Bottom);
-        // Sağdan sola: ikon metnin öbür yanına geçer (IconPosition okuma yönüne göredir).
-        bool iconFirst = (IconPosition == TwIconPosition.Left) != TwRtl.NeedsMirroring(this);
+        // Sağdan sola: ikon metnin öbür yanına geçer (IconPosition okuma yönüne göredir). Meşgul göstergesi hep metnin önündedir.
+        bool iconFirst = (_busy || IconPosition == TwIconPosition.Left) != TwRtl.NeedsMirroring(this);
         var iconRect = new Rectangle(iconFirst ? x : x + textWidth + gap, bounds.Y, iconSize.Width, bounds.Height);
         var textRect = new Rectangle(iconFirst ? x + iconSize.Width + gap : x, bounds.Y, textWidth, bounds.Height);
 
-        TwIconRenderer.DrawIcon(graphics, icon, em, AlignVertically(iconRect, em, vertical), TwDisabledText.TextColor(this));
+        if (_busy) DrawSpinner(graphics, AlignVertically(iconRect, em, vertical), TwDisabledText.TextColor(this));
+        else TwIconRenderer.DrawIcon(graphics, icon, em, AlignVertically(iconRect, em, vertical), TwDisabledText.TextColor(this));
         if (hasText)
         {
             var flags = (textFlags & ~(TextFormatFlags.HorizontalCenter | TextFormatFlags.Right)) | TextFormatFlags.NoPadding;

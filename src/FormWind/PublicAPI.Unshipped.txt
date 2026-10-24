@@ -373,3 +373,7 @@ static FormWind.TwToast.MaxVisible.get -> int
 static FormWind.TwToast.MaxVisible.set -> void
 static FormWind.TwToast.Position.get -> FormWind.TwToastPosition
 static FormWind.TwToast.Position.set -> void
+FormWind.TwButton.IsBusy.get -> bool
+FormWind.TwButton.IsBusy.set -> void
+override FormWind.TwButton.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwButton.OnClick(System.EventArgs! e) -> void
