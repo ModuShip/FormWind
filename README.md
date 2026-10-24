@@ -1098,6 +1098,8 @@ TwTransition.CrossFade(pnlPage, () => ShowPage(next));
 TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // başlık çubuğu dahil tüm form
 ```
 
+- **Dikkat çekme:** `TwAttention.Pulse(control, count: 2)` kontrolün kenarından dışa yayılıp solan halkalar gönderir (her biri 700 ms), örneğin sayısı artan bir rozete; renk zemini varsa zemin, yoksa yazı rengidir. `TwChip.Pulse()` aynısıdır.
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 
 ```csharp

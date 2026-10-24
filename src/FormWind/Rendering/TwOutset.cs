@@ -172,6 +172,18 @@ internal sealed class TwOutset
     /// <summary>How far (96 DPI px) outside its place a focus ring starts.</summary>
     internal const int RingInDistance = 6;
 
+    // Dikkat çekme: kontrolün çevresinden dışa yayılıp solan halkalar (TwAttention.Pulse).
+    private DateTime _pingStart;
+    private int _pingCount;
+    private float _pingRadius;
+    private Color _pingColor;
+
+    /// <summary>Time (ms) of one attention pulse.</summary>
+    internal const int PingDuration = 700;
+
+    /// <summary>How far (96 DPI px) an attention pulse spreads out.</summary>
+    internal const int PingDistance = 10;
+
     private TwOutset(Control control)
     {
         _control = control;
@@ -184,10 +196,11 @@ internal sealed class TwOutset
         _control.Disposed += (_, _) => _timer.Dispose();
         _timer.Tick += (_, _) =>
         {
-            if (Progress >= 1f && RingInProgress >= 1f)
+            if (Progress >= 1f && RingInProgress >= 1f && !Pinging)
             {
                 _timer.Stop();
                 _ringIn = false;
+                _pingCount = 0;
             }
             InvalidateParent();
         };
@@ -204,7 +217,23 @@ internal sealed class TwOutset
         }
     }
 
-    internal bool Animating => Progress < 1f || RingInProgress < 1f;
+    internal bool Animating => Progress < 1f || RingInProgress < 1f || Pinging;
+
+    /// <summary>Whether attention pulses are running.</summary>
+    internal bool Pinging => _pingCount > 0 && (DateTime.UtcNow - _pingStart).TotalMilliseconds < _pingCount * PingDuration;
+
+    /// <summary>Starts <paramref name="count"/> attention pulses in <paramref name="color"/> around the control.</summary>
+    public void Ping(int count, Color color, float radius)
+    {
+        _pingStart = DateTime.UtcNow;
+        _pingCount = Math.Max(1, count);
+        _pingColor = color;
+        _pingRadius = radius;
+        _timer.Start();
+        InvalidateParent();
+    }
+
+    private int PingExtent => _pingCount > 0 ? (int)Math.Ceiling(PingDistance * TwDpi.DeviceDpi(_control) / 96f) + 2 : 0;
 
     /// <summary>Progress of a focus ring closing in (eased); 1 when none runs.</summary>
     internal float RingInProgress
@@ -295,11 +324,12 @@ internal sealed class TwOutset
     {
         var spec = Spec;
         float progress = Progress;
-        if (!_control.Visible || spec is null && (progress >= 1f || _fromShadows.Count == 0 && _fromRing is null)) return;
+        bool pinging = Pinging;
+        if (!_control.Visible || spec is null && !pinging && (progress >= 1f || _fromShadows.Count == 0 && _fromRing is null)) return;
 
         var bounds = _control.Bounds;
         int spread = RingInSpread;
-        int extent = Math.Max((spec?.Extent ?? 0) + spread, progress < 1f ? _fromExtent : 0);
+        int extent = Math.Max(Math.Max((spec?.Extent ?? 0) + spread, progress < 1f ? _fromExtent : 0), PingExtent);
         _paintedBounds = Rectangle.Inflate(bounds, extent, extent);
         // Bir kontrolün geçersiz kılması ebeveyni yalnızca o bölgede yeniden çizer; diğer gölge ve çerçeveler atlanır.
         if (clip is Rectangle area && !area.IntersectsWith(_paintedBounds)) return;
@@ -315,6 +345,7 @@ internal sealed class TwOutset
             for (int i = _fromShadows.Count - 1; i >= 0; i--)
                 TwShadowRenderer.Draw(graphics, bounds, shadowRadius, _fromShadows[i], 1f - progress);
         if (fading && _fromRing != null) DrawRing(graphics, bounds, _fromRing, 1f - progress);
+        if (pinging) DrawPing(graphics, _control.Bounds);
         if (spec is null) return;
         float shadowOpacity = fading && _shadowsFade ? progress : 1f;
         for (int i = spec.Shadows.Count - 1; i >= 0; i--)
@@ -333,6 +364,20 @@ internal sealed class TwOutset
             if (spread > 0) opacity *= 0.35f + 0.65f * RingInProgress;
             DrawRing(graphics, Rectangle.Inflate(bounds, spread, spread), spec, opacity);
         }
+    }
+
+    // Her darbe kontrolün kenarından başlar, PingDistance kadar yayılırken solar.
+    private void DrawPing(Graphics graphics, Rectangle bounds)
+    {
+        double elapsed = (DateTime.UtcNow - _pingStart).TotalMilliseconds % PingDuration;
+        float t = TwMotion.Ease(TwEasing.Out, (float)(elapsed / PingDuration));
+        float scale = TwDpi.DeviceDpi(_control) / 96f;
+        int grow = (int)Math.Round(PingDistance * scale * t);
+        int alpha = (int)Math.Round(_pingColor.A * 0.9f * (1 - t));
+        if (alpha <= 0) return;
+        var ring = Rectangle.Inflate(bounds, grow, grow);
+        float radius = TwPainter.EffectiveRadius(_pingRadius, bounds.Size) + grow;
+        TwPainter.StrokeRounded(graphics, ring, radius, Math.Max(2f, 2.5f * scale), Color.FromArgb(alpha, _pingColor));
     }
 
     private static void DrawRing(Graphics graphics, Rectangle bounds, TwOutsetSpec spec, float opacity)
@@ -369,7 +414,7 @@ internal sealed class TwOutset
         if (_parent is null) return;
         // Daralan halka için en dış konumu da kapsar.
         var ringIn = _ringIn ? (int)Math.Ceiling(RingInDistance * TwDpi.DeviceDpi(_control) / 96f) : 0;
-        var extent = Math.Max((Spec?.Extent ?? 0) + ringIn, _fromExtent);
+        var extent = Math.Max(Math.Max((Spec?.Extent ?? 0) + ringIn, _fromExtent), PingExtent);
         var area = Rectangle.Inflate(_control.Bounds, extent, extent);
         _parent.Invalidate(Rectangle.Union(area, _paintedBounds.IsEmpty ? area : _paintedBounds));
         _paintedBounds = area;

@@ -1098,6 +1098,8 @@ TwTransition.CrossFade(pnlPage, () => ShowPage(next));
 TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // the whole form, title bar included
 ```
 
+- **Drawing attention:** `TwAttention.Pulse(control, count: 2)` sends rings out from the control's edges that spread and fade (700 ms each), for example on a badge whose count went up; the color is its background when it has one, otherwise its text color. `TwChip.Pulse()` does the same.
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 
 ```csharp

@@ -286,6 +286,12 @@ public class TwChip : Control, ITwChrome, ITwCheckable
     }
 
     /// <summary>Clicks the chip (toggles <see cref="Checked"/> when checkable).</summary>
+    /// <summary>Draws attention to the chip: <paramref name="count"/> rings spread out from it and fade (see <see cref="TwAttention.Pulse"/>).</summary>
+    public void Pulse(int count = 2) => TwAttention.Pulse(this, count);
+
+    /// <summary>Corner radius the chip is drawn with (a pill without <c>rounded-*</c>).</summary>
+    internal float DrawnRadius => _chrome.Equals(TwChrome.None) ? 9999 : _chrome.Radius;
+
     public void PerformClick()
     {
         if (Enabled && Interactive) OnClick(EventArgs.Empty);

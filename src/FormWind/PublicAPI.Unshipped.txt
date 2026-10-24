@@ -386,3 +386,7 @@ static FormWind.TwGrid.SetLoadingStyle(System.Windows.Forms.DataGridView! grid, 
 FormWind.TwTransition
 static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change) -> void
 static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change, int durationMs) -> void
+FormWind.TwAttention
+FormWind.TwChip.Pulse(int count = 2) -> void
+static FormWind.TwAttention.IsPulsing(System.Windows.Forms.Control! control) -> bool
+static FormWind.TwAttention.Pulse(System.Windows.Forms.Control! control, int count = 2) -> void

@@ -57,6 +57,7 @@ All notable changes to FormWind are documented in this file. The format follows
   light band across the skeleton rows instead of the pulse.
 - `TwTransition.CrossFade(host, change)` applies a change (a page switch, a theme change) under a picture of the old
   look that fades away (250 ms, or a given duration).
+- `TwAttention.Pulse(control, count)` and `TwChip.Pulse(count)` send rings out from a control to draw attention to it.
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each
