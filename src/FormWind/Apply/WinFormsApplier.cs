@@ -31,7 +31,8 @@ public class WinFormsApplier : IStyleApplier
         var original = context.Original;
 
         var (back, fore) = ColorTargets(control, style, context);
-        ApplyColors(control, back, fore, original, applied, TransitionDuration(control, style, context), context.DesignMode);
+        var timing = TransitionTiming(control, style, context);
+        ApplyColors(control, back, fore, original, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTransition.None, context.DesignMode);
         // RTF olarak yüklenen metnin "otomatik" rengi ForeColor yerine sistem yazı rengiyle çizilir (bkz. TwRichTextColor).
         if (!context.DesignMode && control is RichTextBox rich) TwRichTextColor.Update(rich, fore.HasValue);
         ApplyFont(control, style, original, applied, context.Theme);
@@ -58,8 +59,10 @@ public class WinFormsApplier : IStyleApplier
         if (!context.DesignMode && TwDisabledNative.Supports(control)) TwDisabledNative.Update(control, style.BackColor is Color { A: 255 });
         // Yüksek Karşıtlık'ta accent-* vurgu rengine (Highlight) çevrilir; bağlantılar Windows'un bağlantı rengiyle kalır.
         if (control is LinkLabel link) ApplyLinkColors(link, (context.State & TwState.HighContrast) != 0 ? new TwStyle() : style);
-        ApplyChrome(control, style, context, applied);
+        ApplyChrome(control, style, context, applied, timing);
         if (control is ITwToggle toggle) toggle.SetToggleColors(style.AccentColor, style.FillColor);
+        if (control is ITwAnimated animated) animated.SetAnimation(context.DesignMode ? TwAnimation.None : style.Animation ?? TwAnimation.None);
+        if (control is ITwTimed timed) timed.SetTiming(new TwTimingClasses(style.Transition, style.DurationMs, style.DelayMs, style.Easing));
         if (!context.DesignMode && TwNativeTheme.Supports(control))
         {
             // Yüksek Karşıtlık'ta Windows'un karşıtlık temaları kalır (koyu tema adları onun renklerini ezerdi).
@@ -77,11 +80,19 @@ public class WinFormsApplier : IStyleApplier
             textBox.PlaceholderColor = context.Parsed.ResolvePart("placeholder", context.State & ~(TwState.Hover | TwState.Active)).ForeColor;
         if (control is TwPictureBox picture && style.ObjectFit is TwImageFit fit) picture.Fit = fit;
         if (control is TwTabStrip tabs) ApplyTabColors(tabs, style, context);
+        if (control is TwPanel panel) panel.BackdropBlur = style.BackdropBlur ?? 0;
+        if (control is TwToolbar toolbar)
+        {
+            // Araç çubuğu: öğe aralığı gap-*, "daha fazla" menüsü menu: ve item:.
+            if (style.GapX is int toolbarGap) toolbar.Gap = toolbarGap;
+            toolbar.MenuColors = ToolStripApplier.BuildColors(style, context);
+        }
         if (control is TwDatePicker picker) picker.CalendarColors = CalendarColors(style, context);
         if (control is TwCalendar calendar) calendar.Colors = CalendarColors(style, context);
         if (control is TwDataList list) ApplyDataListColors(list, style, context);
         if (control is TwSlider slider) ApplySliderColors(slider, style, context);
         if (control is TwField field) ApplyFieldParts(field, context);
+        if (control is TwSettingRow settingRow) ApplySettingRowParts(settingRow, style, context);
         if (control is TwPager pager)
         {
             // Geçerli sayfa selected:, hover item:hover:.
@@ -162,6 +173,18 @@ public class WinFormsApplier : IStyleApplier
         field.SetPartStyles(label.ForeColor, captionFont, hint.ForeColor, error.ForeColor, messageFont);
     }
 
+    // Ayar satırı: etiket label:, açıklama ve birim hint:, satırlar arası ayırıcı divide-*.
+    private static void ApplySettingRowParts(TwSettingRow row, TwStyle style, TwApplyContext context)
+    {
+        var state = context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible);
+        var label = context.Parsed.ResolvePart("label", state);
+        var hint = context.Parsed.ResolvePart("hint", state);
+        float scale = TwDpi.FontScale(row);
+        var labelFont = label.HasFont ? TwFonts.Create(label, row.Font, context.Theme, scale) : null;
+        var hintFont = hint.HasFont ? TwFonts.Create(hint, row.Font, context.Theme, scale) : null;
+        row.SetPartStyles(label.ForeColor, labelFont, hint.ForeColor, hintFont, style.DivideColor);
+    }
+
     // Kaydırıcı: ray fill-*, dolu kısım accent-*, tutamaç item:bg-* (varsayılan beyaz).
     private static void ApplySliderColors(TwSlider slider, TwStyle style, TwApplyContext context)
     {
@@ -203,6 +226,7 @@ public class WinFormsApplier : IStyleApplier
         else if (style.ForeColor is Color f) colors.SelectedFore = f;
         if (row.BorderColor is Color divider) colors.Divider = divider;
         if (style.FillColor is Color thumb) colors.Thumb = thumb;
+        colors.Accent = style.AccentColor;
         // Grup başlıkları header:, iskelet satırlar zemin ile metin renginin %12 karışımı.
         var header = context.Parsed.ResolvePart("header", state);
         if (header.BackColor is Color groupBack) colors.GroupBack = groupBack;
@@ -234,14 +258,28 @@ public class WinFormsApplier : IStyleApplier
         if (hover.BackColor is Color hoverBack) colors.HoverBack = hoverBack;
         if (style.FillColor is Color track) colors.Track = track;
         tabs.Colors = colors;
+        // Taşma menüsü: menu: ve item: class'ları; yazı rengi verilmemişse etkin sekmeninki, koyu menüde hover ve kenarlık
+        // menü zemininden türetilir.
+        var menuColors = ToolStripApplier.BuildColors(style, context);
+        if (context.Parsed.ResolvePart("item", state).ForeColor is null) menuColors.Fore = colors.ActiveFore;
+        if (context.Parsed.ResolvePart("item", state | TwState.Hover).ForeColor is null) menuColors.ItemHoverFore = colors.ActiveFore;
+        if (menuColors.MenuBack.GetBrightness() < 0.5f && hover.BackColor is null)
+        {
+            menuColors.ItemHoverBack = TwCharts.Blend(menuColors.MenuBack, menuColors.Fore, 0.12f);
+            if (context.Parsed.ResolvePart("menu", state).BorderColor is null) menuColors.MenuBorder = TwCharts.Blend(menuColors.MenuBack, menuColors.Fore, 0.2f);
+        }
+        tabs.MenuColors = menuColors;
         tabs.Gap = style.GapX is int gap ? TwSides.Scale(gap, context.Scale) : -1;
     }
 
     // transition yalnızca çalışma zamanında ve görünen (handle'ı oluşmuş) kontrollerde anlamlıdır.
-    private static int TransitionDuration(Control control, TwStyle style, TwApplyContext context) =>
-        style.Transition == true && !context.DesignMode && control.IsHandleCreated ? style.DurationMs ?? 150 : 0;
+    internal static TwTransition TransitionTiming(Control control, TwStyle style, TwApplyContext context) =>
+        style.Transition == true && TwMotion.Enabled && !context.DesignMode && control.IsHandleCreated
+            ? new TwTransition(style.DurationMs ?? TwTransition.DefaultDuration, style.DelayMs ?? 0, style.Easing ?? TwEasing.Out,
+                style.TransitionProperty ?? TwTransitionProperty.All)
+            : TwTransition.None;
 
-    private static void ApplyColors(Control control, Color? back, Color? fore, TwOriginal original, Applied applied, int duration, bool designMode)
+    private static void ApplyColors(Control control, Color? back, Color? fore, TwOriginal original, Applied applied, TwTransition duration, bool designMode)
     {
         bool backApplied = applied.Back.Applied;
         ApplyColor(control, TwColorChannel.Back, back, original.BackColor, applied.Back, duration, designMode);
@@ -314,7 +352,7 @@ public class WinFormsApplier : IStyleApplier
     // Renk kanalı: FormWind'in kontrolde bıraktığı değer izlenir. Bir sonraki uygulamada değer farklıysa (ya da
     // kalıtıma bırakılmışken açıkça atanmışsa) uygulama kodu değiştirmiştir; kanal uygulamaya geçer ve hover:/dark:
     // varyantları bu rengi ezmez. Ebeveynden kalıtılan renk değişimleri değişiklik sayılmaz.
-    private static void ApplyColor(Control control, TwColorChannel channel, Color? target, Color? original, ChannelState state, int duration, bool designMode)
+    private static void ApplyColor(Control control, TwColorChannel channel, Color? target, Color? original, ChannelState state, TwTransition duration, bool designMode)
     {
         bool back = channel == TwColorChannel.Back;
         string property = back ? nameof(Control.BackColor) : nameof(Control.ForeColor);
@@ -332,7 +370,7 @@ public class WinFormsApplier : IStyleApplier
         // uygulamanın kendi renginden başlar, açılışta renk kayar ve geçiş süresince ara renkler görünürdü.
         if (!state.Tracked && !designMode)
         {
-            duration = 0;
+            duration = TwTransition.None;
             state.Tracked = true;
             state.Left = original;
         }
@@ -358,7 +396,7 @@ public class WinFormsApplier : IStyleApplier
         {
             if (original is Color restore)
                 SetColor(control, channel, restore, duration, () => Remember(control, back, state, inherited: false));
-            else if (duration > 0)
+            else if (duration.TotalMs > 0)
                 SetColor(control, channel, control.Parent is Control parent ? Current(parent, back) : back ? Control.DefaultBackColor : Control.DefaultForeColor, duration, () =>
                 {
                     if (back) control.ResetBackColor();
@@ -447,9 +485,9 @@ public class WinFormsApplier : IStyleApplier
     }
 
     // Geçiş bitince miras değere dönmek için completed ile Reset çağrılır.
-    private static void SetColor(Control control, TwColorChannel channel, Color target, int duration, Action? completed)
+    private static void SetColor(Control control, TwColorChannel channel, Color target, TwTransition duration, Action? completed)
     {
-        if (duration > 0)
+        if (duration.TotalMs > 0)
         {
             TwAnimator.Animate(control, channel, target, duration, completed);
             return;
@@ -750,7 +788,7 @@ public class WinFormsApplier : IStyleApplier
         }
     }
 
-    private static void ApplyChrome(Control control, TwStyle style, TwApplyContext context, Applied applied)
+    private static void ApplyChrome(Control control, TwStyle style, TwApplyContext context, Applied applied, TwTransition timing)
     {
         var chrome = TwChrome.FromStyle(style, context.Scale, context.Theme.DefaultBorderColor);
         var outset = TwOutsetSpec.FromStyle(style, context.Scale);
@@ -762,14 +800,10 @@ public class WinFormsApplier : IStyleApplier
             chrome = new TwChrome(chrome.Radius, width, width, width, width, SystemColors.WindowText);
         }
 
-        if (control is ITwChrome owner)
-        {
-            owner.SetChrome(chrome);
-        }
-        else if ((style.HasChrome || style.HasGradient || TwDecorator.IsAttached(control)) && SupportsDecoration(control))
-        {
-            TwDecorator.For(control).Update(chrome);
-        }
+        Action<TwChrome>? show = control is ITwChrome owner ? owner.SetChrome
+            : (style.HasChrome || style.HasGradient || TwDecorator.IsAttached(control)) && SupportsDecoration(control) ? TwDecorator.For(control).Update
+            : null;
+        if (show != null) ShowChrome(control, chrome, applied, timing.Animates(TwTransitionProperty.Colors) ? timing : TwTransition.None, show);
 
         // Gölge ve halka ebeveyn tarafından çizilir; native kontrollerde de çalışır (TextBox'ın focus halkası gibi).
         // TextBox kendi kenarlığını çizer ve Paint olayı çalışmaz: native kenarlık kapatılır, class'ların kenarlığı ve
@@ -806,7 +840,33 @@ public class WinFormsApplier : IStyleApplier
         }
 
         if (style.HasOutset || !outset.IsEmpty || TwOutset.IsAttached(control))
-            TwOutset.For(control).Update(outset, TransitionDuration(control, style, context));
+            TwOutset.For(control).Update(outset, timing.Animates(TwTransitionProperty.Shadow) ? timing : TwTransition.None);
+    }
+
+    // Kenarlık rengi transition-colors ile geçer; kalınlık, köşe ve gradyan hemen yeni değerini alır. Geçiş, o an gösterilen
+    // renkten başlar (önceki geçiş sürüyorsa onun ara renginden).
+    private static void ShowChrome(Control control, TwChrome chrome, Applied applied, TwTransition timing, Action<TwChrome> show)
+    {
+        var shown = applied.Chrome;
+        // Geçiş aynı hedefe sürüyorsa (hover sırasında yenileme) baştan başlatılmaz.
+        if (shown is TwChrome current && current.WithBorderColor(chrome.BorderColor).Equals(chrome)
+            && TwAnimator.TryGetTarget(control, TwColorChannel.Border, out var target) && target.ToArgb() == chrome.BorderColor.ToArgb())
+            return;
+        bool animate = shown is TwChrome previous && previous.HasBorder && chrome.HasBorder
+                       && previous.BorderColor.ToArgb() != chrome.BorderColor.ToArgb() && timing.TotalMs > 0 && TwMotion.CanAnimate(control);
+        if (!animate)
+        {
+            TwAnimator.Cancel(control, TwColorChannel.Border);
+            applied.Chrome = chrome;
+            show(chrome);
+            return;
+        }
+        TwAnimator.Animate(control, TwColorChannel.Border, shown!.Value.BorderColor, chrome.BorderColor, timing, color =>
+        {
+            var frame = chrome.WithBorderColor(color);
+            applied.Chrome = frame;
+            show(frame);
+        });
     }
 
     /// <summary>Space between a native TextBox frame and its text (96 DPI pixels).</summary>
@@ -847,6 +907,8 @@ public class WinFormsApplier : IStyleApplier
         /// <summary>Original border of a TextBox with a painted frame; <c>null</c> = no frame.</summary>
         public BorderStyle? NativeBorder;
         public bool Hidden;
+        /// <summary>The chrome last shown (an intermediate border color during a transition).</summary>
+        public TwChrome? Chrome;
         public Padding? DesiredPadding;
         public Padding? DesiredMargin;
         public bool FitHooked;

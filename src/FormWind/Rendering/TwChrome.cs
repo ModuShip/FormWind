@@ -130,6 +130,10 @@ public readonly struct TwChrome : IEquatable<TwChrome>
             TwGradient.FromStyle(style));
     }
 
+    /// <summary>The same chrome with another border color (a frame of a border color transition).</summary>
+    internal TwChrome WithBorderColor(Color color) =>
+        new TwChrome(Radius, BorderLeft, BorderTop, BorderRight, BorderBottom, color, Gradient);
+
     public bool Equals(TwChrome other) =>
         Radius == other.Radius && BorderLeft == other.BorderLeft && BorderTop == other.BorderTop
         && BorderRight == other.BorderRight && BorderBottom == other.BorderBottom

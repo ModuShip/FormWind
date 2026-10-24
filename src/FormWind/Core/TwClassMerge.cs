@@ -36,7 +36,8 @@ internal static class TwClassMerge
         ("min-w-", "min-w"), ("max-w-", "max-w"), ("min-h-", "min-h"), ("max-h-", "max-h"), ("w-", "w"), ("h-", "h"),
         ("rounded", "rounded"), ("cursor-", "cursor"), ("justify-", "justify"), ("items-", "items"), ("self-", "self"),
         ("basis-", "basis"), ("grow", "grow"), ("shrink", "shrink"), ("grid-cols-", "grid-cols"), ("col-span-", "col-span"),
-        ("grid-rows-", "grid-rows"), ("row-span-", "row-span"), ("duration-", "duration"), ("transition", "transition"),
+        ("grid-rows-", "grid-rows"), ("row-span-", "row-span"), ("duration-", "duration"), ("delay-", "delay"), ("ease-", "ease"),
+        ("animate-", "animate"), ("transition", "transition"),
         ("object-", "object"), ("backdrop-", "backdrop"), ("whitespace-", "whitespace"), ("from-", "from"), ("via-", "via"),
         ("to-", "to"), ("fill-", "fill"), ("accent-", "accent"),
     };

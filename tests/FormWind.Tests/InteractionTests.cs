@@ -84,6 +84,32 @@ public class InteractionTests
     });
 
     [Fact]
+    public void Transition_class_switches_color_immediately_when_motion_is_disabled() => Sta.Run(() =>
+    {
+        var previous = TwMotion.Enabled;
+        using var provider = new TailwindProvider();
+        using var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-10000, -10000), ShowInTaskbar = false };
+        var button = new TwButton { Size = new Size(100, 30) };
+        form.Controls.Add(button);
+        form.Show();
+        try
+        {
+            TwMotion.Enabled = false;
+            provider.SetClasses(button, "bg-white hover:bg-black transition duration-200");
+
+            Enter(button);
+
+            Assert.False(TwAnimator.IsAnimating(button, TwColorChannel.Back));
+            Assert.Equal(Color.Black.ToArgb(), button.BackColor.ToArgb());
+        }
+        finally
+        {
+            TwMotion.Enabled = previous;
+            form.Close();
+        }
+    });
+
+    [Fact]
     public void Group_hover_styles_children_when_entering_the_group_or_a_child() => Sta.Run(() =>
     {
         using var provider = new TailwindProvider();

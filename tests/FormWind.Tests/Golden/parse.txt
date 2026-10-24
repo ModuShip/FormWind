@@ -141,6 +141,30 @@
 "transition duration-300"
   DurationMs = 300
   Transition = true
+  TransitionProperty = All
+
+"transition-colors duration-[250ms] delay-75 ease-in-out"
+  DelayMs = 75
+  DurationMs = 250
+  Easing = InOut
+  Transition = true
+  TransitionProperty = Colors
+
+"transition-shadow ease-linear hover:transition-none"
+  Easing = Linear
+  Transition = true
+  TransitionProperty = Shadow
+  [Hover]
+    Transition = false
+    TransitionProperty = None
+  [Dark|Hover]
+    Transition = false
+    TransitionProperty = None
+
+"animate-spin motion-reduce:animate-none"
+  Animation = Spin
+  [MotionReduce]
+    Animation = None
 
 "object-cover"
   ObjectFit = Cover
@@ -257,6 +281,7 @@
   Padding = 16,8,16,8
   Radius = 6
   Transition = true
+  TransitionProperty = All
 
 "btn-primary"
   BackColor = #FF2563EB
@@ -267,6 +292,7 @@
   Padding = 16,8,16,8
   Radius = 6
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FF1D4ED8
   [Active]
@@ -286,6 +312,7 @@
   Padding = 24,8,24,8
   Radius = 6
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FFE5E7EB
   [Active]
@@ -309,6 +336,7 @@
   Padding = 16,8,16,8
   Radius = 6
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FFB91C1C
   [Active]
@@ -454,6 +482,7 @@
   Padding = 16,8,16,8
   Radius = 6
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FF1447E6
   [Active]
@@ -475,6 +504,7 @@
   Padding = 12,6,12,6
   Radius = 4
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FF115EA3
   [Active]
@@ -531,6 +561,7 @@
   Padding = 16,4,16,4
   Radius = 6
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FF003EB3
   [Active]
@@ -591,6 +622,7 @@
   Padding = 24,8,24,8
   Radius = 9999
   Transition = true
+  TransitionProperty = All
   [Hover]
     BackColor = #FF4F378B
   [Active]

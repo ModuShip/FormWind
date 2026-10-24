@@ -54,6 +54,15 @@ public enum TwState
     /// </summary>
     HighContrast = 1 << 16,
 
+    /// <summary>Animations are on (<c>motion-safe:</c>; see <see cref="TwMotion.Enabled"/>).</summary>
+    MotionSafe = 1 << 17,
+
+    /// <summary>Animations are off (<c>motion-reduce:</c>; see <see cref="TwMotion.Enabled"/>).</summary>
+    MotionReduce = 1 << 18,
+
     /// <summary>All width breakpoints.</summary>
     Breakpoints = Sm | Md | Lg | Xl | Xxl,
+
+    /// <summary>Both motion states.</summary>
+    Motion = MotionSafe | MotionReduce,
 }

@@ -223,6 +223,9 @@ public sealed class TwTheme
         ["select"] = "input menu:bg-white menu:border-surface-200 item:hover:bg-surface-100 selected:bg-primary-600 selected:text-white dark:menu:bg-surface-800 dark:menu:border-surface-700 dark:item:hover:bg-surface-700",
         ["field"] = "label:text-sm label:font-medium label:text-surface-700 hint:text-xs hint:text-surface-500 error:text-xs error:text-danger-600 " +
                     "dark:label:text-surface-200 dark:hint:text-surface-400 dark:error:text-danger-400",
+        // TwSettingRow: etiket label:, açıklama ve birim hint:, satır ayırıcısı divide-*.
+        ["setting"] = "px-4 py-3 text-sm text-surface-900 label:text-sm label:font-medium label:text-surface-900 hint:text-xs hint:text-surface-500 divide-surface-200 " +
+                      "dark:text-surface-100 dark:label:text-surface-100 dark:hint:text-surface-400 dark:divide-surface-700",
         ["toggle"] = "text-surface-700 accent-primary-600 dark:text-surface-200 dark:fill-surface-700 dark:border-surface-600",
         ["range"] = "fill-surface-200 accent-primary-600 dark:fill-surface-700 dark:accent-primary-500 dark:item:bg-surface-100",
 
@@ -235,6 +238,13 @@ public sealed class TwTheme
         ["title"] = "text-2xl font-semibold text-surface-900 dark:text-white",
         ["muted"] = "text-sm text-surface-500 dark:text-surface-400",
         ["badge"] = "text-xs font-semibold rounded-full px-2 text-center bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-100",
+        // TwChip: nötr çip ve tonları; checked: işaretlenebilir süzgeç çipleri için.
+        ["chip"] = "text-xs font-medium rounded-full px-2.5 py-0.5 bg-surface-100 text-surface-700 checked:bg-primary-600 checked:text-white " +
+                   "dark:bg-surface-700 dark:text-surface-200 dark:checked:bg-primary-600 dark:checked:text-white",
+        ["chip-primary"] = "chip bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300",
+        ["chip-success"] = "chip bg-success-100 text-success-800 dark:bg-success-950 dark:text-success-300",
+        ["chip-warning"] = "chip bg-warning-100 text-warning-800 dark:bg-warning-950 dark:text-warning-300",
+        ["chip-danger"] = "chip bg-danger-100 text-danger-800 dark:bg-danger-950 dark:text-danger-300",
         ["alert-info"] = "p-3 rounded-md border text-sm bg-primary-50 border-primary-200 text-primary-800 dark:bg-primary-950 dark:border-primary-800 dark:text-primary-100",
         ["alert-success"] = "p-3 rounded-md border text-sm bg-success-50 border-success-200 text-success-800 dark:bg-success-950 dark:border-success-800 dark:text-success-100",
         ["alert-warning"] = "p-3 rounded-md border text-sm bg-warning-50 border-warning-200 text-warning-800 dark:bg-warning-950 dark:border-warning-800 dark:text-warning-100",
@@ -267,7 +277,8 @@ public sealed class TwTheme
                           "dark:bg-surface-800 dark:text-surface-300 dark:selected:bg-surface-900 dark:selected:text-white dark:selected:border-primary-400",
         ["tab-page"] = "bg-white text-surface-900 dark:bg-surface-900 dark:text-surface-100",
         ["tabs"] = "text-surface-500 border-b border-surface-200 selected:text-surface-900 selected:border-primary-600 item:hover:text-surface-700 " +
-                   "dark:text-surface-400 dark:border-surface-700 dark:selected:text-white dark:selected:border-primary-400",
+                   "menu:bg-white menu:border-surface-200 " +
+                   "dark:text-surface-400 dark:border-surface-700 dark:selected:text-white dark:selected:border-primary-400 dark:menu:bg-surface-800 dark:menu:border-surface-700",
         ["menu"] = "bg-white text-surface-700 item:hover:bg-surface-100 dark:bg-surface-800 dark:text-surface-100 dark:item:hover:bg-surface-700",
         // PropertyGrid: header: kategori satırları, selected: seçili özellik, divide-* iç çizgiler.
         ["properties"] = "bg-white text-surface-900 divide-surface-200 header:bg-surface-100 header:text-surface-700 selected:bg-primary-600 selected:text-white " +
@@ -324,6 +335,8 @@ public sealed class TwTheme
         ["TreeView"] = "list",
         ["ListView"] = "list",
         ["TwTabStrip"] = "tabs",
+        ["TwChip"] = "chip",
+        ["TwSettingRow"] = "setting",
         ["ToolStrip"] = "menu",
         ["PropertyGrid"] = "properties",
         ["TabControl"] = "tab-control",

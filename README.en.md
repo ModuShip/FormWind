@@ -110,7 +110,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.2-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`. CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
+`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.2-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`; the `net472` project comes with a manifest and App.config for PerMonitorV2 (see [Setup on .NET Framework](#setup-on-net-framework)). CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
 
 ## Presets and AutoStyle
 
@@ -136,8 +136,8 @@ All presets define **the same component names**, so switching presets restyles t
 | Group | Components |
 | --- | --- |
 | Buttons | `btn`, `btn-primary`, `btn-secondary` (filled neutral), `btn-ghost` (outlined default), `btn-danger`, `link` |
-| Forms | `input`, `select` (input and drop-down), `field`, `toggle`, `range` (slider, progress) |
-| Surfaces and text | `page` (form background, text color and font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
+| Forms | `input`, `select` (input and drop-down), `field`, `setting` (`TwSettingRow`), `toggle`, `range` (slider, progress) |
+| Surfaces and text | `page` (form background, text color and font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
 | Data and navigation | `table`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties` |
 
 **Semantic colors.** The components use the colors `primary`, `surface` (neutral backgrounds and text), `danger`, `success` and `warning` (`bg-primary-600`, `text-surface-500` …). In the default theme they copy `blue`, `gray`, `red`, `green` and `amber` and follow the palette version. Defining a ramp in the theme file (`"colors": { "primary": { "50": "…", …, "950": "…" } }`) recolors every component at once. Classes of your own that use the semantic names change with the preset too.
@@ -158,6 +158,8 @@ All presets define **the same component names**, so switching presets restyles t
 | `DataGridView` | `table` |
 | `ListBox`, `ListView`, `TreeView`, `TwDataList`, `TwListBox`, `TwTreeView` | `list` |
 | `TwTabStrip` (and the strip of `TwTabControl`) | `tabs` |
+| `TwChip` | `chip` |
+| `TwSettingRow` | `setting` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
 | `LinkLabel` | `link-label` |
 | `TabControl`, `TabPage` | `tab-control`, `tab-page` |
@@ -333,6 +335,7 @@ An SVG icon overrides the glyph with the same name, so built-in icons (`check`, 
 | `shadow-{color}`, `shadow-blue-500/50` | Colored shadow |
 | `ring`, `ring-0/1/2/4/8`, `ring-{color}`, `ring-offset-2`, `ring-offset-{color}` | Ring; usually `focus:ring-2 focus:ring-blue-500/30` |
 | `bg-black/50`, `text-white/75` … | Opacity: `/0–100` on every color class |
+| `backdrop-blur-sm`, `backdrop-blur`, `backdrop-blur-md` … `backdrop-blur-3xl`, `backdrop-blur-none` | Frosted glass on a `TwPanel`: what the parent paints behind it is blurred (4–64 px), under a translucent `bg-*/NN` |
 
 Shadows and rings are drawn on the control's **parent** (controls cannot paint outside their own bounds); this works on Form, Panel and TwPanel parents. That is why native controls such as `TextBox` can have a focus ring too.
 
@@ -342,7 +345,9 @@ Shadows and rings are drawn on the control's **parent** (controls cannot paint o
 
 ## Interaction
 
-- **`transition`** (`transition-colors`, `duration-75` … `duration-1000`, `duration-[250ms]`): background and text color changes are animated (ease-out, 150 ms by default). Shadow changes (`shadow-sm hover:shadow-lg transition`) are animated over the same duration too, the old shadow fading out as the new one fades in; blurred shadows come from the cache and are not recomputed during the transition.
+- **`transition`** (`transition-all`, `duration-75` … `duration-1000`, `duration-[250ms]`): background, text and border color changes are animated (ease-out, 150 ms by default). Shadow and ring changes (`shadow-sm hover:shadow-lg transition`, `ring-0 focus:ring-2 transition`) are animated over the same duration too, the old one fading out as the new one fades in; blurred shadows come from the cache and are not recomputed during the transition.
+  - What is animated: `transition-colors` only the colors (background, text, border), `transition-shadow` only the shadow and ring, `transition-none` nothing.
+  - Curve and delay: `ease-out` (default), `ease-linear`, `ease-in`, `ease-in-out`; `delay-75` … `delay-1000`, `delay-[40ms]` holds the transition back that long. Example: `bg-white hover:bg-gray-100 transition duration-200 delay-75 ease-in-out`.
   - The first application has no transition: when classes are assigned, the control takes its final color at once (a transition would start from the application's own color and shift colors at startup). Theme, state (hover, focus, disabled …) and class changes are animated.
   - Transitions are advanced by a WinForms timer (about 60 frames/s). Windows only generates `WM_TIMER` when no other message is queued; while a window that invalidates itself in every `OnPaint` is open (e.g. ShareX's region capture) or the UI thread is busy, transitions stop at an intermediate color and finish once that window closes. The contrast audit checks the target color meanwhile.
 - **`hover:` / `active:`**: only controls with these variants are restyled when the mouse enters or leaves; for the others, mouse movement does not trigger styling. If classes are assigned while the cursor is already over the control (e.g. a button whose classes change on click), the hover state is applied immediately.
@@ -524,6 +529,21 @@ footer.SetAggregate(colAmount, TwAggregate.Sum, "C2");   // Sum, Average, Count,
 - The group header is added to the top of the group's first row (the row gets taller and its content moves down), so rows stay shared and scrolling stays smooth.
 - `TwGridFooter` follows the grid's column widths, order and horizontal scrolling and recomputes when the rows or values change; with a filtered or searched list only the shown rows count. `footer.SetValue(column, values => ...)` computes a custom cell. `AddFooter` docks the footer below a grid docked to fill (or to the top/bottom); otherwise the grid gets shorter. It can also be placed in the Designer and connected with `Grid`.
 
+### Tree rows
+
+Hierarchical rows with columns (lines → machines → causes, each with its totals) in a grid, without a separate tree control:
+
+```csharp
+var tree = TwGrid.SetTree(grid, colName, lines, line => line.Children);   // or TwGridTreeNode("Press 3", 540, 6) nodes
+tree.SetTotal(colMinutes, TwAggregate.Sum);                                 // parent rows show their children's sum
+TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);          // counts only the rows without children
+```
+
+- The grid must be unbound (no `DataSource`): each node is a row, collapsed branches are hidden rows. Column values come from `TwGridTreeNode.Values` (in column order) or the `DataPropertyName` properties of `DataItem`.
+- The tree column shows the indentation, an arrow and `IconName`. Click the arrow or double-click the cell (read-only grids) to expand and collapse; in the tree column → expands or moves to the first child and ← collapses or moves to the parent, `+`/`−` work in every column and `*` expands the whole branch. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
+- Header clicks sort the children of every parent; the hierarchy and the expanded branches stay (`tree.Sort(column, direction)`).
+- `SetTotal` fills empty parent cells with `Sum`, `Average`, `Count`, `Min` or `Max` of their children (sums add the children's totals, the others look at the leaves). After changing nodes call `tree.Refresh()`.
+
 ### Row details
 
 ```csharp
@@ -605,23 +625,26 @@ The file is added on top of the default palette and components (or the preset ch
 | `TwCheckBox`, `TwRadioButton`, `TwSwitch` | See [CheckBox, Radio, Switch](#checkbox-radio-switch). |
 | Standard controls | Color, text and spacing work on every control. Corners are clipped with `Region` (no anti-aliasing) and borders are drawn in the `Paint` event. On a `TextBox` (`TextBoxBase`) the native border is turned off; `border-*` and `rounded-*` are drawn on the parent as a frame 3 px outside the control, filled with the background color (the frame extends past the control's bounds; leave room in the layout). The closed box of a `ComboBox` in `DropDownList` mode (background, border, corners, text, arrow) is painted by FormWind with border or corner classes and on a dark background (without a border class, with a 1 px border between the background and the text color); the drop-down list stays native. Editable `ComboBox`es and other native controls (`ListBox` …) get no corners or borders; use `TwSelect`, `TwListBox`. |
 | `TwButton` | Button with smooth corners. `Image` is not drawn yet and the `Paint` event is not raised. |
-| `TwPanel` | Panel (card) with smooth corners and a border. |
+| `TwPanel` | Panel (card) with smooth corners and a border. A translucent background (`bg-white/70`) shows the parent's painting (its gradient or image) through; `backdrop-blur-*` blurs it first: a frosted card or sidebar inside the window, the in-window counterpart of `backdrop-acrylic`. |
 | `TwTextBox` | Wraps a borderless TextBox in a rounded panel; for the `input` style. |
 | `TwNumberBox` | Number box (`TwTextBox` + ▲▼ on the right). `Minimum`, `Maximum`, `Increment`, `DecimalPlaces`; arrow keys, mouse wheel and culture-aware parsing. |
 | `TwDatePicker` | Date field + drop-down `TwCalendar`. The date can be typed (parsed with `Culture`/`Format`); F4 / Alt+↓ opens the calendar. The calendar is styled with `menu:bg-* menu:border-*`, `selected:bg-* selected:text-*`, `item:hover:bg-*`. |
 | `TwPopover` | A panel that opens next to a control (component): shows the `Content` control on the `Placement` side (`BottomStart`, `TopEnd`, `Right` …) and flips to the opposite side when it does not fit on the screen. A click outside or Esc closes it; `Toggle(anchor)` closes it when open, `RestoreFocus` returns the focus to the anchor. `TwDatePicker`'s calendar opens in one. |
 | `TwCalendar` | Standalone month calendar: the culture's first day of week and day names, a ring on today, `MinDate`/`MaxDate`, keyboard (arrows, PageUp/PageDown, Home/End, Enter, Esc). |
-| `TwTabStrip` | Tab strip: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented background), `gap-*`. Only the strip; for pages use `TwTabControl`. |
+| `TwTabStrip` | Tab strip: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented background), `gap-*`. Tabs that do not fit go to a "more" (…) button at the end (`OverflowMenu`, ↓ opens it; the menu takes `menu:` / `item:`); the selected tab always stays visible. `&` marks a tab's Alt shortcut as on a Label; `UseMnemonic = false` draws it as text ("Parts & cost"). Only the strip; for pages use `TwTabControl`. |
 | `TwTabControl` | Tab control with pages (instead of TabControl): `AddPage("General")` or add `TwTabPage`s; the selected page is shown. The strip is styled through `Strip` (`provider.SetClasses(tabs.Strip, "...")`); Ctrl+Tab / Ctrl+PageDown move between pages. |
 | `TwSlider` | Slider (instead of TrackBar): `Minimum`, `Maximum`, `Value`, `SmallChange`, `LargeChange`. Track `fill-*`, filled part `accent-*`, thumb `item:bg-*`. Keyboard, mouse wheel and dragging. |
 | `TwProgress` | Progress bar (instead of ProgressBar): track `fill-*`, fill `accent-*`, corners `rounded-*`. `Indeterminate = true` draws a moving segment for work of unknown length. |
 | `TwDataList` | Virtual list (see below). |
-| `TwListBox` | Instead of ListBox: `Items` (+ `DisplayMember`), `SelectedItem(s)`, `FindString`; with TwDataList's virtual drawing, multi-selection and styles. |
+| `TwListBox` | Instead of ListBox: `Items` (+ `DisplayMember`), `SelectedItem(s)`, `FindString`; with TwDataList's virtual drawing, multi-selection and styles. `TwListItem` items get the built-in row template (see [List rows](#list-rows-twlistitem)). |
 | `TwCheckedListBox` | Instead of CheckedListBox: a rounded checkbox at the start of each row (`accent-*`), `CheckedIndices`/`CheckedItems`, `ItemCheck`; click the box or press Space. |
 | `TwTreeView` | Virtual tree instead of TreeView: `Nodes`, nodes with icons, `SelectedNode`, `ExpandAll`; ←/→ expand/collapse, `HasLazyChildren` + `BeforeExpand` for lazy loading. Exposed to screen readers as an Outline. |
 | `TwPager` | Paging (see [DataGridView](#datagridview)). |
 | `TwField` | Label + editor + hint/error text; validation rules (see [Forms](#forms-validation-masks-and-dialogs)). |
 | `TwToolTip` | Stylable tooltip: `Classes`; follows dark mode when `Provider` is set. |
+| `TwChip` | A pill with a text, an optional icon or status dot (`IconName`, `DotColor`) and an optional ✕ (`Removable` → `RemoveClick`, also Delete/Backspace). `Clickable` makes it a button, `Checkable` a filter chip that turns on and off (`Checked`, styled with `checked:`). Display chips are not tab stops. Components `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; the ✕ is a separate "Remove" button for screen readers. |
+| `TwToolbar` | A responsive toolbar (a `TwPanel`): children sit in one row with `gap-*`; items that do not fit move to a "more" (…) button whose menu runs them (a button is clicked, a check box toggled, a `TwTabStrip` or `TwSelect` becomes a submenu, other items raise `OverflowItemClick`). Per item: `SetAlignment` (`Start`/`End`), `SetPriority` (higher moves later), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: a title gets narrower before anything moves, down to its `MinimumSize.Width`). The menu takes `menu:` / `item:`, the button is `OverflowButton`. |
+| `TwSettingRow` | A settings row (System Settings style): `LabelText`, `Description` (muted, wraps), the editor (the child control) and `UnitText` on the right (`EditorWidth`, 160 by default). Rows stacked in a `card p-0` panel draw dividers between them (`divide-*`); narrow rows put the editor under the text. `label:` and `hint:` parts, `setting` component. |
 
 ### TwDataList
 
@@ -651,6 +674,23 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
 - **Rows of different heights:** `ItemHeights = i => orders[i].HasNote ? 72 : 52` (96 DPI pixels); row offsets are computed once, call `InvalidateItemHeights()` when the heights change. Without it every row is `ItemHeight` tall and a million rows cost nothing extra; with it each row's height is asked for once.
 - **Incremental loading:** `IsItemLoaded` draws unloaded rows as skeletons (with a gentle pulse) and `ItemsNeeded(first, last)` is raised with the visible range; call `Invalidate()` when the data arrives.
 
+### List rows (`TwListItem`)
+
+The "title, muted line, status dot, value and badge on the right" row that lists repeat (a sidebar, a queue, alerts, rules, search results) comes ready-made: add `TwListItem`s to a `TwListBox` and they are drawn with the built-in template; parts that are not set take no room.
+
+```csharp
+list.Items.Add(new TwListItem("Press 3 · spindle bearing", "Line 2 · 6 stops in 30 days")
+{
+    DotColor = Color.Red,                     // or IconName = "warning", or Score = 0.72 (a small ring with "72")
+    Value = "540 min", ValueCaption = "30 days",
+    Badge = "Chronic", BadgeClasses = "chip-danger",
+});
+```
+
+- Rows with a second line (`Subtitle` or `ValueCaption`) get two lines' height on their own; single-line rows keep `ItemHeight`.
+- The badge takes its colors, padding, corners and font from `BadgeClasses` (default `chip`, with `dark:` variants); the score ring's arc is `ScoreColor` or `accent-*`.
+- Screen readers read the parts joined (`"Press 3 · spindle bearing, Line 2 · 6 stops in 30 days, 540 min, 30 days, Chronic"`). Handling `DrawItem` turns the template off.
+
 ## Charts
 
 Lightweight charts drawn by FormWind itself, with no extra dependency: `TwChart` (line, area, bar), `TwDonutChart`, `TwSparkline` and the KPI card `TwStat`. They follow the dark mode, DPI and the theme like the other controls; with `AutoStyle` they get the `chart` and `stat` components.
@@ -673,6 +713,11 @@ donut.SetData(new[] { "Web", "Store", "Phone" }, new[] { 52.0, 28, 20 });
 stat.Title = "Revenue"; stat.Value = "$1.24M"; stat.Delta = 0.124; stat.Caption = "vs last month";
 stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
 stat.PositiveIsGood = false;                     // for costs and error rates: a rise is shown in red
+stat.ShortValue = "278 h";                       // shown when "278 h 52 min" does not fit; then the text gets smaller
+
+breakdown.Kind = TwChartKind.HorizontalBar;      // one row per category with its full label on the left
+heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN cells: hatched gray, "No production" in the legend and tooltip
+heatmap.EmptyCellText = "No production";
 ```
 
 | Class | Effect |
@@ -689,6 +734,10 @@ stat.PositiveIsGood = false;                     // for costs and error rates: a
 - **Interaction:** hovering or the arrow keys (Home/End) highlight a category and show a tooltip with every series' value; Enter or a click raises `ItemClick` (`TwChartItemEventArgs.Index`, `Label`), `HoverIndexChanged` follows the highlight. The donut highlights a slice and shows it in the middle.
 - **Screen readers:** the charts have the `Chart` role with one item per category or slice (`"Mar: Revenue 170, Target 160"`, `"Web: 52 (52%)"`); the value of the chart is a summary of the ranges. `TwStat` reads as "title: value, change, caption"; the change always carries an arrow and a sign, never color alone.
 - `TwStat`'s change uses the theme's `success` and `danger` colors, so presets and theme files recolor it.
+- **Horizontal bars** (`TwChartKind.HorizontalBar`, set on the chart): categories are rows with their full label on the left (up to 40% of the width, then "…"), the value axis runs along the bottom and values (`ShowValues`) sit at the bar ends, with no axis when every series shows them. Series are side by side or `Stacked`; reference lines are vertical; ↑/↓ move between rows.
+- **Fitting `TwStat`:** a value wider than the card switches to `ShortValue`, then gets smaller down to the title's size (`ValueFit = Shrink`, the default) instead of being cut with "…" (`Ellipsis`); screen readers always read the full value.
+- **Empty heatmap cells:** `EmptyCells` draws `double.NaN` cells in the lowest shade (`Low`, as before), flat gray (`Solid`), hatched gray (`Hatched`) or not at all (`None`); `EmptyCellColor` sets the gray, and `EmptyCellText` ("No production") replaces "—" in the tooltip and for screen readers and adds a key to the legend.
+- **Small rings:** a `TwRingChart` the size of an icon (32 px) keeps a ring at least 3 px thick and shrinks its center text to fit; `TwListItem.Score` draws the same score ring inside a list row.
 
 ## Forms: validation, masks and dialogs
 
@@ -711,6 +760,7 @@ TwToast.Show(this, "Order saved", TwDialogKind.Success);
 ```
 
 - **`TwDialog`** (instead of MessageBox): icon, title, message and right-aligned buttons; Enter is the default, Esc cancels/answers no. Follows the owner form's dark mode. Button texts come from [`TwTexts`](#localization) and can be overridden one by one with `TwDialog.Texts[DialogResult.Yes] = "Delete"`; `TwDialog.Create(...)` allows customization before showing.
+- **Text input:** `TwDialog.Prompt(this, "Name of the saved search", "Save search", placeholder: "e.g. Line 2 · night shift", validator: name => names.Contains(name) ? "This name is taken." : null)` returns the trimmed text, or `null` when cancelled. With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
 - **`TwToast`**: a notification that stacks in the bottom-right corner of the owner form, does not steal focus, pauses while hovered and closes by itself (`DefaultDuration` 4 s). Announced to screen readers as an Alert.
 
 ## Localization
@@ -900,9 +950,56 @@ Recommended setup: `AutoScaleMode = AutoScaleMode.Dpi` and `AutoScaleDimensions 
 | PerMonitorV2 + `AutoScaleMode.Dpi` | Layout, fonts and FormWind spacing scale together. |
 | PerMonitorV2 + `AutoScaleMode.Font` | Forms built in code and (on .NET Framework) Designer forms whose `Font` is assigned after `AutoScaleDimensions` did not scale; spacing and fonts grew, controls did not. |
 
-- On 4.7.2, PerMonitorV2 is enabled with `System.Windows.Forms.ApplicationConfigurationSection` (`DpiAwareness`) in `app.config`. When editing this file by hand, do not remove the `bindingRedirect`s generated by the build; otherwise the `System.Text.Json` dependencies cannot be loaded and the application crashes at startup.
+### Setup on .NET Framework
+
+On .NET 8+, `<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>` or `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` in `Program.Main` is enough. On .NET Framework 4.7.2 / 4.8 there are three options:
+
+| Option | How to turn it on | Result |
+| --- | --- | --- |
+| DPI-unaware (the default) | No setting | Windows scales the window as a bitmap; the layout is correct, the text blurry. `DeviceDpi` stays 96 and FormWind does not scale. |
+| System-aware | `<dpiAware>true</dpiAware>` in the manifest | Crisp at the primary screen's scale. When the window moves to a screen with another scale, Windows stretches or shrinks it as a bitmap. |
+| PerMonitorV2 (recommended) | The manifest **and** App.config, both | Crisp on every screen; WinForms and FormWind rescale when the screen changes. |
+
+For PerMonitorV2 the manifest makes the process DPI-aware and declares Windows 10 compatibility (without `supportedOS` the process silently stays system-aware):
+
+```xml
+<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+  <application>
+    <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+  </application>
+</compatibility>
+<application xmlns="urn:schemas-microsoft-com:asm.v3">
+  <windowsSettings>
+    <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+    <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+  </windowsSettings>
+</application>
+```
+
+App.config turns on WinForms' own per-monitor support:
+
+```xml
+<configuration>
+  <System.Windows.Forms.ApplicationConfigurationSection>
+    <add key="DpiAwareness" value="PerMonitorV2" />
+  </System.Windows.Forms.ApplicationConfigurationSection>
+</configuration>
+```
+
+- **Both are needed.** With PerMonitorV2 only in the manifest the process runs per-monitor, but WinForms does not handle screen changes (`WM_DPICHANGED`): a form moved to a screen with another scale keeps the layout and fonts of the old DPI. On a single screen there is no visible difference. If a single screen is enough, `<dpiAware>true</dpiAware>` (system-aware) alone in the manifest is more consistent.
+- **Do not add `configSections`.** `System.Windows.Forms.ApplicationConfigurationSection` is already declared in machine.config; declaring it again with `<configSections>` in App.config makes WinForms silently ignore the DPI setting and the configuration system fail to start. The error does not appear at startup but on the first screen that uses `ConfigurationManager` (settings, connection strings), as "Configuration system failed to initialize".
+- **Do not remove the `bindingRedirect`s.** On .NET Framework the FormWind package turns on `AutoGenerateBindingRedirects` and the build writes the redirects to the output `.exe.config`. If you remove the redirects the build generated while editing this file by hand, the `System.Text.Json` dependencies cannot be loaded and the application crashes at startup.
+- **Template:** `dotnet new formwind-app --Framework net472` sets up the manifest and App.config this way.
+
+**Applications with their own DPI scaling.** An application that enlarged sizes with its own factor (such as `Px(8)`, `Fs(13)`) while running DPI-unaware scales the same value twice once it becomes DPI-aware: first with the application's factor, then with WinForms' AutoScale or FormWind (about 1.56× instead of 1.25× at 125%). When switching:
+
+- Write class values in 96 DPI units: `text-[13px]`, `p-[8px]`. Pre-scaled values such as `$"text-[{Fs(13)}px]"` are doubled by FormWind's scaling.
+- Use `AutoScaleMode.Dpi` and `AutoScaleDimensions = new SizeF(96F, 96F)` on forms; write `Size`, `Location`, `Padding` and similar values assigned in the constructor (before `ResumeLayout`) in 96 DPI units too, AutoScale enlarges them.
+- For pixel values assigned in code after the form opens, use `control.LogicalToDeviceUnits(8)` instead of your own factor; in your own `OnPaint` drawing the scale is `DeviceDpi / 96f`.
+- Open the application at 125% and 150% and check: if spacing and text grew clearly more than the screen scale, a value is still scaled twice.
+
+- For how to turn on PerMonitorV2 on .NET Framework, see [Setup on .NET Framework](#setup-on-net-framework).
 - On .NET Framework, WinForms applies its DPI setting when the first `Control` is created, while GDI+ reads the screen DPI once when it starts. If a `Font` is created before that (e.g. while loading the theme), GDI+ stays at 96 DPI and native controls (TextBox) draw their fonts too small. FormWind triggers WinForms' DPI initialization before touching GDI+; if your own code creates a `Font` in `Program.Main` before creating a form, call `new Control().Dispose()` first.
-- PerMonitorV2 only takes effect when the application manifest declares Windows 10 compatibility (`supportedOS`); otherwise the process silently stays system-aware.
 - **Moving between screens (150%, 200%):** when a form moves to a screen with a different DPI, FormWind reapplies the classes once after WinForms finishes scaling. On forms set up with `AutoScaleMode.Dpi`, fonts, spacing, owner-drawn controls and DataGridView (fonts and column widths) scale correctly; this was verified at 150% and 200% for `ControlsForm` and a grid form.
 - **`AutoScaleMode.Font` and .NET Framework:** the Designer writes the form's `Font` after `AutoScaleDimensions`. With PerMonitorV2, .NET Framework WinForms skips scaling on that font assignment and updates `AutoScaleDimensions` as if it had scaled: controls keep their 96 DPI size while fonts (and FormWind spacing) grow with the screen DPI; text is clipped and grid columns stay narrow. This also happens without FormWind (the same form scales correctly when `Font` is assigned first) and does not happen on .NET 8. It cannot be fixed at run time: the overwritten value no longer tells at which DPI the form was designed. The **FW002** analyzer warns about these forms; the fix is `AutoScaleMode.Dpi` with `AutoScaleDimensions = new SizeF(96F, 96F)`.
 - In Font-mode forms .NET Framework changes fonts without raising events when moving between screens; the inner box of `TwTextBox` kept a deleted font handle and drew its text small with the system font. `TwTextBox` now refreshes the inner font on the form's `DpiChanged` event (`Text_boxes_keep_a_valid_native_font_after_moving_to_200_percent`).
@@ -949,7 +1046,32 @@ In .NET Framework projects, warns when an `InitializeComponent` that uses `SetCl
 
 ## Animations and responsive variants
 
-- The tab indicator (underline, pill, segment) slides to the new tab; list row hover backgrounds fade in; skeleton rows (list and grid) pulse gently. `TwMotion.Enabled` follows Windows' "Show animations" setting and can be turned off in code; there is no animation at design time or on invisible controls.
+- The tab indicator (underline, pill, segment) slides to the new tab; list row hover backgrounds fade in; skeleton rows (list and grid) pulse gently; the `TwSwitch` knob slides, `TwToast` fades in and out, `TwDialog` and `TwPopover` fade in when they open, and the indeterminate `TwProgress` segment slides along the track. The switch knob, the tab indicator and the list hover follow the control's `duration-*`, `delay-*` and `ease-*` classes; `transition-none` makes them immediate.
+- **`animate-spin`** turns a `TwIcon` (one turn per second; loading indicators), **`animate-pulse`** fades a `TwIcon` or the background of a `TwPanel` in and out (skeleton placeholders), `animate-none` stops them. All animated controls share one clock, so pulsing placeholders pulse together.
+
+```csharp
+tw.SetClasses(icoLoading, "text-gray-500 animate-spin motion-reduce:animate-none");
+tw.SetClasses(pnlSkeleton, "h-4 w-40 rounded bg-gray-200 animate-pulse");
+```
+
+- `TwMotion.Enabled` follows Windows' "Show animations" setting (also when it changes while the application runs) and can be turned off in code; `TwMotion.FollowSystem()` hands it back to Windows. When it is off all of these and `transition` changes happen immediately (the indeterminate progress segment stands still in the middle, a spinning icon stops). There is no animation at design time or on invisible controls.
+- **`motion-safe:`** / **`motion-reduce:`** variants apply while animations are on / off; when the setting changes only the controls that use them are reapplied. `forced-colors:` still applies last.
+- **Closing:** `TwDialog` and `TwPopover` also fade when they close. The window closes at once (`DialogResult`, `IsOpen`, `Closed` are not delayed); its last picture fades out in a click-through window.
+- **Values:** a new `TwProgress.Value` slides the fill to its place (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` counts a new value up from the previous one (from zero when it first appears), keeping the text's form (`$12,400`, `98.4%`); only a value with a single number is counted, `AnimateValue = false` turns it off. `TwChart` opens from left to right the first time it is shown with data; `AnimateOnShow = false` turns it off, `AnimateIn()` plays it again (e.g. after loading new data).
+- **Collapsing panel:** `TwPanel.Expanded = false` (or `Collapse()`) slides the panel's height down to zero and hides it, `Expand()` shows it and slides it back to its height (its preferred height when `AutoSize`); 200 ms, changed with `duration-*` / `ease-*`. The children keep their places and are cut off while it slides. The height must be the panel's own: `Dock = Top`/`Bottom` or not docked (a panel that grows with `grow` in a flex container does not slide).
+
+```csharp
+btnFilters.Click += (_, _) => pnlFilters.Expanded = !pnlFilters.Expanded;
+```
+
+- For animations in your own control under the same rules, use `TwTween`: call `Start(duration, easing, delay)` when the value changes and read `Progress` (0–1) in `OnPaint`; the owner is invalidated every frame, and when animations are off `Progress` is 1 right away. The `Tick` (every frame) and `Completed` events are for driving properties such as opacity. `TwMotion.Ease`, `Lerp` and `Blend` give the same curves and interpolation.
+
+```csharp
+_tween = new TwTween(this);
+void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
+// OnPaint: float h = _from + (_target - _from) * _tween.Progress;
+```
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 
 ```csharp

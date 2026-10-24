@@ -75,6 +75,22 @@ internal static class TwCharts
     /// <summary>Secondary text: the <c>label:</c> color or the text color blended toward the surface.</summary>
     public static Color Muted(Control control, TwChartColors colors) => colors.Label ?? Blend(control.ForeColor, Surface(control), 0.4f);
 
+    /// <summary>A rounded box filled with <paramref name="back"/> and crossed by diagonal lines (a "no data" cell).</summary>
+    public static void FillHatched(Graphics g, Rectangle box, float radius, Color back, Color line, float scale)
+    {
+        if (box.Width <= 0 || box.Height <= 0) return;
+        TwPainter.FillRounded(g, box, radius, back);
+        using var path = TwPainter.CreateRoundedRect(box, radius);
+        var state = g.Save();
+        g.SetClip(path, CombineMode.Intersect);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        float step = Math.Max(3, 5 * scale);
+        using (var pen = new Pen(line, Math.Max(1f, scale)))
+            for (float x = box.Left - box.Height; x < box.Right; x += step)
+                g.DrawLine(pen, x, box.Bottom, x + box.Height, box.Top);
+        g.Restore(state);
+    }
+
     /// <summary>Gridlines: the <c>divide-*</c> color or one step off the surface.</summary>
     public static Color Grid(Control control, TwChartColors colors) => colors.Grid ?? Blend(Surface(control), control.ForeColor, 0.12f);
 
@@ -153,6 +169,40 @@ internal static class TwCharts
             path.AddArc(bar.Right - d, bar.Bottom - d, d, d, 0, 90);
             path.AddArc(bar.Left, bar.Bottom - d, d, d, 90, 90);
             path.AddLine(bar.Left, bar.Bottom - r, bar.Left, bar.Top);
+        }
+        path.CloseFigure();
+        var state = g.Save();
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.FillPath(brush, path);
+        g.Restore(state);
+    }
+
+    /// <summary>A horizontal bar with a rounded data end (right for positive values, left for negative) and a square end at the baseline.</summary>
+    public static void FillHorizontalBar(Graphics g, RectangleF bar, float radius, bool right, Color color)
+    {
+        if (bar.Width <= 0 || bar.Height <= 0) return;
+        float r = Math.Min(radius, Math.Min(bar.Height / 2f, bar.Width));
+        using var brush = new SolidBrush(color);
+        if (r < 0.5f)
+        {
+            g.FillRectangle(brush, bar);
+            return;
+        }
+        using var path = new GraphicsPath();
+        float d = r * 2;
+        if (right)
+        {
+            path.AddLine(bar.Left, bar.Top, bar.Right - r, bar.Top);
+            path.AddArc(bar.Right - d, bar.Top, d, d, 270, 90);
+            path.AddArc(bar.Right - d, bar.Bottom - d, d, d, 0, 90);
+            path.AddLine(bar.Right - r, bar.Bottom, bar.Left, bar.Bottom);
+        }
+        else
+        {
+            path.AddLine(bar.Right, bar.Bottom, bar.Left + r, bar.Bottom);
+            path.AddArc(bar.Left, bar.Bottom - d, d, d, 90, 90);
+            path.AddArc(bar.Left, bar.Top, d, d, 180, 90);
+            path.AddLine(bar.Left + r, bar.Top, bar.Right, bar.Top);
         }
         path.CloseFigure();
         var state = g.Save();

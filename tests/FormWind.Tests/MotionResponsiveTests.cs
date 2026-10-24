@@ -92,4 +92,88 @@ public class MotionResponsiveTests
             form.Close();
         }
     });
+
+    [Fact]
+    public void Switch_knob_slides_only_when_motion_is_enabled() => Sta.Run(() =>
+    {
+        var previous = TwMotion.Enabled;
+        using var form = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-4000, 0) };
+        var sw = new TwSwitch { Size = new Size(44, 24) };
+        form.Controls.Add(sw);
+        form.Show();
+        try
+        {
+            TwMotion.Enabled = false;
+            sw.Checked = true;
+            Assert.Equal(1f, sw.ThumbPosition);                             // anında
+
+            TwMotion.Enabled = true;
+            sw.Checked = false;
+            Assert.True(sw.ThumbPosition > 0f, "Düğme kaymadan yerine geçti.");
+        }
+        finally
+        {
+            TwMotion.Enabled = previous;
+            form.Close();
+        }
+    });
+
+    [Fact]
+    public void Toast_appears_and_closes_immediately_when_motion_is_disabled() => Sta.Run(() =>
+    {
+        var previous = TwMotion.Enabled;
+        using var owner = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-4000, 0), Size = new Size(600, 400) };
+        owner.Show();
+        try
+        {
+            TwMotion.Enabled = false;
+            var toast = TwToast.Show(owner, "Kaydedildi", durationMs: 0);
+            Assert.Equal(1.0, toast.Opacity);                               // solarak belirmez
+
+            toast.Dismiss();
+            Assert.True(toast.IsDisposed);                                  // solmadan kapanır
+            Assert.Empty(TwToast.OpenToasts(owner));
+
+            TwMotion.Enabled = true;
+            var animated = TwToast.Show(owner, "Kaydedildi", durationMs: 0);
+            Assert.True(animated.Opacity < 1.0);
+            animated.Close();
+        }
+        finally
+        {
+            TwMotion.Enabled = previous;
+            owner.Close();
+        }
+    });
+
+    [Fact]
+    public void Indeterminate_progress_stands_still_when_motion_is_disabled() => Sta.Run(() =>
+    {
+        var previous = TwMotion.Enabled;
+        using var form = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-4000, 0) };
+        var progress = new TwProgress { Size = new Size(200, 8) };
+        form.Controls.Add(progress);
+        form.Show();
+        try
+        {
+            TwMotion.Enabled = false;
+            progress.Indeterminate = true;
+            Assert.False(progress.Animating);
+            var bar = progress.BarBounds;
+            Assert.Equal(200 - bar.Right, bar.Left);                        // ortada
+            Assert.True(bar.Width > 0);
+            progress.Phase = 0.9f;
+            Assert.Equal(bar, progress.BarBounds);                          // faz yok sayılır
+
+            progress.Indeterminate = false;
+            TwMotion.Enabled = true;
+            progress.Indeterminate = true;
+            Assert.True(progress.Animating);
+        }
+        finally
+        {
+            TwMotion.Enabled = previous;
+            form.Close();
+        }
+    });
 }

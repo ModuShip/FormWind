@@ -60,6 +60,7 @@ internal sealed class TwBinding
         if (_control is Form form) form.DpiChanged += OnDpiChanged;
         if (_control is CheckBox checkBox) checkBox.CheckedChanged += OnStateChanged;
         if (_control is RadioButton radioButton) radioButton.CheckedChanged += OnStateChanged;
+        if (_control is ITwCheckable checkable) checkable.CheckedChanged += OnStateChanged;
 
         // Class'lar imleç zaten kontrolün üzerindeyken atanırsa (örn. tıklayınca class'ı değişen buton) MouseEnter
         // tekrar gelmez; hover durumu baştan doğru başlar.
@@ -79,6 +80,9 @@ internal sealed class TwBinding
 
     /// <summary>Whether the classes have <c>sm:</c>/<c>md:</c>… variants (reapplied when the form is resized).</summary>
     public bool UsesBreakpoints => _parsed.UsesAny(TwState.Breakpoints);
+
+    /// <summary>Whether the classes have <c>motion-safe:</c>/<c>motion-reduce:</c> variants (reapplied when <see cref="TwMotion.Enabled"/> changes).</summary>
+    public bool UsesMotion => _parsed.UsesAny(TwState.Motion);
 
     public string Classes { get; private set; } = "";
 
@@ -244,6 +248,7 @@ internal sealed class TwBinding
         _control.Disposed -= OnDisposed;
         if (_control is CheckBox checkBox) checkBox.CheckedChanged -= OnStateChanged;
         if (_control is RadioButton radioButton) radioButton.CheckedChanged -= OnStateChanged;
+        if (_control is ITwCheckable checkable) checkable.CheckedChanged -= OnStateChanged;
         UnhookDescendants();
     }
 
@@ -293,11 +298,12 @@ internal sealed class TwBinding
     private TwState CurrentState()
     {
         var state = _owner.BaseState | (_control.RightToLeft == RightToLeft.Yes ? TwState.Rtl : TwState.Ltr);
-        if (_control is CheckBox { Checked: true } || _control is RadioButton { Checked: true })
+        if (_control is CheckBox { Checked: true } || _control is RadioButton { Checked: true } || _control is ITwCheckable { Checked: true })
             state |= TwState.Checked;
 
         if (_owner.HasError(_control)) state |= TwState.Invalid;
         if (UsesBreakpoints) state |= TwBreakpoints.For(_control);
+        if (UsesMotion) state |= TwMotion.Enabled ? TwState.MotionSafe : TwState.MotionReduce;
 
         // Devre dışı kontrolde etkileşim durumları uygulanmaz.
         if (!_control.Enabled) return state | TwState.Disabled;

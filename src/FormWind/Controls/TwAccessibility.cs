@@ -186,7 +186,7 @@ internal sealed class TwTabStripAccessibleObject : TwListAccessibleObject
 
         public override string? Name
         {
-            get => Index < _tabs.Tabs.Count ? _tabs.Tabs[Index] : null;
+            get => Index < _tabs.Tabs.Count ? _tabs.GetDisplayText(Index) : null;
             set { }
         }
 

@@ -142,9 +142,9 @@ internal sealed class TwOutsetSpec : IEquatable<TwOutsetSpec>
 /// <summary>
 /// Draws shadows and rings on the control's <b>parent</b>: controls cannot paint outside their own bounds.
 /// The parent's Paint event runs before the child windows paint, so the shadow naturally stays below the control.
-/// Works on every parent that raises Paint, such as Form, Panel and TwPanel. With <c>transition</c>, a shadow change
-/// (e.g. <c>shadow-sm hover:shadow-lg</c>) is animated by cross-fading the old and new shadows; the blurred shadow
-/// bitmaps come from the cache and are not recomputed per frame.
+/// Works on every parent that raises Paint, such as Form, Panel and TwPanel. With <c>transition</c> (or
+/// <c>transition-shadow</c>), a shadow or ring change (e.g. <c>shadow-sm hover:shadow-lg</c>, <c>focus:ring-2</c>) is animated
+/// by cross-fading the old and new ones; the blurred shadow bitmaps come from the cache and are not recomputed per frame.
 /// </summary>
 internal sealed class TwOutset
 {
@@ -156,9 +156,12 @@ internal sealed class TwOutset
     private Rectangle _paintedBounds;
     private readonly Timer _timer = new Timer { Interval = 16 };
     private IReadOnlyList<TwShadowLayer> _fromShadows = Array.Empty<TwShadowLayer>();
+    private TwOutsetSpec? _fromRing;
     private int _fromExtent;
     private DateTime _start;
-    private int _duration;
+    private TwTransition _timing;
+    // Geçişte belirerek çizilenler; değişmeyen tam opak kalır.
+    private bool _shadowsFade, _ringFade;
 
     private TwOutset(Control control)
     {
@@ -178,10 +181,15 @@ internal sealed class TwOutset
         Reattach();
     }
 
-    // Gölge geçişinin ease-out ilerlemesi; geçiş yoksa 1.
-    internal float Progress => _duration > 0 && (DateTime.UtcNow - _start).TotalMilliseconds < _duration
-        ? TwMotion.EaseOut((float)((DateTime.UtcNow - _start).TotalMilliseconds / _duration))
-        : 1f;
+    // Gölge ve halka geçişinin (eğrisi uygulanmış) ilerlemesi; geçiş yoksa 1.
+    internal float Progress
+    {
+        get
+        {
+            double elapsed = (DateTime.UtcNow - _start).TotalMilliseconds;
+            return _timing.TotalMs > 0 && elapsed < _timing.TotalMs ? _timing.Progress(elapsed) : 1f;
+        }
+    }
 
     internal bool Animating => Progress < 1f;
 
@@ -191,34 +199,49 @@ internal sealed class TwOutset
 
     public static TwOutset For(Control control) => Table.GetValue(control, c => new TwOutset(c));
 
-    public void Update(TwOutsetSpec spec) => Update(spec, 0);
+    public void Update(TwOutsetSpec spec) => Update(spec, TwTransition.None);
 
     /// <param name="spec">New shadow, ring and frame.</param>
-    /// <param name="durationMs">Transition time of the shadow change (<c>transition</c>); 0 = immediate.</param>
-    public void Update(TwOutsetSpec spec, int durationMs)
+    /// <param name="timing">Transition of the shadow and ring change (<c>transition</c>); none = immediate.</param>
+    public void Update(TwOutsetSpec spec, TwTransition timing)
     {
         if (Spec != null && Spec.Equals(spec)) return;
-        var oldShadows = Spec?.Shadows ?? Array.Empty<TwShadowLayer>();
-        int oldExtent = Spec?.Extent ?? 0;
+        var old = Spec;
+        var oldShadows = old?.Shadows ?? Array.Empty<TwShadowLayer>();
+        int oldExtent = old?.Extent ?? 0;
         Spec = spec.IsEmpty ? null : spec;
 
-        if (durationMs > 0 && TwMotion.CanAnimate(_control) && !SameShadows(oldShadows, spec.Shadows))
+        bool shadowsChanged = !SameShadows(oldShadows, spec.Shadows);
+        bool ringChanged = !SameRing(old, spec);
+        if (timing.TotalMs > 0 && TwMotion.CanAnimate(_control) && (shadowsChanged || ringChanged))
         {
             // Geçiş sürerken yeniden değişirse o anki görüntü yerine eski hedeften başlanır (kısa geçişte fark edilmez).
-            _fromShadows = oldShadows;
+            _fromShadows = shadowsChanged ? oldShadows : Array.Empty<TwShadowLayer>();
+            _fromRing = ringChanged && old is { RingWidth: > 0 } ? old : null;
             _fromExtent = Math.Max(oldExtent, _fromExtent);
             _start = DateTime.UtcNow;
-            _duration = durationMs;
+            _timing = timing;
+            _shadowsFade = shadowsChanged;
+            _ringFade = ringChanged;
             _timer.Start();
         }
         else
         {
-            _duration = 0;
+            _timing = TwTransition.None;
             _timer.Stop();
             _fromShadows = Array.Empty<TwShadowLayer>();
+            _fromRing = null;
             _fromExtent = 0;
         }
         InvalidateParent();
+    }
+
+    private static bool SameRing(TwOutsetSpec? a, TwOutsetSpec b)
+    {
+        float width = a?.RingWidth ?? 0;
+        if (width <= 0 && b.RingWidth <= 0) return true;
+        return a != null && width == b.RingWidth && a.RingOffset == b.RingOffset
+               && a.RingColor.ToArgb() == b.RingColor.ToArgb() && a.RingOffsetColor.ToArgb() == b.RingOffsetColor.ToArgb();
     }
 
     private static bool SameShadows(IReadOnlyList<TwShadowLayer> a, IReadOnlyList<TwShadowLayer> b)
@@ -236,7 +259,7 @@ internal sealed class TwOutset
     {
         var spec = Spec;
         float progress = Progress;
-        if (!_control.Visible || spec is null && (progress >= 1f || _fromShadows.Count == 0)) return;
+        if (!_control.Visible || spec is null && (progress >= 1f || _fromShadows.Count == 0 && _fromRing is null)) return;
 
         var bounds = _control.Bounds;
         int extent = Math.Max(spec?.Extent ?? 0, progress < 1f ? _fromExtent : 0);
@@ -250,12 +273,15 @@ internal sealed class TwOutset
         float shadowRadius = spec?.Radius ?? 0;
 
         // Gölgeler, en geniş katman önce; geçişte eski gölge solarken yenisi belirir.
-        if (progress < 1f)
+        bool fading = progress < 1f;
+        if (fading)
             for (int i = _fromShadows.Count - 1; i >= 0; i--)
                 TwShadowRenderer.Draw(graphics, bounds, shadowRadius, _fromShadows[i], 1f - progress);
+        if (fading && _fromRing != null) DrawRing(graphics, bounds, _fromRing, 1f - progress);
         if (spec is null) return;
+        float shadowOpacity = fading && _shadowsFade ? progress : 1f;
         for (int i = spec.Shadows.Count - 1; i >= 0; i--)
-            TwShadowRenderer.Draw(graphics, bounds, spec.Radius, spec.Shadows[i], progress);
+            TwShadowRenderer.Draw(graphics, bounds, spec.Radius, spec.Shadows[i], shadowOpacity);
 
         if (spec.Frame is TwChrome frame)
         {
@@ -263,18 +289,22 @@ internal sealed class TwOutset
             TwPainter.StrokeChrome(graphics, bounds, frame);
         }
 
-        if (spec.RingWidth > 0)
+        if (spec.RingWidth > 0) DrawRing(graphics, bounds, spec, fading && _ringFade ? progress : 1f);
+    }
+
+    private static void DrawRing(Graphics graphics, Rectangle bounds, TwOutsetSpec spec, float opacity)
+    {
+        if (opacity <= 0f) return;
+        Color Fade(Color color) => opacity >= 1f ? color : Color.FromArgb((int)Math.Round(color.A * opacity), color);
+        var radius = TwPainter.EffectiveRadius(spec.Radius, bounds.Size);
+        if (spec.RingOffset > 0)
         {
-            var radius = TwPainter.EffectiveRadius(spec.Radius, bounds.Size);
-            if (spec.RingOffset > 0)
-            {
-                var offsetBounds = Rectangle.Inflate(bounds, (int)Math.Ceiling(spec.RingOffset), (int)Math.Ceiling(spec.RingOffset));
-                TwPainter.StrokeRounded(graphics, offsetBounds, radius + spec.RingOffset, spec.RingOffset, spec.RingOffsetColor);
-            }
-            var grow = (int)Math.Ceiling(spec.RingOffset + spec.RingWidth);
-            var ringBounds = Rectangle.Inflate(bounds, grow, grow);
-            TwPainter.StrokeRounded(graphics, ringBounds, radius + grow, spec.RingWidth, spec.RingColor);
+            var offsetBounds = Rectangle.Inflate(bounds, (int)Math.Ceiling(spec.RingOffset), (int)Math.Ceiling(spec.RingOffset));
+            TwPainter.StrokeRounded(graphics, offsetBounds, radius + spec.RingOffset, spec.RingOffset, Fade(spec.RingOffsetColor));
         }
+        var grow = (int)Math.Ceiling(spec.RingOffset + spec.RingWidth);
+        var ringBounds = Rectangle.Inflate(bounds, grow, grow);
+        TwPainter.StrokeRounded(graphics, ringBounds, radius + grow, spec.RingWidth, Fade(spec.RingColor));
     }
 
     private void Reattach()

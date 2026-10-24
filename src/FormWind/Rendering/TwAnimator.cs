@@ -9,11 +9,12 @@ internal enum TwColorChannel
 {
     Back,
     Fore,
+    Border,
 }
 
 /// <summary>
-/// Color transitions for the <c>transition</c> class. A single timer per thread (about 60 frames/s) runs all
-/// animations with an ease-out curve. When a channel gets a new target, the transition continues from the
+/// Color transitions for the <c>transition</c> classes. A single timer per thread (about 60 frames/s) runs all
+/// animations with the transition's curve and delay. When a channel gets a new target, the transition continues from the
 /// current color. Windows generates <c>WM_TIMER</c> only when no other message is queued: while a window keeps
 /// invalidating itself during paint, or the UI thread is busy, transitions pause at an intermediate color
 /// (<see cref="TryGetTarget"/> still gives the target).
@@ -31,19 +32,30 @@ internal static class TwAnimator
     public static bool IsAnimating(Control control, TwColorChannel channel) =>
         _active != null && _active.ContainsKey((control, channel));
 
-    public static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null)
+    /// <summary>Animates the control's BackColor or ForeColor with an ease-out curve.</summary>
+    public static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null) =>
+        Animate(control, channel, target, new TwTransition(durationMs), completed);
+
+    /// <summary>Animates the control's BackColor or ForeColor.</summary>
+    public static void Animate(Control control, TwColorChannel channel, Color target, TwTransition timing, Action? completed = null)
     {
         var current = channel == TwColorChannel.Back ? control.BackColor : control.ForeColor;
-        if (durationMs <= 0 || current.ToArgb() == target.ToArgb())
+        Animate(control, channel, current, target, timing, color => Set(control, channel, color), completed);
+    }
+
+    /// <summary>Animates a color shown by <paramref name="set"/> (e.g. the border of the control's chrome).</summary>
+    public static void Animate(Control control, TwColorChannel channel, Color from, Color target, TwTransition timing, Action<Color> set, Action? completed = null)
+    {
+        if (timing.TotalMs <= 0 || from.ToArgb() == target.ToArgb())
         {
             Cancel(control, channel);
-            Set(control, channel, target);
+            set(target);
             completed?.Invoke();
             return;
         }
 
         _active ??= new Dictionary<(Control, TwColorChannel), Animation>();
-        _active[(control, channel)] = new Animation(current, target, DateTime.UtcNow, durationMs, completed);
+        _active[(control, channel)] = new Animation(from, target, DateTime.UtcNow, timing, set, completed);
 
         if (_timer is null)
         {
@@ -79,18 +91,16 @@ internal static class TwAnimator
         var finished = new List<(Control, TwColorChannel)>();
         foreach (var pair in _active)
         {
-            var (control, channel) = (pair.Key.Control, pair.Key.Channel);
             var animation = pair.Value;
-            if (control.IsDisposed)
+            if (pair.Key.Control.IsDisposed)
             {
                 finished.Add(pair.Key);
                 continue;
             }
 
-            var t = Math.Min(1.0, (now - animation.Start).TotalMilliseconds / animation.DurationMs);
-            var eased = 1 - Math.Pow(1 - t, 3);
-            Set(control, channel, Lerp(animation.From, animation.To, eased));
-            if (t >= 1) finished.Add(pair.Key);
+            var elapsed = (now - animation.Start).TotalMilliseconds;
+            animation.Set(Lerp(animation.From, animation.To, animation.Timing.Progress(elapsed)));
+            if (elapsed >= animation.Timing.TotalMs) finished.Add(pair.Key);
         }
 
         foreach (var key in finished)
@@ -124,19 +134,21 @@ internal static class TwAnimator
 
     private sealed class Animation
     {
-        public Animation(Color from, Color to, DateTime start, int durationMs, Action? completed)
+        public Animation(Color from, Color to, DateTime start, TwTransition timing, Action<Color> set, Action? completed)
         {
             From = from;
             To = to;
             Start = start;
-            DurationMs = durationMs;
+            Timing = timing;
+            Set = set;
             Completed = completed;
         }
 
         public Color From { get; }
         public Color To { get; }
         public DateTime Start { get; }
-        public int DurationMs { get; }
+        public TwTransition Timing { get; }
+        public Action<Color> Set { get; }
         public Action? Completed { get; }
     }
 }

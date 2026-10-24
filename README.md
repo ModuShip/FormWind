@@ -110,7 +110,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.2-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır. CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
+`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.2-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır; `net472` projesi PerMonitorV2 için manifest ve App.config ile gelir (bkz. [.NET Framework'te kurulum](#net-frameworkte-kurulum)). CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
 
 ## Hazır görünümler ve AutoStyle
 
@@ -136,8 +136,8 @@ Bütün görünümler **aynı bileşen adlarını** tanımlar; görünüm deği�
 | Grup | Bileşenler |
 | --- | --- |
 | Butonlar | `btn`, `btn-primary`, `btn-secondary` (dolgulu nötr), `btn-ghost` (kenarlıklı varsayılan), `btn-danger`, `link` |
-| Form | `input`, `select` (input ve açılır liste), `field`, `toggle`, `range` (slider, ilerleme) |
-| Yüzey ve yazı | `page` (form zemini, yazı rengi ve font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
+| Form | `input`, `select` (input ve açılır liste), `field`, `setting` (`TwSettingRow`), `toggle`, `range` (slider, ilerleme) |
+| Yüzey ve yazı | `page` (form zemini, yazı rengi ve font), `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger` |
 | Veri ve gezinme | `table`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties` |
 
 **Anlamsal renkler.** Bileşenler `primary`, `surface` (nötr zemin ve yazı), `danger`, `success` ve `warning` renklerini kullanır (`bg-primary-600`, `text-surface-500` …). Varsayılan temada bunlar sırasıyla `blue`, `gray`, `red`, `green` ve `amber`'ın kopyasıdır ve palet sürümünü izler. Tema dosyasında bir rampa tanımlamak (`"colors": { "primary": { "50": "…", …, "950": "…" } }`) bütün bileşenleri birlikte yeniden renklendirir. Kendi class'larınızda da anlamsal adları kullanırsanız onlar da görünümle değişir.
@@ -158,6 +158,8 @@ Bütün görünümler **aynı bileşen adlarını** tanımlar; görünüm deği�
 | `DataGridView` | `table` |
 | `ListBox`, `ListView`, `TreeView`, `TwDataList`, `TwListBox`, `TwTreeView` | `list` |
 | `TwTabStrip` (ve `TwTabControl`'ün şeridi) | `tabs` |
+| `TwChip` | `chip` |
+| `TwSettingRow` | `setting` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
 | `LinkLabel` | `link-label` |
 | `TabControl`, `TabPage` | `tab-control`, `tab-page` |
@@ -333,6 +335,7 @@ SVG ikon aynı adlı glifi ezer, böylece yerleşik ikonlar (`check`, `chevron-d
 | `shadow-{renk}`, `shadow-blue-500/50` | Renkli gölge |
 | `ring`, `ring-0/1/2/4/8`, `ring-{renk}`, `ring-offset-2`, `ring-offset-{renk}` | Halka; genelde `focus:ring-2 focus:ring-blue-500/30` |
 | `bg-black/50`, `text-white/75` … | Saydamlık: tüm renk class'larında `/0–100` |
+| `backdrop-blur-sm`, `backdrop-blur`, `backdrop-blur-md` … `backdrop-blur-3xl`, `backdrop-blur-none` | `TwPanel`'de buzlu cam: ebeveynin arkada çizdiği bulanıklaşır (4–64 px), üstünde yarı saydam bir `bg-*/NN` |
 
 Gölge ve halka kontrolün **ebeveyninde** çizilir (kontroller kendi sınırlarının dışına çizemez); Form, Panel ve TwPanel ebeveynlerinde çalışır. Bu sayede `TextBox` gibi native kontrollerin de focus halkası olabilir.
 
@@ -342,7 +345,9 @@ Gölge ve halka kontrolün **ebeveyninde** çizilir (kontroller kendi sınırlar
 
 ## Etkileşim
 
-- **`transition`** (`transition-colors`, `duration-75` … `duration-1000`, `duration-[250ms]`): arka plan ve metin rengi değişimleri yumuşak geçişle (ease-out, varsayılan 150 ms) uygulanır. Gölge değişimleri de (`shadow-sm hover:shadow-lg transition`) aynı sürede, eski gölge solarken yenisi belirerek geçer; bulanık gölgeler önbellekten gelir, geçiş sırasında yeniden hesaplanmaz.
+- **`transition`** (`transition-all`, `duration-75` … `duration-1000`, `duration-[250ms]`): arka plan, metin ve kenarlık rengi değişimleri yumuşak geçişle (ease-out, varsayılan 150 ms) uygulanır. Gölge ve halka değişimleri de (`shadow-sm hover:shadow-lg transition`, `ring-0 focus:ring-2 transition`) aynı sürede, eskisi solarken yenisi belirerek geçer; bulanık gölgeler önbellekten gelir, geçiş sırasında yeniden hesaplanmaz.
+  - Ne geçeceği: `transition-colors` yalnızca renkler (zemin, metin, kenarlık), `transition-shadow` yalnızca gölge ve halka, `transition-none` hiçbiri.
+  - Eğri ve gecikme: `ease-out` (varsayılan), `ease-linear`, `ease-in`, `ease-in-out`; `delay-75` … `delay-1000`, `delay-[40ms]` geçişi o kadar bekletir. Örnek: `bg-white hover:bg-gray-100 transition duration-200 delay-75 ease-in-out`.
   - İlk uygulama geçişsizdir: class'lar atandığında kontrol hemen son rengini alır (geçiş uygulamanın kendi renginden başlayıp açılışta renk kaydırırdı). Tema, durum (hover, focus, disabled …) ve class değişimleri geçişlidir.
   - Geçişler bir WinForms zamanlayıcısıyla (yaklaşık 60 kare/sn) ilerler. Windows `WM_TIMER`'ı yalnızca kuyrukta başka mesaj yokken üretir; her `OnPaint`'te kendini yeniden geçersiz kılan bir pencere açıkken (örn. ShareX'in bölge yakalaması) ya da UI iş parçacığı meşgulken geçişler durur ve o sırada ara renkte kalır, pencere kapanınca tamamlanır. Kontrast denetimi bu sürede de varılacak rengi ölçer.
 - **`hover:` / `active:`**: yalnızca bu varyantları olan kontroller fare girip çıkınca yeniden stillenir; diğerlerinde fare hareketi stil uygulamasını tetiklemez. Class'lar imleç zaten kontrolün üzerindeyken atanırsa (örn. tıklayınca class'ı değişen bir buton) hover durumu hemen uygulanır.
@@ -524,6 +529,21 @@ footer.SetAggregate(colAmount, TwAggregate.Sum, "C2");   // Sum, Average, Count,
 - Grup başlığı grubun ilk satırının üstüne eklenir (satır uzar, içeriği aşağı kayar); satırlar paylaşımda kalır, kaydırma akıcı kalır.
 - `TwGridFooter` grid'in kolon genişliklerini, sırasını ve yatay kaydırmasını izler; satırlar ya da değerler değişince yeniden hesaplar. Süzülen ya da aranan listede yalnızca görünen satırlar sayılır. `footer.SetValue(column, values => ...)` özel bir hücre hesaplar. `AddFooter` doldurmaya (ya da üste/alta) yerleşen grid'in altına yerleşir; aksi halde grid kısalır. Designer'da da konup `Grid` ile bağlanabilir.
 
+### Ağaç satırlar
+
+Ayrı bir ağaç kontrolü olmadan, grid'de sütunlu hiyerarşik satırlar (hatlar → makineler → nedenler, her biri toplamlarıyla):
+
+```csharp
+var tree = TwGrid.SetTree(grid, colName, hatlar, hat => hat.Children);   // ya da TwGridTreeNode("Pres 3", 540, 6) düğümleri
+tree.SetTotal(colMinutes, TwAggregate.Sum);                               // üst satırlar çocuklarının toplamını gösterir
+TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);        // yalnızca çocuksuz satırları sayar
+```
+
+- Grid bağlı olmamalıdır (`DataSource` yok): her düğüm bir satırdır, kapalı dallar gizli satırlardır. Sütun değerleri `TwGridTreeNode.Values`'tan (sütun sırasıyla) ya da `DataItem`'ın `DataPropertyName` özelliklerinden gelir.
+- Ağaç sütunu girintiyi, oku ve `IconName`'i gösterir. Oka tıklamak ya da hücreye çift tıklamak (salt okunur grid'de) açar ve kapatır; ağaç sütununda → açar ya da ilk çocuğa iner, ← kapatır ya da üst düğüme çıkar, `+`/`−` her sütunda çalışır, `*` dalın tamamını açar. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
+- Başlık tıklaması her üst düğümün çocuklarını kendi içinde sıralar; hiyerarşi ve açık dallar korunur (`tree.Sort(column, direction)`).
+- `SetTotal` boş üst hücreleri çocuklarının `Sum`, `Average`, `Count`, `Min` ya da `Max` değeriyle doldurur (toplam çocukların toplamlarını toplar, diğerleri yapraklara bakar). Düğümler değişince `tree.Refresh()`.
+
 ### Satır detayları
 
 ```csharp
@@ -605,23 +625,26 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwCheckBox`, `TwRadioButton`, `TwSwitch` | Bkz. [CheckBox, Radio, Switch](#checkbox-radio-switch). |
 | Standart kontroller | Renk, yazı ve boşluk her kontrolde çalışır. Köşe `Region` ile kırpılır (antialias yok), kenarlık `Paint` olayında çizilir. `TextBox`'ta (`TextBoxBase`) native kenarlık kapatılır; `border-*` ve `rounded-*` ebeveynde, kontrolün 3 px dışına zemin rengiyle doldurulmuş bir çerçeve olarak çizilir (çerçeve kontrolün sınırlarından taşar, yerleşimde pay bırakın). `DropDownList` modundaki `ComboBox`'ın kapalı kutusu (zemin, kenarlık, köşe, metin, ok) kenarlık ya da köşe class'larında ve koyu bir zeminde FormWind tarafından çizilir (kenarlık class'ı yoksa 1 px'lik, zeminden yazıya doğru bir kenarlıkla); açılır liste native kalır. Düzenlenebilir `ComboBox`'ta ve diğer native kontrollerde (`ListBox` …) köşe ve kenarlık uygulanmaz; `TwSelect`, `TwListBox` kullanın. |
 | `TwButton` | Pürüzsüz köşeli buton. `Image` henüz çizilmez, `Paint` olayı tetiklenmez. |
-| `TwPanel` | Pürüzsüz köşeli, kenarlıklı panel (kart). |
+| `TwPanel` | Pürüzsüz köşeli, kenarlıklı panel (kart). Yarı saydam zemin (`bg-white/70`) ebeveynin çizimini (geçişini ya da resmini) gösterir; `backdrop-blur-*` onu önce bulanıklaştırır: pencere içinde buzlu cam kart ya da kenar çubuğu, `backdrop-acrylic`'in form içi karşılığı. |
 | `TwTextBox` | Kenarlıksız TextBox'ı yuvarlak bir panel içine alır; `input` stili için. |
 | `TwNumberBox` | Sayı kutusu (`TwTextBox` + sağda ▲▼). `Minimum`, `Maximum`, `Increment`, `DecimalPlaces`; ok tuşları, fare tekeri ve kültüre göre ayrıştırma. |
 | `TwDatePicker` | Tarih alanı + açılır `TwCalendar`. Tarih yazılabilir (`Culture`/`Format`'a göre çözülür), F4 / Alt+↓ takvimi açar. Takvim `menu:bg-* menu:border-*`, `selected:bg-* selected:text-*`, `item:hover:bg-*` ile stillenir. |
 | `TwPopover` | Bir kontrole bağlı açılan panel (bileşen): `Content` kontrolünü `Placement` tarafında (`BottomStart`, `TopEnd`, `Right` …) gösterir, ekrana sığmazsa karşı tarafa geçer. Dışarı tıklama ve Esc kapatır; `Toggle(anchor)` açıkken kapatır, `RestoreFocus` odağı çapaya geri verir. `TwDatePicker`'ın takvimi bununla açılır. |
 | `TwCalendar` | Tek başına ay takvimi: kültürün ilk günü ve gün adları, bugün halkası, `MinDate`/`MaxDate`, klavye (oklar, PageUp/PageDown, Home/End, Enter, Esc). |
-| `TwTabStrip` | Sekme şeridi: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented zemini), `gap-*`. Yalnızca şerittir; sayfalı kullanım için `TwTabControl`. |
+| `TwTabStrip` | Sekme şeridi: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented zemini), `gap-*`. Sığmayan sekmeler sondaki "daha fazla" (…) düğmesine taşınır (`OverflowMenu`, ↓ açar; menü `menu:` / `item:` alır); seçili sekme hep görünür kalır. `&` Label'daki gibi sekmenin Alt kısayolunu işaretler; `UseMnemonic = false` onu metin olarak çizer ("Parça & maliyet"). Yalnızca şerittir; sayfalı kullanım için `TwTabControl`. |
 | `TwTabControl` | Sayfalı sekme kontrolü (TabControl yerine): `AddPage("Genel")` ya da `TwTabPage` ekleyin, seçili sayfa gösterilir. Şerit `Strip` üzerinden stillenir (`provider.SetClasses(tabs.Strip, "...")`); Ctrl+Tab / Ctrl+PageDown sayfalar arasında gezer. |
 | `TwSlider` | Kaydırıcı (TrackBar yerine): `Minimum`, `Maximum`, `Value`, `SmallChange`, `LargeChange`. Ray `fill-*`, dolu kısım `accent-*`, tutamaç `item:bg-*`. Klavye, fare tekeri ve sürükleme. |
 | `TwProgress` | İlerleme çubuğu (ProgressBar yerine): ray `fill-*`, dolgu `accent-*`, köşe `rounded-*`. `Indeterminate = true` süresi bilinmeyen iş için kayan bir parça çizer. |
 | `TwDataList` | Sanal liste (bkz. aşağı). |
-| `TwListBox` | ListBox yerine: `Items` (+ `DisplayMember`), `SelectedItem(s)`, `FindString`; TwDataList'in sanal çizimi, çoklu seçimi ve stilleriyle. |
+| `TwListBox` | ListBox yerine: `Items` (+ `DisplayMember`), `SelectedItem(s)`, `FindString`; TwDataList'in sanal çizimi, çoklu seçimi ve stilleriyle. `TwListItem` öğeleri hazır satır şablonuyla çizilir (bkz. [Liste satırları](#liste-satırları-twlistitem)). |
 | `TwCheckedListBox` | CheckedListBox yerine: satır başında yuvarlak onay kutusu (`accent-*`), `CheckedIndices`/`CheckedItems`, `ItemCheck`; kutuya tık ya da Boşluk. |
 | `TwTreeView` | TreeView yerine sanal ağaç: `Nodes`, ikonlu düğümler, `SelectedNode`, `ExpandAll`; ←/→ ile aç/kapa, tembel yükleme için `HasLazyChildren` + `BeforeExpand`. Ekran okuyucuya Outline olarak görünür. |
 | `TwPager` | Sayfalama (bkz. [DataGridView](#datagridview)). |
 | `TwField` | Etiket + düzenleyici + ipucu/hata metni; doğrulama kuralları (bkz. [Formlar](#formlar-doğrulama-maske-ve-diyaloglar)). |
 | `TwToolTip` | Stillenebilir ipucu: `Classes`; `Provider` verilirse koyu temayı izler. |
+| `TwChip` | Metinli, isteğe bağlı simgeli ya da durum noktalı (`IconName`, `DotColor`) ve isteğe bağlı ✕'li hap (`Removable` → `RemoveClick`; Delete/Backspace de). `Clickable` onu düğme, `Checkable` açılıp kapanan bir süzgeç çipi yapar (`Checked`, `checked:` ile stillenir). Salt gösterim çipleri sekme durağı değildir. Bileşenler `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; ✕ ekran okuyucuya ayrı bir "Kaldır" düğmesidir. |
+| `TwToolbar` | Duyarlı araç çubuğu (bir `TwPanel`): çocuklar `gap-*` aralıkla tek satırda durur; sığmayanlar "daha fazla" (…) düğmesine geçer ve menüden çalışır (düğme tıklanır, onay kutusu değişir, `TwTabStrip` ya da `TwSelect` alt menü olur, diğerleri `OverflowItemClick`'i tetikler). Öğe başına: `SetAlignment` (`Start`/`End`), `SetPriority` (yüksek olan daha geç taşınır), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: başlık bir şey taşınmadan önce daralır, `MinimumSize.Width`'e kadar). Menü `menu:` / `item:` alır, düğme `OverflowButton`'dır. |
+| `TwSettingRow` | Ayar satırı (System Settings tarzı): `LabelText`, `Description` (soluk, satır kaydırır), sağda düzenleyici (çocuk kontrol) ve `UnitText` (`EditorWidth`, varsayılan 160). `card p-0` panelde üst üste duran satırlar aralarına ayırıcı çizer (`divide-*`); dar satırda düzenleyici metnin altına iner. `label:` ve `hint:` parçaları, `setting` bileşeni. |
 
 ### TwDataList
 
@@ -651,6 +674,23 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
 - **Farklı yükseklikte satırlar:** `ItemHeights = i => orders[i].HasNote ? 72 : 52` (96 DPI pikseli); satır başlangıçları bir kez hesaplanır, yükseklikler değişince `InvalidateItemHeights()`. Verilmezse bütün satırlar `ItemHeight` boyundadır ve milyon satırda ek maliyet yoktur; verildiğinde her satırın yüksekliği bir kez sorulur.
 - **Parça parça yükleme:** `IsItemLoaded` yüklenmemiş satırları iskelet olarak çizer (hafifçe nabız atar) ve `ItemsNeeded(first, last)` görünür aralıkla tetiklenir; veri gelince `Invalidate()`.
 
+### Liste satırları (`TwListItem`)
+
+Listelerin tekrar tekrar çizdiği "başlık, soluk alt satır, durum noktası, sağda değer ve rozet" satırı hazır gelir (kenar çubuğu, kuyruk, uyarılar, kurallar, arama sonuçları): `TwListBox`'a `TwListItem` ekleyin, hazır şablonla çizilir; verilmeyen parçalar yer kaplamaz.
+
+```csharp
+list.Items.Add(new TwListItem("Pres 3 · mil yatağı", "Hat 2 · 30 günde 6 duruş")
+{
+    DotColor = Color.Red,                     // ya da IconName = "warning", ya da Score = 0.72 ("72" yazan küçük halka)
+    Value = "540 dk", ValueCaption = "30 gün",
+    Badge = "Kronik", BadgeClasses = "chip-danger",
+});
+```
+
+- İkinci satırı olan satırlar (`Subtitle` ya da `ValueCaption`) kendiliğinden iki satır boyunda olur; tek satırlılar `ItemHeight`'te kalır.
+- Rozet renklerini, dolgusunu, köşesini ve yazısını `BadgeClasses`'tan alır (varsayılan `chip`, `dark:` varyantlarıyla); skor halkasının yayı `ScoreColor` ya da `accent-*`.
+- Ekran okuyucular parçaları birlikte okur (`"Pres 3 · mil yatağı, Hat 2 · 30 günde 6 duruş, 540 dk, 30 gün, Kronik"`). `DrawItem` işlenirse şablon kullanılmaz.
+
 ## Grafikler
 
 FormWind'in kendi çizdiği, ek bağımlılığı olmayan hafif grafikler: `TwChart` (çizgi, alan, çubuk), `TwDonutChart`, `TwSparkline` ve KPI kartı `TwStat`. Diğer kontroller gibi koyu temayı, DPI'ı ve temayı izler; `AutoStyle` ile `chart` ve `stat` bileşenlerini alır.
@@ -673,6 +713,11 @@ donut.SetData(new[] { "Web", "Mağaza", "Telefon" }, new[] { 52.0, 28, 20 });
 stat.Title = "Gelir"; stat.Value = "₺1,24 Mn"; stat.Delta = 0.124; stat.Caption = "geçen aya göre";
 stat.Trend = new[] { 820.0, 940, 910, 1040, 1240 };
 stat.PositiveIsGood = false;                     // maliyet ve hata oranında artış kırmızı gösterilir
+stat.ShortValue = "278 sa";                      // "278 sa 52 dk" sığmazsa gösterilir; o da sığmazsa yazı küçülür
+
+dagilim.Kind = TwChartKind.HorizontalBar;        // her kategori bir satır, tam etiketi solda
+heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN hücreler: taralı gri; göstergede ve ipucunda "Üretim yok"
+heatmap.EmptyCellText = "Üretim yok";
 ```
 
 | Class | Etkisi |
@@ -689,6 +734,10 @@ stat.PositiveIsGood = false;                     // maliyet ve hata oranında ar
 - **Etkileşim:** fareyle ya da ok tuşlarıyla (Home/End) bir kategori vurgulanır ve her serinin değeri ipucunda görünür; Enter ya da tıklama `ItemClick`'i tetikler (`TwChartItemEventArgs.Index`, `Label`), `HoverIndexChanged` vurguyu izler. Halka grafik vurgulanan dilimi ortada gösterir.
 - **Ekran okuyucular:** grafikler `Chart` rolündedir, her kategori ya da dilim bir öğedir (`"Mar: Gelir 170, Hedef 160"`, `"Web: 52 (52%)"`); grafiğin değeri aralıkların özetidir. `TwStat` "başlık: değer, değişim, açıklama" olarak okunur; değişim her zaman ok ve işaretle verilir, yalnızca renkle değil.
 - `TwStat`'ın değişimi temanın `success` ve `danger` renklerini kullanır; hazır görünümler ve tema dosyaları onu da yeniden renklendirir.
+- **Yatay çubuklar** (`TwChartKind.HorizontalBar`, grafiğe verilir): kategoriler satırdır, tam etiketleri soldadır (genişliğin en çok %40'ı, sonra "…"), değer ekseni alttadır ve değerler (`ShowValues`) çubuk uçlarında durur; her seri değerini gösteriyorsa eksen yazılmaz. Seriler yan yana ya da `Stacked`; referans çizgileri dikeydir; ↑/↓ satırlar arasında gezer.
+- **`TwStat`'ta sığdırma:** karttan geniş değer önce `ShortValue`'ya geçer, sonra "…" ile kesilmek (`Ellipsis`) yerine başlık boyutuna kadar küçülür (`ValueFit = Shrink`, varsayılan); ekran okuyucu her zaman tam değeri okur.
+- **Isı haritasında boş hücreler:** `EmptyCells`, `double.NaN` hücreleri en düşük tonla (`Low`, önceki davranış), düz griyle (`Solid`), taralı griyle (`Hatched`) çizer ya da hiç çizmez (`None`); `EmptyCellColor` griyi verir, `EmptyCellText` ("Üretim yok") ipucunda ve ekran okuyucuda "—" yerine geçer ve göstergeye bir anahtar ekler.
+- **Küçük halkalar:** simge boyundaki (32 px) bir `TwRingChart` en az 3 px kalınlıkta halka çizer ve orta yazısını sığacak kadar küçültür; `TwListItem.Score` aynı skor halkasını liste satırında çizer.
 
 ## Formlar: doğrulama, maske ve diyaloglar
 
@@ -711,6 +760,7 @@ TwToast.Show(this, "Sipariş kaydedildi", TwDialogKind.Success);
 ```
 
 - **`TwDialog`** (MessageBox yerine): ikon, başlık, mesaj, sağa dayalı düğmeler; Enter varsayılan, Esc iptal/hayır. Sahip formun koyu temasını izler. Düğme metinleri [`TwTexts`](#yerelleştirme)'ten gelir, tek tek `TwDialog.Texts[DialogResult.Yes] = "Sil"` ile ezilebilir; `TwDialog.Create(...)` göstermeden özelleştirmeye izin verir.
+- **Metin girişi:** `TwDialog.Prompt(this, "Kayıtlı arama adı", "Aramayı kaydet", placeholder: "örn. Hat 2 · gece vardiyası", validator: ad => adlar.Contains(ad) ? "Bu ad kullanılıyor." : null)` kırpılmış metni, iptalde `null` döndürür. `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
 - **`TwToast`**: sahip formun sağ alt köşesinde üst üste dizilen, odak çalmayan, fare üzerindeyken bekleyen ve kendiliğinden kapanan bildirim (`DefaultDuration` 4 sn). Ekran okuyucuya Alert olarak bildirilir.
 
 ## Yerelleştirme
@@ -900,9 +950,56 @@ KeePass 2.61 ile denendi: iki eklenti (FormWind 0.91 ve 0.92) aynı süreçte ke
 | PerMonitorV2 + `AutoScaleMode.Dpi` | Yerleşim, font ve FormWind boşlukları birlikte ölçeklenir. |
 | PerMonitorV2 + `AutoScaleMode.Font` | Kodla kurulan formlar ve (.NET Framework'te) fontu `AutoScaleDimensions`'tan sonra atanan Designer formları ölçeklenmedi; boşluklar ve fontlar büyüdü, kontroller büyümedi. |
 
-- 4.7.2'de PerMonitorV2 `app.config` içindeki `System.Windows.Forms.ApplicationConfigurationSection` (`DpiAwareness`) ile açılır. Bu dosyayı elle düzenlerken derlemenin ürettiği `bindingRedirect`'leri silmeyin; `System.Text.Json` bağımlılıkları yüklenemez ve uygulama açılışta düşer.
+### .NET Framework'te kurulum
+
+.NET 8+ projelerinde `<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>` ya da `Program.Main`'de `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` yeterlidir. .NET Framework 4.7.2 / 4.8'de üç seçenek var:
+
+| Seçenek | Nasıl açılır | Sonuç |
+| --- | --- | --- |
+| DPI-unaware (varsayılan) | Ayar yok | Windows pencereyi bitmap olarak büyütür; yerleşim doğru, yazılar bulanık. `DeviceDpi` 96 kalır, FormWind ölçeklemez. |
+| System-aware | Manifestte `<dpiAware>true</dpiAware>` | Birincil ekranın ölçeğinde net. Pencere ölçeği farklı bir ekrana taşınınca Windows onu bitmap olarak büyütür ya da küçültür. |
+| PerMonitorV2 (önerilen) | Manifest **ve** App.config, ikisi birlikte | Her ekranda net; ekran değişince WinForms ve FormWind yeniden ölçekler. |
+
+PerMonitorV2 için manifest süreci DPI-aware yapar ve Windows 10 uyumluluğunu bildirir (`supportedOS` yoksa süreç sessizce system-aware kalır):
+
+```xml
+<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+  <application>
+    <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+  </application>
+</compatibility>
+<application xmlns="urn:schemas-microsoft-com:asm.v3">
+  <windowsSettings>
+    <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+    <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+  </windowsSettings>
+</application>
+```
+
+App.config ise WinForms'un kendi per-monitor desteğini açar:
+
+```xml
+<configuration>
+  <System.Windows.Forms.ApplicationConfigurationSection>
+    <add key="DpiAwareness" value="PerMonitorV2" />
+  </System.Windows.Forms.ApplicationConfigurationSection>
+</configuration>
+```
+
+- **İkisi birden gerekir.** Yalnızca manifestte PerMonitorV2 varsa süreç per-monitor çalışır ama WinForms ekran değişimini (`WM_DPICHANGED`) işlemez: ölçeği farklı ekrana taşınan formun yerleşimi ve fontları eski DPI'da kalır. Tek ekranda fark görünmez. Tek ekran yetiyorsa manifestte yalnızca `<dpiAware>true</dpiAware>` (system-aware) daha tutarlıdır.
+- **`configSections` eklemeyin.** `System.Windows.Forms.ApplicationConfigurationSection` machine.config'de zaten tanımlıdır; App.config'te `<configSections>` ile yeniden tanımlanınca WinForms DPI ayarını sessizce yok sayar ve yapılandırma sistemi başlamaz. Hata açılışta değil, `ConfigurationManager`'ı (ayarlar, bağlantı dizeleri) ilk kullanan ekranda "Yapılandırma sistemi başlatılamadı" olarak çıkar.
+- **`bindingRedirect`'leri silmeyin.** FormWind paketi .NET Framework'te `AutoGenerateBindingRedirects`'i açar ve derleme yönlendirmeleri çıktıdaki `.exe.config`'e yazar. Bu dosyayı elle düzenlerken derlemenin ürettiği yönlendirmeleri silerseniz `System.Text.Json` bağımlılıkları yüklenemez ve uygulama açılışta düşer.
+- **Şablon:** `dotnet new formwind-app --Framework net472` manifesti ve App.config'i bu şekilde kurar.
+
+**Kendi DPI ölçeklemesi olan uygulamalar.** DPI-unaware çalışırken boyutları kendi çarpanıyla (`Px(8)`, `Fs(13)` gibi) büyüten bir uygulama DPI-aware'a geçince aynı değer iki kez büyür: önce uygulamanın çarpanıyla, sonra WinForms'un AutoScale'i ya da FormWind ile (%125'te 1,25 yerine yaklaşık 1,56 kat). Geçişte:
+
+- Sınıflardaki değerleri 96 DPI birimiyle yazın: `text-[13px]`, `p-[8px]`. `$"text-[{Fs(13)}px]"` gibi önceden ölçeklenmiş değerler FormWind'in ölçeklemesiyle iki katına çıkar.
+- Formlarda `AutoScaleMode.Dpi` ve `AutoScaleDimensions = new SizeF(96F, 96F)` kullanın; yapıcıda (`ResumeLayout`'tan önce) atanan `Size`, `Location`, `Padding` gibi değerleri de 96 DPI birimiyle yazın, AutoScale bunları büyütür.
+- Form açıldıktan sonra kodla atanan piksel değerleri için kendi çarpanınız yerine `control.LogicalToDeviceUnits(8)` kullanın; kendi `OnPaint` çiziminizde ölçek `DeviceDpi / 96f`'tir.
+- Uygulamayı %125 ve %150'de açıp kontrol edin: boşluklar ve yazılar ekran ölçeğinden belirgin biçimde fazla büyüdüyse bir değer hâlâ iki kez ölçekleniyordur.
+
+- .NET Framework'te PerMonitorV2'nin nasıl açılacağı için bkz. [.NET Framework'te kurulum](#net-frameworkte-kurulum).
 - .NET Framework'te WinForms DPI ayarını ilk `Control` oluşturulurken uygular; GDI+ ise ekran DPI'ını başladığı anda bir kez okur. Bundan önce bir `Font` oluşturulursa (örn. tema yüklenirken) GDI+ 96 DPI'da kalır ve native kontrollerin (TextBox) fontları küçük çizilir. FormWind GDI+'ya dokunmadan önce WinForms'un DPI başlatmasını tetikler; kendi kodunuzda `Program.Main` içinde form oluşturmadan önce `Font` üretiyorsanız önce `new Control().Dispose()` çağırın.
-- PerMonitorV2 yalnızca uygulama manifestinde Windows 10 uyumluluğu (`supportedOS`) bildirildiyse açılır; yoksa süreç sessizce system-aware kalır.
 - **Ekran değişimi (%150, %200):** form başka DPI'lı bir ekrana taşınınca FormWind class'ları WinForms ölçeklemeyi bitirdikten sonra bir kez yeniden uygular. `AutoScaleMode.Dpi` ile kurulan formlarda fontlar, boşluklar, owner-draw kontroller ve DataGridView (font ve kolon genişlikleri) doğru ölçeklenir; bu `ControlsForm` ve bir grid formu için %150 ve %200'de doğrulandı.
 - **`AutoScaleMode.Font` ve .NET Framework:** Designer formun `Font`'unu `AutoScaleDimensions`'tan sonra yazar. .NET Framework WinForms, PerMonitorV2 açıkken bu font atamasında ölçeklemeyi atlar ve `AutoScaleDimensions`'ı ölçeklenmiş gibi günceller: kontroller 96 DPI boyutunda kalır, fontlar (ve FormWind boşlukları) ekran DPI'ıyla büyür; yazılar kırpılır, grid kolonları dar kalır. Bu FormWind'siz de olur (aynı form `Font` önce atanınca doğru ölçeklenir) ve .NET 8'de yoktur. Çalışma anında düzeltilemez: ezilen değerden formun hangi DPI'da tasarlandığı anlaşılamaz. **FW002** çözümleyicisi bu formları uyarır; çözüm `AutoScaleMode.Dpi` ve `AutoScaleDimensions = new SizeF(96F, 96F)`.
 - Font modundaki formlarda .NET Framework ekran değişiminde fontları olay tetiklemeden değiştirir; `TwTextBox`'ın iç kutusu silinmiş font handle'ını tutup yazıyı sistem fontuyla küçük çiziyordu. `TwTextBox` artık formun `DpiChanged` olayında iç fontu yeniler (`Text_boxes_keep_a_valid_native_font_after_moving_to_200_percent`).
@@ -949,7 +1046,32 @@ Yalnızca class metni sabit olan çağrılar ve class'ların gerçekten yönetti
 
 ## Animasyonlar ve responsive varyantlar
 
-- Sekme göstergesi (alt çizgi, hap, bölme) yeni sekmeye kayar; liste satırlarının hover zemini yumuşakça belirir; iskelet satırlar (liste ve grid) hafifçe nabız atar. `TwMotion.Enabled` Windows'un "animasyonları göster" ayarını izler, kodla kapatılabilir; tasarım zamanında ve görünmeyen kontrollerde animasyon yapılmaz.
+- Sekme göstergesi (alt çizgi, hap, bölme) yeni sekmeye kayar; liste satırlarının hover zemini yumuşakça belirir; iskelet satırlar (liste ve grid) hafifçe nabız atar; `TwSwitch` düğmesi kayar, `TwToast` solarak belirip kaybolur, `TwDialog` ve `TwPopover` açılırken solarak belirir, belirsiz `TwProgress` şeridi ray boyunca kayar. Switch düğmesi, sekme göstergesi ve liste hover'ı kontrolün `duration-*`, `delay-*` ve `ease-*` class'larına uyar; `transition-none` onları anında yapar.
+- **`animate-spin`** bir `TwIcon`'u döndürür (saniyede bir tur; yükleniyor göstergesi), **`animate-pulse`** bir `TwIcon`'u ya da `TwPanel`'in zeminini solup geri getirir (iskelet yer tutucu), `animate-none` durdurur. Tüm animasyonlu kontroller aynı saatle çizilir; nabız atan yer tutucular birlikte atar.
+
+```csharp
+tw.SetClasses(icoLoading, "text-gray-500 animate-spin motion-reduce:animate-none");
+tw.SetClasses(pnlSkeleton, "h-4 w-40 rounded bg-gray-200 animate-pulse");
+```
+
+- `TwMotion.Enabled` Windows'un "animasyonları göster" ayarını izler (uygulama çalışırken değişirse de), kodla kapatılabilir; `TwMotion.FollowSystem()` yeniden Windows'a bırakır. Kapalıyken bunların hepsi ve `transition` geçişleri anında olur (belirsiz progress şeridi ortada durur, dönen simge durur). Tasarım zamanında ve görünmeyen kontrollerde animasyon yapılmaz.
+- **`motion-safe:`** / **`motion-reduce:`** varyantları animasyon açıkken / kapalıyken uygulanır; ayar değişince yalnızca bunları kullanan kontroller yeniden uygulanır. `forced-colors:` yine en son uygulanır.
+- **Kapanış:** `TwDialog` ve `TwPopover` kapanırken de solar. Pencere hemen kapanır (`DialogResult`, `IsOpen`, `Closed` gecikmez); son görüntüsü tıklamayı geçiren bir pencerede solarak kaybolur.
+- **Değerler:** yeni `TwProgress.Value` dolguyu yerine kaydırır (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` yeni değeri öncekinden (ilk görünüşte sıfırdan) sayarak gösterir, metnin biçimi korunur (`₺12.400`, `%98,4`); yalnızca tek sayı içeren değer sayılır, `AnimateValue = false` kapatır. `TwChart` verisiyle ilk göründüğünde soldan sağa açılarak çizilir; `AnimateOnShow = false` kapatır, `AnimateIn()` yeniden oynatır (örn. yeni veri yüklenince).
+- **Açılıp kapanan panel:** `TwPanel.Expanded = false` (ya da `Collapse()`) panelin yüksekliğini sıfıra kaydırıp gizler, `Expand()` gösterip yüksekliğine (`AutoSize` ise tercih edilen yüksekliğe) geri kaydırır; 200 ms, `duration-*` / `ease-*` ile değişir. Çocuklar yerinde kalır, kayış sırasında kesilir. Yükseklik panelin kendisine ait olmalıdır: `Dock = Top`/`Bottom` ya da kenetlenmemiş (flex'te `grow` ile büyüyen panel kaymaz).
+
+```csharp
+btnFilters.Click += (_, _) => pnlFilters.Expanded = !pnlFilters.Expanded;
+```
+
+- Kendi kontrolünüzde aynı kurallarla animasyon için `TwTween`: değer değişince `Start(süre, eğri, gecikme)`, `OnPaint`'te `Progress` (0–1) okunur; sahibi her karede geçersiz kılınır, animasyon kapalıysa `Progress` hemen 1 olur. `Tick` (her kare) ve `Completed` olayları opaklık gibi özellikleri sürmek içindir. `TwMotion.Ease`, `Lerp` ve `Blend` aynı eğri ve ara değer hesaplarını verir.
+
+```csharp
+_tween = new TwTween(this);
+void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
+// OnPaint: float h = _from + (_target - _from) * _tween.Progress;
+```
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 
 ```csharp

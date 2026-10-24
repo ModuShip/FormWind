@@ -210,29 +210,39 @@ public class TwRadioButton : RadioButton, ITwChrome, ITwToggle
 
 /// <summary>
 /// On/off switch (Tailwind's switch pattern: 44×24 px track, 20 px knob). The track is <c>accent-*</c> when on and
-/// <c>fill-*</c> when off. The knob slides to its new position in 150 ms.
+/// <c>fill-*</c> when off. The knob slides to its new position in 150 ms; <c>duration-*</c>, <c>delay-*</c> and <c>ease-*</c>
+/// change that, <c>transition-none</c> (or <see cref="TwMotion.Enabled"/> off) makes it immediate.
 /// </summary>
 [ToolboxItem(true)]
 [Description("Stylable on/off switch.")]
-public class TwSwitch : CheckBox, ITwChrome, ITwToggle
+public class TwSwitch : CheckBox, ITwChrome, ITwToggle, ITwTimed
 {
-    private readonly Timer _timer = new Timer { Interval = 15 };
+    private readonly TwTween _slide;
+    private TwTimingClasses _timing;
     private Color? _accent;
     private Color? _fill;
-    private float _position;
-    private DateTime _animationStart;
-    private float _animationFrom;
+    private float _slideFrom;
 
     public TwSwitch()
     {
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
                  | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
-        _timer.Tick += (_, _) => Animate();
+        _slide = new TwTween(this);
     }
 
     /// <summary>Knob position: 0 = off, 1 = on (values in between during animation).</summary>
     [Browsable(false)]
-    public float ThumbPosition => _position;
+    public float ThumbPosition
+    {
+        get
+        {
+            float target = Checked ? 1 : 0;
+            float progress = _slide.Progress;
+            return progress >= 1f ? target : _slideFrom + (target - _slideFrom) * progress;
+        }
+    }
+
+    void ITwTimed.SetTiming(TwTimingClasses timing) => _timing = timing;
 
     private int TrackWidth => TwToggleDrawing.Scale(this, 44);
 
@@ -252,44 +262,21 @@ public class TwSwitch : CheckBox, ITwChrome, ITwToggle
     public override Size GetPreferredSize(Size proposedSize) =>
         TwToggleDrawing.PreferredSize(this, TrackWidth, TrackHeight, Gap);
 
-    protected override void OnCreateControl()
-    {
-        base.OnCreateControl();
-        _position = Checked ? 1 : 0;
-    }
-
     protected override void OnCheckedChanged(EventArgs e)
     {
+        // Kayış o anki konumdan başlar (önceki geçiş sürüyorsa onun ara konumundan); önceki hedef yeni değerin tersidir.
+        float previousTarget = Checked ? 0 : 1;
+        float progress = _slide.Progress;
+        _slideFrom = progress >= 1f ? previousTarget : _slideFrom + (previousTarget - _slideFrom) * progress;
         base.OnCheckedChanged(e);
-        if (!IsHandleCreated)
-        {
-            _position = Checked ? 1 : 0;
-            return;
-        }
-        _animationFrom = _position;
-        _animationStart = DateTime.UtcNow;
-        _timer.Start();
+        _slide.Start(_timing.For(150));
+        Invalidate();
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _timer.Dispose();
+        if (disposing) _slide.Dispose();
         base.Dispose(disposing);
-    }
-
-    private void Animate()
-    {
-        const double duration = 150;
-        var t = Math.Min(1, (DateTime.UtcNow - _animationStart).TotalMilliseconds / duration);
-        var eased = 1 - Math.Pow(1 - t, 3); // ease-out
-        float target = Checked ? 1 : 0;
-        _position = (float)(_animationFrom + (target - _animationFrom) * eased);
-        if (t >= 1)
-        {
-            _position = target;
-            _timer.Stop();
-        }
-        Invalidate();
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -298,12 +285,13 @@ public class TwSwitch : CheckBox, ITwChrome, ITwToggle
         var track = TwToggleDrawing.Layout(this, g, TrackWidth, TrackHeight, Gap);
         var on = TwToggleDrawing.Dim(_accent ?? TwToggleDrawing.DefaultAccent, Enabled);
         var off = TwToggleDrawing.Dim(_fill ?? TwToggleDrawing.DefaultTrack, Enabled);
-        TwPainter.FillRounded(g, track, track.Height / 2f, Blend(off, on, _position));
+        float position = ThumbPosition;
+        TwPainter.FillRounded(g, track, track.Height / 2f, Blend(off, on, position));
 
         float inset = TwToggleDrawing.Scale(this, 2);
         float thumb = track.Height - inset * 2;
         // Sağdan sola: açık konum solda.
-        float travel = (track.Width - inset * 2 - thumb) * (TwRtl.NeedsMirroring(this) ? 1 - _position : _position);
+        float travel = (track.Width - inset * 2 - thumb) * (TwRtl.NeedsMirroring(this) ? 1 - position : position);
         float x = track.Left + inset + travel;
         TwToggleDrawing.FillEllipse(g, new RectangleF(x, track.Top + inset, thumb, thumb), Color.White);
     }

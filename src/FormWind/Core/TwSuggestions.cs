@@ -13,7 +13,7 @@ internal static class TwSuggestions
     private static readonly string[] Variants =
     {
         "dark", "forced-colors", "rtl", "ltr", "checked", "focus", "focus-visible", "hover", "group-hover", "active", "disabled",
-        "invalid", "sm", "md", "lg", "xl", "2xl",
+        "invalid", "sm", "md", "lg", "xl", "2xl", "motion-safe", "motion-reduce",
         "header", "cell", "alt", "selected", "row", "row-header", "match", "group", "footer", "item", "menu", "caption",
         "placeholder", "label", "hint", "error",
     };
@@ -28,7 +28,9 @@ internal static class TwSuggestions
         "shrink-0", "justify-start", "justify-end", "justify-center", "justify-between", "justify-around", "justify-evenly",
         "items-start", "items-baseline", "items-end", "items-center", "items-stretch", "self-start", "self-end", "self-center",
         "self-stretch", "self-auto", "group", "object-cover", "object-contain", "object-fill", "transition", "transition-colors",
-        "transition-all", "transition-none", "truncate", "backdrop-mica", "backdrop-acrylic", "backdrop-tabbed", "backdrop-none",
+        "transition-all", "transition-shadow", "transition-none", "ease-linear", "ease-in", "ease-out", "ease-in-out",
+        "animate-spin", "animate-pulse", "animate-none", "truncate", "backdrop-mica", "backdrop-acrylic", "backdrop-tabbed", "backdrop-none",
+        "backdrop-blur", "backdrop-blur-none", "backdrop-blur-sm", "backdrop-blur-md", "backdrop-blur-lg", "backdrop-blur-xl", "backdrop-blur-2xl", "backdrop-blur-3xl",
         "whitespace-nowrap", "whitespace-normal", "divide-x", "divide-y", "divide-x-0", "divide-y-0",
     };
 
@@ -94,7 +96,11 @@ internal static class TwSuggestions
         foreach (var shadow in new[] { "", "-sm", "-md", "-lg", "-xl", "-2xl", "-none" }) yield return "shadow" + shadow;
         foreach (var ring in new[] { "", "-0", "-1", "-2", "-4", "-8" }) yield return "ring" + ring;
         foreach (var offset in new[] { "0", "1", "2", "4", "8" }) yield return "ring-offset-" + offset;
-        foreach (var duration in new[] { "0", "75", "100", "150", "200", "300", "500", "700", "1000" }) yield return "duration-" + duration;
+        foreach (var duration in new[] { "0", "75", "100", "150", "200", "300", "500", "700", "1000" })
+        {
+            yield return "duration-" + duration;
+            yield return "delay-" + duration;
+        }
         foreach (var direction in new[] { "r", "l", "t", "b", "tr", "tl", "br", "bl" }) yield return "bg-gradient-to-" + direction;
         foreach (var kind in new[] { "p", "m" })
             foreach (var side in Sides)

@@ -140,8 +140,10 @@ public class TwPopover : Component
         var gap = (int)Math.Round(Offset * TwDpi.DeviceDpi(anchor) / 96f);
         var bounds = Place(screenAnchor, dropDown.GetPreferredSize(Size.Empty), Screen.FromRectangle(screenAnchor).WorkingArea,
             Placement, gap, anchor.RightToLeft == RightToLeft.Yes);
-        // BelowRight: verilen nokta sol üst köşe; sağdan sola düzende de konumu Place belirler.
+        // BelowRight: verilen nokta sol üst köşe; sağdan sola düzende de konumu Place belirler. Açılırken solarak belirir.
+        if (TwMotion.Enabled) dropDown.Opacity = 0;
         dropDown.Show(anchor, anchor.PointToClient(bounds.Location), ToolStripDropDownDirection.BelowRight);
+        FadeIn(dropDown);
 
         if (FocusContent) FocusFirst(_content);
         Opened?.Invoke(this, EventArgs.Empty);
@@ -214,6 +216,8 @@ public class TwPopover : Component
     {
         if (disposing)
         {
+            _fadeIn?.Dispose();
+            _fadeIn = null;
             _dropDown?.Dispose();
             _dropDown = null;
             _host = null;
@@ -222,6 +226,24 @@ public class TwPopover : Component
             _anchor = null;
         }
         base.Dispose(disposing);
+    }
+
+    /// <summary>Fade-in time when the popover opens (ms).</summary>
+    internal const int FadeDuration = 150;
+
+    private TwTween? _fadeIn;
+
+    private void FadeIn(ToolStripDropDown dropDown)
+    {
+        if (dropDown.Opacity >= 1) return;
+        if (_fadeIn is null)
+        {
+            _fadeIn = new TwTween(dropDown);
+            _fadeIn.Tick += (_, _) => { if (_dropDown != null) _dropDown.Opacity = _fadeIn.Progress; };
+            _fadeIn.Completed += (_, _) => { if (_dropDown != null) _dropDown.Opacity = 1; };
+        }
+        _fadeIn.Start(FadeDuration);
+        if (!_fadeIn.Running) dropDown.Opacity = 1;
     }
 
     private ToolStripDropDown EnsureDropDown()
@@ -245,6 +267,12 @@ public class TwPopover : Component
         // Kapanırken odak içerikten çıkar; geri verilip verilmeyeceği şimdi belli olur.
         _restoreFocus = RestoreFocus && _content?.ContainsFocus == true
             && e.CloseReason is ToolStripDropDownCloseReason.Keyboard or ToolStripDropDownCloseReason.CloseCalled;
+        // Popover hemen kapanır (IsOpen, Closed ve odak eskisi gibi); son görüntüsü solarak kaybolur.
+        if (!e.Cancel && _dropDown is { Visible: true } dropDown)
+        {
+            _fadeIn?.Stop();
+            TwFadeOut.Play(dropDown, null, FadeDuration, roundCorners: false);
+        }
     }
 
     private void OnDropDownClosed(object? sender, ToolStripDropDownClosedEventArgs e)

@@ -122,8 +122,9 @@ WinForms has no anti-aliased corners, shadows or focus rings, so FormWind draws 
 Other files in this folder are thin wrappers around a single Windows feature: DWM title bars and backdrops
 (`TwTitleBar`), dark native scrollbars and tooltips (`TwNativeTheme`, `TwNativeToolTips`), High Contrast
 (`TwHighContrast`), keyboard and mouse focus tracking (`TwFocusVisible`), RTL mirroring (`TwRtl`), DPI (`TwDpi`),
-color transitions (`TwAnimator`) and in-control animations (`TwMotion`). Undocumented Windows APIs (for example,
-`DarkMode_Explorer`) fail silently on systems that do not support them.
+color transitions (`TwAnimator`, timing in `TwTransition`), in-control animations (`TwMotion`, `TwTween`) and repeating
+`animate-*` animations (`TwAnimations`). Undocumented Windows APIs (for example, `DarkMode_Explorer`) fail silently on
+systems that do not support them.
 
 ### Layout (`src/FormWind/Layout/`)
 
@@ -154,6 +155,9 @@ loading states (`TwGridDecorator`), and virtual rows (`TwVirtualRows<T>`).
 - Group headers and row details do not insert rows: they make a row taller (`TwGridDecorator.DesiredHeight`, supplied
   through `RowHeightInfoNeeded` on bound grids) and push its content down with cell padding in `CellFormatting`; the
   header band and the detail area are painted in `RowPostPaint`, detail controls are child windows placed on every paint.
+- Tree rows (`TwGridTree`, `TwGrid.SetTree`) fill an unbound grid with one row per node in display order; a collapsed
+  branch is a set of hidden rows, the tree column gets left padding in `CellFormatting` and its arrows are painted in
+  `RowPostPaint`, and header clicks rebuild the rows with each parent's children sorted.
 - `TwGridInversion` subclasses the grid window: in dark mode the grid is styled light, renders itself into a bitmap with
   `WM_PRINTCLIENT` and is copied through an invert + hue-rotate color matrix.
 
@@ -191,7 +195,7 @@ Styling must never crash the host application. `TwBinding.Refresh` and the paint
 Everything runs on the UI thread. Process-wide or thread-wide state is kept to a minimum and is explicit:
 
 - Font cache: `TwFonts`.
-- Animation timer and input tracking: `TwAnimator`, `TwFocusVisible`.
+- Animation timers and input tracking: `TwAnimator`, `TwAnimations`, `TwFocusVisible`.
 - Native tooltip hook: `TwNativeToolTips`.
 - Theme: `TwTheme.Current`.
 

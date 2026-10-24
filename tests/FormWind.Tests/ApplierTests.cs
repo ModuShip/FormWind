@@ -7,6 +7,7 @@ using Xunit;
 
 namespace FormWind.Tests;
 
+[Collection(UiCollection.Name)] // TwMotion.Enabled paylaşılır: geçiş testleri onu kapatan testlerle aynı anda koşmamalı
 public class ApplierTests
 {
     private readonly TwTheme _theme = new TwTheme();

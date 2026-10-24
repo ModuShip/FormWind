@@ -27,7 +27,7 @@ internal static class TwParser
     private static readonly Regex RingRx = new Regex(@"^ring(?:-(0|1|2|4|8))?$", Options);
     private static readonly Regex RingOffsetRx = new Regex(@"^ring-offset-(0|1|2|4|8)$", Options);
     private static readonly Regex GradientRx = new Regex(@"^bg-gradient-to-(r|l|t|b|tr|tl|br|bl)$", Options);
-    private static readonly Regex DurationRx = new Regex(@"^duration-(0|75|100|150|200|300|500|700|1000|\[\d+ms\])$", Options);
+    private static readonly Regex DurationRx = new Regex(@"^(duration|delay)-(0|75|100|150|200|300|500|700|1000|\[\d+ms\])$", Options);
     private static readonly Regex FontSizeRx = new Regex(@"^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|\[\d{1,3}(?:\.\d{1,2})?px\])$", Options);
     private static readonly Regex SpacingRx = new Regex(@"^([pm])([xytrbl]?)-(\d+(?:\.5)?|px|\[\d+px\])$", Options);
     private static readonly Regex SizeRx = new Regex(@"^([wh])-(\d+(?:\.5)?|px|\[\d+px\]|full|\d+/\d+)$", Options);
@@ -99,8 +99,9 @@ internal static class TwParser
         }
 
         // Önce en yüksek öncelikli durum biti, eşitlikte daha az koşullu varyant: "hover" < "dark:hover" < "active".
+        // motion-safe:/motion-reduce: dark: gibi ortam koşuludur, sıraya girmez: forced-colors: yine en son uygulanır.
         var ordered = variants.Values
-            .OrderBy(v => HighestBit(v.Conditions))
+            .OrderBy(v => HighestBit(v.Conditions & ~TwState.Motion))
             .ThenBy(v => BitCount(v.Conditions))
             .ToList();
 
@@ -195,6 +196,8 @@ internal static class TwParser
                 case "lg": conditions |= TwState.Lg; break;
                 case "xl": conditions |= TwState.Xl; break;
                 case "2xl": conditions |= TwState.Xxl; break;
+                case "motion-safe": conditions |= TwState.MotionSafe; break;
+                case "motion-reduce": conditions |= TwState.MotionReduce; break;
                 default:
                     if (part != null || !Parts.Contains(segment)) return false;
                     part = segment;
@@ -262,10 +265,12 @@ internal static class TwParser
 
         if ((match = DurationRx.Match(utility)).Success)
         {
-            var value = match.Groups[1].Value;
-            style.DurationMs = value.StartsWith("[", StringComparison.Ordinal)
+            var value = match.Groups[2].Value;
+            int ms = value.StartsWith("[", StringComparison.Ordinal)
                 ? int.Parse(value.Substring(1, value.Length - 4), NumberStyles.None, CultureInfo.InvariantCulture)
                 : int.Parse(value, CultureInfo.InvariantCulture);
+            if (match.Groups[1].Value == "duration") style.DurationMs = ms;
+            else style.DelayMs = ms;
             return true;
         }
 
@@ -477,15 +482,32 @@ internal static class TwParser
             case "object-contain": style.ObjectFit = TwImageFit.Contain; return true;
             case "object-fill": style.ObjectFit = TwImageFit.Fill; return true;
             case "transition":
-            case "transition-colors":
-            case "transition-all": style.Transition = true; return true;
-            case "transition-none": style.Transition = false; return true;
+            case "transition-all": SetTransition(style, TwTransitionProperty.All); return true;
+            case "transition-colors": SetTransition(style, TwTransitionProperty.Colors); return true;
+            case "transition-shadow": SetTransition(style, TwTransitionProperty.Shadow); return true;
+            case "transition-none": style.Transition = false; style.TransitionProperty = TwTransitionProperty.None; return true;
+            case "ease-linear": style.Easing = TwEasing.Linear; return true;
+            case "ease-in": style.Easing = TwEasing.In; return true;
+            case "ease-out": style.Easing = TwEasing.Out; return true;
+            case "ease-in-out": style.Easing = TwEasing.InOut; return true;
+            case "animate-spin": style.Animation = TwAnimation.Spin; return true;
+            case "animate-pulse": style.Animation = TwAnimation.Pulse; return true;
+            case "animate-none": style.Animation = TwAnimation.None; return true;
 
             case "truncate": style.Truncate = true; style.NoWrap = true; return true;
             case "backdrop-mica": style.Backdrop = TwBackdrop.Mica; return true;
             case "backdrop-acrylic": style.Backdrop = TwBackdrop.Acrylic; return true;
             case "backdrop-tabbed": style.Backdrop = TwBackdrop.Tabbed; return true;
             case "backdrop-none": style.Backdrop = TwBackdrop.None; return true;
+            // Buzlu cam (TwPanel): arkadaki çizim bulanıklaştırılır; yarı saydam bg-*/NN ile birlikte kullanılır.
+            case "backdrop-blur-none": style.BackdropBlur = 0; return true;
+            case "backdrop-blur-sm": style.BackdropBlur = 4; return true;
+            case "backdrop-blur": style.BackdropBlur = 8; return true;
+            case "backdrop-blur-md": style.BackdropBlur = 12; return true;
+            case "backdrop-blur-lg": style.BackdropBlur = 16; return true;
+            case "backdrop-blur-xl": style.BackdropBlur = 24; return true;
+            case "backdrop-blur-2xl": style.BackdropBlur = 40; return true;
+            case "backdrop-blur-3xl": style.BackdropBlur = 64; return true;
             case "whitespace-nowrap": style.NoWrap = true; return true;
             case "whitespace-normal": style.NoWrap = false; return true;
 
@@ -496,6 +518,12 @@ internal static class TwParser
         }
 
         return false;
+    }
+
+    private static void SetTransition(TwStyle style, TwTransitionProperty properties)
+    {
+        style.Transition = true;
+        style.TransitionProperty = properties;
     }
 
     private static void SetFlex(TwStyle style, float grow, float shrink, TwLength basis)

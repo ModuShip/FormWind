@@ -48,6 +48,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         TwTheme.CurrentChanged += OnCurrentThemeChanged;
         TwHighContrast.Changed += OnHighContrastChanged;
         TwTextScale.Changed += OnTextScaleChanged;
+        TwMotion.Changed += OnMotionChanged;
         TwFocusVisible.EnsureInstalled();
     }
 
@@ -169,6 +170,20 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
 
     // Windows'un metin boyutu değişti (ya da TwFonts.RespectTextScale): text-* boyutları yeniden hesaplanır.
     private void OnTextScaleChanged(object? sender, EventArgs e) => RefreshAll();
+
+    // TwMotion.Enabled değişti: yalnızca motion-safe:/motion-reduce: kullanan kontroller yeniden uygulanır. Değer başka bir
+    // iş parçacığında atanmışsa kontrolün kendi iş parçacığına aktarılır.
+    private void OnMotionChanged(object? sender, EventArgs e)
+    {
+        if (_initializing) return;
+        foreach (var binding in _bindings.Values.Where(b => b.UsesMotion).ToList())
+        {
+            var control = binding.Control;
+            if (control.IsDisposed) continue;
+            if (!control.InvokeRequired) binding.Refresh(force: true);
+            else if (control.IsHandleCreated) control.BeginInvoke((Action)(() => { if (!control.IsDisposed) binding.Refresh(force: true); }));
+        }
+    }
 
     private void OnHighContrastChanged(object? sender, EventArgs e)
     {
@@ -793,6 +808,7 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
             TwTheme.CurrentChanged -= OnCurrentThemeChanged;
             TwHighContrast.Changed -= OnHighContrastChanged;
             TwTextScale.Changed -= OnTextScaleChanged;
+            TwMotion.Changed -= OnMotionChanged;
             TwNativeToolTips.SetDark(this, false);
             _hoverTimer.Dispose();
             UnhookAutoContainers();

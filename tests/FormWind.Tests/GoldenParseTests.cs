@@ -64,6 +64,9 @@ public class GoldenParseTests
         "bg-gradient-to-b from-white to-gray-100",
         "cursor-pointer hidden",
         "transition duration-300",
+        "transition-colors duration-[250ms] delay-75 ease-in-out",
+        "transition-shadow ease-linear hover:transition-none",
+        "animate-spin motion-reduce:animate-none",
         "object-cover",
         // Yerleşim
         "flex flex-row gap-4 items-center justify-between",
@@ -114,7 +117,7 @@ public class GoldenParseTests
     {
         TwState.Hover, TwState.Active, TwState.Focus, TwState.FocusVisible, TwState.Disabled, TwState.Checked,
         TwState.Invalid, TwState.GroupHover, TwState.Dark, TwState.Dark | TwState.Hover, TwState.Md, TwState.Lg,
-        TwState.Rtl, TwState.Ltr,
+        TwState.Rtl, TwState.Ltr, TwState.MotionSafe, TwState.MotionReduce,
     };
 
     private static readonly (string Name, Func<TwTheme> Create, string[] Classes)[] Themes =

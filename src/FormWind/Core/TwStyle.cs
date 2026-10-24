@@ -50,11 +50,26 @@ public sealed class TwStyle
     /// <summary><c>group</c>: descendants react to this control's hover with <c>group-hover:</c>.</summary>
     public bool? IsGroup { get; set; }
 
-    /// <summary><c>transition</c>: background and text color changes are animated over <see cref="DurationMs"/>.</summary>
+    /// <summary><c>transition*</c>: changes are animated over <see cref="DurationMs"/>; <c>transition-none</c> = false.</summary>
     public bool? Transition { get; set; }
+
+    /// <summary>
+    /// What <see cref="Transition"/> animates: <c>transition</c>/<c>transition-all</c> everything, <c>transition-colors</c> the
+    /// colors (background, text, border), <c>transition-shadow</c> the shadow and ring.
+    /// </summary>
+    public TwTransitionProperty? TransitionProperty { get; set; }
 
     /// <summary><c>duration-*</c> (ms). The Tailwind default is 150.</summary>
     public int? DurationMs { get; set; }
+
+    /// <summary><c>delay-*</c>: wait (ms) before a transition starts.</summary>
+    public int? DelayMs { get; set; }
+
+    /// <summary><c>ease-linear</c>, <c>ease-in</c>, <c>ease-out</c> (default), <c>ease-in-out</c>.</summary>
+    public TwEasing? Easing { get; set; }
+
+    /// <summary><c>animate-spin</c>, <c>animate-pulse</c>, <c>animate-none</c>; drawn by controls that support it (e.g. <see cref="TwIcon"/>).</summary>
+    public TwAnimation? Animation { get; set; }
     public int? Radius { get; set; }
     public float? FontSizePx { get; set; }
     public string? FontFamily { get; set; }
@@ -80,6 +95,9 @@ public sealed class TwStyle
 
     /// <summary>Windows 11 window backdrop (<c>backdrop-mica</c>, <c>backdrop-acrylic</c>, <c>backdrop-tabbed</c>, <c>backdrop-none</c>); Form only.</summary>
     public TwBackdrop? Backdrop { get; set; }
+
+    /// <summary><c>backdrop-blur-*</c>: blur radius (96 DPI pixels) of what is behind a <see cref="TwPanel"/>; 0 = none.</summary>
+    public int? BackdropBlur { get; set; }
 
     public Cursor? Cursor { get; set; }
     public bool? Hidden { get; set; }
@@ -173,6 +191,7 @@ public sealed class TwStyle
         FillColor = SystemColors.ControlDark;
         AccentColor = SystemColors.Highlight;
         Transition = null;
+        TransitionProperty = null;
     }
 
     /// <summary>Writes the defined values of <paramref name="other"/> over this style.</summary>
@@ -198,7 +217,11 @@ public sealed class TwStyle
         ObjectFit = other.ObjectFit ?? ObjectFit;
         IsGroup = other.IsGroup ?? IsGroup;
         Transition = other.Transition ?? Transition;
+        TransitionProperty = other.TransitionProperty ?? TransitionProperty;
         DurationMs = other.DurationMs ?? DurationMs;
+        DelayMs = other.DelayMs ?? DelayMs;
+        Easing = other.Easing ?? Easing;
+        Animation = other.Animation ?? Animation;
         Radius = other.Radius ?? Radius;
         FontSizePx = other.FontSizePx ?? FontSizePx;
         FontFamily = other.FontFamily ?? FontFamily;
@@ -217,6 +240,7 @@ public sealed class TwStyle
         NoWrap = other.NoWrap ?? NoWrap;
         Truncate = other.Truncate ?? Truncate;
         Backdrop = other.Backdrop ?? Backdrop;
+        BackdropBlur = other.BackdropBlur ?? BackdropBlur;
         Cursor = other.Cursor ?? Cursor;
         Hidden = other.Hidden ?? Hidden;
 

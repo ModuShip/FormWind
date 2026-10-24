@@ -60,6 +60,8 @@ public sealed class TwTexts
         Select = "Seç",
         Expand = "Genişlet",
         Collapse = "Daralt",
+        Remove = "Kaldır",
+        More = "Daha fazla",
         PreviousMonth = "Önceki ay",
         NextMonth = "Sonraki ay",
         Item = "Öğe {0}",
@@ -130,6 +132,10 @@ public sealed class TwTexts
     public string Select { get; set; } = "Select";
     public string Expand { get; set; } = "Expand";
     public string Collapse { get; set; } = "Collapse";
+    /// <summary>The ✕ of a removable <see cref="TwChip"/>.</summary>
+    public string Remove { get; set; } = "Remove";
+    /// <summary>The "more" button of <see cref="TwTabStrip"/> and <see cref="TwToolbar"/> that holds what does not fit.</summary>
+    public string More { get; set; } = "More";
     public string PreviousMonth { get; set; } = "Previous month";
     public string NextMonth { get; set; } = "Next month";
     /// <summary>List row without a name; {0}: position.</summary>

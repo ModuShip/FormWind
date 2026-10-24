@@ -25,11 +25,29 @@ public sealed class TwHeatmapCellEventArgs : EventArgs
     public double Value { get; }
 }
 
+/// <summary>How a <see cref="TwHeatmap"/> draws cells without a value (<see cref="double.NaN"/>).</summary>
+public enum TwHeatmapEmptyCell
+{
+    /// <summary>In the lowest shade, like the scale's low end.</summary>
+    Low,
+
+    /// <summary>A flat gray (<see cref="TwHeatmap.EmptyCellColor"/>) that is not part of the scale.</summary>
+    Solid,
+
+    /// <summary>Diagonal lines on the gray ("no production").</summary>
+    Hatched,
+
+    /// <summary>Nothing; the surface shows through.</summary>
+    None,
+}
+
 /// <summary>
 /// A grid of colored cells: rows (lines, machines, shifts) against columns (days, hours, factors), each shaded by its value
 /// from <see cref="LowColor"/> to <see cref="HighColor"/> (default: one step off the surface to <c>accent-*</c>). When the
 /// values cross zero (a correlation matrix) the scale diverges: negative values shade toward <see cref="NegativeColor"/>.
-/// Missing values (<see cref="double.NaN"/>) leave an empty cell. Row labels sit on the left and column labels on top, with
+/// Missing values (<see cref="double.NaN"/>) are drawn as <see cref="EmptyCells"/> says (the lowest shade by default; flat or
+/// hatched gray for "no production") and named <see cref="EmptyCellText"/> in the tooltip, the legend and for screen
+/// readers. Row labels sit on the left and column labels on top, with
 /// a gradient legend; hovering or the arrow keys show a cell's value, and screen readers get one item per cell.
 /// <code>
 /// heatmap.SetData(new[] { "Line 1", "Line 2" }, new[] { "Mon", "Tue", "Wed" },
@@ -54,6 +72,9 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private string? _valueFormat;
     private string _legendMinText = "";
     private string _legendMaxText = "";
+    private TwHeatmapEmptyCell _emptyCells;
+    private Color _emptyCellColor = Color.Empty;
+    private string _emptyCellText = "";
     private int _hover = -1;
     private Point? _mouse;
     private TwChartColors _colors = new TwChartColors();
@@ -242,6 +263,49 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         }
     }
 
+    /// <summary>How cells without a value (<see cref="double.NaN"/>) are drawn.</summary>
+    [Category("Appearance"), DefaultValue(TwHeatmapEmptyCell.Low)]
+    public TwHeatmapEmptyCell EmptyCells
+    {
+        get => _emptyCells;
+        set
+        {
+            _emptyCells = value;
+            Invalidate();
+        }
+    }
+
+    /// <summary>Color of <see cref="TwHeatmapEmptyCell.Solid"/> and <see cref="TwHeatmapEmptyCell.Hatched"/> cells; empty = a gray off the surface.</summary>
+    [Category("Appearance")]
+    public Color EmptyCellColor
+    {
+        get => _emptyCellColor;
+        set
+        {
+            _emptyCellColor = value;
+            Invalidate();
+        }
+    }
+
+    private bool ShouldSerializeEmptyCellColor() => !_emptyCellColor.IsEmpty;
+
+    private void ResetEmptyCellColor() => EmptyCellColor = Color.Empty;
+
+    /// <summary>
+    /// What a missing value means ("No production"): shown in the tooltip and read by screen readers instead of "—", and,
+    /// with a gray or hatched <see cref="EmptyCells"/>, added to the legend.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(""), Localizable(true)]
+    public string EmptyCellText
+    {
+        get => _emptyCellText;
+        set
+        {
+            _emptyCellText = value ?? "";
+            Invalidate();
+        }
+    }
+
     /// <summary>The highlighted cell as <c>row × ColumnCount + column</c> (-1 = none).</summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int HoverIndex
@@ -322,6 +386,34 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             if (!_negativeColor.IsEmpty) return _negativeColor;
             var blue = TwCharts.SeriesColor(0, _colors.Dark, null);
             return High.ToArgb() == blue.ToArgb() ? TwCharts.SeriesColor(1, _colors.Dark, null) : blue;
+        }
+    }
+
+    // Boş hücre grisi ölçeğin düşük ucundan ayrılsın diye yüzeyden bir adım daha uzaktır.
+    private Color Empty => !_emptyCellColor.IsEmpty ? _emptyCellColor : TwCharts.Blend(TwCharts.Surface(this), ForeColor, _colors.Dark ? 0.16f : 0.12f);
+
+    private Color HatchLine => TwCharts.Blend(Empty, ForeColor, _colors.Dark ? 0.22f : 0.18f);
+
+    private bool EmptyInLegend => _emptyCellText.Length > 0 && _emptyCells is TwHeatmapEmptyCell.Solid or TwHeatmapEmptyCell.Hatched;
+
+    private string FormatValue(double value) =>
+        double.IsNaN(value) && _emptyCellText.Length > 0 ? _emptyCellText : TwCharts.Format(value, _valueFormat);
+
+    // Değeri olmayan hücre EmptyCells'e göre: en düşük ton, düz gri, taralı gri ya da hiç.
+    private void PaintEmptyCell(Graphics g, Rectangle box, float radius, float s, Color surface)
+    {
+        var back = Enabled ? Empty : TwCharts.Blend(Empty, surface, 0.5f);
+        switch (_emptyCells)
+        {
+            case TwHeatmapEmptyCell.Low:
+                TwPainter.FillRounded(g, box, radius, Enabled ? Low : TwCharts.Blend(Low, surface, 0.5f));
+                break;
+            case TwHeatmapEmptyCell.Solid:
+                TwPainter.FillRounded(g, box, radius, back);
+                break;
+            case TwHeatmapEmptyCell.Hatched:
+                TwCharts.FillHatched(g, box, radius, back, Enabled ? HatchLine : TwCharts.Blend(HatchLine, surface, 0.5f), s);
+                break;
         }
     }
 
@@ -432,7 +524,8 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                 double value = GetValue(r, c);
                 var color = GetCellColor(value);
                 if (!Enabled) color = TwCharts.Blend(color, surface, 0.5f);
-                TwPainter.FillRounded(g, box, radius, color);
+                if (double.IsNaN(value)) PaintEmptyCell(g, box, radius, s, surface);
+                else TwPainter.FillRounded(g, box, radius, color);
                 if (r * columns + c == _hover)
                     TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, ForeColor);
                 if (_showValues && !double.IsNaN(value))
@@ -452,8 +545,10 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             var cell = layout.Cell(r, c);
             var anchor = _mouse ?? new Point((int)(cell.Right), (int)(cell.Y + cell.Height / 2));
             var title = string.Join(" · ", new[] { RowLabel(r), ColumnLabel(c).Replace('\n', ' ') }.Where(x => x.Length > 0));
+            double value = GetValue(r, c);
+            var key = double.IsNaN(value) && _emptyCells != TwHeatmapEmptyCell.Low ? (Color?)Empty : GetCellColor(value);
             TwCharts.DrawTooltip(g, this, anchor, title.Length > 0 ? title : (r + 1) + " · " + (c + 1),
-                new[] { ((Color?)GetCellColor(GetValue(r, c)), TwCharts.Format(GetValue(r, c), _valueFormat)) }, s);
+                new[] { (key, FormatValue(value)) }, s);
         }
         if (Focused && ShowFocusCues)
             TwPainter.StrokeRounded(g, ClientRectangle, 6 * s, 2 * s, Color.FromArgb(160, _colors.Accent ?? TwCharts.SeriesColor(0, _colors.Dark, null)));
@@ -482,6 +577,17 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         }
         x -= gap + lowSize.Width;
         TextRenderer.DrawText(g, low, Font, new Point(x, area.Top), muted, Flags);
+        if (!EmptyInLegend) return;
+
+        // Boş hücre anahtarı: geçişin solunda küçük bir örnek kutu ve anlamı.
+        var emptySize = TextRenderer.MeasureText(_emptyCellText, Font, Size.Empty, Flags);
+        x -= gap * 2 + emptySize.Width;
+        TextRenderer.DrawText(g, _emptyCellText, Font, new Point(x, area.Top), muted, Flags);
+        int swatch = Math.Min(area.Height, (int)(12 * s));
+        x -= (int)(6 * s) + swatch;
+        var box = new Rectangle(x, area.Top + (area.Height - swatch) / 2, swatch, swatch);
+        if (_emptyCells == TwHeatmapEmptyCell.Hatched) TwCharts.FillHatched(g, box, 2 * s, Empty, HatchLine, s);
+        else TwPainter.FillRounded(g, box, 2 * s, Empty);
     }
 
     // ---- Etkileşim ----
@@ -594,7 +700,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     public string GetItemText(int row, int column)
     {
         var name = string.Join(", ", new[] { RowLabel(row), ColumnLabel(column).Replace('\n', ' ') }.Where(x => x.Length > 0));
-        return (name.Length > 0 ? name + ": " : "") + TwCharts.Format(GetValue(row, column), _valueFormat);
+        return (name.Length > 0 ? name + ": " : "") + FormatValue(GetValue(row, column));
     }
 
     string ITwChartItems.ItemText(int index) => ColumnCount == 0 ? "" : GetItemText(index / ColumnCount, index % ColumnCount);

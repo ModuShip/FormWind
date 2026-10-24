@@ -7,11 +7,22 @@ using System.Windows.Forms;
 
 namespace FormWind;
 
+/// <summary>How <see cref="TwStat"/> fits a value that is wider than the card.</summary>
+public enum TwStatFit
+{
+    /// <summary>The value is cut with "…".</summary>
+    Ellipsis,
+
+    /// <summary>The value's text gets smaller until it fits (down to the size of the title), then is cut.</summary>
+    Shrink,
+}
+
 /// <summary>
 /// KPI card: a title, a large value, the change with an arrow and an optional trend. The change is colored with the theme's
 /// <c>success</c>/<c>danger</c> colors and always carries an arrow and a sign (never color alone); with
 /// <see cref="PositiveIsGood"/> = <c>false</c> (costs, errors) a fall is good. The title and caption use <c>label:text-*</c>,
-/// the trend <c>accent-*</c>. The <c>stat</c> component gives a card look.
+/// the trend <c>accent-*</c>. The <c>stat</c> component gives a card look. A value wider than the card switches to
+/// <see cref="ShortValue"/> ("278 h" for "278 h 52 min") and then gets smaller (<see cref="ValueFit"/>) instead of being cut.
 /// <code>
 /// stat.Title = "Revenue"; stat.Value = "₺1,2 Mn"; stat.Delta = 0.124; stat.Caption = "vs last month";
 /// stat.Trend = new[] { 820.0, 940, 910, 1040, 1200 };
@@ -34,6 +45,9 @@ public class TwStat : Control, ITwChrome, ITwChartControl
     private TwChrome _chrome = TwChrome.None;
     private TwChartColors _colors = new TwChartColors();
     private Font? _valueFont;
+    private string _shortValue = "";
+    private TwStatFit _valueFit = TwStatFit.Shrink;
+    private (int Width, string Value, string Short, TwStatFit Fit, Font? Font, string Text, float Points) _fit;
 
     public TwStat()
     {
@@ -60,7 +74,114 @@ public class TwStat : Control, ITwChrome, ITwChartControl
     public string Value
     {
         get => _value;
-        set => Set(ref _value, value ?? "");
+        set
+        {
+            value ??= "";
+            if (value != _value) StartCount(_value, value);
+            Set(ref _value, value);
+        }
+    }
+
+    /// <summary>
+    /// Counts the number in a new <see cref="Value"/> up (or down) from the previous one, or from zero the first time, in
+    /// 800 ms; the text keeps its form ("₺12.400" counts as "₺9.731"). Only a value with a single number is counted, and
+    /// not when animations are off.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool AnimateValue { get; set; } = true;
+
+    /// <summary>Time (ms) a changed value takes to count to its new number.</summary>
+    internal const int CountDuration = 800;
+
+    private TwTween? _count;
+    private TwNumberText? _countTo;
+    private double _countFrom;
+
+    private void StartCount(string previous, string next)
+    {
+        _countTo = null;
+        _count?.Stop();
+        if (!AnimateValue || !TwMotion.CanAnimate(this)) return;
+        _shown = true;
+        if (!TwNumberText.TryParse(next, out var target)) return;
+        double from = TwNumberText.TryParse(previous, out var old) && old!.SameForm(target!) ? old.Value : 0;
+        if (from == target!.Value) return;
+        _countTo = target;
+        _countFrom = from;
+        _count ??= new TwTween(this);
+        _count.Start(CountDuration, TwEasing.Out);
+        if (!_count.Running) _countTo = null;
+    }
+
+    // Değer görünmeden önce atanmışsa (Load, tasarımcı) ilk görünüşte sıfırdan sayılır.
+    private bool _shown;
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        if (_shown || !TwMotion.CanAnimate(this)) return;
+        _shown = true;
+        if (_countTo is null) StartCount("", _value);
+    }
+
+    /// <summary>The value text drawn now: <paramref name="text"/>, or the counting number while a change is counted.</summary>
+    internal string CountedText(string text)
+    {
+        if (_countTo is null || _count is null || !_count.Running || text != _value) return text;
+        return _countTo.Format(_countFrom + (_countTo.Value - _countFrom) * _count.Progress);
+    }
+
+    /// <summary>A shorter form of <see cref="Value"/> shown when the value does not fit ("278 h" for "278 h 52 min").</summary>
+    [Category("Appearance"), DefaultValue("")]
+    public string ShortValue
+    {
+        get => _shortValue;
+        set => Set(ref _shortValue, value ?? "");
+    }
+
+    /// <summary>What happens when the value (and <see cref="ShortValue"/>) does not fit: smaller text or "…".</summary>
+    [Category("Appearance"), DefaultValue(TwStatFit.Shrink)]
+    public TwStatFit ValueFit
+    {
+        get => _valueFit;
+        set
+        {
+            _valueFit = value;
+            Invalidate();
+        }
+    }
+
+    /// <summary>The value text as drawn at the given width and its font size in points (the short form or a smaller size when needed).</summary>
+    internal (string Text, float Points) FitValue(int width)
+    {
+        // Çizimde her seferinde font oluşturulmasın diye son sonuç saklanır.
+        var key = (width, _value, _shortValue, _valueFit, ValueFont);
+        if (_fit.Font != null && (_fit.Width, _fit.Value, _fit.Short, _fit.Fit, _fit.Font) == key) return (_fit.Text, _fit.Points);
+        var result = ComputeFit(width);
+        _fit = (width, _value, _shortValue, _valueFit, ValueFont, result.Text, result.Points);
+        return result;
+    }
+
+    private (string Text, float Points) ComputeFit(int width)
+    {
+        var flags = TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
+        int Measure(string text, Font font) => TextRenderer.MeasureText(text, font, Size.Empty, flags).Width;
+        var text = _value;
+        if (Measure(text, ValueFont) <= width) return (text, ValueFont.SizeInPoints);
+        if (_shortValue.Length > 0)
+        {
+            text = _shortValue;
+            if (Measure(text, ValueFont) <= width) return (text, ValueFont.SizeInPoints);
+        }
+        if (_valueFit == TwStatFit.Ellipsis) return (text, ValueFont.SizeInPoints);
+        // Yarım puanlık adımlarla başlık boyutuna kadar küçülür.
+        float min = Font.SizeInPoints;
+        for (float size = ValueFont.SizeInPoints - 0.5f; size > min; size -= 0.5f)
+        {
+            using var font = new Font(ValueFont.FontFamily, size, FontStyle.Bold, GraphicsUnit.Point);
+            if (Measure(text, font) <= width) return (text, size);
+        }
+        return (text, min);
     }
 
     /// <summary>Relative change (0.124 = +12.4%); <c>null</c> hides the change row.</summary>
@@ -208,8 +329,18 @@ public class TwStat : Control, ITwChrome, ITwChartControl
         }
         if (_value.Length > 0)
         {
+            // Satır yüksekliği tam boyuttan alınır; küçülen değer aynı satırda dikeyde ortalanır, alttaki satırlar kaymaz.
             int h = TextRenderer.MeasureText(g, _value, ValueFont, Size.Empty, flags).Height;
-            TextRenderer.DrawText(g, _value, ValueFont, new Rectangle(content.X, y, content.Width, h), Enabled ? ForeColor : muted, flags);
+            var (text, points) = FitValue(content.Width);
+            text = CountedText(text);
+            var line = new Rectangle(content.X, y, content.Width, h);
+            if (points >= ValueFont.SizeInPoints)
+                TextRenderer.DrawText(g, text, ValueFont, line, Enabled ? ForeColor : muted, flags);
+            else
+            {
+                using var small = new Font(ValueFont.FontFamily, points, FontStyle.Bold, GraphicsUnit.Point);
+                TextRenderer.DrawText(g, text, small, line, Enabled ? ForeColor : muted, flags | TextFormatFlags.Bottom);
+            }
             y += h + gap;
         }
 
@@ -252,7 +383,11 @@ public class TwStat : Control, ITwChrome, ITwChartControl
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _valueFont?.Dispose();
+        if (disposing)
+        {
+            _valueFont?.Dispose();
+            _count?.Dispose();
+        }
         base.Dispose(disposing);
     }
 

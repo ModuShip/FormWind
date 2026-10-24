@@ -85,6 +85,32 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
 
     protected override Size DefaultSize => new Size(160, 160);
 
+    /// <summary>A score ring: a track and an arc of <paramref name="fraction"/> (0–1) with a short text in the middle.</summary>
+    internal static void DrawScore(Graphics g, Rectangle box, double fraction, Color color, Color track, string? text, Font font, Color textColor, float scale)
+    {
+        int d = Math.Min(box.Width, box.Height);
+        if (d <= 2) return;
+        float width = Math.Max(2 * scale, Math.Min(3.5f * scale, d * 0.14f));
+        var ring = new RectangleF(box.X + (box.Width - d) / 2f + width / 2, box.Y + (box.Height - d) / 2f + width / 2, d - width, d - width);
+        var state = g.Save();
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        using (var pen = new Pen(track, width)) g.DrawEllipse(pen, ring);
+        float sweep = (float)(Math.Max(0, Math.Min(1, double.IsNaN(fraction) ? 0 : fraction)) * 360);
+        if (sweep > 0)
+        {
+            using var bar = new Pen(color, width) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            if (sweep >= 359.9f) g.DrawEllipse(bar, ring);
+            else g.DrawArc(bar, ring, -90, sweep);
+        }
+        g.Restore(state);
+        if (string.IsNullOrEmpty(text)) return;
+        float inner = d - width * 2;
+        float size = Math.Max(5.5f, Math.Min(font.SizeInPoints, inner / scale * 0.4f));
+        using var bold = new Font(font.FontFamily, size, FontStyle.Bold, GraphicsUnit.Point);
+        TextRenderer.DrawText(g, text, bold, Rectangle.Round(ring), textColor,
+            Flags & ~TextFormatFlags.EndEllipsis | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+    }
+
     protected override Padding DefaultPadding => new Padding(4);
 
     public event EventHandler<TwChartItemEventArgs>? ItemClick;
@@ -233,7 +259,8 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
         var result = new List<(float, float)>();
         if (n == 0 || outer <= 0) return result;
         // Halkalar yarıçapın en çok %70'ini kaplar; ortada metin için yer kalır.
-        float width = Math.Max(2 * s, Math.Min(outer * _thickness, (outer * 0.7f - (n - 1) * gap) / n));
+        // Küçük halka (liste satırındaki skor) okunsun diye en az 3 px kalınlıkta çizilir.
+        float width = Math.Max(Math.Min(3 * s, outer * 0.3f), Math.Max(2 * s, Math.Min(outer * _thickness, (outer * 0.7f - (n - 1) * gap) / n)));
         for (int i = 0; i < n; i++) result.Add((outer - width / 2 - i * (width + gap), width));
         return result;
     }
@@ -285,13 +312,21 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
             small = _centerLabel;
         }
         float inner = radii.Count == 0 ? ring.Width / 2 : radii[radii.Count - 1].Radius - radii[radii.Count - 1].Width / 2;
-        if (inner > 10 * s)
+        if (inner > 6 * s)
         {
-            float size = Math.Max(Font.SizeInPoints, Math.Min(Font.SizeInPoints * 2.4f, inner / s * 0.42f));
+            // Küçük halkada yazı halkanın içine sığacak kadar küçülür (en az 6 pt); büyükte yazı boyutundan aşağı inmez.
+            float fit = inner / s * 0.42f;
+            float size = Math.Min(Font.SizeInPoints * 2.4f, Math.Max(fit, Math.Max(6f, Math.Min(Font.SizeInPoints, inner / s * 0.6f))));
             using var bigFont = new Font(Font.FontFamily, size, FontStyle.Bold, GraphicsUnit.Point);
             int width = (int)(inner * 1.7f);
             var bigSize = big.Length > 0 ? TextRenderer.MeasureText(big, bigFont, Size.Empty, Flags & ~TextFormatFlags.EndEllipsis) : Size.Empty;
             var smallSize = small.Length > 0 ? TextRenderer.MeasureText(small, Font, Size.Empty, Flags & ~TextFormatFlags.EndEllipsis) : Size.Empty;
+            // Alt yazı halkanın içine sığmıyorsa gösterilmez.
+            if (bigSize.Height + smallSize.Height > inner * 1.8f)
+            {
+                small = "";
+                smallSize = Size.Empty;
+            }
             int total = bigSize.Height + smallSize.Height;
             int y = (int)(center.Y - total / 2f);
             if (big.Length > 0)

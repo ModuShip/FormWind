@@ -11,8 +11,12 @@ using Xunit;
 namespace FormWind.Tests;
 
 /// <summary>formwind-mcp's tools, called directly.</summary>
-public class McpToolTests
+[Collection(UiCollection.Name)] // Renderer.Render TwMotion.Enabled'ı süreç genelinde kapatır; geçiş testleriyle aynı anda koşmamalı
+public class McpToolTests : IDisposable
 {
+    // Sunucu sürecinde animasyonlar hep kapalı kalır; test sürecinde diğer testler için TestMotion'ın değeri geri verilir.
+    public void Dispose() => TwMotion.Enabled = true;
+
     [Fact]
     public void Validate_reports_unknown_classes_with_suggestions()
     {

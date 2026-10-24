@@ -84,9 +84,13 @@ public sealed class TwToastForm : Form
 
     private readonly TailwindProvider _tw = new TailwindProvider();
     private readonly Timer _timer = new Timer();
-    private readonly Timer _fade = new Timer { Interval = 15 };
+    private readonly TwTween _fade;
+    private double _fadeFrom;
     private int _remaining;
     private bool _closing;
+
+    /// <summary>Fade-in and fade-out time (ms).</summary>
+    internal const int FadeDuration = 150;
 
     internal TwToastForm(string message, string? title, TwDialogKind kind, bool dark, int durationMs)
     {
@@ -99,7 +103,8 @@ public sealed class TwToastForm : Form
         StartPosition = FormStartPosition.Manual;
         AutoSize = true;
         AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        Opacity = 0;
+        // Animasyon kapalıyken katmanlı pencere hiç oluşmaz; bildirim tam opak açılır.
+        Opacity = TwMotion.Enabled ? 0 : 1;
         AccessibleRole = AccessibleRole.Alert;
         AccessibleName = string.IsNullOrEmpty(title) ? message : title + ": " + message;
         Kind = kind;
@@ -146,7 +151,9 @@ public sealed class TwToastForm : Form
         root.Click += (_, _) => Dismiss();
 
         _timer.Tick += (_, _) => Dismiss();
+        _fade = new TwTween(this);
         _fade.Tick += (_, _) => StepFade();
+        _fade.Completed += (_, _) => FinishFade();
     }
 
     public TwDialogKind Kind { get; }
@@ -184,18 +191,18 @@ public sealed class TwToastForm : Form
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-        _fade.Start();
+        if (Opacity < 1) StartFade();
         StartTimer();
         AccessibilityNotifyClients(AccessibleEvents.SystemAlert, -1);
     }
 
-    /// <summary>Fades the notification out and closes it.</summary>
+    /// <summary>Fades the notification out and closes it (closes immediately when <see cref="TwMotion.Enabled"/> is off).</summary>
     public void Dismiss()
     {
         if (_closing) return;
         _closing = true;
         _timer.Stop();
-        _fade.Start();
+        StartFade();
     }
 
     private void StartTimer()
@@ -205,18 +212,25 @@ public sealed class TwToastForm : Form
         _timer.Start();
     }
 
+    // Solma süreye bağlıdır (kare sayısına değil): UI iş parçacığı yavaşlasa da 150 ms'de biter. Animasyon yapılamıyorsa
+    // (TwMotion kapalı, pencere görünmüyor) hemen biter.
+    private void StartFade()
+    {
+        _fadeFrom = Opacity;
+        _fade.Start(FadeDuration);
+        if (!_fade.Running) FinishFade();
+    }
+
     private void StepFade()
     {
         double target = _closing ? 0 : 1;
-        double next = Opacity + (target > Opacity ? 0.12 : -0.12);
-        if ((target == 1 && next >= 1) || (target == 0 && next <= 0))
-        {
-            _fade.Stop();
-            Opacity = target;
-            if (_closing) Close();
-            return;
-        }
-        Opacity = next;
+        Opacity = _fadeFrom + (target - _fadeFrom) * _fade.Progress;
+    }
+
+    private void FinishFade()
+    {
+        if (_closing) Close();
+        else Opacity = 1;
     }
 
     protected override void Dispose(bool disposing)

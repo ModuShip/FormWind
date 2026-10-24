@@ -15,6 +15,13 @@ public enum TwChartKind
     Line,
     Area,
     Bar,
+
+    /// <summary>
+    /// The whole chart as horizontal bars: one row per category with its full label on the left and the value axis along
+    /// the bottom (a breakdown by line or by cause). Set on the chart, not on a series; series are side by side or
+    /// <see cref="TwChart.Stacked"/>, <see cref="TwChart.ReferenceLines"/> are vertical, markers and the right axis are not drawn.
+    /// </summary>
+    HorizontalBar,
 }
 
 /// <summary>Which points of a line or area series get a marker.</summary>
@@ -237,7 +244,7 @@ public sealed class TwChartItemEventArgs : EventArgs
 [ToolboxItem(true)]
 [DefaultEvent(nameof(ItemClick))]
 [Description("Line, area and bar chart.")]
-public class TwChart : Control, ITwChartControl, ITwChartItems
+public partial class TwChart : Control, ITwChartControl, ITwChartItems
 {
     private IReadOnlyList<string> _categories = Array.Empty<string>();
     private TwChartKind _kind;
@@ -497,11 +504,17 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         return !series.Color.IsEmpty ? series.Color : TwCharts.SeriesColor(index, _colors.Dark, _colors.Accent);
     }
 
-    private TwChartKind KindOf(TwChartSeries series) => series.Kind ?? _kind;
+    // Yatay çubuk grafikte her seri yatay çubuktur.
+    private TwChartKind KindOf(TwChartSeries series) => IsHorizontal ? TwChartKind.HorizontalBar : series.Kind ?? _kind;
+
+    private bool IsHorizontal => _kind == TwChartKind.HorizontalBar;
+
+    private static bool IsBar(TwChartKind kind) => kind is TwChartKind.Bar or TwChartKind.HorizontalBar;
 
     private void OnDataChanged()
     {
         if (_hover >= CategoryCount) _hover = -1;
+        TryPlayIntro();
         Invalidate();
         AccessibilityNotifyClients(AccessibleEvents.Reorder, -1);
     }
@@ -538,7 +551,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
     }
 
     /// <summary>Whether a right axis is drawn: some series are on each axis.</summary>
-    private bool HasSecondaryAxis => Series.Any(x => x.Axis == TwChartAxis.Secondary) && Series.Any(x => x.Axis == TwChartAxis.Primary);
+    private bool HasSecondaryAxis => !IsHorizontal && Series.Any(x => x.Axis == TwChartAxis.Secondary) && Series.Any(x => x.Axis == TwChartAxis.Primary);
 
     private TwChartAxis AxisOf(TwChartAxis axis) => axis == TwChartAxis.Secondary && HasSecondaryAxis ? TwChartAxis.Secondary : TwChartAxis.Primary;
 
@@ -552,7 +565,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         {
             var kind = KindOf(series);
             if (kind != TwChartKind.Line) includeZero = true;
-            if (kind == TwChartKind.Bar && stacked) continue;
+            if (IsBar(kind) && stacked) continue;
             foreach (var v in series.Values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)))
             {
                 min = Math.Min(min, v);
@@ -561,7 +574,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         }
         if (stacked)
         {
-            var bars = Series.Where(x => KindOf(x) == TwChartKind.Bar).ToList();
+            var bars = Series.Where(x => IsBar(KindOf(x))).ToList();
             for (int i = 0; i < CategoryCount; i++)
             {
                 double up = 0, down = 0;
@@ -665,6 +678,13 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         var g = e.Graphics;
         TwPainter.PaintParentBackground(this, g);
         if (BackColor.A > 0) using (var brush = new SolidBrush(BackColor)) g.FillRectangle(brush, ClientRectangle);
+        if (IsHorizontal)
+        {
+            // Giriş animasyonunda çubuklar soldan büyür (etiketler de soldan açılır).
+            ClipIntro(g, ClientRectangle);
+            PaintHorizontal(g);
+            return;
+        }
         float s = DpiScale;
         var layout = ComputeLayout();
         var plot = layout.Plot;
@@ -728,6 +748,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
 
         var state = g.Save();
         g.SetClip(Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
+        ClipIntro(g, Rectangle.Inflate(plot, (int)(6 * s), (int)(6 * s)));
         PaintBars(g, layout, surface, s);
         PaintGuideLines(g, layout, muted, s);
         for (int i = 0; i < Series.Count; i++)
@@ -737,7 +758,8 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         PaintMarkers(g, layout, surface, s);
         g.Restore(state);
         PaintGuideLabels(g, layout, muted, surface, s);
-        PaintValueLabels(g, layout, muted, s);
+        // Değer etiketleri çubuklarıyla birlikte, açılış bitince görünür.
+        if (IntroProgress >= 1f) PaintValueLabels(g, layout, muted, s);
 
         if (LegendVisible) PaintLegend(g, layout.Legend, muted, s);
         if (_hover >= 0 && Series.Count > 0)
@@ -1062,7 +1084,8 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
     }
 
     protected override bool IsInputKey(Keys keyData) =>
-        (keyData & ~Keys.Shift) is Keys.Left or Keys.Right or Keys.Home or Keys.End || base.IsInputKey(keyData);
+        (keyData & ~Keys.Shift) is Keys.Left or Keys.Right or Keys.Home or Keys.End
+        || IsHorizontal && (keyData & ~Keys.Shift) is Keys.Up or Keys.Down || base.IsInputKey(keyData);
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -1072,8 +1095,8 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
         _mouse = null;
         switch (e.KeyCode)
         {
-            case Keys.Left: HoverIndex = _hover <= 0 ? 0 : _hover - 1; break;
-            case Keys.Right: HoverIndex = _hover < 0 ? 0 : Math.Min(count - 1, _hover + 1); break;
+            case Keys.Left or Keys.Up: HoverIndex = _hover <= 0 ? 0 : _hover - 1; break;
+            case Keys.Right or Keys.Down: HoverIndex = _hover < 0 ? 0 : Math.Min(count - 1, _hover + 1); break;
             case Keys.Home: HoverIndex = 0; break;
             case Keys.End: HoverIndex = count - 1; break;
             case Keys.Enter when _hover >= 0: ItemClick?.Invoke(this, new TwChartItemEventArgs(_hover, CategoryLabel(_hover))); break;
@@ -1108,6 +1131,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
     /// <summary>The category under a client point (-1 = none).</summary>
     public int ItemAt(Point client)
     {
+        if (IsHorizontal) return HorizontalItemAt(client);
         var plot = ComputeLayout();
         int count = CategoryCount;
         if (count == 0 || client.X < plot.Plot.Left || client.X >= plot.Plot.Right || client.Y < Padding.Top || client.Y > Height - Padding.Bottom) return -1;
@@ -1116,6 +1140,7 @@ public class TwChart : Control, ITwChartControl, ITwChartItems
 
     Rectangle ITwChartItems.ItemBounds(int index)
     {
+        if (IsHorizontal) return HorizontalRowBounds(index);
         var layout = ComputeLayout();
         return Rectangle.Round(new RectangleF(layout.Plot.Left + layout.Band * index, layout.Plot.Top, layout.Band, layout.Plot.Height));
     }

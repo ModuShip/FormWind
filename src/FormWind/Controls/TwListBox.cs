@@ -11,6 +11,8 @@ namespace FormWind;
 /// <summary>
 /// Replaces ListBox: a <see cref="TwDataList"/> that holds items. Objects added to <see cref="Items"/> are shown with
 /// <see cref="DisplayMember"/> (or <c>ToString()</c>); virtual drawing, multi-selection, groups and styles come from TwDataList.
+/// A <see cref="TwListItem"/> is drawn with the built-in row template (status dot, icon or score ring, title and muted line,
+/// value and badge on the right); rows with a second line get taller on their own.
 /// </summary>
 [ToolboxItem(true)]
 [DefaultEvent(nameof(SelectedIndexChanged))]
@@ -25,11 +27,51 @@ public class TwListBox : TwDataList
     {
         ItemHeight = 32;
         ItemText = GetItemText;
+        AccessibleItemText = GetAccessibleText;
+        ItemHeights = TemplateHeight;
         _items.ListChanged += (_, _) =>
         {
             ItemCount = _items.Count;
+            if (ItemHeights == (Func<int, int>)TemplateHeight) InvalidateItemHeights();
             Invalidate();
         };
+    }
+
+    // İki satırlı şablon satırı (alt satır ya da değer açıklaması olan TwListItem) en az iki satır yüksekliğindedir.
+    private int TemplateHeight(int index) =>
+        index < _items.Count && _items[index] is TwListItem { IsTwoLine: true } ? Math.Max(ItemHeight, TwoLineHeight) : ItemHeight;
+
+    // Ölçüm her satır için tekrarlanmasın diye yazı tipi ve DPI başına bir kez alınır.
+    private (Font? Font, int Dpi, int Height) _twoLine;
+
+    private int TwoLineHeight
+    {
+        get
+        {
+            int dpi = TwDpi.DeviceDpi(this);
+            if (_twoLine.Font != Font || _twoLine.Dpi != dpi) _twoLine = (Font, dpi, TwListItemPainter.TwoLineHeight(this));
+            return _twoLine.Height;
+        }
+    }
+
+    private string GetAccessibleText(int index) =>
+        index < _items.Count && _items[index] is TwListItem item ? item.AccessibleText : GetItemText(index);
+
+    protected override void OnFontChanged(EventArgs e)
+    {
+        base.OnFontChanged(e);
+        InvalidateItemHeights();
+    }
+
+    /// <summary>Draws <see cref="TwListItem"/> rows with the template unless <see cref="TwDataList.DrawItem"/> is handled.</summary>
+    protected override void OnDrawItem(TwDataListDrawEventArgs e)
+    {
+        if (!HasDrawItemHandler && e.Index < _items.Count && _items[e.Index] is TwListItem item)
+        {
+            TwListItemPainter.Paint(this, e, item, Colors.Accent);
+            return;
+        }
+        base.OnDrawItem(e);
     }
 
     [Category("Data"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]

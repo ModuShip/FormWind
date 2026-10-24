@@ -203,6 +203,7 @@ internal static class VocabularyData
     public static readonly IReadOnlyList<string> Variants = new[]
     {
         "hover", "focus", "focus-visible", "active", "disabled", "checked", "invalid", "group-hover", "dark", "forced-colors", "rtl", "ltr",
+        "motion-safe", "motion-reduce",
         "sm", "md", "lg", "xl", "2xl",
         "header", "cell", "row", "row-header", "alt", "selected", "match", "group", "footer", "item", "menu", "caption", "placeholder",
         "label", "hint", "error",
@@ -226,8 +227,8 @@ internal static class VocabularyData
             new[] { "border", "border-{0|2|4|8}", "border-{x|y|t|r|b|l}{|-0|-2|-4|-8}", "rounded{|-none|-sm|-md|-lg|-xl|-2xl|-3xl|-full|-[{n}px]}" },
             new[] { "border", "border-2", "border-b", "border-t-2", "rounded-lg", "rounded-full", "rounded-[10px]" }),
         new VocabularyCategory("effects",
-            new[] { "shadow{|-sm|-md|-lg|-xl|-2xl|-none}", "ring{|-0|-1|-2|-4|-8}", "ring-offset-{0|1|2|4|8}", "bg-gradient-to-{r|l|t|b|tr|tl|br|bl}", "transition{|-colors|-all|-none}", "duration-{0|75|100|150|200|300|500|700|1000|[{n}ms]}", "backdrop-{mica|acrylic|tabbed|none}" },
-            new[] { "shadow-md", "ring-2", "ring-offset-2", "bg-gradient-to-r", "transition", "duration-150", "backdrop-mica" }),
+            new[] { "shadow{|-sm|-md|-lg|-xl|-2xl|-none}", "ring{|-0|-1|-2|-4|-8}", "ring-offset-{0|1|2|4|8}", "bg-gradient-to-{r|l|t|b|tr|tl|br|bl}", "transition{|-colors|-shadow|-all|-none}", "duration-{0|75|100|150|200|300|500|700|1000|[{n}ms]}", "delay-{0|75|100|150|200|300|500|700|1000|[{n}ms]}", "ease-{linear|in|out|in-out}", "animate-{spin|pulse|none}", "backdrop-{mica|acrylic|tabbed|none}" },
+            new[] { "shadow-md", "ring-2", "ring-offset-2", "bg-gradient-to-r", "transition", "duration-150", "delay-75", "ease-in-out", "animate-spin", "backdrop-mica" }),
         new VocabularyCategory("layout",
             new[] { "block", "flex", "grid", "flex-{row|col|wrap|nowrap}", "flex-{1|auto|initial|none}", "grow{|-0}", "shrink{|-0}", "justify-{start|end|center|between|around|evenly}", "items-{start|end|center|stretch|baseline}", "self-{auto|start|end|center|stretch}", "grid-cols-{1-12}", "grid-rows-{1-12}", "col-span-{1-12|full}", "row-span-{1-12|full}" },
             new[] { "flex", "flex-col", "flex-1", "justify-between", "items-center", "grid", "grid-cols-3", "col-span-2", "shrink-0" }),

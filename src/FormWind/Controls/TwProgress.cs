@@ -8,12 +8,13 @@ namespace FormWind;
 /// <summary>
 /// Stylable progress bar (instead of ProgressBar): rounded track and fill. Track <c>fill-*</c>, fill <c>accent-*</c>,
 /// corners <c>rounded-*</c> (fully rounded by default). With <see cref="Indeterminate"/> a segment slides along the track
-/// for work of unknown length.
+/// for work of unknown length; when <see cref="TwMotion.Enabled"/> is off the segment stands still in the middle. A new
+/// <see cref="Value"/> slides the fill to its place in 300 ms (<c>duration-*</c>, <c>ease-*</c>; <c>transition-none</c> = at once).
 /// </summary>
 [ToolboxItem(true)]
 [DefaultProperty(nameof(Value))]
 [Description("Stylable progress bar.")]
-public class TwProgress : Control, ITwChrome
+public class TwProgress : Control, ITwChrome, ITwTimed
 {
     private int _maximum = 100;
     private int _value;
@@ -21,6 +22,12 @@ public class TwProgress : Control, ITwChrome
     private float _phase;
     private TwChrome _chrome = TwChrome.None;
     private readonly Timer _timer = new Timer { Interval = 16 };
+    private TwTween? _fill;
+    private float _fillFrom;
+    private TwTimingClasses _timing;
+
+    /// <summary>Default time (ms) the fill takes to reach a new value.</summary>
+    internal const int FillDuration = 300;
 
     public TwProgress()
     {
@@ -31,7 +38,8 @@ public class TwProgress : Control, ITwChrome
         BackColor = Color.Transparent;
         _timer.Tick += (_, _) =>
         {
-            _phase = (_phase + 0.012f) % 1f;
+            if (!TwMotion.Enabled) _timer.Stop();
+            else _phase = (_phase + 0.012f) % 1f;
             Invalidate();
         };
     }
@@ -56,7 +64,11 @@ public class TwProgress : Control, ITwChrome
         {
             value = Math.Max(0, Math.Min(_maximum, value));
             if (value == _value) return;
+            // Dolgu o an gösterilen yerden yeni değere kayar (önceki kayış sürüyorsa onun ara konumundan).
+            _fillFrom = FillFraction;
             _value = value;
+            _fill ??= new TwTween(this);
+            _fill.Start(_timing.For(FillDuration));
             Invalidate();
             AccessibilityNotifyClients(AccessibleEvents.ValueChange, -1);
         }
@@ -87,6 +99,9 @@ public class TwProgress : Control, ITwChrome
         }
     }
 
+    /// <summary>Whether the sliding segment's timer is running (for tests).</summary>
+    internal bool Animating => _timer.Enabled;
+
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color TrackColor { get; set; } = ColorTranslator.FromHtml("#e5e7eb");   // gray-200
 
@@ -110,12 +125,25 @@ public class TwProgress : Control, ITwChrome
             if (_indeterminate)
             {
                 int width = Math.Max(Height, Width * 2 / 5);
-                int x = (int)((Width + width) * _phase) - width;
+                int x = TwMotion.Enabled ? (int)((Width + width) * _phase) - width : (Width - width) / 2;
                 return Rectangle.Intersect(new Rectangle(x, 0, width, Height), ClientRectangle);
             }
-            return new Rectangle(0, 0, (int)Math.Round(Width * (_value / (float)_maximum)), Height);
+            return new Rectangle(0, 0, (int)Math.Round(Width * FillFraction), Height);
         }
     }
+
+    /// <summary>The filled part (0–1) as drawn now: between the old and the new value while the fill slides.</summary>
+    internal float FillFraction
+    {
+        get
+        {
+            float target = _value / (float)_maximum;
+            float progress = _fill?.Progress ?? 1f;
+            return progress >= 1f ? target : _fillFrom + (target - _fillFrom) * progress;
+        }
+    }
+
+    void ITwTimed.SetTiming(TwTimingClasses timing) => _timing = timing;
 
     protected override AccessibleObject CreateAccessibilityInstance() => new ProgressAccessibleObject(this);
 
@@ -150,13 +178,17 @@ public class TwProgress : Control, ITwChrome
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _timer.Dispose();
+        if (disposing)
+        {
+            _timer.Dispose();
+            _fill?.Dispose();
+        }
         base.Dispose(disposing);
     }
 
     private void UpdateTimer()
     {
-        bool run = _indeterminate && Visible && IsHandleCreated && !DesignMode;
+        bool run = _indeterminate && !DesignMode && TwMotion.CanAnimate(this);
         if (run) _timer.Start();
         else _timer.Stop();
     }

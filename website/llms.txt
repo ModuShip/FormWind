@@ -15,8 +15,8 @@ The look comes from a preset in `tw.config.json` next to the exe: `{ "preset": "
 ## Components (same names in every preset)
 
 - Buttons: `btn`, `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`, `link`, `link-label`
-- Forms: `input`, `select`, `field`, `toggle`, `range`
-- Surfaces and text: `page`, `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`
+- Forms: `input`, `select`, `field`, `setting`, `toggle`, `range`
+- Surfaces and text: `page`, `card`, `sidebar`, `nav-item`, `title`, `muted`, `badge`, `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`, `alert-info`, `alert-success`, `alert-warning`, `alert-danger`
 - Data and navigation: `table`, `table-sm`, `table-lg`, `table-striped`, `table-bordered`, `list`, `tabs`, `tab-control`, `tab-page`, `menu`, `properties`, `chart`, `stat`
 
 Prefer components over long utility strings: switching presets then restyles the application without touching its classes.
@@ -28,7 +28,7 @@ Prefer components over long utility strings: switching presets then restyles the
 - Spacing: `p-*`, `px-*`, `py-*`, `pt|pr|pb|pl-*` → Padding; `m-*` (used by flex and grid). Units of 4 px: `0 0.5 1 1.5 2 … 12 14 16 20 24`, `px`, `[12px]`.
 - Size: `w-*`, `h-*` (units, `full`, fractions like `1/2`), `min-w-*`, `max-w-*` (units or `xs` … `7xl`).
 - Borders and corners: `border`, `border-0|2|4|8`, `border-x|y|t|r|b|l`, `rounded`, `rounded-none|sm|md|lg|xl|2xl|3xl|full|[10px]`.
-- Effects: `shadow`, `shadow-sm|md|lg|xl|2xl|none`, `ring`, `ring-0|1|2|4|8`, `ring-offset-*`, `bg-gradient-to-r` with `from-*` `via-*` `to-*`, `transition`, `duration-150`, `backdrop-mica|acrylic|tabbed` (forms).
+- Effects: `shadow`, `shadow-sm|md|lg|xl|2xl|none`, `ring`, `ring-0|1|2|4|8`, `ring-offset-*`, `bg-gradient-to-r` with `from-*` `via-*` `to-*`, `transition`, `transition-colors|shadow|all|none`, `duration-150`, `delay-75`, `ease-linear|in|out|in-out`, `animate-spin|pulse` (TwIcon; TwPanel pulses), `backdrop-mica|acrylic|tabbed` (forms), `backdrop-blur-sm|md|lg|xl|2xl|3xl` with a translucent `bg-white/70` (frosted `TwPanel`).
 - Layout (inside `TwPanel`): `flex`, `flex-row`, `flex-col`, `flex-wrap`, `gap-*`, `justify-start|end|center|between|around|evenly`, `items-start|end|center|stretch`, `flex-1`, `flex-none`, `grow`, `shrink-0`, `basis-*`, `self-*`, `grid`, `grid-cols-1`…`12`, `col-span-*`, `grid-rows-*`, `row-span-*`. `Dock` and `Anchor` are ignored inside a flex or grid container.
 - Other: `hidden`, `visible`, `cursor-pointer|default|text`, `group`, `object-cover|contain|fill`, `divide-x`, `divide-y`.
 
@@ -36,15 +36,15 @@ Not supported (do not use): rem values, `opacity-*`, `z-*`, `absolute`/`relative
 
 ## Variants
 
-States: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `checked:`, `invalid:`, `group-hover:`, `dark:`, `forced-colors:`, `rtl:`, `ltr:`; breakpoints (the form's client width, not the screen's): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`. They combine: `dark:hover:bg-gray-800`.
+States: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `checked:`, `invalid:`, `group-hover:`, `dark:`, `forced-colors:`, `rtl:`, `ltr:`, `motion-safe:`, `motion-reduce:` (see `TwMotion.Enabled`); breakpoints (the form's client width, not the screen's): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`. They combine: `dark:hover:bg-gray-800`.
 
-Parts: `header:`, `cell:`, `row:`, `row-header:`, `alt:`, `selected:`, `match:`, `group:`, `footer:` (DataGridView); `item:`, `menu:` (ToolStrip, MenuStrip, TwSelect); `caption:` (form title bar); `placeholder:` (TwTextBox); `label:`, `hint:`, `error:` (TwField). At most one part per class: `dark:header:bg-gray-800`.
+Parts: `header:`, `cell:`, `row:`, `row-header:`, `alt:`, `selected:`, `match:`, `group:`, `footer:` (DataGridView); `item:`, `menu:` (ToolStrip, MenuStrip, TwSelect); `caption:` (form title bar); `placeholder:` (TwTextBox); `label:`, `hint:`, `error:` (TwField; `label:`, `hint:` also TwSettingRow). At most one part per class: `dark:header:bg-gray-800`.
 
 Every light color needs a `dark:` counterpart unless the class is a component (components already have one).
 
 ## Controls
 
-Use standard controls first. `Tw*` controls exist where a native control cannot be styled well: `TwButton`, `TwPanel` (also the flex and grid host), `TwTextBox`, `TwField`, `TwSelect`, `TwDatePicker`, `TwCalendar`, `TwNumberBox`, `TwSlider`, `TwSwitch`, `TwCheckBox`, `TwRadioButton`, `TwListBox`, `TwCheckedListBox`, `TwDataList`, `TwTreeView`, `TwTabControl`, `TwTabStrip`, `TwPager`, `TwStepper`, `TwProgress`, `TwPictureBox`, `TwToolTip`; charts `TwChart`, `TwDonutChart`, `TwRingChart`, `TwSparkline`, `TwStat`, `TwHeatmap`, `TwTimeline`; dialogs and toasts through the static `TwDialog` and `TwToast` classes; panels that open next to a control (menus, pickers, filters) through the `TwPopover` component (`Content`, `Placement`, `Show`/`Toggle(anchor)`).
+Use standard controls first. `Tw*` controls exist where a native control cannot be styled well: `TwButton`, `TwPanel` (also the flex and grid host), `TwTextBox`, `TwField`, `TwSelect`, `TwDatePicker`, `TwCalendar`, `TwNumberBox`, `TwSlider`, `TwSwitch`, `TwCheckBox`, `TwRadioButton`, `TwListBox`, `TwCheckedListBox`, `TwDataList`, `TwTreeView`, `TwTabControl`, `TwTabStrip` (overflow menu, `UseMnemonic`), `TwPager`, `TwStepper`, `TwProgress`, `TwPictureBox`, `TwToolTip`, `TwChip` (removable, clickable or checkable pill), `TwToolbar` (items that do not fit go to a "more" menu), `TwSettingRow` (label, description, editor, unit); rows of `TwListBox` drawn by a template with `TwListItem` (title, subtitle, dot, icon or score ring, value, badge); tree rows with columns in a DataGridView through `TwGrid.SetTree`; charts `TwChart`, `TwDonutChart`, `TwRingChart`, `TwSparkline`, `TwStat` (`ShortValue`, shrinks to fit), `TwHeatmap` (`EmptyCells` for NaN), `TwTimeline`, `TwChartKind.HorizontalBar`; dialogs and toasts through the static `TwDialog` (`TwDialog.Prompt` asks for text) and `TwToast` classes; panels that open next to a control (menus, pickers, filters) through the `TwPopover` component (`Content`, `Placement`, `Show`/`Toggle(anchor)`).
 
 ## Rules that prevent common mistakes
 

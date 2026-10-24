@@ -5,6 +5,95 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `ease-linear`, `ease-in`, `ease-out` and `ease-in-out` pick the curve of a transition, and `delay-*` (`delay-75` …
+  `delay-1000`, `delay-[40ms]`) waits before it starts. The default stays ease-out with no delay.
+- `transition-shadow` animates only the shadow and ring. `transition-colors` now also animates the border color, and
+  `transition` (`transition-all`) also fades the ring in and out (`ring-0 focus:ring-2 transition`).
+- `motion-safe:` and `motion-reduce:` variants apply while animations are on or off (`TwMotion.Enabled`), for example
+  `animate-spin motion-reduce:animate-none`. Controls that use them are reapplied when the setting changes.
+- `animate-spin` turns a `TwIcon` (one turn per second, for loading indicators) and `animate-pulse` fades a `TwIcon` or
+  the background of a `TwPanel` (skeleton placeholders). `animate-none` stops them. They stand still when animations
+  are off.
+- The `TwSwitch` knob, the `TwTabStrip` indicator and the `TwDataList` row hover follow `duration-*`, `delay-*` and
+  `ease-*` on the control; `transition-none` makes them immediate.
+- `TwDialog` and `TwPopover` fade in when they open and fade out when they close (150 ms). The window closes at once
+  (`DialogResult`, `IsOpen` and `Closed` are not delayed); its last picture fades out in a click-through window.
+- A new `TwProgress.Value` slides the fill to its place (300 ms; `duration-*`, `ease-*`, `transition-none`).
+- `TwStat` counts a new value up from the previous one, or from zero when it first appears (800 ms), keeping the text's
+  form (`₺12.400`, `98,4%`); `AnimateValue = false` turns it off. Only a value with a single number is counted.
+- `TwChart` opens from left to right the first time it is shown with data (600 ms); `AnimateOnShow = false` turns it
+  off and `AnimateIn()` plays it again, for example after loading new data.
+- `TwPanel.Expanded` (`Expand()`, `Collapse()`, `ExpandedChanged`) slides the panel's height to zero and hides it, or
+  shows it and slides it back to its height (its preferred height when `AutoSize`), in 200 ms (`duration-*`, `ease-*`).
+  The children keep their places meanwhile.
+- `TwTween` is public: progress of a value over time with a curve and a delay, for custom controls; it finishes
+  immediately when animations are off. `TwMotion` adds `Changed`, `FollowSystem()`, `CanAnimate`, `Ease`, `Lerp` and
+  `Blend`.
+- Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
+  selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
+  tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each
+  parent; `TwGridTree.SetTotal` shows the children's sum, average, count, minimum or maximum in parent rows, and a
+  `TwGridFooter` counts only the rows without children.
+- `TwChip`: a pill with a text, an optional icon or status dot and an optional ✕ (`Removable`, `RemoveClick`, also
+  Delete/Backspace); `Clickable` and `Checkable` (a filter chip styled with `checked:`). The theme has the `chip`,
+  `chip-primary`, `chip-success`, `chip-warning` and `chip-danger` components, and AutoStyle maps `TwChip` to `chip`.
+- `TwListItem`: `TwListBox` draws these items with a built-in row template (a status dot, an icon or a small score
+  ring, a title and a muted line, a value and a badge styled by classes on the right); two-line rows get taller on their
+  own and screen readers read every part.
+- `TwToolbar`: a responsive toolbar whose items that do not fit move to a "more" (…) menu that runs them (buttons are
+  clicked, check boxes toggled, tab strips and selects become submenus), with per-item alignment, priority and
+  overflow mode; a `Shrink` item (a title) gets narrower first.
+- `TwSettingRow`: a System Settings style row with a label, a description, the editor and a unit; stacked rows draw
+  dividers between them and narrow rows put the editor under the text (`setting` component, `label:` and `hint:` parts).
+- `TwDialog.Prompt` and `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`,
+  `InputMaxLength`, `InputValidator`) ask for a line of text; OK validates it and keeps the dialog open with the error
+  under the box.
+- `TwChartKind.HorizontalBar`: horizontal bar charts with one row per category, the full label on the left, the value
+  axis along the bottom and values at the bar ends; side by side or stacked, with vertical reference lines.
+- `TwTabStrip.OverflowMenu` (on by default): tabs that do not fit go to a "more" button at the end whose menu selects
+  them (↓ opens it, `menu:`/`item:` classes); the selected tab stays visible. `TwTabStrip.UseMnemonic` (on by
+  default, as on a Label) and Alt shortcuts for tabs.
+- `TwHeatmap.EmptyCells` (`Low`, `Solid`, `Hatched`, `None`), `EmptyCellColor` and `EmptyCellText`: missing values can
+  be drawn as flat or hatched gray, named ("No production") in the tooltip and for screen readers, and keyed in the
+  legend.
+- `TwStat.ShortValue` and `TwStat.ValueFit`: a value that does not fit switches to its short form and then gets
+  smaller, down to the title's size.
+- `backdrop-blur-sm` … `backdrop-blur-3xl` (`TwPanel.BackdropBlur`): a frosted `TwPanel` that blurs what the parent
+  paints behind it, under a translucent `bg-*/NN`.
+- `TwTexts.Remove` and `TwTexts.More` (screen reader names of the chip's ✕ and the "more" buttons).
+
+### Changed
+
+- A `TwPanel` with a translucent background (`bg-white/70`) shows the parent's painting (a gradient or an image)
+  through. Before, it was blended over the parent's background color only.
+- `TwStat` shrinks a value that does not fit instead of cutting it with "…" (`ValueFit = Ellipsis` restores that).
+- A `TwRingChart` as small as an icon keeps a ring at least 3 px thick and shrinks its center text to fit.
+- The `tabs` component colors the overflow menu (`menu:bg-* menu:border-*`, with `dark:` variants).
+- `transition-colors` no longer animates shadows, as in Tailwind; use `transition` (or `transition-shadow`) for them.
+- `TwToast` fades in and out in 150 ms whatever the frame rate. Before, each frame added a fixed step, so on a busy UI
+  thread the fade took longer.
+- `TwMotion.Enabled` notices when the Windows "Show animations" setting changes while the application runs.
+
+### Fixed
+
+- `TwTabStrip` no longer clips the tabs that do not fit (they go to the overflow menu), and screen readers read tab
+  names without the `&` shortcut marker.
+- `transition`, `TwSwitch`, `TwToast` and indeterminate `TwProgress` follow `TwMotion.Enabled` (Windows' "Show
+  animations" setting). Before, they animated even when animations were off. Now color and shadow transitions and the
+  switch knob change immediately, toasts appear and close without fading, and the indeterminate progress segment
+  stands still in the middle of the track.
+- The `net472` project of the `formwind-app` template comes with an App.config that sets `DpiAwareness` to
+  `PerMonitorV2`. Before, PerMonitorV2 came only from the manifest, which leaves WinForms' per-monitor support off: a
+  form moved to a screen with another scale kept the layout and fonts of the old DPI.
+
+### Changed
+
+- README: "Setup on .NET Framework" under DPI: the DPI-unaware, system-aware and PerMonitorV2 options, why
+  PerMonitorV2 needs both the manifest and App.config, why App.config must not declare the section in `configSections`,
+  and how to move an application with its own DPI factor (`Px()`-style helpers) to DPI-aware without scaling twice.
+
 ## [0.1.2-preview.1] - 2026-10-21
 
 ### Added

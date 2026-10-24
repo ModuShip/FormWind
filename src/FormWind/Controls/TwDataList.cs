@@ -21,6 +21,7 @@ internal sealed class TwDataListColors
     public Color GroupBack { get; set; } = Color.Empty;                             // boşsa Back
     public Color GroupFore { get; set; } = ColorTranslator.FromHtml("#6b7280");     // gray-500
     public Color Skeleton { get; set; } = ColorTranslator.FromHtml("#e5e7eb");      // gray-200
+    public Color? Accent { get; set; }                                              // accent-*
 }
 
 public enum TwListSelectionMode
@@ -188,7 +189,7 @@ public sealed class TwDataListDrawEventArgs : EventArgs
 [ToolboxItem(true)]
 [DefaultEvent(nameof(DrawItem))]
 [Description("Stillenebilir sanal veri listesi.")]
-public class TwDataList : Control
+public class TwDataList : Control, ITwTimed
 {
     private int _itemCount;
     private int _itemHeight = 40;
@@ -217,6 +218,8 @@ public class TwDataList : Control
     private int _requestedFirst = -1, _requestedLast = -1;
     private bool _itemsNeededPosted;
     private TwTween? _hoverFade;
+    // Hover zemininin belirişi (120 ms); duration-*, delay-*, ease-* ve transition-none ile değişir.
+    private TwTimingClasses _timing;
     private Timer? _pulse;
 
     // Odak halkası yalnızca odak klavyeyle geldiyse çizilir (bkz. TwFocusVisible).
@@ -505,6 +508,8 @@ public class TwDataList : Control
         }
     }
 
+    void ITwTimed.SetTiming(TwTimingClasses timing) => _timing = timing;
+
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     internal TwDataListColors Colors
     {
@@ -725,7 +730,7 @@ public class TwDataList : Control
             if (index >= 0 && index != _hoverIndex)
             {
                 _hoverFade ??= new TwTween(this);
-                _hoverFade.Start(120);
+                _hoverFade.Start(_timing.For(120));
             }
             _hoverIndex = index;
             _thumbHover = overThumb;
@@ -968,6 +973,9 @@ public class TwDataList : Control
         }
         base.Dispose(disposing);
     }
+
+    /// <summary>Whether <see cref="DrawItem"/> has a handler.</summary>
+    protected bool HasDrawItemHandler => DrawItem != null;
 
     /// <summary>Draws a row: raises <see cref="DrawItem"/> if handled, otherwise writes <see cref="ItemText"/>.</summary>
     protected virtual void OnDrawItem(TwDataListDrawEventArgs e)
