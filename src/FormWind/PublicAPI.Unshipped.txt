@@ -216,7 +216,8 @@ FormWind.TwTween.Dispose() -> void
 FormWind.TwTween.Progress.get -> float
 FormWind.TwTween.Running.get -> bool
 FormWind.TwTween.Start(int durationMs) -> void
-FormWind.TwTween.Start(int durationMs, FormWind.TwEasing easing, int delayMs = 0) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwEasing easing) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwEasing easing, int delayMs) -> void
 FormWind.TwTween.Stop() -> void
 FormWind.TwTween.Tick -> System.EventHandler?
 FormWind.TwTween.TwTween(System.Windows.Forms.Control! owner) -> void
@@ -294,3 +295,33 @@ FormWind.TwStat.AnimateValue.set -> void
 override FormWind.TwChart.Dispose(bool disposing) -> void
 override FormWind.TwChart.OnVisibleChanged(System.EventArgs! e) -> void
 override FormWind.TwStat.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwEasing.Spring = 4 -> FormWind.TwEasing
+FormWind.TwCubicBezier
+FormWind.TwCubicBezier.TwCubicBezier() -> void
+FormWind.TwCubicBezier.TwCubicBezier(double x1, double y1, double x2, double y2) -> void
+FormWind.TwCubicBezier.Ease(float t) -> float
+FormWind.TwCubicBezier.Equals(FormWind.TwCubicBezier other) -> bool
+FormWind.TwCubicBezier.X1.get -> double
+FormWind.TwCubicBezier.X2.get -> double
+FormWind.TwCubicBezier.Y1.get -> double
+FormWind.TwCubicBezier.Y2.get -> double
+override FormWind.TwCubicBezier.Equals(object? obj) -> bool
+override FormWind.TwCubicBezier.GetHashCode() -> int
+override FormWind.TwCubicBezier.ToString() -> string!
+static FormWind.TwCubicBezier.operator !=(FormWind.TwCubicBezier left, FormWind.TwCubicBezier right) -> bool
+static FormWind.TwCubicBezier.operator ==(FormWind.TwCubicBezier left, FormWind.TwCubicBezier right) -> bool
+FormWind.TwTween.Start(int durationMs, FormWind.TwCubicBezier curve) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwCubicBezier curve, int delayMs) -> void
+FormWind.TwMotion.Durations
+static FormWind.TwMotion.Durations.L.get -> int
+static FormWind.TwMotion.Durations.M.get -> int
+static FormWind.TwMotion.Durations.S.get -> int
+static FormWind.TwMotion.Durations.Xs.get -> int
+FormWind.TwAnimator
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwCubicBezier curve) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwCubicBezier curve, int delayMs, System.Action? completed) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwEasing easing) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwEasing easing, int delayMs, System.Action? completed) -> void
+static FormWind.TwAnimator.Cancel(System.Windows.Forms.Control! control, string! name) -> void
+static FormWind.TwAnimator.IsAnimating(System.Windows.Forms.Control! control, string! name) -> bool

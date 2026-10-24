@@ -90,7 +90,31 @@ public static class TwMotion
     public static bool CanAnimate(Control control) =>
         Enabled && control is not null && control.IsHandleCreated && control.Visible && control.Site?.DesignMode != true;
 
-    /// <summary>Applies the timing curve to linear progress <paramref name="t"/> (clamped to 0–1).</summary>
+    /// <summary>
+    /// Standard durations (ms) for in-control animations; 1 ms each when animations are off, so a change that waits for
+    /// one ends at once.
+    /// </summary>
+    public static class Durations
+    {
+        /// <summary>120 ms: hover and press feedback, small fades.</summary>
+        public static int Xs => Pick(120);
+
+        /// <summary>180 ms: focus rings, toggles, popovers and menus.</summary>
+        public static int S => Pick(180);
+
+        /// <summary>250 ms: sliding indicators, panels and values that move.</summary>
+        public static int M => Pick(250);
+
+        /// <summary>450 ms: entrances such as charts and notifications.</summary>
+        public static int L => Pick(450);
+
+        private static int Pick(int durationMs) => Enabled ? durationMs : 1;
+    }
+
+    /// <summary>
+    /// Applies the timing curve to linear progress <paramref name="t"/> (clamped to 0–1). The result is 0 at the start and
+    /// 1 at the end; <see cref="TwEasing.Spring"/> goes above 1 for a moment in between.
+    /// </summary>
     public static float Ease(TwEasing easing, float t)
     {
         t = Math.Max(0f, Math.Min(1f, t));
@@ -104,6 +128,10 @@ public static class TwMotion
                 if (t < 0.5f) return 4 * t * t * t;
                 float rest = -2 * t + 2;
                 return 1 - rest * rest * rest / 2;
+            case TwEasing.Spring:
+                // Sönümlü kosinüs (en çok ~%10 taşma); son terim t = 1'de tam 1 vermesi için e^-8 artığını siler.
+                if (t >= 1f) return 1f;
+                return (float)(1 - Math.Exp(-8 * t) * Math.Cos(3 * Math.PI * t) - t * Math.Exp(-8));
             default:
                 float inverse = 1 - t;
                 return 1 - inverse * inverse * inverse;
@@ -117,10 +145,15 @@ public static class TwMotion
         from.X + (to.X - from.X) * t, from.Y + (to.Y - from.Y) * t,
         from.Width + (to.Width - from.Width) * t, from.Height + (to.Height - from.Height) * t);
 
-    /// <summary>The color <paramref name="t"/> of the way from <paramref name="from"/> to <paramref name="to"/> (alpha included).</summary>
+    /// <summary>
+    /// The color <paramref name="t"/> of the way from <paramref name="from"/> to <paramref name="to"/> (alpha included);
+    /// channels are clamped to 0–255 when <paramref name="t"/> overshoots.
+    /// </summary>
     public static Color Blend(Color from, Color to, float t) => Color.FromArgb(
-        (int)(from.A + (to.A - from.A) * t), (int)(from.R + (to.R - from.R) * t),
-        (int)(from.G + (to.G - from.G) * t), (int)(from.B + (to.B - from.B) * t));
+        Channel(from.A + (to.A - from.A) * t), Channel(from.R + (to.R - from.R) * t),
+        Channel(from.G + (to.G - from.G) * t), Channel(from.B + (to.B - from.B) * t));
+
+    internal static int Channel(double value) => value <= 0 ? 0 : value >= 255 ? 255 : (int)value;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SystemParametersInfo(int action, int param, out bool value, int winIni);
@@ -161,7 +194,10 @@ public sealed class TwTween : IDisposable
     /// <summary>Whether an animation is running.</summary>
     public bool Running => _timer.Enabled;
 
-    /// <summary>Progress between 0 and 1 with the curve applied (0 during the delay, 1 without animation or at the end).</summary>
+    /// <summary>
+    /// Progress with the curve applied: 0 during the delay, 1 without animation or at the end, between 0 and 1 meanwhile
+    /// (curves that overshoot, such as <see cref="TwEasing.Spring"/>, go above 1 for a moment).
+    /// </summary>
     public float Progress => _timing.TotalMs > 0 && Elapsed < _timing.TotalMs ? _timing.Progress(Elapsed) : 1f;
 
     /// <summary>When an animation reaches its end (not when it is stopped or finishes immediately).</summary>
@@ -173,10 +209,26 @@ public sealed class TwTween : IDisposable
     public void Start(int durationMs) => Start(new TwTransition(durationMs));
 
     /// <summary>Starts a new animation; finishes immediately if the owner cannot animate.</summary>
-    /// <param name="durationMs">Length of the animation (ms).</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="easing">Timing curve.</param>
+    public void Start(int durationMs, TwEasing easing) => Start(new TwTransition(durationMs, 0, easing));
+
+    /// <summary>Starts a new animation; finishes immediately if the owner cannot animate.</summary>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
     /// <param name="easing">Timing curve.</param>
     /// <param name="delayMs">Wait before it starts moving (ms); <see cref="Progress"/> is 0 meanwhile.</param>
-    public void Start(int durationMs, TwEasing easing, int delayMs = 0) => Start(new TwTransition(durationMs, delayMs, easing));
+    public void Start(int durationMs, TwEasing easing, int delayMs) => Start(new TwTransition(durationMs, delayMs, easing));
+
+    /// <summary>Starts a new animation with a custom curve; finishes immediately if the owner cannot animate.</summary>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
+    public void Start(int durationMs, TwCubicBezier curve) => Start(new TwTransition(durationMs, 0, curve));
+
+    /// <summary>Starts a new animation with a custom curve; finishes immediately if the owner cannot animate.</summary>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
+    /// <param name="delayMs">Wait before it starts moving (ms); <see cref="Progress"/> is 0 meanwhile.</param>
+    public void Start(int durationMs, TwCubicBezier curve, int delayMs) => Start(new TwTransition(durationMs, delayMs, curve));
 
     internal void Start(TwTransition timing)
     {

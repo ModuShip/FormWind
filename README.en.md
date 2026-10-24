@@ -1072,6 +1072,14 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 // OnPaint: float h = _from + (_target - _from) * _tween.Progress;
 ```
 
+- Curves: `TwEasing.Out` (default), `In`, `InOut`, `Linear` and `Spring` (a damped spring that goes ~10% past the target and settles back; `Progress` goes above 1 for a moment, `Blend` clamps colors). For a custom curve, as in CSS, `new TwCubicBezier(x1, y1, x2, y2)`: `_tween.Start(250, new TwCubicBezier(0.34, 1.56, 0.64, 1))`.
+- Standard durations are in `TwMotion.Durations`: `Xs` 120, `S` 180, `M` 250, `L` 450 ms. When animations are off they are all 1 ms, so anything that waits for them ends at once.
+- To animate a number of a control (a width, a position, an opacity) without writing `OnPaint`, use `TwAnimator.Animate(control, name, from, to, duration, set)`; a new call with the same control and name replaces the running one (to continue from where it is, pass the last value given to `set` as `from`). Overloads take a curve, a delay and `completed`; `Cancel` and `IsAnimating` take the same name. When animations are off the value is set to `to` at once.
+
+```csharp
+TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
+```
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` variants apply based on the form's client width (640 / 768 / 1024 / 1280 / 1536 px at 96 DPI; configurable via `TwBreakpoints`). When the form is resized and a threshold changes, only controls using these variants are restyled:
 
 ```csharp

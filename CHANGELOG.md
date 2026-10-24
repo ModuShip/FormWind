@@ -31,6 +31,14 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwTween` is public: progress of a value over time with a curve and a delay, for custom controls; it finishes
   immediately when animations are off. `TwMotion` adds `Changed`, `FollowSystem()`, `CanAnimate`, `Ease`, `Lerp` and
   `Blend`.
+- `TwEasing.Spring`: a damped spring that goes about 10% past the target and settles back. `TwCubicBezier` is a custom
+  curve like CSS `cubic-bezier(x1, y1, x2, y2)`, for `TwTween.Start` and `TwAnimator.Animate`. `TwMotion.Blend` and
+  color transitions clamp colors when a curve overshoots.
+- `TwMotion.Durations` gives standard durations: `Xs` 120, `S` 180, `M` 250 and `L` 450 ms, or 1 ms each when
+  animations are off.
+- `TwAnimator` is public and animates a number of a control: `Animate(control, name, from, to, durationMs, set)`, with
+  overloads for the curve, a delay and a `completed` callback, and `Cancel` / `IsAnimating`. A new animation with the
+  same name replaces the running one; when the control cannot animate the end value is set at once.
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each

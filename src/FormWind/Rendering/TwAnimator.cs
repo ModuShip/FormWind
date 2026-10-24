@@ -13,38 +13,103 @@ internal enum TwColorChannel
 }
 
 /// <summary>
-/// Color transitions for the <c>transition</c> classes. A single timer per thread (about 60 frames/s) runs all
-/// animations with the transition's curve and delay. When a channel gets a new target, the transition continues from the
-/// current color. Windows generates <c>WM_TIMER</c> only when no other message is queued: while a window keeps
-/// invalidating itself during paint, or the UI thread is busy, transitions pause at an intermediate color
-/// (<see cref="TryGetTarget"/> still gives the target).
+/// Animates a number of a control (a position, a width, an opacity) and the color transitions of the <c>transition</c>
+/// classes. A single timer per thread (about 60 frames/s) runs all animations with their curve and delay. A new animation
+/// of the same control and name replaces the running one; to continue from where it is, pass the last value given to
+/// <c>set</c> as <c>from</c>. Windows generates <c>WM_TIMER</c> only when no other message is queued: while a window
+/// keeps invalidating itself during paint, or the UI thread is busy, animations pause at an intermediate value.
+/// <code>
+/// TwAnimator.Animate(panel, "width", panel.Width, 320, TwMotion.Durations.M, w => panel.Width = (int)w);
+/// </code>
 /// </summary>
-internal static class TwAnimator
+public static class TwAnimator
 {
     [ThreadStatic]
-    private static Dictionary<(Control Control, TwColorChannel Channel), Animation>? _active;
+    private static Dictionary<(Control Control, object Key), Animation>? _active;
 
     [ThreadStatic]
     private static Timer? _timer;
 
-    public static int ActiveCount => _active?.Count ?? 0;
+    internal static int ActiveCount => _active?.Count ?? 0;
 
-    public static bool IsAnimating(Control control, TwColorChannel channel) =>
+    /// <summary>
+    /// Animates a number from <paramref name="from"/> to <paramref name="to"/>, giving each frame's value to
+    /// <paramref name="set"/>. When the control cannot animate (<see cref="TwMotion.CanAnimate"/>) or the duration is 0,
+    /// <paramref name="set"/> gets <paramref name="to"/> at once.
+    /// </summary>
+    /// <param name="control">Control whose animation this is; it stops when the control is disposed.</param>
+    /// <param name="name">Name of the animated value; a new animation with the same control and name replaces the running one.</param>
+    /// <param name="from">Start value.</param>
+    /// <param name="to">End value; the last value given to <paramref name="set"/>.</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="set">Applies a value (called on the UI thread every frame).</param>
+    public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set) =>
+        Animate(control, name, from, to, new TwTransition(durationMs), set, null);
+
+    /// <summary>Animates a number with a timing curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
+    public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwEasing easing) =>
+        Animate(control, name, from, to, new TwTransition(durationMs, 0, easing), set, null);
+
+    /// <summary>Animates a number with a timing curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
+    /// <param name="delayMs">Wait before it starts moving (ms).</param>
+    /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>
+    public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set,
+        TwEasing easing, int delayMs, Action? completed) =>
+        Animate(control, name, from, to, new TwTransition(durationMs, delayMs, easing), set, completed);
+
+    /// <summary>Animates a number with a custom curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
+    public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwCubicBezier curve) =>
+        Animate(control, name, from, to, new TwTransition(durationMs, 0, curve), set, null);
+
+    /// <summary>Animates a number with a custom curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
+    /// <param name="delayMs">Wait before it starts moving (ms).</param>
+    /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>
+    public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set,
+        TwCubicBezier curve, int delayMs, Action? completed) =>
+        Animate(control, name, from, to, new TwTransition(durationMs, delayMs, curve), set, completed);
+
+    private static void Animate(Control control, string name, double from, double to, TwTransition timing, Action<double> set, Action? completed)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        if (name is null) throw new ArgumentNullException(nameof(name));
+        if (set is null) throw new ArgumentNullException(nameof(set));
+
+        if (!TwMotion.CanAnimate(control) || timing.TotalMs <= 0 || from.Equals(to))
+        {
+            Cancel(control, name);
+            set(to);
+            completed?.Invoke();
+            return;
+        }
+        Start(control, name, to, timing, progress => set(progress >= 1f ? to : from + (to - from) * progress), completed);
+    }
+
+    /// <summary>Whether a number of <paramref name="control"/> named <paramref name="name"/> is animating.</summary>
+    public static bool IsAnimating(Control control, string name) => _active != null && _active.ContainsKey((control, name));
+
+    /// <summary>Stops the animation where it is (<c>completed</c> is not called).</summary>
+    public static void Cancel(Control control, string name) => _active?.Remove((control, name));
+
+    internal static bool IsAnimating(Control control, TwColorChannel channel) =>
         _active != null && _active.ContainsKey((control, channel));
 
     /// <summary>Animates the control's BackColor or ForeColor with an ease-out curve.</summary>
-    public static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null) =>
+    internal static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null) =>
         Animate(control, channel, target, new TwTransition(durationMs), completed);
 
     /// <summary>Animates the control's BackColor or ForeColor.</summary>
-    public static void Animate(Control control, TwColorChannel channel, Color target, TwTransition timing, Action? completed = null)
+    internal static void Animate(Control control, TwColorChannel channel, Color target, TwTransition timing, Action? completed = null)
     {
         var current = channel == TwColorChannel.Back ? control.BackColor : control.ForeColor;
         Animate(control, channel, current, target, timing, color => Set(control, channel, color), completed);
     }
 
     /// <summary>Animates a color shown by <paramref name="set"/> (e.g. the border of the control's chrome).</summary>
-    public static void Animate(Control control, TwColorChannel channel, Color from, Color target, TwTransition timing, Action<Color> set, Action? completed = null)
+    internal static void Animate(Control control, TwColorChannel channel, Color from, Color target, TwTransition timing, Action<Color> set, Action? completed = null)
     {
         if (timing.TotalMs <= 0 || from.ToArgb() == target.ToArgb())
         {
@@ -53,9 +118,27 @@ internal static class TwAnimator
             completed?.Invoke();
             return;
         }
+        Start(control, channel, target, timing, progress => set(Lerp(from, target, progress)), completed);
+    }
 
-        _active ??= new Dictionary<(Control, TwColorChannel), Animation>();
-        _active[(control, channel)] = new Animation(from, target, DateTime.UtcNow, timing, set, completed);
+    internal static void Cancel(Control control, TwColorChannel channel) => _active?.Remove((control, channel));
+
+    /// <summary>The target color the channel is currently transitioning to.</summary>
+    internal static bool TryGetTarget(Control control, TwColorChannel channel, out Color target)
+    {
+        if (_active != null && _active.TryGetValue((control, channel), out var animation))
+        {
+            target = (Color)animation.Target;
+            return true;
+        }
+        target = Color.Empty;
+        return false;
+    }
+
+    private static void Start(Control control, object key, object target, TwTransition timing, Action<float> apply, Action? completed)
+    {
+        _active ??= new Dictionary<(Control, object), Animation>();
+        _active[(control, key)] = new Animation(target, DateTime.UtcNow, timing, apply, completed);
 
         if (_timer is null)
         {
@@ -63,20 +146,6 @@ internal static class TwAnimator
             _timer.Tick += (_, _) => Step(DateTime.UtcNow);
         }
         _timer.Start();
-    }
-
-    public static void Cancel(Control control, TwColorChannel channel) => _active?.Remove((control, channel));
-
-    /// <summary>The target color the channel is currently transitioning to.</summary>
-    public static bool TryGetTarget(Control control, TwColorChannel channel, out Color target)
-    {
-        if (_active != null && _active.TryGetValue((control, channel), out var animation))
-        {
-            target = animation.To;
-            return true;
-        }
-        target = Color.Empty;
-        return false;
     }
 
     /// <summary>Advances the animations to <paramref name="now"/> (used by the timer and tests).</summary>
@@ -88,26 +157,29 @@ internal static class TwAnimator
             return;
         }
 
-        var finished = new List<(Control, TwColorChannel)>();
-        foreach (var pair in _active)
+        var finished = new List<((Control Control, object Key) Key, Animation Animation)>();
+        // set geri çağrısı yeni bir animasyon başlatabilir ya da iptal edebilir; sözlük üzerinde değil kopyada dönülür.
+        foreach (var pair in new List<KeyValuePair<(Control Control, object Key), Animation>>(_active))
         {
             var animation = pair.Value;
             if (pair.Key.Control.IsDisposed)
             {
-                finished.Add(pair.Key);
+                _active.Remove(pair.Key);
                 continue;
             }
 
             var elapsed = (now - animation.Start).TotalMilliseconds;
-            animation.Set(Lerp(animation.From, animation.To, animation.Timing.Progress(elapsed)));
-            if (elapsed >= animation.Timing.TotalMs) finished.Add(pair.Key);
+            bool done = elapsed >= animation.Timing.TotalMs;
+            animation.Apply(done ? 1f : animation.Timing.Progress(elapsed));
+            if (done) finished.Add((pair.Key, animation));
         }
 
-        foreach (var key in finished)
+        foreach (var (key, animation) in finished)
         {
-            var animation = _active[key];
+            // Apply sırasında yerine yenisi konduysa (ya da iptal edildiyse) bitmiş sayılmaz.
+            if (!_active.TryGetValue(key, out var current) || !ReferenceEquals(current, animation)) continue;
             _active.Remove(key);
-            if (!key.Item1.IsDisposed) animation.Completed?.Invoke();
+            if (!key.Control.IsDisposed) animation.Completed?.Invoke();
         }
 
         if (_active.Count == 0) _timer?.Stop();
@@ -127,28 +199,26 @@ internal static class TwAnimator
     }
 
     private static Color Lerp(Color from, Color to, double amount) => Color.FromArgb(
-        (int)Math.Round(from.A + (to.A - from.A) * amount),
-        (int)Math.Round(from.R + (to.R - from.R) * amount),
-        (int)Math.Round(from.G + (to.G - from.G) * amount),
-        (int)Math.Round(from.B + (to.B - from.B) * amount));
+        TwMotion.Channel(Math.Round(from.A + (to.A - from.A) * amount)),
+        TwMotion.Channel(Math.Round(from.R + (to.R - from.R) * amount)),
+        TwMotion.Channel(Math.Round(from.G + (to.G - from.G) * amount)),
+        TwMotion.Channel(Math.Round(from.B + (to.B - from.B) * amount)));
 
     private sealed class Animation
     {
-        public Animation(Color from, Color to, DateTime start, TwTransition timing, Action<Color> set, Action? completed)
+        public Animation(object target, DateTime start, TwTransition timing, Action<float> apply, Action? completed)
         {
-            From = from;
-            To = to;
+            Target = target;
             Start = start;
             Timing = timing;
-            Set = set;
+            Apply = apply;
             Completed = completed;
         }
 
-        public Color From { get; }
-        public Color To { get; }
+        public object Target { get; }
         public DateTime Start { get; }
         public TwTransition Timing { get; }
-        public Action<Color> Set { get; }
+        public Action<float> Apply { get; }
         public Action? Completed { get; }
     }
 }

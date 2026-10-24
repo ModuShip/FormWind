@@ -1072,6 +1072,14 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 // OnPaint: float h = _from + (_target - _from) * _tween.Progress;
 ```
 
+- Eğriler: `TwEasing.Out` (varsayılan), `In`, `InOut`, `Linear` ve `Spring` (hedefi ~%10 aşıp geri oturan sönümlü yay; `Progress` bir an 1'in üstüne çıkar, `Blend` renkleri sınırlar). Özel eğri için CSS'teki gibi `new TwCubicBezier(x1, y1, x2, y2)`: `_tween.Start(250, new TwCubicBezier(0.34, 1.56, 0.64, 1))`.
+- Standart süreler `TwMotion.Durations`: `Xs` 120, `S` 180, `M` 250, `L` 450 ms. Animasyon kapalıyken hepsi 1 ms olur, bu sürelere bağlı bekleyişler de hemen biter.
+- Kontrolün bir sayısını (genişlik, konum, opaklık) `OnPaint` yazmadan canlandırmak için `TwAnimator.Animate(kontrol, ad, başlangıç, bitiş, süre, set)`; aynı kontrol ve adla yeni çağrı çalışanın yerine geçer (kaldığı yerden sürmek için `set`'e son verilen değeri `başlangıç` olarak verin). Eğri, gecikme ve `completed` alan aşırı yüklemeleri vardır; `Cancel` ve `IsAnimating` da aynı adla çalışır. Animasyon kapalıysa değer hemen bitişe atanır.
+
+```csharp
+TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
+```
+
 - `sm:`, `md:`, `lg:`, `xl:`, `2xl:` varyantları formun istemci genişliğine göre uygulanır (640 / 768 / 1024 / 1280 / 1536 px, 96 DPI; `TwBreakpoints` ile değiştirilebilir). Form yeniden boyutlanıp eşik değişince yalnızca bu varyantları kullanan kontroller yeniden uygulanır:
 
 ```csharp
