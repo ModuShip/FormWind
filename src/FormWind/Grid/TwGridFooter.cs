@@ -65,7 +65,9 @@ public static partial class TwGrid
 /// <summary>
 /// Totals row below a DataGridView: its cells line up with the grid's columns (widths, order, horizontal scrolling) and show
 /// a summary of each column (<see cref="SetAggregate"/>) or a fixed text (<see cref="SetText"/>). Totals are recomputed when
-/// the rows or values change; with a filtered or searched <see cref="TwSortableBindingList{T}"/> only the shown rows count.
+/// the rows or values change; with a filtered or searched <see cref="TwSortableBindingList{T}"/> only the shown rows count,
+/// and in a tree grid (<see cref="TwGrid.SetTree(DataGridView, DataGridViewColumn, IEnumerable{TwGridTreeNode})"/>) only the
+/// rows without children, collapsed or not.
 /// Colors and font come from the grid's <c>footer:</c> part (otherwise the header background with bold text).
 /// <code>
 /// var footer = TwGrid.AddFooter(grid);
@@ -204,10 +206,13 @@ public class TwGridFooter : Control
             }
             var read = TwGridData.Reader(_grid, column);
             var values = new List<object?>(rows);
+            var tree = TwGridTree.TryGet(_grid);
             for (int i = 0; i < rows; i++)
             {
-                // Aramayla gizlenen satırlar sayılmaz; kapalı gruplardaki satırlar sayılır.
+                // Aramayla gizlenen satırlar sayılmaz; kapalı gruplardaki satırlar sayılır. Ağaçta üst satırlar
+                // çocuklarının toplamını taşır, yalnızca yapraklar sayılır.
                 if (TwGridDecorator.TryGet(_grid)?.IsSearchHidden(i) == true) continue;
+                if (tree != null && !tree.IsLeafRow(i)) continue;
                 values.Add(read(i));
             }
             _texts[column] = cell.Compute != null ? cell.Compute(values) ?? "" : Aggregate(values, cell, column);
@@ -216,28 +221,31 @@ public class TwGridFooter : Control
 
     private static string Aggregate(List<object?> values, Cell cell, DataGridViewColumn column)
     {
-        var present = values.Where(v => v != null && v != DBNull.Value && !(v is string s && s.Length == 0)).ToList();
-        if (cell.Aggregate == TwAggregate.Count) return present.Count.ToString(CultureInfo.CurrentCulture);
-        if (present.Count == 0) return "";
+        if (cell.Aggregate == TwAggregate.Count) return AggregateValue(values, TwAggregate.Count)!.ToString()!;
+        var result = AggregateValue(values, cell.Aggregate);
+        if (result is null) return "";
+        if (cell.Format != null && result is IFormattable formattable) return formattable.ToString(cell.Format, CultureInfo.CurrentCulture);
+        return TwGridData.Format(result, column);
+    }
 
-        object? result;
-        switch (cell.Aggregate)
+    /// <summary>The summary of values (<c>null</c> when there is nothing to summarize); Count is an <see cref="int"/>, sums a <see cref="decimal"/>.</summary>
+    internal static object? AggregateValue(IReadOnlyList<object?> values, TwAggregate aggregate)
+    {
+        var present = values.Where(v => v != null && v != DBNull.Value && !(v is string s && s.Length == 0)).ToList();
+        if (aggregate == TwAggregate.Count) return present.Count;
+        if (present.Count == 0 || aggregate == TwAggregate.None) return null;
+        switch (aggregate)
         {
             case TwAggregate.Min:
             case TwAggregate.Max:
                 var sorted = present.OrderBy(v => v, Comparer<object?>.Create(TwSortableBindingList<object>.CompareValues)).ToList();
-                result = cell.Aggregate == TwAggregate.Min ? sorted[0] : sorted[sorted.Count - 1];
-                break;
+                return aggregate == TwAggregate.Min ? sorted[0] : sorted[sorted.Count - 1];
             default:
                 var numbers = present.Select(ToDecimal).Where(n => n.HasValue).Select(n => n!.Value).ToList();
-                if (numbers.Count == 0) return "";
+                if (numbers.Count == 0) return null;
                 decimal sum = numbers.Sum();
-                result = cell.Aggregate == TwAggregate.Average ? sum / numbers.Count : sum;
-                break;
+                return aggregate == TwAggregate.Average ? sum / numbers.Count : sum;
         }
-        if (result is null) return "";
-        if (cell.Format != null && result is IFormattable formattable) return formattable.ToString(cell.Format, CultureInfo.CurrentCulture);
-        return TwGridData.Format(result, column);
     }
 
     private static decimal? ToDecimal(object? value)
