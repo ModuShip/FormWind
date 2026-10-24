@@ -377,3 +377,9 @@ FormWind.TwButton.IsBusy.get -> bool
 FormWind.TwButton.IsBusy.set -> void
 override FormWind.TwButton.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
 override FormWind.TwButton.OnClick(System.EventArgs! e) -> void
+FormWind.TwLoadingStyle
+FormWind.TwLoadingStyle.Pulse = 0 -> FormWind.TwLoadingStyle
+FormWind.TwLoadingStyle.Shimmer = 1 -> FormWind.TwLoadingStyle
+static FormWind.TwGrid.GetLoadingStyle(System.Windows.Forms.DataGridView! grid) -> FormWind.TwLoadingStyle
+static FormWind.TwGrid.SetLoading(System.Windows.Forms.DataGridView! grid, bool loading, FormWind.TwLoadingStyle style) -> void
+static FormWind.TwGrid.SetLoadingStyle(System.Windows.Forms.DataGridView! grid, FormWind.TwLoadingStyle style) -> void

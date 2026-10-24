@@ -53,6 +53,8 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwPopover` and the menus FormWind draws grow from 95% and fade in from the side they open from (140 ms) and fade out
   when they close (120 ms; the popover used to fade in and out in 150 ms).
 - A focus ring that appears for keyboard focus closes in from 6 px outside onto the control (180 ms).
+- `TwGrid.SetLoading(grid, loading, TwLoadingStyle)` and `TwGrid.SetLoadingStyle`: `TwLoadingStyle.Shimmer` sweeps a
+  light band across the skeleton rows instead of the pulse.
 - Tree rows with columns in a DataGridView: `TwGrid.SetTree(grid, treeColumn, roots)` (or data objects with a children
   selector) shows hierarchical rows indented under their parent with an expand arrow in the tree column. ←/→ in the
   tree column, `+`/`−`/`*`, a click on the arrow or a double-click expand and collapse; header clicks sort within each

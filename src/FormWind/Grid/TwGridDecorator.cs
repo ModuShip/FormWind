@@ -3,11 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace FormWind;
+
+/// <summary>Look of the skeleton rows of a loading grid (<see cref="TwGrid.SetLoading(DataGridView, bool, TwLoadingStyle)"/>).</summary>
+public enum TwLoadingStyle
+{
+    /// <summary>The skeleton bars fade in and out together (the default).</summary>
+    Pulse = 0,
+
+    /// <summary>A light band sweeps across the skeleton bars from left to right.</summary>
+    Shimmer = 1,
+}
 
 /// <summary>
 /// Empty and loading states for a DataGridView:
@@ -43,6 +54,25 @@ public static partial class TwGrid
         TwGridDecorator.For(grid).Loading = loading;
         grid.Invalidate();
     }
+
+    /// <summary>
+    /// Loading state with the look of the skeleton rows: <see cref="TwLoadingStyle.Pulse"/> fades them in and out,
+    /// <see cref="TwLoadingStyle.Shimmer"/> sweeps a light band across them. Both stand still when animations are off.
+    /// </summary>
+    public static void SetLoading(DataGridView grid, bool loading, TwLoadingStyle style)
+    {
+        TwGridDecorator.For(grid).LoadingStyle = style;
+        SetLoading(grid, loading);
+    }
+
+    /// <summary>Look of the skeleton rows while loading (default <see cref="TwLoadingStyle.Pulse"/>).</summary>
+    public static void SetLoadingStyle(DataGridView grid, TwLoadingStyle style)
+    {
+        TwGridDecorator.For(grid).LoadingStyle = style;
+        grid.Invalidate();
+    }
+
+    public static TwLoadingStyle GetLoadingStyle(DataGridView grid) => TwGridDecorator.TryGet(grid)?.LoadingStyle ?? TwLoadingStyle.Pulse;
 
     public static bool IsLoading(DataGridView grid) => TwGridDecorator.TryGet(grid)?.Loading == true;
 
@@ -445,6 +475,8 @@ internal sealed partial class TwGridDecorator
 
     public bool Loading { get; set; }
 
+    public TwLoadingStyle LoadingStyle { get; set; }
+
     private string? _loadingText;
 
     /// <summary><see cref="TwTexts.Loading"/> when not set.</summary>
@@ -589,10 +621,28 @@ internal sealed partial class TwGridDecorator
             TextFormatFlags.WordBreak | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
     }
 
+    /// <summary>Time of one shimmer sweep across the grid (ms).</summary>
+    internal const int ShimmerPeriod = 1400;
+
+    /// <summary>Clock of the shimmer (ms); tests set it to draw a chosen moment.</summary>
+    [ThreadStatic]
+    internal static int? ShimmerClockForTests;
+
+    /// <summary>Center x of the shimmer band at <paramref name="clockMs"/>: it enters at the left and leaves at the right.</summary>
+    internal static float ShimmerCenter(Rectangle body, int clockMs, float band)
+    {
+        float phase = (clockMs & int.MaxValue) % ShimmerPeriod / (float)ShimmerPeriod;
+        return body.Left - band / 2 + (body.Width + band) * phase;
+    }
+
     private void PaintSkeleton(Graphics g, Rectangle body)
     {
         bool dark = TwGridState.IsDark(_grid);
-        var bar = TwMotion.Blend(_grid.BackgroundColor, ColorTranslator.FromHtml(dark ? "#374151" : "#e5e7eb"), TwDataList.PulseFactor(_grid));
+        bool shimmer = LoadingStyle == TwLoadingStyle.Shimmer;
+        var baseColor = ColorTranslator.FromHtml(dark ? "#374151" : "#e5e7eb");
+        // Parıltıda çubuklar sabit tondadır; nabızda tonları birlikte gidip gelir.
+        var bar = shimmer ? baseColor : TwMotion.Blend(_grid.BackgroundColor, baseColor, TwDataList.PulseFactor(_grid));
+        using var bars = new GraphicsPath();
         int rowHeight = Math.Max((int)(24 * Scale), _grid.RowTemplate.Height);
         int barHeight = Math.Max(4, (int)Math.Round(8 * Scale));
         int pad = (int)(12 * Scale);
@@ -609,9 +659,33 @@ internal sealed partial class TwGridDecorator
                 float ratio = 0.45f + ((row * 7 + c * 13) % 10) * 0.05f;
                 int w = Math.Max(barHeight, (int)((width - pad * 2) * ratio));
                 if (width - pad * 2 <= 0) continue;
-                TwPainter.FillRounded(g, new Rectangle(x + pad, y + (rowHeight - barHeight) / 2, w, barHeight), barHeight / 2f, bar);
+                var rect = new Rectangle(x + pad, y + (rowHeight - barHeight) / 2, w, barHeight);
+                TwPainter.FillRounded(g, rect, barHeight / 2f, bar);
+                if (shimmer) bars.AddRectangle(rect);
             }
         }
+        if (shimmer && (TwMotion.CanAnimate(_grid) || ShimmerClockForTests.HasValue)) PaintShimmer(g, body, bars, dark);
+    }
+
+    // Çubukların üstünden geçen açık bant: kenarlarda saydam, ortada yüzeyin açık tonu.
+    private void PaintShimmer(Graphics g, Rectangle body, GraphicsPath bars, bool dark)
+    {
+        float band = Math.Max(80 * Scale, body.Width * 0.35f);
+        float center = ShimmerCenter(body, ShimmerClockForTests ?? Environment.TickCount, band);
+        var area = new RectangleF(center - band / 2, body.Top, band, body.Height);
+        var light = dark ? Color.FromArgb(70, 255, 255, 255) : Color.FromArgb(170, 255, 255, 255);
+        var state = g.Save();
+        g.SetClip(bars);
+        using (var brush = new LinearGradientBrush(new RectangleF(area.Left - 1, area.Top, area.Width + 2, area.Height), Color.Transparent, Color.Transparent, LinearGradientMode.Horizontal))
+        {
+            brush.InterpolationColors = new ColorBlend
+            {
+                Colors = new[] { Color.FromArgb(0, light), light, Color.FromArgb(0, light) },
+                Positions = new[] { 0f, 0.5f, 1f },
+            };
+            g.FillRectangle(brush, area);
+        }
+        g.Restore(state);
     }
 
     private Timer? _pulse;
@@ -622,7 +696,7 @@ internal sealed partial class TwGridDecorator
         {
             if (_pulse is null)
             {
-                _pulse = new Timer { Interval = 50 };
+                _pulse = new Timer { Interval = 33 };
                 _pulse.Tick += (_, _) => _grid.Invalidate(BodyBounds);
                 _grid.Disposed += (_, _) => _pulse.Dispose();
             }

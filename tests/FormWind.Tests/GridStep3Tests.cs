@@ -102,6 +102,49 @@ public class GridStep3Tests
     });
 
     [Fact]
+    public void Shimmer_sweeps_a_light_band_across_the_skeleton_bars() => Sta.Run(() =>
+    {
+        using var provider = new TailwindProvider();
+        var grid = new DataGridView { AllowUserToAddRows = false };
+        grid.Columns.Add("Name", "Ad");
+        grid.Columns.Add("City", "Şehir");
+        using var form = HostForm(grid);
+        provider.SetClasses(grid, "table");
+        form.Show();
+        try
+        {
+            var body = TwGridDecorator.For(grid).BodyBounds;
+            TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer);
+            Assert.True(TwGrid.IsLoading(grid));
+            Assert.Equal(TwLoadingStyle.Shimmer, TwGrid.GetLoadingStyle(grid));
+
+            // Bant başta ızgaranın solunda (görünmez), yarı yolda ortadadır.
+            Assert.True(TwGridDecorator.ShimmerCenter(body, 0, 100) < body.Left);
+            Assert.Equal(body.Left + body.Width / 2f, TwGridDecorator.ShimmerCenter(body, TwGridDecorator.ShimmerPeriod / 2, 100), 0);
+            try
+            {
+                TwGridDecorator.ShimmerClockForTests = 0;
+                using var before = Render(grid);
+                TwGridDecorator.ShimmerClockForTests = TwGridDecorator.ShimmerPeriod / 2;
+                using var middle = Render(grid);
+                int plain = CountColor(before, body, Argb("#e5e7eb"));
+                Assert.True(plain > 200, "İskelet satırlar çizilmedi.");
+                Assert.True(CountColor(middle, body, Argb("#e5e7eb")) < plain - 50, "Parıltı bandı çubukları aydınlatmadı.");
+                Assert.True(CountDifferent(before, middle, body) > 50);
+            }
+            finally
+            {
+                TwGridDecorator.ShimmerClockForTests = null;
+            }
+            TwGrid.SetLoading(grid, false);
+        }
+        finally
+        {
+            form.Close();
+        }
+    });
+
+    [Fact]
     public void Empty_and_loading_states_are_painted() => Sta.Run(() =>
     {
         using var provider = new TailwindProvider();
