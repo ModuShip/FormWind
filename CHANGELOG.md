@@ -5,6 +5,8 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.3-preview.1] - 2026-10-25
+
 ### Added
 
 - `ease-linear`, `ease-in`, `ease-out` and `ease-in-out` pick the curve of a transition, and `delay-*` (`delay-75` …
@@ -102,6 +104,9 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwToast` fades in and out in 150 ms whatever the frame rate. Before, each frame added a fixed step, so on a busy UI
   thread the fade took longer.
 - `TwMotion.Enabled` notices when the Windows "Show animations" setting changes while the application runs.
+- README: "Setup on .NET Framework" under DPI: the DPI-unaware, system-aware and PerMonitorV2 options, why
+  PerMonitorV2 needs both the manifest and App.config, why App.config must not declare the section in `configSections`,
+  and how to move an application with its own DPI factor (`Px()`-style helpers) to DPI-aware without scaling twice.
 
 ### Fixed
 
@@ -114,12 +119,6 @@ All notable changes to FormWind are documented in this file. The format follows
 - The `net472` project of the `formwind-app` template comes with an App.config that sets `DpiAwareness` to
   `PerMonitorV2`. Before, PerMonitorV2 came only from the manifest, which leaves WinForms' per-monitor support off: a
   form moved to a screen with another scale kept the layout and fonts of the old DPI.
-
-### Changed
-
-- README: "Setup on .NET Framework" under DPI: the DPI-unaware, system-aware and PerMonitorV2 options, why
-  PerMonitorV2 needs both the manifest and App.config, why App.config must not declare the section in `configSections`,
-  and how to move an application with its own DPI factor (`Px()`-style helpers) to DPI-aware without scaling twice.
 
 ## [0.1.2-preview.1] - 2026-10-21
 
@@ -293,7 +292,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.2-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.3-preview.1...HEAD
+[0.1.3-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.2-preview.1...v0.1.3-preview.1
 [0.1.2-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.1-preview.1...v0.1.2-preview.1
 [0.1.1-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.0-preview.1...v0.1.1-preview.1
 [0.1.0-preview.1]: https://github.com/ModuShip/FormWind/releases/tag/v0.1.0-preview.1

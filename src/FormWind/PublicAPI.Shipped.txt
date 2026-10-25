@@ -1663,7 +1663,6 @@ override FormWind.TwStepper.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> v
 override FormWind.TwSwitch.Dispose(bool disposing) -> void
 override FormWind.TwSwitch.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
 override FormWind.TwSwitch.OnCheckedChanged(System.EventArgs! e) -> void
-override FormWind.TwSwitch.OnCreateControl() -> void
 override FormWind.TwSwitch.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
 override FormWind.TwTabControl.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
 override FormWind.TwTabControl.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
@@ -1915,3 +1914,394 @@ FormWind.TwPopoverPlacement.RightStart = 6 -> FormWind.TwPopoverPlacement
 FormWind.TwPopoverPlacement.Top = 4 -> FormWind.TwPopoverPlacement
 FormWind.TwPopoverPlacement.TopEnd = 5 -> FormWind.TwPopoverPlacement
 FormWind.TwPopoverPlacement.TopStart = 3 -> FormWind.TwPopoverPlacement
+FormWind.TwAnimation
+FormWind.TwAnimation.None = 0 -> FormWind.TwAnimation
+FormWind.TwAnimation.Pulse = 2 -> FormWind.TwAnimation
+FormWind.TwAnimation.Spin = 1 -> FormWind.TwAnimation
+FormWind.TwChartKind.HorizontalBar = 3 -> FormWind.TwChartKind
+FormWind.TwChip
+FormWind.TwChip.Checkable.get -> bool
+FormWind.TwChip.Checkable.set -> void
+FormWind.TwChip.Checked.get -> bool
+FormWind.TwChip.Checked.set -> void
+FormWind.TwChip.CheckedChanged -> System.EventHandler?
+FormWind.TwChip.Clickable.get -> bool
+FormWind.TwChip.Clickable.set -> void
+FormWind.TwChip.DotColor.get -> System.Drawing.Color
+FormWind.TwChip.DotColor.set -> void
+FormWind.TwChip.IconName.get -> string?
+FormWind.TwChip.IconName.set -> void
+FormWind.TwChip.PerformClick() -> void
+FormWind.TwChip.PerformRemove() -> void
+FormWind.TwChip.Removable.get -> bool
+FormWind.TwChip.Removable.set -> void
+FormWind.TwChip.RemoveButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwChip.RemoveClick -> System.EventHandler?
+FormWind.TwChip.TwChip() -> void
+FormWind.TwDataList.HasDrawItemHandler.get -> bool
+FormWind.TwDialogForm.InputBox.get -> FormWind.TwTextBox?
+FormWind.TwDialogForm.InputField.get -> FormWind.TwField?
+FormWind.TwDialogForm.InputText.get -> string!
+FormWind.TwDialogOptions.InputLabel.get -> string!
+FormWind.TwDialogOptions.InputLabel.set -> void
+FormWind.TwDialogOptions.InputMaxLength.get -> int
+FormWind.TwDialogOptions.InputMaxLength.set -> void
+FormWind.TwDialogOptions.InputPlaceholder.get -> string!
+FormWind.TwDialogOptions.InputPlaceholder.set -> void
+FormWind.TwDialogOptions.InputRequired.get -> bool
+FormWind.TwDialogOptions.InputRequired.set -> void
+FormWind.TwDialogOptions.InputText.get -> string!
+FormWind.TwDialogOptions.InputText.set -> void
+FormWind.TwDialogOptions.InputValidator.get -> System.Func<string!, string?>?
+FormWind.TwDialogOptions.InputValidator.set -> void
+FormWind.TwDialogOptions.ShowInput.get -> bool
+FormWind.TwDialogOptions.ShowInput.set -> void
+FormWind.TwEasing
+FormWind.TwEasing.In = 2 -> FormWind.TwEasing
+FormWind.TwEasing.InOut = 3 -> FormWind.TwEasing
+FormWind.TwEasing.Linear = 1 -> FormWind.TwEasing
+FormWind.TwEasing.Out = 0 -> FormWind.TwEasing
+FormWind.TwGridTree
+FormWind.TwGridTree.AllNodes() -> System.Collections.Generic.IEnumerable<FormWind.TwGridTreeNode!>!
+FormWind.TwGridTree.CollapseAll() -> void
+FormWind.TwGridTree.CurrentNode.get -> FormWind.TwGridTreeNode?
+FormWind.TwGridTree.ExpandAll() -> void
+FormWind.TwGridTree.GetExpanderBounds(int rowIndex) -> System.Drawing.Rectangle
+FormWind.TwGridTree.Grid.get -> System.Windows.Forms.DataGridView!
+FormWind.TwGridTree.Indent.get -> int
+FormWind.TwGridTree.Indent.set -> void
+FormWind.TwGridTree.NodeAt(int rowIndex) -> FormWind.TwGridTreeNode?
+FormWind.TwGridTree.NodeCollapsed -> System.EventHandler<FormWind.TwGridTreeEventArgs!>?
+FormWind.TwGridTree.NodeExpanded -> System.EventHandler<FormWind.TwGridTreeEventArgs!>?
+FormWind.TwGridTree.Refresh() -> void
+FormWind.TwGridTree.Roots.get -> System.Collections.Generic.IReadOnlyList<FormWind.TwGridTreeNode!>!
+FormWind.TwGridTree.SetTotal(System.Windows.Forms.DataGridViewColumn! column, FormWind.TwAggregate aggregate) -> void
+FormWind.TwGridTree.Sort(System.Windows.Forms.DataGridViewColumn! column, System.ComponentModel.ListSortDirection direction) -> void
+FormWind.TwGridTree.TreeColumn.get -> System.Windows.Forms.DataGridViewColumn?
+FormWind.TwGridTreeEventArgs
+FormWind.TwGridTreeEventArgs.Node.get -> FormWind.TwGridTreeNode!
+FormWind.TwGridTreeEventArgs.TwGridTreeEventArgs(FormWind.TwGridTreeNode! node) -> void
+FormWind.TwGridTreeNode
+FormWind.TwGridTreeNode.DataItem.get -> object?
+FormWind.TwGridTreeNode.DataItem.set -> void
+FormWind.TwGridTreeNode.Descendants() -> System.Collections.Generic.IEnumerable<FormWind.TwGridTreeNode!>!
+FormWind.TwGridTreeNode.HasChildren.get -> bool
+FormWind.TwGridTreeNode.IconName.get -> string?
+FormWind.TwGridTreeNode.IconName.set -> void
+FormWind.TwGridTreeNode.IsExpanded.get -> bool
+FormWind.TwGridTreeNode.IsExpanded.set -> void
+FormWind.TwGridTreeNode.IsVisible.get -> bool
+FormWind.TwGridTreeNode.Level.get -> int
+FormWind.TwGridTreeNode.Nodes.get -> FormWind.TwGridTreeNodeCollection!
+FormWind.TwGridTreeNode.Parent.get -> FormWind.TwGridTreeNode?
+FormWind.TwGridTreeNode.RowIndex.get -> int
+FormWind.TwGridTreeNode.Tag.get -> object?
+FormWind.TwGridTreeNode.Tag.set -> void
+FormWind.TwGridTreeNode.TwGridTreeNode() -> void
+FormWind.TwGridTreeNode.TwGridTreeNode(params object?[]! values) -> void
+FormWind.TwGridTreeNode.Values.get -> object?[]?
+FormWind.TwGridTreeNode.Values.set -> void
+FormWind.TwGridTreeNodeCollection
+FormWind.TwHeatmap.EmptyCellColor.get -> System.Drawing.Color
+FormWind.TwHeatmap.EmptyCellColor.set -> void
+FormWind.TwHeatmap.EmptyCellText.get -> string!
+FormWind.TwHeatmap.EmptyCellText.set -> void
+FormWind.TwHeatmap.EmptyCells.get -> FormWind.TwHeatmapEmptyCell
+FormWind.TwHeatmap.EmptyCells.set -> void
+FormWind.TwHeatmapEmptyCell
+FormWind.TwHeatmapEmptyCell.Hatched = 2 -> FormWind.TwHeatmapEmptyCell
+FormWind.TwHeatmapEmptyCell.Low = 0 -> FormWind.TwHeatmapEmptyCell
+FormWind.TwHeatmapEmptyCell.None = 3 -> FormWind.TwHeatmapEmptyCell
+FormWind.TwHeatmapEmptyCell.Solid = 1 -> FormWind.TwHeatmapEmptyCell
+FormWind.TwIcon.Animation.get -> FormWind.TwAnimation
+FormWind.TwListItem
+FormWind.TwListItem.AccessibleText.get -> string!
+FormWind.TwListItem.Badge.get -> string?
+FormWind.TwListItem.Badge.set -> void
+FormWind.TwListItem.BadgeClasses.get -> string?
+FormWind.TwListItem.BadgeClasses.set -> void
+FormWind.TwListItem.DotColor.get -> System.Drawing.Color
+FormWind.TwListItem.DotColor.set -> void
+FormWind.TwListItem.IconColor.get -> System.Drawing.Color
+FormWind.TwListItem.IconColor.set -> void
+FormWind.TwListItem.IconName.get -> string?
+FormWind.TwListItem.IconName.set -> void
+FormWind.TwListItem.IsTwoLine.get -> bool
+FormWind.TwListItem.Score.get -> double?
+FormWind.TwListItem.Score.set -> void
+FormWind.TwListItem.ScoreColor.get -> System.Drawing.Color
+FormWind.TwListItem.ScoreColor.set -> void
+FormWind.TwListItem.ScoreText.get -> string?
+FormWind.TwListItem.ScoreText.set -> void
+FormWind.TwListItem.Subtitle.get -> string?
+FormWind.TwListItem.Subtitle.set -> void
+FormWind.TwListItem.Tag.get -> object?
+FormWind.TwListItem.Tag.set -> void
+FormWind.TwListItem.Title.get -> string!
+FormWind.TwListItem.Title.set -> void
+FormWind.TwListItem.TwListItem() -> void
+FormWind.TwListItem.TwListItem(string! title, string? subtitle = null) -> void
+FormWind.TwListItem.Value.get -> string?
+FormWind.TwListItem.Value.set -> void
+FormWind.TwListItem.ValueCaption.get -> string?
+FormWind.TwListItem.ValueCaption.set -> void
+FormWind.TwPanel.BackdropBlur.get -> int
+FormWind.TwPanel.BackdropBlur.set -> void
+FormWind.TwSettingRow
+FormWind.TwSettingRow.CaptionLabel.get -> System.Windows.Forms.Label!
+FormWind.TwSettingRow.Description.get -> string!
+FormWind.TwSettingRow.Description.set -> void
+FormWind.TwSettingRow.DescriptionLabel.get -> System.Windows.Forms.Label!
+FormWind.TwSettingRow.Editor.get -> System.Windows.Forms.Control?
+FormWind.TwSettingRow.EditorWidth.get -> int
+FormWind.TwSettingRow.EditorWidth.set -> void
+FormWind.TwSettingRow.LabelText.get -> string!
+FormWind.TwSettingRow.LabelText.set -> void
+FormWind.TwSettingRow.TwSettingRow() -> void
+FormWind.TwSettingRow.UnitLabel.get -> System.Windows.Forms.Label!
+FormWind.TwSettingRow.UnitText.get -> string!
+FormWind.TwSettingRow.UnitText.set -> void
+FormWind.TwStat.ShortValue.get -> string!
+FormWind.TwStat.ShortValue.set -> void
+FormWind.TwStat.ValueFit.get -> FormWind.TwStatFit
+FormWind.TwStat.ValueFit.set -> void
+FormWind.TwStatFit
+FormWind.TwStatFit.Ellipsis = 0 -> FormWind.TwStatFit
+FormWind.TwStatFit.Shrink = 1 -> FormWind.TwStatFit
+FormWind.TwState.Motion = FormWind.TwState.MotionSafe | FormWind.TwState.MotionReduce -> FormWind.TwState
+FormWind.TwState.MotionReduce = 262144 -> FormWind.TwState
+FormWind.TwState.MotionSafe = 131072 -> FormWind.TwState
+FormWind.TwStyle.Animation.get -> FormWind.TwAnimation?
+FormWind.TwStyle.Animation.set -> void
+FormWind.TwStyle.BackdropBlur.get -> int?
+FormWind.TwStyle.BackdropBlur.set -> void
+FormWind.TwStyle.DelayMs.get -> int?
+FormWind.TwStyle.DelayMs.set -> void
+FormWind.TwStyle.Easing.get -> FormWind.TwEasing?
+FormWind.TwStyle.Easing.set -> void
+FormWind.TwStyle.TransitionProperty.get -> FormWind.TwTransitionProperty?
+FormWind.TwStyle.TransitionProperty.set -> void
+FormWind.TwTabStrip.OverflowButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabStrip.OverflowDropDown.get -> System.Windows.Forms.ContextMenuStrip?
+FormWind.TwTabStrip.OverflowMenu.get -> bool
+FormWind.TwTabStrip.OverflowMenu.set -> void
+FormWind.TwTabStrip.OverflowTabs.get -> System.Collections.Generic.IReadOnlyList<int>!
+FormWind.TwTabStrip.ShowOverflow() -> void
+FormWind.TwTabStrip.UseMnemonic.get -> bool
+FormWind.TwTabStrip.UseMnemonic.set -> void
+FormWind.TwTexts.More.get -> string!
+FormWind.TwTexts.More.set -> void
+FormWind.TwTexts.Remove.get -> string!
+FormWind.TwTexts.Remove.set -> void
+FormWind.TwToolbar
+FormWind.TwToolbar.Gap.get -> int
+FormWind.TwToolbar.Gap.set -> void
+FormWind.TwToolbar.GetAlignment(System.Windows.Forms.Control! item) -> FormWind.TwToolbarAlignment
+FormWind.TwToolbar.GetOverflow(System.Windows.Forms.Control! item) -> FormWind.TwToolbarOverflow
+FormWind.TwToolbar.GetPriority(System.Windows.Forms.Control! item) -> int
+FormWind.TwToolbar.OverflowButton.get -> FormWind.TwButton!
+FormWind.TwToolbar.OverflowItemClick -> System.EventHandler<FormWind.TwToolbarItemEventArgs!>?
+FormWind.TwToolbar.OverflowItems.get -> System.Collections.Generic.IReadOnlyList<System.Windows.Forms.Control!>!
+FormWind.TwToolbar.OverflowMenu.get -> System.Windows.Forms.ContextMenuStrip?
+FormWind.TwToolbar.SetAlignment(System.Windows.Forms.Control! item, FormWind.TwToolbarAlignment alignment) -> void
+FormWind.TwToolbar.SetOverflow(System.Windows.Forms.Control! item, FormWind.TwToolbarOverflow overflow) -> void
+FormWind.TwToolbar.SetOverflowText(System.Windows.Forms.Control! item, string? text) -> void
+FormWind.TwToolbar.SetPriority(System.Windows.Forms.Control! item, int priority) -> void
+FormWind.TwToolbar.ShowOverflowMenu() -> void
+FormWind.TwToolbar.TwToolbar() -> void
+FormWind.TwToolbarAlignment
+FormWind.TwToolbarAlignment.End = 1 -> FormWind.TwToolbarAlignment
+FormWind.TwToolbarAlignment.Start = 0 -> FormWind.TwToolbarAlignment
+FormWind.TwToolbarItemEventArgs
+FormWind.TwToolbarItemEventArgs.Item.get -> System.Windows.Forms.Control!
+FormWind.TwToolbarItemEventArgs.TwToolbarItemEventArgs(System.Windows.Forms.Control! item) -> void
+FormWind.TwToolbarOverflow
+FormWind.TwToolbarOverflow.Always = 2 -> FormWind.TwToolbarOverflow
+FormWind.TwToolbarOverflow.AsNeeded = 0 -> FormWind.TwToolbarOverflow
+FormWind.TwToolbarOverflow.Never = 1 -> FormWind.TwToolbarOverflow
+FormWind.TwToolbarOverflow.Shrink = 3 -> FormWind.TwToolbarOverflow
+FormWind.TwTransitionProperty
+FormWind.TwTransitionProperty.All = FormWind.TwTransitionProperty.Colors | FormWind.TwTransitionProperty.Shadow -> FormWind.TwTransitionProperty
+FormWind.TwTransitionProperty.Colors = 1 -> FormWind.TwTransitionProperty
+FormWind.TwTransitionProperty.None = 0 -> FormWind.TwTransitionProperty
+FormWind.TwTransitionProperty.Shadow = 2 -> FormWind.TwTransitionProperty
+FormWind.TwTween
+FormWind.TwTween.Completed -> System.EventHandler?
+FormWind.TwTween.Dispose() -> void
+FormWind.TwTween.Progress.get -> float
+FormWind.TwTween.Running.get -> bool
+FormWind.TwTween.Start(int durationMs) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwEasing easing) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwEasing easing, int delayMs) -> void
+FormWind.TwTween.Stop() -> void
+FormWind.TwTween.Tick -> System.EventHandler?
+FormWind.TwTween.TwTween(System.Windows.Forms.Control! owner) -> void
+override FormWind.TwChip.AutoSize.get -> bool
+override FormWind.TwChip.AutoSize.set -> void
+override FormWind.TwChip.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwChip.DefaultCursor.get -> System.Windows.Forms.Cursor!
+override FormWind.TwChip.DefaultPadding.get -> System.Windows.Forms.Padding
+override FormWind.TwChip.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwChip.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwChip.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwChip.OnClick(System.EventArgs! e) -> void
+override FormWind.TwChip.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwChip.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwChip.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwChip.OnLostFocus(System.EventArgs! e) -> void
+override FormWind.TwChip.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwChip.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwChip.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwChip.OnPaddingChanged(System.EventArgs! e) -> void
+override FormWind.TwChip.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwChip.OnTextChanged(System.EventArgs! e) -> void
+override FormWind.TwChip.Text.get -> string!
+override FormWind.TwChip.Text.set -> void
+override FormWind.TwListBox.OnDrawItem(FormWind.TwDataListDrawEventArgs! e) -> void
+override FormWind.TwListBox.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwListItem.ToString() -> string!
+override FormWind.TwPanel.Dispose(bool disposing) -> void
+override FormWind.TwPanel.OnBackColorChanged(System.EventArgs! e) -> void
+override FormWind.TwPanel.OnLocationChanged(System.EventArgs! e) -> void
+override FormWind.TwPanel.OnParentChanged(System.EventArgs! e) -> void
+override FormWind.TwPanel.OnSizeChanged(System.EventArgs! e) -> void
+override FormWind.TwSettingRow.DefaultPadding.get -> System.Windows.Forms.Padding
+override FormWind.TwSettingRow.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwSettingRow.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwSettingRow.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwSettingRow.OnBackColorChanged(System.EventArgs! e) -> void
+override FormWind.TwSettingRow.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwSettingRow.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwSettingRow.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwSettingRow.OnForeColorChanged(System.EventArgs! e) -> void
+override FormWind.TwSettingRow.OnLocationChanged(System.EventArgs! e) -> void
+override FormWind.TwSettingRow.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwSettingRow.OnParentChanged(System.EventArgs! e) -> void
+override FormWind.TwTabStrip.ProcessMnemonic(char charCode) -> bool
+override FormWind.TwToolbar.DefaultPadding.get -> System.Windows.Forms.Padding
+override FormWind.TwToolbar.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwToolbar.Dispose(bool disposing) -> void
+override FormWind.TwToolbar.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwToolbar.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwToolbar.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwToolbar.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwToolbar.OnVisibleChanged(System.EventArgs! e) -> void
+static FormWind.TwDialog.Prompt(System.Windows.Forms.IWin32Window? owner, string! message, string? title = null, string! text = "", string! placeholder = "", System.Func<string!, string?>? validator = null) -> string?
+static FormWind.TwGrid.GetTree(System.Windows.Forms.DataGridView! grid) -> FormWind.TwGridTree?
+static FormWind.TwGrid.SetTree(System.Windows.Forms.DataGridView! grid, System.Windows.Forms.DataGridViewColumn! treeColumn, System.Collections.Generic.IEnumerable<FormWind.TwGridTreeNode!>! roots) -> FormWind.TwGridTree!
+static FormWind.TwGrid.SetTree<T>(System.Windows.Forms.DataGridView! grid, System.Windows.Forms.DataGridViewColumn! treeColumn, System.Collections.Generic.IEnumerable<T>! roots, System.Func<T, System.Collections.Generic.IEnumerable<T>?>! children) -> FormWind.TwGridTree!
+static FormWind.TwMotion.Blend(System.Drawing.Color from, System.Drawing.Color to, float t) -> System.Drawing.Color
+static FormWind.TwMotion.CanAnimate(System.Windows.Forms.Control! control) -> bool
+static FormWind.TwMotion.Changed -> System.EventHandler?
+static FormWind.TwMotion.Ease(FormWind.TwEasing easing, float t) -> float
+static FormWind.TwMotion.FollowSystem() -> void
+static FormWind.TwMotion.Lerp(System.Drawing.RectangleF from, System.Drawing.RectangleF to, float t) -> System.Drawing.RectangleF
+FormWind.TwChart.AnimateIn() -> void
+FormWind.TwChart.AnimateOnShow.get -> bool
+FormWind.TwChart.AnimateOnShow.set -> void
+FormWind.TwPanel.Collapse() -> void
+FormWind.TwPanel.Expand() -> void
+FormWind.TwPanel.Expanded.get -> bool
+FormWind.TwPanel.Expanded.set -> void
+FormWind.TwPanel.ExpandedChanged -> System.EventHandler?
+FormWind.TwPanel.IsCollapsing.get -> bool
+FormWind.TwStat.AnimateValue.get -> bool
+FormWind.TwStat.AnimateValue.set -> void
+override FormWind.TwChart.Dispose(bool disposing) -> void
+override FormWind.TwChart.OnVisibleChanged(System.EventArgs! e) -> void
+override FormWind.TwStat.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwEasing.Spring = 4 -> FormWind.TwEasing
+FormWind.TwCubicBezier
+FormWind.TwCubicBezier.TwCubicBezier() -> void
+FormWind.TwCubicBezier.TwCubicBezier(double x1, double y1, double x2, double y2) -> void
+FormWind.TwCubicBezier.Ease(float t) -> float
+FormWind.TwCubicBezier.Equals(FormWind.TwCubicBezier other) -> bool
+FormWind.TwCubicBezier.X1.get -> double
+FormWind.TwCubicBezier.X2.get -> double
+FormWind.TwCubicBezier.Y1.get -> double
+FormWind.TwCubicBezier.Y2.get -> double
+override FormWind.TwCubicBezier.Equals(object? obj) -> bool
+override FormWind.TwCubicBezier.GetHashCode() -> int
+override FormWind.TwCubicBezier.ToString() -> string!
+static FormWind.TwCubicBezier.operator !=(FormWind.TwCubicBezier left, FormWind.TwCubicBezier right) -> bool
+static FormWind.TwCubicBezier.operator ==(FormWind.TwCubicBezier left, FormWind.TwCubicBezier right) -> bool
+FormWind.TwTween.Start(int durationMs, FormWind.TwCubicBezier curve) -> void
+FormWind.TwTween.Start(int durationMs, FormWind.TwCubicBezier curve, int delayMs) -> void
+FormWind.TwMotion.Durations
+static FormWind.TwMotion.Durations.L.get -> int
+static FormWind.TwMotion.Durations.M.get -> int
+static FormWind.TwMotion.Durations.S.get -> int
+static FormWind.TwMotion.Durations.Xs.get -> int
+FormWind.TwAnimator
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwCubicBezier curve) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwCubicBezier curve, int delayMs, System.Action? completed) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwEasing easing) -> void
+static FormWind.TwAnimator.Animate(System.Windows.Forms.Control! control, string! name, double from, double to, int durationMs, System.Action<double>! set, FormWind.TwEasing easing, int delayMs, System.Action? completed) -> void
+static FormWind.TwAnimator.Cancel(System.Windows.Forms.Control! control, string! name) -> void
+static FormWind.TwAnimator.IsAnimating(System.Windows.Forms.Control! control, string! name) -> bool
+FormWind.TwChart.AnimateChanges.get -> bool
+FormWind.TwChart.AnimateChanges.set -> void
+override FormWind.TwChart.OnSizeChanged(System.EventArgs! e) -> void
+FormWind.TwRingChart.AnimateChanges.get -> bool
+FormWind.TwRingChart.AnimateChanges.set -> void
+FormWind.TwRingChart.AnimateIn() -> void
+FormWind.TwRingChart.AnimateOnShow.get -> bool
+FormWind.TwRingChart.AnimateOnShow.set -> void
+override FormWind.TwRingChart.Dispose(bool disposing) -> void
+override FormWind.TwRingChart.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwHeatmap.AnimateChanges.get -> bool
+FormWind.TwHeatmap.AnimateChanges.set -> void
+FormWind.TwHeatmap.AnimateIn() -> void
+FormWind.TwHeatmap.AnimateOnShow.get -> bool
+FormWind.TwHeatmap.AnimateOnShow.set -> void
+override FormWind.TwHeatmap.Dispose(bool disposing) -> void
+override FormWind.TwHeatmap.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwTimeline.AnimateChanges.get -> bool
+FormWind.TwTimeline.AnimateChanges.set -> void
+FormWind.TwTimeline.AnimateIn() -> void
+FormWind.TwTimeline.AnimateOnShow.get -> bool
+FormWind.TwTimeline.AnimateOnShow.set -> void
+override FormWind.TwTimeline.Dispose(bool disposing) -> void
+override FormWind.TwTimeline.OnVisibleChanged(System.EventArgs! e) -> void
+FormWind.TwSparkline.AnimateChanges.get -> bool
+FormWind.TwSparkline.AnimateChanges.set -> void
+FormWind.TwSparkline.AnimateIn() -> void
+FormWind.TwSparkline.AnimateOnShow.get -> bool
+FormWind.TwSparkline.AnimateOnShow.set -> void
+override FormWind.TwSparkline.Dispose(bool disposing) -> void
+override FormWind.TwSparkline.OnVisibleChanged(System.EventArgs! e) -> void
+override FormWind.TwTimeline.OnSizeChanged(System.EventArgs! e) -> void
+FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomCenter = 4 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomLeft = 2 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.BottomRight = 0 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopCenter = 5 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopLeft = 3 -> FormWind.TwToastPosition
+FormWind.TwToastPosition.TopRight = 1 -> FormWind.TwToastPosition
+FormWind.TwToastForm.Subtitle.get -> string!
+FormWind.TwToastForm.Subtitle.set -> void
+FormWind.TwToastForm.SubtitleLabel.get -> System.Windows.Forms.Label!
+static FormWind.TwToast.EnterEasing.get -> FormWind.TwEasing
+static FormWind.TwToast.EnterEasing.set -> void
+static FormWind.TwToast.MaxVisible.get -> int
+static FormWind.TwToast.MaxVisible.set -> void
+static FormWind.TwToast.Position.get -> FormWind.TwToastPosition
+static FormWind.TwToast.Position.set -> void
+FormWind.TwButton.IsBusy.get -> bool
+FormWind.TwButton.IsBusy.set -> void
+override FormWind.TwButton.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwButton.OnClick(System.EventArgs! e) -> void
+FormWind.TwLoadingStyle
+FormWind.TwLoadingStyle.Pulse = 0 -> FormWind.TwLoadingStyle
+FormWind.TwLoadingStyle.Shimmer = 1 -> FormWind.TwLoadingStyle
+static FormWind.TwGrid.GetLoadingStyle(System.Windows.Forms.DataGridView! grid) -> FormWind.TwLoadingStyle
+static FormWind.TwGrid.SetLoading(System.Windows.Forms.DataGridView! grid, bool loading, FormWind.TwLoadingStyle style) -> void
+static FormWind.TwGrid.SetLoadingStyle(System.Windows.Forms.DataGridView! grid, FormWind.TwLoadingStyle style) -> void
+FormWind.TwTransition
+static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change) -> void
+static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change, int durationMs) -> void
+FormWind.TwAttention
+FormWind.TwChip.Pulse(int count = 2) -> void
+static FormWind.TwAttention.IsPulsing(System.Windows.Forms.Control! control) -> bool
+static FormWind.TwAttention.Pulse(System.Windows.Forms.Control! control, int count = 2) -> void
