@@ -95,7 +95,7 @@ public sealed class TwTexts
     // Kontroller ve grid.
     /// <summary>Aranabilir <see cref="TwSelect"/> kutusunun ipucu.</summary>
     public string Search { get; set; } = "Search…";
-    /// <summary>Text of the <see cref="TwGrid.SetLoading"/> overlay.</summary>
+    /// <summary>Text of the <see cref="TwGrid.SetLoading(System.Windows.Forms.DataGridView, bool)"/> overlay.</summary>
     public string Loading { get; set; } = "Loading…";
     /// <summary>Grid filter menu.</summary>
     public string SelectAll { get; set; } = "(Select all)";

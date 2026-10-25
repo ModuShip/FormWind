@@ -47,11 +47,23 @@ public static class TwAnimator
         Animate(control, name, from, to, new TwTiming(durationMs), set, null);
 
     /// <summary>Animates a number with a timing curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="control">Control whose animation this is; it stops when the control is disposed.</param>
+    /// <param name="name">Name of the animated value; a new animation with the same control and name replaces the running one.</param>
+    /// <param name="from">Start value.</param>
+    /// <param name="to">End value; the last value given to <paramref name="set"/>.</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="set">Applies a value (called on the UI thread every frame).</param>
     /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwEasing easing) =>
         Animate(control, name, from, to, new TwTiming(durationMs, 0, easing), set, null);
 
     /// <summary>Animates a number with a timing curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="control">Control whose animation this is; it stops when the control is disposed.</param>
+    /// <param name="name">Name of the animated value; a new animation with the same control and name replaces the running one.</param>
+    /// <param name="from">Start value.</param>
+    /// <param name="to">End value; the last value given to <paramref name="set"/>.</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="set">Applies a value (called on the UI thread every frame).</param>
     /// <param name="easing">Timing curve; with <see cref="TwEasing.Spring"/> values go past the end value for a moment.</param>
     /// <param name="delayMs">Wait before it starts moving (ms).</param>
     /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>
@@ -60,11 +72,23 @@ public static class TwAnimator
         Animate(control, name, from, to, new TwTiming(durationMs, delayMs, easing), set, completed);
 
     /// <summary>Animates a number with a custom curve (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="control">Control whose animation this is; it stops when the control is disposed.</param>
+    /// <param name="name">Name of the animated value; a new animation with the same control and name replaces the running one.</param>
+    /// <param name="from">Start value.</param>
+    /// <param name="to">End value; the last value given to <paramref name="set"/>.</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="set">Applies a value (called on the UI thread every frame).</param>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
     public static void Animate(Control control, string name, double from, double to, int durationMs, Action<double> set, TwCubicBezier curve) =>
         Animate(control, name, from, to, new TwTiming(durationMs, 0, curve), set, null);
 
     /// <summary>Animates a number with a custom curve and a delay (see <see cref="Animate(Control, string, double, double, int, Action{double})"/>).</summary>
+    /// <param name="control">Control whose animation this is; it stops when the control is disposed.</param>
+    /// <param name="name">Name of the animated value; a new animation with the same control and name replaces the running one.</param>
+    /// <param name="from">Start value.</param>
+    /// <param name="to">End value; the last value given to <paramref name="set"/>.</param>
+    /// <param name="durationMs">Length of the animation (ms), e.g. <see cref="TwMotion.Durations"/>.</param>
+    /// <param name="set">Applies a value (called on the UI thread every frame).</param>
     /// <param name="curve">Timing curve (CSS <c>cubic-bezier</c>).</param>
     /// <param name="delayMs">Wait before it starts moving (ms).</param>
     /// <param name="completed">Called when it reaches the end value (also when that happens at once), not when it is replaced or cancelled.</param>

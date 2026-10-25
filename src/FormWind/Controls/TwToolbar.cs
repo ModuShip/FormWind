@@ -369,7 +369,7 @@ public class TwToolbar : TwPanel
                     tab.Click += (_, _) => tabs.SelectedIndex = index;
                     menuItem.DropDownItems.Add(tab);
                 }
-                if (menuItem.Text.Length == 0) menuItem.Text = tabs.SelectedIndex >= 0 && tabs.SelectedIndex < tabs.Tabs.Count ? tabs.GetDisplayText(tabs.SelectedIndex) : TwTexts.Current.More;
+                if (string.IsNullOrEmpty(menuItem.Text)) menuItem.Text = tabs.SelectedIndex >= 0 && tabs.SelectedIndex < tabs.Tabs.Count ? tabs.GetDisplayText(tabs.SelectedIndex) : TwTexts.Current.More;
                 break;
             case TwSelect select:
                 for (int i = 0; i < select.Items.Count; i++)
@@ -379,7 +379,7 @@ public class TwToolbar : TwPanel
                     option.Click += (_, _) => select.SelectedIndex = index;
                     menuItem.DropDownItems.Add(option);
                 }
-                if (menuItem.Text.Length == 0 || menuItem.Text == select.SelectedItem) menuItem.Text = select.AccessibleName ?? select.SelectedItem ?? "";
+                if (string.IsNullOrEmpty(menuItem.Text) || menuItem.Text == select.SelectedItem) menuItem.Text = select.AccessibleName ?? select.SelectedItem ?? "";
                 break;
             case CheckBox check:
                 menuItem.Checked = check.Checked;

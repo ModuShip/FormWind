@@ -390,3 +390,4 @@ FormWind.TwAttention
 FormWind.TwChip.Pulse(int count = 2) -> void
 static FormWind.TwAttention.IsPulsing(System.Windows.Forms.Control! control) -> bool
 static FormWind.TwAttention.Pulse(System.Windows.Forms.Control! control, int count = 2) -> void
+*REMOVED*override FormWind.TwSwitch.OnCreateControl() -> void

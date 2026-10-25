@@ -72,6 +72,7 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         set => base.AutoSize = value;
     }
 
+#pragma warning disable CS8765 // Control.Text .NET 8'de [AllowNull] ile işaretli.
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always), Localizable(true)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public override string Text
@@ -79,6 +80,7 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         get => base.Text;
         set => base.Text = value;
     }
+#pragma warning restore CS8765
 
     /// <summary>Icon before the text (<see cref="TwIconRenderer.DrawIcon"/>); <c>null</c> = none.</summary>
     [Category("Appearance"), DefaultValue(null)]

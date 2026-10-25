@@ -180,12 +180,12 @@ public class GridTreeTests
             Assert.Equal(DataGridViewColumnSortMode.Programmatic, minutes.SortMode);
 
             tree.Sort(minutes, ListSortDirection.Descending);
-            var order = grid.Rows.Cast<DataGridViewRow>().Select(r => (string)r.Cells[0].Value).ToArray();
+            var order = grid.Rows.Cast<DataGridViewRow>().Select(r => (string?)r.Cells[0].Value).ToArray();
             Assert.Equal(new[] { "Hat 1", "Pres 3", "Mil yatağı", "Kalıp değişimi", "Testere", "Hat 2" }, order);
             Assert.Equal(SortOrder.Descending, minutes.HeaderCell.SortGlyphDirection);
 
             tree.Sort(minutes, ListSortDirection.Ascending);
-            order = grid.Rows.Cast<DataGridViewRow>().Select(r => (string)r.Cells[0].Value).ToArray();
+            order = grid.Rows.Cast<DataGridViewRow>().Select(r => (string?)r.Cells[0].Value).ToArray();
             Assert.Equal(new[] { "Hat 2", "Hat 1", "Testere", "Pres 3", "Kalıp değişimi", "Mil yatağı" }, order);
             Assert.All(Shown(grid), Assert.True);                                  // açık dallar açık kalır
             Assert.Same(tree.Roots[1].Nodes[1], tree.NodeAt(3));
