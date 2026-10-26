@@ -6,6 +6,8 @@ FormWind.TwEdge.Right = 2 -> FormWind.TwEdge
 FormWind.TwEdge.Top = 1 -> FormWind.TwEdge
 FormWind.TwWindowMotion
 static FormWind.TwMotion.AfterPaintAsync(System.Windows.Forms.Control! control) -> System.Threading.Tasks.Task!
+static FormWind.TwToast.Inset.get -> System.Windows.Forms.Padding
+static FormWind.TwToast.Inset.set -> void
 static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge) -> void
 static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge, int durationMs) -> void
 static FormWind.TwTransition.SlideOut(System.Windows.Forms.Control! panel, FormWind.TwEdge edge) -> void

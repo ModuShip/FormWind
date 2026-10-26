@@ -54,6 +54,23 @@ public static class TwToast
     /// </summary>
     public static int MaxVisible { get; set; }
 
+    /// <summary>
+    /// Space (96 DPI px, scaled with the owner's DPI) kept free at the edges of the owner's client area, in addition to the
+    /// 16 px margin: for example <c>new Padding(0, 56, 0, 0)</c> keeps notifications at the top below a toolbar, or
+    /// <c>new Padding(0, 0, 0, 40)</c> keeps them above a status bar. Open notifications move at once.
+    /// </summary>
+    public static Padding Inset
+    {
+        get => _inset;
+        set
+        {
+            _inset = value;
+            foreach (var owner in new List<Form>(Open.Keys)) Arrange(owner);
+        }
+    }
+
+    private static Padding _inset;
+
     /// <summary>Curve of the slide in (default <see cref="TwEasing.Out"/>; <see cref="TwEasing.Spring"/> overshoots a little and settles).</summary>
     public static TwEasing EnterEasing { get; set; } = TwEasing.Out;
 
@@ -112,8 +129,11 @@ public static class TwToast
     private static void Arrange(Form owner)
     {
         if (!Open.TryGetValue(owner, out var list) || owner.IsDisposed) return;
+        float dpi = TwDpi.DeviceDpi(owner) / 96f;
         var client = owner.RectangleToScreen(owner.ClientRectangle);
-        int margin = (int)Math.Round(16 * TwDpi.DeviceDpi(owner) / 96f);
+        client = Rectangle.FromLTRB(client.Left + (int)Math.Round(_inset.Left * dpi), client.Top + (int)Math.Round(_inset.Top * dpi),
+            client.Right - (int)Math.Round(_inset.Right * dpi), client.Bottom - (int)Math.Round(_inset.Bottom * dpi));
+        int margin = (int)Math.Round(16 * dpi);
         bool top = Position is TwToastPosition.TopRight or TwToastPosition.TopLeft or TwToastPosition.TopCenter;
         int edge = top ? client.Top + margin : client.Bottom - margin;
         for (int i = list.Count - 1; i >= 0; i--)
