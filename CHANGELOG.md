@@ -5,6 +5,41 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwTransition.SlideIn(panel, edge)` and `SlideOut(panel, edge)` show or hide a side panel sliding from its edge. The
+  layout is done once: a picture of the panel slides into its place while the rest of the parent cross-fades to its new
+  layout, so a grid beside the panel is not relaid out and torn every frame.
+- `TwWindowMotion`: `Attach(window, edge)` makes a window (a sheet, a side window) slide in from an edge each time it is
+  shown and its last picture fade out toward that edge each time it closes; `SlideIn` and `FadeOut` do it once. The
+  window closes at once. `TwEdge` names the edge.
+- `TwMotion.AfterPaintAsync(control)` completes once the control has painted what was pending, also while another
+  control keeps repainting (where `Application.Idle` never comes).
+- `TwMotion.Timings` sets the built-in durations no `duration-*` class reaches: chart opening, change and stagger, stat
+  counting, popup opening and closing, attention pulse, dialog and toast fades. `Reset()` restores the defaults.
+- `TwMotion.Preference` (`TwMotionPreference.System`, `On`, `Off`) gives the animation setting as one value an application
+  can store with its own settings.
+- `TwToast.Inset` keeps space free at the owner's edges, for example below a toolbar.
+- `TwButton.RunBusyAsync(work)` runs the work with the button busy and makes it usable again when the work ends or fails.
+- `TwDataList.IsLoading` (also `TwListBox`) fills the list with pulsing skeleton rows and ignores input while data loads.
+- `TwStat.DefaultAnimateValue` turns value counting off (or on) for every stat that does not set `AnimateValue`.
+
+### Changed
+
+- All animations run on one frame clock per UI thread that no longer depends on `WM_TIMER`. A control that keeps
+  repainting (a chart opening, pulsing skeleton rows) used to stop every other animation, such as a page transition.
+- `TwTransition.CrossFade` takes the picture of the old look from the screen after the pending paints are done (from the
+  desktop window manager when the part is covered or off screen) instead of `DrawToBitmap`, which redrew the page (40–80
+  ms), drew overlapping controls in the wrong order, doubled text in nested scrolled panels and drew a removed title bar
+  back. The fade starts only after the new look is painted, so it is seen whole however long the change takes.
+- A form's picture leaves out the invisible resize borders Windows 10 and 11 count in its bounds.
+- The fade-out of closing dialogs and popovers no longer copies the wrong part of the screen in a DPI-unaware application
+  on a scaled display (or a system-aware one on several monitors): the screen is read in physical pixels there and scaled
+  to the window's size.
+- Pictures that close or fade (dialogs, popovers, transitions) no longer play Windows' own window animation, which could
+  leave them on screen for a moment after closing.
+- A `DataGridView` with classes is double buffered, so it is no longer painted row by row while data arrives.
+
 ## [0.1.3-preview.1] - 2026-10-25
 
 ### Added

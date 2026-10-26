@@ -349,7 +349,7 @@ Shadows and rings are drawn on the control's **parent** (controls cannot paint o
   - What is animated: `transition-colors` only the colors (background, text, border), `transition-shadow` only the shadow and ring, `transition-none` nothing.
   - Curve and delay: `ease-out` (default), `ease-linear`, `ease-in`, `ease-in-out`; `delay-75` … `delay-1000`, `delay-[40ms]` holds the transition back that long. Example: `bg-white hover:bg-gray-100 transition duration-200 delay-75 ease-in-out`.
   - The first application has no transition: when classes are assigned, the control takes its final color at once (a transition would start from the application's own color and shift colors at startup). Theme, state (hover, focus, disabled …) and class changes are animated.
-  - Transitions are advanced by a WinForms timer (about 60 frames/s). Windows only generates `WM_TIMER` when no other message is queued; while a window that invalidates itself in every `OnPaint` is open (e.g. ShareX's region capture) or the UI thread is busy, transitions stop at an intermediate color and finish once that window closes. The contrast audit checks the target color meanwhile.
+  - All FormWind animations run on one frame clock per UI thread (about 60 frames/s). The clock does not depend on `WM_TIMER`: transitions go on while a control keeps repainting itself (a chart opening, pulsing skeleton rows) or another window invalidates itself in every `OnPaint` (e.g. ShareX's region capture). Only a busy UI thread delays frames; the value then jumps to where it should be by time. The contrast audit checks the target color while a transition runs.
 - **`hover:` / `active:`**: only controls with these variants are restyled when the mouse enters or leaves; for the others, mouse movement does not trigger styling. If classes are assigned while the cursor is already over the control (e.g. a button whose classes change on click), the hover state is applied immediately.
 - **`group` / `group-hover:`**: hovering a container with the `group` class applies the `group-hover:` variants of the controls inside it. A container that reacts to hover counts as hovered even when the cursor enters directly over a child.
 - **Placeholder**: `TwTextBox.PlaceholderText`; color `placeholder:text-gray-400`.
@@ -1057,7 +1057,7 @@ tw.SetClasses(pnlSkeleton, "h-4 w-40 rounded bg-gray-200 animate-pulse");
 - `TwMotion.Enabled` follows Windows' "Show animations" setting (also when it changes while the application runs) and can be turned off in code; `TwMotion.FollowSystem()` hands it back to Windows. When it is off all of these and `transition` changes happen immediately (the indeterminate progress segment stands still in the middle, a spinning icon stops). There is no animation at design time or on invisible controls.
 - **`motion-safe:`** / **`motion-reduce:`** variants apply while animations are on / off; when the setting changes only the controls that use them are reapplied. `forced-colors:` still applies last.
 - **Closing:** `TwDialog` and `TwPopover` also fade when they close. The window closes at once (`DialogResult`, `IsOpen`, `Closed` are not delayed); its last picture fades out in a click-through window.
-- **Values:** a new `TwProgress.Value` slides the fill to its place (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` counts a new value up from the previous one (from zero when it first appears), keeping the text's form (`$12,400`, `98.4%`); only a value with a single number is counted, `AnimateValue = false` turns it off. Charts open the first time they are shown with data: `TwChart` bars grow from the baseline one after another (35 ms apart) and lines and areas draw from left to right; `TwRingChart` rings fill from zero; `TwHeatmap` cells fade in from the top left to the bottom right; `TwTimeline` dots pop up in time order with a spring and the joining line extends; a `TwSparkline` line draws from left to right and its bars grow. The delays add up to 400 ms at most. When the data changes after that, the chart is not redrawn from scratch: the bars, points, fills and shades on screen move to the new ones in 350 ms (also through calls that clear and re-add, such as `SetData`). `AnimateOnShow = false` turns the opening off, `AnimateChanges = false` the move; `AnimateIn()` plays the opening again (e.g. after loading new data).
+- **Values:** a new `TwProgress.Value` slides the fill to its place (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` counts a new value up from the previous one (from zero when it first appears), keeping the text's form (`$12,400`, `98.4%`); only a value with a single number is counted, `AnimateValue = false` turns it off; `TwStat.DefaultAnimateValue = false` turns it off for every stat that does not set its own. Charts open the first time they are shown with data: `TwChart` bars grow from the baseline one after another (35 ms apart) and lines and areas draw from left to right; `TwRingChart` rings fill from zero; `TwHeatmap` cells fade in from the top left to the bottom right; `TwTimeline` dots pop up in time order with a spring and the joining line extends; a `TwSparkline` line draws from left to right and its bars grow. The delays add up to 400 ms at most. When the data changes after that, the chart is not redrawn from scratch: the bars, points, fills and shades on screen move to the new ones in 350 ms (also through calls that clear and re-add, such as `SetData`). `AnimateOnShow = false` turns the opening off, `AnimateChanges = false` the move; `AnimateIn()` plays the opening again (e.g. after loading new data).
 - **Collapsing panel:** `TwPanel.Expanded = false` (or `Collapse()`) slides the panel's height down to zero and hides it, `Expand()` shows it and slides it back to its height (its preferred height when `AutoSize`); 200 ms, changed with `duration-*` / `ease-*`. The children keep their places and are cut off while it slides. The height must be the panel's own: `Dock = Top`/`Bottom` or not docked (a panel that grows with `grow` in a flex container does not slide).
 
 ```csharp
@@ -1074,28 +1074,54 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 
 - Curves: `TwEasing.Out` (default), `In`, `InOut`, `Linear` and `Spring` (a damped spring that goes ~10% past the target and settles back; `Progress` goes above 1 for a moment, `Blend` clamps colors). For a custom curve, as in CSS, `new TwCubicBezier(x1, y1, x2, y2)`: `_tween.Start(250, new TwCubicBezier(0.34, 1.56, 0.64, 1))`.
 - Standard durations are in `TwMotion.Durations`: `Xs` 120, `S` 180, `M` 250, `L` 450 ms. When animations are off they are all 1 ms, so anything that waits for them ends at once.
+- Built-in durations that no `duration-*` class reaches follow a design system's own values through `TwMotion.Timings`: `ChartIntro` (600), `ChartChange` (350), `ChartStagger` (35), `StatCount` (800), `PopupOpen` (140), `PopupClose` (120), `AttentionPulse` (700), `DialogFade` (150), `ToastFade` (150) ms. A change applies to animations that start afterwards, 0 turns that animation off and `Reset()` goes back to the defaults.
+
+```csharp
+TwMotion.Timings.ChartStagger = 70;      // between timeline dots
+TwMotion.Timings.AttentionPulse = 1200;  // pulse
+```
+
+- To store the animation setting with the application's own settings, use `TwMotion.Preference` (`TwMotionPreference.System` follows Windows, `On` / `Off` set `Enabled`): `TwMotion.Preference = Settings.Default.Motion;` at startup and `Settings.Default.Motion = TwMotion.Preference;` when the user changes it.
+- `await TwMotion.AfterPaintAsync(control)` completes on the next frame of the animation clock, once the control and its children have painted what was pending; for example to show a page first and bind its data after it is on screen. Unlike `Application.Idle` it also comes while a control keeps repainting.
+
+```csharp
+ShowPage(page);
+await TwMotion.AfterPaintAsync(page);
+grid.DataSource = await LoadAsync();
+```
 - To animate a number of a control (a width, a position, an opacity) without writing `OnPaint`, use `TwAnimator.Animate(control, name, from, to, duration, set)`; a new call with the same control and name replaces the running one (to continue from where it is, pass the last value given to `set` as `from`). Overloads take a curve, a delay and `completed`; `Cancel` and `IsAnimating` take the same name. When animations are off the value is set to `to` at once.
 
 ```csharp
 TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
 ```
 
-- **Notifications:** `TwToast.Position` picks the corner (`BottomRight` by default, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; at the top the newest is on top). `TwToast.MaxVisible = 1` puts each new notification in the place of the previous one (which fades out where it is; 0 = no limit). A new notification slides 12 px in from its edge (`TwToast.EnterEasing`, e.g. `TwEasing.Spring`); a success notification draws its check mark. `toast.Subtitle` adds a muted line under the message ("DR-24817 · Line 2") and rearranges the stack.
+- **Notifications:** `TwToast.Position` picks the corner (`BottomRight` by default, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; at the top the newest is on top). `TwToast.MaxVisible = 1` puts each new notification in the place of the previous one (which fades out where it is; 0 = no limit). A new notification slides 12 px in from its edge (`TwToast.EnterEasing`, e.g. `TwEasing.Spring`); a success notification draws its check mark. `toast.Subtitle` adds a muted line under the message ("DR-24817 · Line 2") and rearranges the stack. `TwToast.Inset` keeps space free at the owner's edges in addition to the 16 px margin (96 DPI px): `TwToast.Inset = new Padding(0, 56, 0, 0)` keeps notifications at the top below a toolbar; open notifications move at once.
 - **Busy button:** `TwButton.IsBusy = true` draws a spinner before the text and ignores clicks (Enter, Space, `PerformClick`, `AcceptButton`); no `Click` and no `DialogResult`, and screen readers hear the busy state.
 
+`RunBusyAsync` runs the work with the button busy and makes it usable again when the work ends (also when it fails); when the button is already busy the work does not run and it returns `false`:
+
 ```csharp
-btnSave.IsBusy = true;
-try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+btnSave.Click += async (_, _) => await btnSave.RunBusyAsync(() => SaveAsync());
 ```
 
 - **Popovers and menus:** `TwPopover` and the menus FormWind draws grow from 95% and fade in from the anchor's side (the owner item for a submenu, the cursor for a context menu) in 140 ms, and fade out in 120 ms when they close. A window's content cannot be scaled, so during the opening the real window is invisible (it already takes clicks and keys) and a click-through picture of it grows in its place.
 - **Focus ring:** a ring that appears for keyboard focus (`focus-visible:ring-*`, `focus:ring-*`) starts 6 px outside and closes in onto the control in 180 ms; for mouse focus it appears in place.
-- **Grid loading:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` sweeps a light band across the skeleton bars from left to right (the default `Pulse` fades them; `SetLoadingStyle` changes it later).
-- **Transitions:** `TwTransition.CrossFade(host, change)` first puts a picture of `host` over it, applies `change` and fades the old picture away in 250 ms. For page and theme switches:
+- **Grid loading:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` sweeps a light band across the skeleton bars from left to right (the default `Pulse` fades them; `SetLoadingStyle` changes it later). A `DataGridView` with classes is double buffered (it is no longer painted row by row while data arrives); removing the classes restores the original value.
+- **List loading:** `TwDataList.IsLoading = true` (and `TwListBox`) hides the rows, fills the list with pulsing skeleton rows and ignores clicks, keys and the wheel. When data comes page by page, `IsItemLoaded` draws only the unloaded rows as skeletons.
+- **Transitions:** `TwTransition.CrossFade(host, change)` first puts a picture of `host` over it, applies and paints `change` under it, and only then fades the old picture away in 250 ms (the whole fade is seen however long the change takes). The picture is taken from the screen once the pending paints are done: overlapping controls, a custom title bar and scrolled panels come out as shown. A DPI-unaware application on a scaled display reads the screen in physical pixels and scales the picture to the window's size. When the part is under another application's window or off screen, the window's own content is asked from the desktop window manager (`PrintWindow`, several times slower); `DrawToBitmap` is only the last resort and can get overlapping controls wrong. Anything above the part on screen (e.g. a notification of the same form) is in the picture too and fades with it. For page and theme switches:
 
 ```csharp
 TwTransition.CrossFade(pnlPage, () => ShowPage(next));
 TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // the whole form, title bar included
+```
+
+- **Sliding panel:** `TwTransition.SlideIn(panel, TwEdge.Right)` shows a side panel (an inspector, filters) sliding in from its edge and `SlideOut` hides it sliding out (250 ms). The width is not changed frame by frame: the layout is done once, a picture of the panel slides into its place and the rest of the parent cross-fades to its new layout, so a grid beside it is not relaid out and torn every frame. The panel's new look is read from the screen while the old picture above it is left out of screen capture for a moment (Windows 10 2004 and later; `PrintWindow` before that). A screen recording or share may miss the old picture for that one frame.
+- **Sliding window:** `TwWindowMotion.Attach(sheet, TwEdge.Right)` makes a window slide 24 px in from its edge each time it is shown, and its last picture fade out sliding toward the same edge each time it closes; the window still closes at once (`DialogResult` and the return of `ShowDialog` are not delayed). For one-off use, `SlideIn(window, edge)` (on a shown window) and `FadeOut(window, edge)` (in `FormClosing`).
+
+```csharp
+TwTransition.SlideIn(pnlInspector, TwEdge.Right);
+TwWindowMotion.Attach(filterSheet, TwEdge.Right);
+filterSheet.ShowDialog(this);
 ```
 
 - **Drawing attention:** `TwAttention.Pulse(control, count: 2)` sends rings out from the control's edges that spread and fade (700 ms each), for example on a badge whose count went up; the color is its background when it has one, otherwise its text color. `TwChip.Pulse()` does the same.

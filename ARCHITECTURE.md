@@ -123,7 +123,10 @@ Other files in this folder are thin wrappers around a single Windows feature: DW
 (`TwTitleBar`), dark native scrollbars and tooltips (`TwNativeTheme`, `TwNativeToolTips`), High Contrast
 (`TwHighContrast`), keyboard and mouse focus tracking (`TwFocusVisible`), RTL mirroring (`TwRtl`), DPI (`TwDpi`),
 color and number transitions (`TwAnimator`, timing and curves in `TwTiming`, `TwCubicBezier`), in-control animations (`TwMotion`, `TwTween`) and repeating
-`animate-*` animations (`TwAnimations`). Undocumented Windows APIs (for example, `DarkMode_Explorer`) fail silently on
+`animate-*` animations (`TwAnimations`), all driven by one frame clock per UI thread (`TwFrameClock`: a thread-pool timer
+posts a frame message, which Windows delivers before pending paints, unlike `WM_TIMER`). Transitions and fades take
+pictures of what is on screen through `TwCapture` (screen, then `PrintWindow`, then `DrawToBitmap`) and show them in
+click-through windows (`TwFadeOut`, `TwTransition`, `TwWindowMotion`). Undocumented Windows APIs (for example, `DarkMode_Explorer`) fail silently on
 systems that do not support them.
 
 ### Layout (`src/FormWind/Layout/`)
@@ -195,7 +198,7 @@ Styling must never crash the host application. `TwBinding.Refresh` and the paint
 Everything runs on the UI thread. Process-wide or thread-wide state is kept to a minimum and is explicit:
 
 - Font cache: `TwFonts`.
-- Animation timers and input tracking: `TwAnimator`, `TwAnimations`, `TwFocusVisible`.
+- Animation clock and input tracking: `TwFrameClock` (one hidden message window per UI thread), `TwAnimator`, `TwAnimations`, `TwFocusVisible`.
 - Native tooltip hook: `TwNativeToolTips`.
 - Theme: `TwTheme.Current`.
 

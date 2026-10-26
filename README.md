@@ -349,7 +349,7 @@ Gölge ve halka kontrolün **ebeveyninde** çizilir (kontroller kendi sınırlar
   - Ne geçeceği: `transition-colors` yalnızca renkler (zemin, metin, kenarlık), `transition-shadow` yalnızca gölge ve halka, `transition-none` hiçbiri.
   - Eğri ve gecikme: `ease-out` (varsayılan), `ease-linear`, `ease-in`, `ease-in-out`; `delay-75` … `delay-1000`, `delay-[40ms]` geçişi o kadar bekletir. Örnek: `bg-white hover:bg-gray-100 transition duration-200 delay-75 ease-in-out`.
   - İlk uygulama geçişsizdir: class'lar atandığında kontrol hemen son rengini alır (geçiş uygulamanın kendi renginden başlayıp açılışta renk kaydırırdı). Tema, durum (hover, focus, disabled …) ve class değişimleri geçişlidir.
-  - Geçişler bir WinForms zamanlayıcısıyla (yaklaşık 60 kare/sn) ilerler. Windows `WM_TIMER`'ı yalnızca kuyrukta başka mesaj yokken üretir; her `OnPaint`'te kendini yeniden geçersiz kılan bir pencere açıkken (örn. ShareX'in bölge yakalaması) ya da UI iş parçacığı meşgulken geçişler durur ve o sırada ara renkte kalır, pencere kapanınca tamamlanır. Kontrast denetimi bu sürede de varılacak rengi ölçer.
+  - FormWind'in bütün animasyonları UI iş parçacığı başına tek bir kare saatiyle (yaklaşık 60 kare/sn) ilerler. Saat `WM_TIMER`'a bağlı değildir: kendini sürekli yeniden boyayan bir kontrol (açılan bir grafik, nabız atan iskelet satırlar) ya da her `OnPaint`'te kendini geçersiz kılan başka bir pencere (örn. ShareX'in bölge yakalaması) açıkken de geçişler sürer. Yalnızca meşgul bir UI iş parçacığı kareleri geciktirir; değer o zaman zamana göre olması gereken yere atlar. Kontrast denetimi geçiş sürerken de varılacak rengi ölçer.
 - **`hover:` / `active:`**: yalnızca bu varyantları olan kontroller fare girip çıkınca yeniden stillenir; diğerlerinde fare hareketi stil uygulamasını tetiklemez. Class'lar imleç zaten kontrolün üzerindeyken atanırsa (örn. tıklayınca class'ı değişen bir buton) hover durumu hemen uygulanır.
 - **`group` / `group-hover:`**: `group` class'lı konteynerin üzerine gelindiğinde içindeki kontrollerin `group-hover:` varyantları uygulanır. Hover'a tepki veren konteynerler, imleç doğrudan bir çocuk kontrolün üzerinden girse de hover sayılır.
 - **Placeholder**: `TwTextBox.PlaceholderText`; renk `placeholder:text-gray-400`.
@@ -1057,7 +1057,7 @@ tw.SetClasses(pnlSkeleton, "h-4 w-40 rounded bg-gray-200 animate-pulse");
 - `TwMotion.Enabled` Windows'un "animasyonları göster" ayarını izler (uygulama çalışırken değişirse de), kodla kapatılabilir; `TwMotion.FollowSystem()` yeniden Windows'a bırakır. Kapalıyken bunların hepsi ve `transition` geçişleri anında olur (belirsiz progress şeridi ortada durur, dönen simge durur). Tasarım zamanında ve görünmeyen kontrollerde animasyon yapılmaz.
 - **`motion-safe:`** / **`motion-reduce:`** varyantları animasyon açıkken / kapalıyken uygulanır; ayar değişince yalnızca bunları kullanan kontroller yeniden uygulanır. `forced-colors:` yine en son uygulanır.
 - **Kapanış:** `TwDialog` ve `TwPopover` kapanırken de solar. Pencere hemen kapanır (`DialogResult`, `IsOpen`, `Closed` gecikmez); son görüntüsü tıklamayı geçiren bir pencerede solarak kaybolur.
-- **Değerler:** yeni `TwProgress.Value` dolguyu yerine kaydırır (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` yeni değeri öncekinden (ilk görünüşte sıfırdan) sayarak gösterir, metnin biçimi korunur (`₺12.400`, `%98,4`); yalnızca tek sayı içeren değer sayılır, `AnimateValue = false` kapatır. Grafikler verisiyle ilk göründüklerinde açılır: `TwChart`'ta çubuklar tabandan sırayla büyür (35 ms arayla), çizgi ve alanlar soldan sağa çizilir; `TwRingChart` halkaları sıfırdan dolar; `TwHeatmap` hücreleri sol üstten sağ alta solarak belirir; `TwTimeline` noktaları zaman sırasıyla yayla (Spring) çıkar ve birleştiren çizgi uzar; `TwSparkline` çizgisi soldan sağa çizilir, çubukları büyür. Gecikmeler toplam 400 ms'yi geçmez. Gösterildikten sonra veri değişirse baştan çizilmez: ekrandaki çubuk, nokta, doluluk ve renk 350 ms'de yenisine kayar (`SetData` gibi silip yeniden ekleyen çağrılar da). `AnimateOnShow = false` açılışı, `AnimateChanges = false` geçişi kapatır; `AnimateIn()` açılışı yeniden oynatır (örn. yeni veri yüklenince).
+- **Değerler:** yeni `TwProgress.Value` dolguyu yerine kaydırır (300 ms; `duration-*`, `ease-*`, `transition-none`). `TwStat` yeni değeri öncekinden (ilk görünüşte sıfırdan) sayarak gösterir, metnin biçimi korunur (`₺12.400`, `%98,4`); yalnızca tek sayı içeren değer sayılır, `AnimateValue = false` kapatır; `TwStat.DefaultAnimateValue = false` kendi değerini vermeyen bütün göstergelerde kapatır. Grafikler verisiyle ilk göründüklerinde açılır: `TwChart`'ta çubuklar tabandan sırayla büyür (35 ms arayla), çizgi ve alanlar soldan sağa çizilir; `TwRingChart` halkaları sıfırdan dolar; `TwHeatmap` hücreleri sol üstten sağ alta solarak belirir; `TwTimeline` noktaları zaman sırasıyla yayla (Spring) çıkar ve birleştiren çizgi uzar; `TwSparkline` çizgisi soldan sağa çizilir, çubukları büyür. Gecikmeler toplam 400 ms'yi geçmez. Gösterildikten sonra veri değişirse baştan çizilmez: ekrandaki çubuk, nokta, doluluk ve renk 350 ms'de yenisine kayar (`SetData` gibi silip yeniden ekleyen çağrılar da). `AnimateOnShow = false` açılışı, `AnimateChanges = false` geçişi kapatır; `AnimateIn()` açılışı yeniden oynatır (örn. yeni veri yüklenince).
 - **Açılıp kapanan panel:** `TwPanel.Expanded = false` (ya da `Collapse()`) panelin yüksekliğini sıfıra kaydırıp gizler, `Expand()` gösterip yüksekliğine (`AutoSize` ise tercih edilen yüksekliğe) geri kaydırır; 200 ms, `duration-*` / `ease-*` ile değişir. Çocuklar yerinde kalır, kayış sırasında kesilir. Yükseklik panelin kendisine ait olmalıdır: `Dock = Top`/`Bottom` ya da kenetlenmemiş (flex'te `grow` ile büyüyen panel kaymaz).
 
 ```csharp
@@ -1074,28 +1074,54 @@ void Expand() { _from = _height; _tween.Start(200, TwEasing.InOut); }
 
 - Eğriler: `TwEasing.Out` (varsayılan), `In`, `InOut`, `Linear` ve `Spring` (hedefi ~%10 aşıp geri oturan sönümlü yay; `Progress` bir an 1'in üstüne çıkar, `Blend` renkleri sınırlar). Özel eğri için CSS'teki gibi `new TwCubicBezier(x1, y1, x2, y2)`: `_tween.Start(250, new TwCubicBezier(0.34, 1.56, 0.64, 1))`.
 - Standart süreler `TwMotion.Durations`: `Xs` 120, `S` 180, `M` 250, `L` 450 ms. Animasyon kapalıyken hepsi 1 ms olur, bu sürelere bağlı bekleyişler de hemen biter.
+- `duration-*` class'larının ulaşmadığı yerleşik süreler `TwMotion.Timings` ile tasarım sisteminin değerlerine uyarlanır: `ChartIntro` (600), `ChartChange` (350), `ChartStagger` (35), `StatCount` (800), `PopupOpen` (140), `PopupClose` (120), `AttentionPulse` (700), `DialogFade` (150), `ToastFade` (150) ms. Değişiklik sonra başlayan animasyonlara uygulanır, 0 o animasyonu kapatır, `Reset()` varsayılanlara döner.
+
+```csharp
+TwMotion.Timings.ChartStagger = 70;      // zaman çizelgesinde noktalar arası
+TwMotion.Timings.AttentionPulse = 1200;  // nabız
+```
+
+- Animasyon ayarını uygulamanın kendi ayarlarında saklamak için `TwMotion.Preference` (`TwMotionPreference.System` Windows'u izler, `On` / `Off` `Enabled`'ı ayarlar): açılışta `TwMotion.Preference = Settings.Default.Motion;`, kullanıcı değiştirince `Settings.Default.Motion = TwMotion.Preference;`.
+- `await TwMotion.AfterPaintAsync(control)` kontrol ve çocukları bekleyen boyamalarını bitirince, animasyon saatinin bir sonraki karesinde tamamlanır; örneğin sayfayı önce gösterip verisini ekrana çıktıktan sonra bağlamak için. `Application.Idle`'ın aksine kendini sürekli boyayan bir kontrol varken de gelir.
+
+```csharp
+ShowPage(page);
+await TwMotion.AfterPaintAsync(page);
+grid.DataSource = await LoadAsync();
+```
 - Kontrolün bir sayısını (genişlik, konum, opaklık) `OnPaint` yazmadan canlandırmak için `TwAnimator.Animate(kontrol, ad, başlangıç, bitiş, süre, set)`; aynı kontrol ve adla yeni çağrı çalışanın yerine geçer (kaldığı yerden sürmek için `set`'e son verilen değeri `başlangıç` olarak verin). Eğri, gecikme ve `completed` alan aşırı yüklemeleri vardır; `Cancel` ve `IsAnimating` da aynı adla çalışır. Animasyon kapalıysa değer hemen bitişe atanır.
 
 ```csharp
 TwAnimator.Animate(pnlSide, "width", pnlSide.Width, 320, TwMotion.Durations.M, w => pnlSide.Width = (int)w, TwEasing.Spring);
 ```
 
-- **Bildirimler:** `TwToast.Position` köşeyi seçer (`BottomRight` varsayılan, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; üstte en yenisi en üsttedir). `TwToast.MaxVisible = 1` her yeni bildirimi eskisinin yerine koyar (eskisi yerinde solar; 0 = sınır yok). Yeni bildirim kendi kenarından 12 px kayarak gelir (`TwToast.EnterEasing`, örn. `TwEasing.Spring`); başarı bildiriminin onay işareti kendini çizer. `toast.Subtitle` mesajın altına soluk bir satır ekler ("DR-24817 · Hat 2") ve yığını yeniden dizer.
+- **Bildirimler:** `TwToast.Position` köşeyi seçer (`BottomRight` varsayılan, `TopRight`, `BottomLeft`, `TopLeft`, `BottomCenter`, `TopCenter`; üstte en yenisi en üsttedir). `TwToast.MaxVisible = 1` her yeni bildirimi eskisinin yerine koyar (eskisi yerinde solar; 0 = sınır yok). Yeni bildirim kendi kenarından 12 px kayarak gelir (`TwToast.EnterEasing`, örn. `TwEasing.Spring`); başarı bildiriminin onay işareti kendini çizer. `toast.Subtitle` mesajın altına soluk bir satır ekler ("DR-24817 · Hat 2") ve yığını yeniden dizer. `TwToast.Inset` sahip formun kenarlarında 16 px kenar payına ek olarak boş kalacak alanı verir (96 DPI px): `TwToast.Inset = new Padding(0, 56, 0, 0)` üstteki bildirimleri araç çubuğunun altında tutar; açık bildirimler hemen yer değiştirir.
 - **Meşgul buton:** `TwButton.IsBusy = true` metnin önünde dönen bir gösterge çizer ve tıklamaları (Enter, Space, `PerformClick`, `AcceptButton`) yok sayar; `Click` ve `DialogResult` gelmez, ekran okuyucu Busy durumunu duyar.
 
+`RunBusyAsync` işi meşgul durumda çalıştırır ve iş bitince (hata verse de) düğmeyi serbest bırakır; düğme zaten meşgulse işi çalıştırmaz ve `false` döner:
+
 ```csharp
-btnSave.IsBusy = true;
-try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+btnSave.Click += async (_, _) => await btnSave.RunBusyAsync(() => SaveAsync());
 ```
 
 - **Popover ve menüler:** `TwPopover` ve FormWind'in çizdiği menüler açılırken çapanın (alt menüde sahip öğenin, bağlam menüsünde imlecin) tarafından %95'ten büyüyüp solarak belirir (140 ms), kapanırken solar (120 ms). Pencere içeriği ölçeklenemediği için açılış boyunca gerçek pencere görünmezdir (tıklama ve tuşları alır), yerinde tıklamayı geçiren bir görüntüsü büyür.
 - **Odak halkası:** klavyeyle gelen odakta beliren halka (`focus-visible:ring-*`, `focus:ring-*`) 6 px dışarıdan başlayıp 180 ms'de yerine daralır; fareyle verilen odakta yerinde belirir.
-- **Grid yükleme:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` iskelet çubuklar üzerinden soldan sağa açık bir bant geçirir (varsayılan `Pulse` nabızdır; `SetLoadingStyle` sonradan değiştirir).
-- **Geçişler:** `TwTransition.CrossFade(host, change)` önce `host`'un görüntüsünü üstüne koyar, `change`'i uygular ve eski görüntüyü 250 ms'de soldurur. Sayfa değişimi ve tema değişimi için:
+- **Grid yükleme:** `TwGrid.SetLoading(grid, true, TwLoadingStyle.Shimmer)` iskelet çubuklar üzerinden soldan sağa açık bir bant geçirir (varsayılan `Pulse` nabızdır; `SetLoadingStyle` sonradan değiştirir). Class'ı olan `DataGridView`'lerde çift tampon açılır (veri dolarken tablo satır satır boyanmaz); class'lar kaldırılınca özgün değerine döner.
+- **Liste yükleme:** `TwDataList.IsLoading = true` (ve `TwListBox`) satırları gizleyip listeyi nabız atan iskelet satırlarla doldurur, tıklama, tuş ve tekerleği yok sayar. Veri sayfa sayfa geliyorsa `IsItemLoaded` ile yalnızca yüklenmemiş satırlar iskelet çizilir.
+- **Geçişler:** `TwTransition.CrossFade(host, change)` önce `host`'un görüntüsünü üstüne koyar, `change`'i onun altında uygulayıp boyatır ve eski görüntüyü ondan sonra 250 ms'de soldurur (değişiklik uzun sürse de solmanın tamamı görünür). Görüntü, bekleyen boyamalar bittikten sonra ekrandan alınır: üst üste binen kontroller, özel başlık çubuğu ve kaydırılmış paneller ekrandaki gibi çıkar. Ölçekli ekranda DPI farkında olmayan uygulamada ekran fiziksel piksellerle okunup pencerenin boyutuna küçültülür. Parça başka bir uygulamanın penceresi altındaysa ya da ekran dışındaysa pencerenin kendi içeriği masaüstü pencere yöneticisinden (`PrintWindow`, birkaç kat yavaş) istenir; `DrawToBitmap` yalnızca son çaredir ve üst üste binen kontrolleri yanlış çizebilir. Parçanın üstünde ekranda görünen her şey (örn. aynı formun bildirimi) de resme girer ve onunla birlikte solar. Sayfa değişimi ve tema değişimi için:
 
 ```csharp
 TwTransition.CrossFade(pnlPage, () => ShowPage(next));
 TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   // başlık çubuğu dahil tüm form
+```
+
+- **Kayan panel:** `TwTransition.SlideIn(panel, TwEdge.Right)` bir kenar panelini (Inspector, filtreler) kenarından kayarak gösterir, `SlideOut` kayarak gizler (250 ms). Genişlik her karede değiştirilmez: yerleşim bir kez yapılır, panelin resmi yerine kayar ve ebeveynin geri kalanı yeni yerleşimine solar; yanındaki tablo her karede yeniden yerleşip yırtılmaz. Panelin yeni hâli, üstündeki eski görüntü bir anlığına ekran yakalamasından çıkarılarak ekrandan okunur (Windows 10 2004 ve sonrası; öncesinde `PrintWindow`). Ekran kaydı ya da paylaşımı bu anda eski görüntüyü bir kare görmeyebilir.
+- **Kayan pencere:** `TwWindowMotion.Attach(sheet, TwEdge.Right)` bir pencerenin her gösterilişinde kenarından 24 px kayarak belirmesini, her kapanışında son görüntüsünün aynı kenara kayarak solmasını sağlar; pencere yine hemen kapanır (`DialogResult` ve `ShowDialog`'un dönüşü gecikmez). Tek seferlik kullanım için `SlideIn(window, edge)` (gösterilmiş pencere) ve `FadeOut(window, edge)` (`FormClosing` içinde).
+
+```csharp
+TwTransition.SlideIn(pnlInspector, TwEdge.Right);
+TwWindowMotion.Attach(filterSheet, TwEdge.Right);
+filterSheet.ShowDialog(this);
 ```
 
 - **Dikkat çekme:** `TwAttention.Pulse(control, count: 2)` kontrolün kenarından dışa yayılıp solan halkalar gönderir (her biri 700 ms), örneğin sayısı artan bir rozete; renk zemini varsa zemin, yoksa yazı rengidir. `TwChip.Pulse()` aynısıdır.
