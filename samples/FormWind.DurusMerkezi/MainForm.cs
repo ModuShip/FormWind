@@ -186,11 +186,20 @@ namespace DurusMerkezi
             ResumeLayout(true);
         }
 
-        /// <summary>Bir ekranı gösterir (0: kapanış, 1: giriş, 2: kayıtlar, 3: kronik, 4: analitik).</summary>
+        /// <summary>
+        /// Bir ekranı gösterir (0: kapanış, 1: giriş, 2: kayıtlar, 3: kronik, 4: analitik). Pencere görünürken eski ekran
+        /// yenisinin üstünde solar.
+        /// </summary>
         public void ShowPage(int index)
         {
             index = Math.Max(0, Math.Min(_pages.Length - 1, index));
             if (index == _current) return;
+            if (_current >= 0 && Visible) TwTransition.CrossFade(this, () => SwitchPage(index), TwMotion.Durations.S);
+            else SwitchPage(index);
+        }
+
+        private void SwitchPage(int index)
+        {
             _current = index;
             var page = _pages[index];
             SuspendLayout();
@@ -225,6 +234,11 @@ namespace DurusMerkezi
             _host.Controls.Add(content);
             _host.AutoScrollPosition = Point.Empty;
             ResumeLayout(true);
+
+            // Bildirimler sağ üstte, araç çubuğunun (ve varsa ikinci satırının) altında: birincil düğmeleri örtmez.
+            float scale = DeviceDpi / 96f;
+            int toolbar = _toolbar.Height + (second != null ? _toolbar2.Height : 0);
+            TwToast.Inset = new Padding(0, (int)Math.Round(toolbar / scale), 0, 0);
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ namespace DurusMerkezi
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             TwTheme.Current = TwTheme.FromJson(Theme.Json);
+            TwToast.Position = TwToastPosition.TopRight;
             bool light = Array.IndexOf(args, "--light") >= 0;
             int pageIndex = Array.IndexOf(args, "--page");
             int page = pageIndex >= 0 && pageIndex + 1 < args.Length ? int.Parse(args[pageIndex + 1]) : 0;

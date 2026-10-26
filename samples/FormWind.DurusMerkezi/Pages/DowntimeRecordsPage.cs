@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using FormWind;
 
@@ -32,16 +33,32 @@ namespace DurusMerkezi
 
         public override Control[] SecondaryToolbar => _secondary ??= new Control[]
         {
-            Ui.Plain("ERP'den çek", "refresh"), Ui.IconButton("columns", "Ayrıntı panelini göster", "btn-icon"),
+            Ui.Plain("ERP'den çek", "refresh"), DetailToggle(),
         };
 
         private Control[] _secondary;
+        private TwPanel _detail;
+
+        // Ayrıntı paneli sağdan kayarak açılır ve kapanır; kayıt listesi bir kez yerleşir, her karede yeniden boyutlanmaz.
+        private TwButton DetailToggle()
+        {
+            var toggle = Ui.IconButton("columns", "Ayrıntı panelini gizle", "btn-icon");
+            toggle.Click += (_, _) =>
+            {
+                if (_detail is null) return;
+                bool show = !_detail.Visible;
+                if (show) TwTransition.SlideIn(_detail, TwEdge.Right);
+                else TwTransition.SlideOut(_detail, TwEdge.Right);
+                toggle.AccessibleName = show ? "Ayrıntı panelini gizle" : "Ayrıntı panelini göster";
+            };
+            return toggle;
+        }
 
         protected override TwPanel BuildContent() => PageBody(
             "Duruş Kayıtları & Kök Neden",
             "ERP'den düşen ham duruşları zenginleştirin: neden, sınıf, parça, maliyet ve kanıt.",
             new Control[] { Ui.Chip("5  kayıt kök neden bekliyor", Tone.Red), Ui.Chip("Ort. giriş süresi 6 dk", Tone.Gray) },
-            Ui.Row("items-start gap-4", RecordList(), Detail()));
+            Ui.Row("items-start gap-4", RecordList(), _detail = Detail()));
 
         // ---- Kayıt listesi ----
 
@@ -159,9 +176,21 @@ namespace DurusMerkezi
                 Ui.Row("", Ui.Text("Parça & maliyet", "muted font-semibold"), Ui.Spacer(), Ui.Button("Parça ekle", "btn-sm text-sm py-1.5")), parts, totals,
                 Ui.Text("Operatör & bakımcı yorumları", "muted font-semibold"), comments);
             var actions = Ui.Row("gap-2 px-5 h-[60px] flex-none bg-surface-50 dark:bg-[#242426] border-t border-surface-200 dark:border-surface-700",
-                Ui.Spacer(), Ui.Button("Taslak kaydet", "btn-sm text-sm py-1.5"), Ui.Button("Kronik incelemeye gönder", "btn-sm text-sm py-1.5"), Ui.Primary("Amir onayına gönder"));
+                Ui.Spacer(), Ui.Button("Taslak kaydet", "btn-sm text-sm py-1.5"), Ui.Button("Kronik incelemeye gönder", "btn-sm text-sm py-1.5"), SendButton());
 
             return Ui.Box("card flex flex-col gap-0 p-0 flex-1", header, Ui.Divider(), body, actions);
+        }
+
+        // Gönderim sürerken düğme meşguldür; bitince araç çubuğunun altında bir bildirim çıkar.
+        private TwButton SendButton()
+        {
+            var send = Ui.Primary("Amir onayına gönder");
+            send.Click += async (_, _) =>
+            {
+                if (await send.RunBusyAsync(() => Task.Delay(700)) && send.FindForm() is Form form)
+                    TwToast.Show(form, "DR-24817 amir onayına gönderildi.", TwDialogKind.Success, "Gönderildi");
+            };
+            return send;
         }
     }
 }
