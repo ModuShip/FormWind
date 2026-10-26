@@ -7,8 +7,36 @@ FormWind.TwEdge.Bottom = 3 -> FormWind.TwEdge
 FormWind.TwEdge.Left = 0 -> FormWind.TwEdge
 FormWind.TwEdge.Right = 2 -> FormWind.TwEdge
 FormWind.TwEdge.Top = 1 -> FormWind.TwEdge
+FormWind.TwMotion.Timings
+FormWind.TwMotionPreference
+FormWind.TwMotionPreference.Off = 2 -> FormWind.TwMotionPreference
+FormWind.TwMotionPreference.On = 1 -> FormWind.TwMotionPreference
+FormWind.TwMotionPreference.System = 0 -> FormWind.TwMotionPreference
 FormWind.TwWindowMotion
 static FormWind.TwMotion.AfterPaintAsync(System.Windows.Forms.Control! control) -> System.Threading.Tasks.Task!
+static FormWind.TwMotion.Preference.get -> FormWind.TwMotionPreference
+static FormWind.TwMotion.Preference.set -> void
+static FormWind.TwMotion.Timings.AttentionPulse.get -> int
+static FormWind.TwMotion.Timings.AttentionPulse.set -> void
+static FormWind.TwMotion.Timings.ChartChange.get -> int
+static FormWind.TwMotion.Timings.ChartChange.set -> void
+static FormWind.TwMotion.Timings.ChartIntro.get -> int
+static FormWind.TwMotion.Timings.ChartIntro.set -> void
+static FormWind.TwMotion.Timings.ChartStagger.get -> int
+static FormWind.TwMotion.Timings.ChartStagger.set -> void
+static FormWind.TwMotion.Timings.DialogFade.get -> int
+static FormWind.TwMotion.Timings.DialogFade.set -> void
+static FormWind.TwMotion.Timings.PopupClose.get -> int
+static FormWind.TwMotion.Timings.PopupClose.set -> void
+static FormWind.TwMotion.Timings.PopupOpen.get -> int
+static FormWind.TwMotion.Timings.PopupOpen.set -> void
+static FormWind.TwMotion.Timings.Reset() -> void
+static FormWind.TwMotion.Timings.StatCount.get -> int
+static FormWind.TwMotion.Timings.StatCount.set -> void
+static FormWind.TwMotion.Timings.ToastFade.get -> int
+static FormWind.TwMotion.Timings.ToastFade.set -> void
+static FormWind.TwStat.DefaultAnimateValue.get -> bool
+static FormWind.TwStat.DefaultAnimateValue.set -> void
 static FormWind.TwToast.Inset.get -> System.Windows.Forms.Padding
 static FormWind.TwToast.Inset.set -> void
 static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge) -> void

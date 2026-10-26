@@ -84,11 +84,28 @@ public class TwStat : Control, ITwChrome, ITwChartControl
 
     /// <summary>
     /// Counts the number in a new <see cref="Value"/> up (or down) from the previous one, or from zero the first time, in
-    /// 800 ms; the text keeps its form ("₺12.400" counts as "₺9.731"). Only a value with a single number is counted, and
-    /// not when animations are off.
+    /// 800 ms (<see cref="TwMotion.Timings.StatCount"/>); the text keeps its form ("₺12.400" counts as "₺9.731"). Only a
+    /// value with a single number is counted, and not when animations are off. Unless set, follows
+    /// <see cref="DefaultAnimateValue"/>.
     /// </summary>
-    [Category("Behavior"), DefaultValue(true)]
-    public bool AnimateValue { get; set; } = true;
+    [Category("Behavior")]
+    public bool AnimateValue
+    {
+        get => _animateValue ?? DefaultAnimateValue;
+        set => _animateValue = value;
+    }
+
+    private bool? _animateValue;
+
+    private bool ShouldSerializeAnimateValue() => _animateValue.HasValue;
+
+    private void ResetAnimateValue() => _animateValue = null;
+
+    /// <summary>
+    /// <see cref="AnimateValue"/> of every stat that does not set its own (default <c>true</c>). Many design systems leave
+    /// numbers still; <c>TwStat.DefaultAnimateValue = false</c> at startup shows every value at once.
+    /// </summary>
+    public static bool DefaultAnimateValue { get; set; } = true;
 
     /// <summary>Time (ms) a changed value takes to count to its new number.</summary>
     internal const int CountDuration = 800;
@@ -109,7 +126,7 @@ public class TwStat : Control, ITwChrome, ITwChartControl
         _countTo = target;
         _countFrom = from;
         _count ??= new TwTween(this);
-        _count.Start(CountDuration, TwEasing.Out);
+        _count.Start(TwMotion.Timings.StatCount, TwEasing.Out);
         if (!_count.Running) _countTo = null;
     }
 

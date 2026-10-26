@@ -10,7 +10,8 @@ namespace FormWind;
 
 /// <summary>
 /// Opening and closing of popups (<see cref="TwPopover"/>, menus drawn by FormWind): they grow from 95% to full size and fade
-/// in (<see cref="OpenDuration"/> ms) from the side they open from, and fade out when they close (<see cref="CloseDuration"/> ms).
+/// in (<see cref="TwMotion.Timings.PopupOpen"/> ms) from the side they open from, and fade out when they close
+/// (<see cref="TwMotion.Timings.PopupClose"/> ms).
 /// A window's content cannot be scaled, so while opening the popup stays invisible (it already takes clicks and keys) and
 /// a click-through picture of it grows in its place; when no picture can be taken it only fades in. Nothing moves when
 /// animations are off.
@@ -71,7 +72,7 @@ internal static class TwPopupMotion
     public static void Close(ToolStripDropDown dropDown)
     {
         if (Openings.TryGetValue(dropDown, out var opening)) opening.Stop();
-        if (dropDown.Visible) TwFadeOut.Play(dropDown, null, CloseDuration, roundCorners: false);
+        if (dropDown.Visible) TwFadeOut.Play(dropDown, null, TwMotion.Timings.PopupClose, roundCorners: false);
     }
 
     /// <summary>Whether the opening of <paramref name="dropDown"/> is running.</summary>
@@ -108,7 +109,7 @@ internal static class TwPopupMotion
             _tween = new TwTween(dropDown);
             _tween.Tick += (_, _) => Step();
             _tween.Completed += (_, _) => Stop();
-            _tween.Start(OpenDuration, TwEasing.Out);
+            _tween.Start(TwMotion.Timings.PopupOpen, TwEasing.Out);
             Step();
             if (!_tween.Running) Stop();
         }

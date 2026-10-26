@@ -287,7 +287,7 @@ public sealed class TwDialogForm : Form
         base.OnFormClosing(e);
         if (e.Cancel || !Visible) return;
         _fadeIn.Stop();
-        TwFadeOut.Play(this, Owner, FadeDuration, roundCorners: true);
+        TwFadeOut.Play(this, Owner, TwMotion.Timings.DialogFade, roundCorners: true);
     }
 
     protected override void OnShown(EventArgs e)
@@ -295,7 +295,7 @@ public sealed class TwDialogForm : Form
         base.OnShown(e);
         if (Opacity < 1)
         {
-            _fadeIn.Start(FadeDuration);
+            _fadeIn.Start(TwMotion.Timings.DialogFade);
             if (!_fadeIn.Running) Opacity = 1;
         }
         if (InputBox != null)

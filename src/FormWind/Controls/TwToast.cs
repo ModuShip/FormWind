@@ -302,7 +302,7 @@ public sealed class TwToastForm : Form
         base.OnShown(e);
         if (Opacity < 1) StartFade();
         // Onay işareti bildirim neredeyse görününce çizilmeye başlar.
-        _check?.Play(FadeDuration);
+        _check?.Play(TwMotion.Timings.ToastFade);
         StartTimer();
         AccessibilityNotifyClients(AccessibleEvents.SystemAlert, -1);
     }
@@ -343,8 +343,8 @@ public sealed class TwToastForm : Form
     private void StartFade()
     {
         _fadeFrom = Opacity;
-        if (_closing) _fade.Start(FadeDuration);
-        else _fade.Start(FadeDuration * 2, TwToast.EnterEasing);
+        if (_closing) _fade.Start(TwMotion.Timings.ToastFade);
+        else _fade.Start(TwMotion.Timings.ToastFade * 2, TwToast.EnterEasing);
         if (!_fade.Running) FinishFade();
         // İlk karede de kenardan başlar (hedefte bir an görünüp geri zıplamaz).
         else if (!_closing) Location = SlideLocation(0f);

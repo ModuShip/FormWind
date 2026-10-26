@@ -181,6 +181,11 @@ internal sealed class TwOutset
     /// <summary>Time (ms) of one attention pulse.</summary>
     internal const int PingDuration = 700;
 
+    // Darbe süresi ilk darbede sabitlenir: süre ayarı darbeler sürerken değişirse halka sıçramaz.
+    private int PingTime => Math.Max(1, _pingTime);
+
+    private int _pingTime = PingDuration;
+
     /// <summary>How far (96 DPI px) an attention pulse spreads out.</summary>
     internal const int PingDistance = 10;
 
@@ -220,12 +225,13 @@ internal sealed class TwOutset
     internal bool Animating => Progress < 1f || RingInProgress < 1f || Pinging;
 
     /// <summary>Whether attention pulses are running.</summary>
-    internal bool Pinging => _pingCount > 0 && (DateTime.UtcNow - _pingStart).TotalMilliseconds < _pingCount * PingDuration;
+    internal bool Pinging => _pingCount > 0 && (DateTime.UtcNow - _pingStart).TotalMilliseconds < _pingCount * PingTime;
 
     /// <summary>Starts <paramref name="count"/> attention pulses in <paramref name="color"/> around the control.</summary>
     public void Ping(int count, Color color, float radius)
     {
         _pingStart = DateTime.UtcNow;
+        _pingTime = TwMotion.Timings.AttentionPulse;
         _pingCount = Math.Max(1, count);
         _pingColor = color;
         _pingRadius = radius;
@@ -369,8 +375,8 @@ internal sealed class TwOutset
     // Her darbe kontrolün kenarından başlar, PingDistance kadar yayılırken solar.
     private void DrawPing(Graphics graphics, Rectangle bounds)
     {
-        double elapsed = (DateTime.UtcNow - _pingStart).TotalMilliseconds % PingDuration;
-        float t = TwMotion.Ease(TwEasing.Out, (float)(elapsed / PingDuration));
+        double elapsed = (DateTime.UtcNow - _pingStart).TotalMilliseconds % PingTime;
+        float t = TwMotion.Ease(TwEasing.Out, (float)(elapsed / PingTime));
         float scale = TwDpi.DeviceDpi(_control) / 96f;
         int grow = (int)Math.Round(PingDistance * scale * t);
         int alpha = (int)Math.Round(_pingColor.A * 0.9f * (1 - t));

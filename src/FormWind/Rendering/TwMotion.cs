@@ -141,6 +141,94 @@ public static class TwMotion
     }
 
     /// <summary>
+    /// Durations (ms) of FormWind's built-in animations that no <c>duration-*</c> class reaches, for matching a design
+    /// system's own values. A change applies to animations that start afterwards; 0 turns that animation off. Set them once
+    /// at startup:
+    /// <code>
+    /// TwMotion.Timings.ChartStagger = 70;
+    /// TwMotion.Timings.AttentionPulse = 1200;
+    /// </code>
+    /// </summary>
+    public static class Timings
+    {
+        private static int _chartIntro = TwChartMotion.IntroDuration, _chartChange = TwChartMotion.ChangeDuration,
+            _chartStagger = TwChartMotion.Stagger, _statCount = TwStat.CountDuration, _popupOpen = TwPopupMotion.OpenDuration,
+            _popupClose = TwPopupMotion.CloseDuration, _attentionPulse = TwOutset.PingDuration,
+            _dialogFade = TwDialogForm.FadeDuration, _toastFade = TwToastForm.FadeDuration;
+
+        /// <summary>Opening of one chart item: a bar growing, a ring filling, a dot popping up (default 600).</summary>
+        public static int ChartIntro { get => _chartIntro; set => _chartIntro = Check(value); }
+
+        /// <summary>Move of a chart from its old data to the new (default 350).</summary>
+        public static int ChartChange { get => _chartChange; set => _chartChange = Check(value); }
+
+        /// <summary>
+        /// Delay between the openings of neighbouring chart items (default 35); all delays together stay within 400 ms, so
+        /// charts with many items do not open slowly.
+        /// </summary>
+        public static int ChartStagger { get => _chartStagger; set => _chartStagger = Check(value); }
+
+        /// <summary><see cref="TwStat"/> counting to a new value (default 800).</summary>
+        public static int StatCount { get => _statCount; set => _statCount = Check(value); }
+
+        /// <summary>Opening of a <see cref="TwPopover"/> or a menu FormWind draws (default 140).</summary>
+        public static int PopupOpen { get => _popupOpen; set => _popupOpen = Check(value); }
+
+        /// <summary>Fade-out of a closing popover or menu (default 120).</summary>
+        public static int PopupClose { get => _popupClose; set => _popupClose = Check(value); }
+
+        /// <summary>One ring of <see cref="TwAttention.Pulse"/> (default 700).</summary>
+        public static int AttentionPulse { get => _attentionPulse; set => _attentionPulse = Check(value); }
+
+        /// <summary>Fade-in and fade-out of a <see cref="TwDialog"/> (default 150).</summary>
+        public static int DialogFade { get => _dialogFade; set => _dialogFade = Check(value); }
+
+        /// <summary>Fade-out of a notification (default 150; it slides in for twice as long).</summary>
+        public static int ToastFade { get => _toastFade; set => _toastFade = Check(value); }
+
+        /// <summary>Sets every duration back to its default.</summary>
+        public static void Reset()
+        {
+            _chartIntro = TwChartMotion.IntroDuration;
+            _chartChange = TwChartMotion.ChangeDuration;
+            _chartStagger = TwChartMotion.Stagger;
+            _statCount = TwStat.CountDuration;
+            _popupOpen = TwPopupMotion.OpenDuration;
+            _popupClose = TwPopupMotion.CloseDuration;
+            _attentionPulse = TwOutset.PingDuration;
+            _dialogFade = TwDialogForm.FadeDuration;
+            _toastFade = TwToastForm.FadeDuration;
+        }
+
+        private static int Check(int durationMs, [System.Runtime.CompilerServices.CallerMemberName] string name = "") =>
+            durationMs >= 0 ? durationMs : throw new ArgumentOutOfRangeException(name, durationMs, "A duration cannot be negative.");
+    }
+
+    /// <summary>
+    /// The animation setting as one value that an application can store with its own settings and set back at startup:
+    /// <see cref="TwMotionPreference.System"/> follows Windows (<see cref="FollowSystem"/>), <see cref="TwMotionPreference.On"/>
+    /// and <see cref="TwMotionPreference.Off"/> set <see cref="Enabled"/>.
+    /// <code>
+    /// TwMotion.Preference = Settings.Default.Motion;            // at startup (a TwMotionPreference setting)
+    /// Settings.Default.Motion = TwMotion.Preference;            // when the user changes it
+    /// </code>
+    /// </summary>
+    public static TwMotionPreference Preference
+    {
+        get => _override switch { null => TwMotionPreference.System, true => TwMotionPreference.On, false => TwMotionPreference.Off };
+        set
+        {
+            switch (value)
+            {
+                case TwMotionPreference.System: FollowSystem(); break;
+                case TwMotionPreference.On: Enabled = true; break;
+                case TwMotionPreference.Off: Enabled = false; break;
+                default: throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            }
+        }
+    }
+
+    /// <summary>
     /// Applies the timing curve to linear progress <paramref name="t"/> (clamped to 0–1). The result is 0 at the start and
     /// 1 at the end; <see cref="TwEasing.Spring"/> goes above 1 for a moment in between.
     /// </summary>
@@ -279,4 +367,17 @@ public sealed class TwTween : IDisposable
     }
 
     public void Dispose() => _timer.Dispose();
+}
+
+/// <summary>The animation setting an application stores (<see cref="TwMotion.Preference"/>).</summary>
+public enum TwMotionPreference
+{
+    /// <summary>Follow Windows' "Show animations in Windows" setting.</summary>
+    System,
+
+    /// <summary>Animations on.</summary>
+    On,
+
+    /// <summary>Animations off: changes are immediate.</summary>
+    Off,
 }

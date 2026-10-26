@@ -6,19 +6,19 @@ namespace FormWind;
 
 /// <summary>
 /// Opening and data-change animation shared by the chart controls. The opening plays once, the first time the chart is
-/// shown with data: each item (bar, ring, cell, dot) starts <see cref="Stagger"/> ms after the previous one. After that a
-/// data change moves what is on screen to the new data in <see cref="ChangeDuration"/> ms. The chart keeps its geometry
+/// shown with data: each item (bar, ring, cell, dot) starts <see cref="TwMotion.Timings.ChartStagger"/> ms after the previous one. After that a
+/// data change moves what is on screen to the new data in <see cref="TwMotion.Timings.ChartChange"/> ms. The chart keeps its geometry
 /// calculations on the target; only painting reads <see cref="IntroProgress"/> and <see cref="ChangeProgress"/>.
 /// </summary>
 internal sealed class TwChartMotion : IDisposable
 {
-    /// <summary>Time (ms) of one item's opening animation.</summary>
+    /// <summary>Default time (ms) of one item's opening animation (<see cref="TwMotion.Timings.ChartIntro"/>).</summary>
     internal const int IntroDuration = 600;
 
-    /// <summary>Time (ms) of the move from the old data to the new.</summary>
+    /// <summary>Default time (ms) of the move from the old data to the new (<see cref="TwMotion.Timings.ChartChange"/>).</summary>
     internal const int ChangeDuration = 350;
 
-    /// <summary>Delay (ms) between the openings of neighbouring items.</summary>
+    /// <summary>Default delay (ms) between the openings of neighbouring items (<see cref="TwMotion.Timings.ChartStagger"/>).</summary>
     internal const int Stagger = 35;
 
     /// <summary>The delays together stay within this (ms), so charts with many items do not open slowly.</summary>
@@ -62,7 +62,7 @@ internal sealed class TwChartMotion : IDisposable
     {
         Shown = true;
         IsIntro = true;
-        Start(IntroDuration, count, easing);
+        Start(TwMotion.Timings.ChartIntro, count, easing);
     }
 
     /// <summary>Plays the opening the first time the chart can show its data.</summary>
@@ -91,7 +91,7 @@ internal sealed class TwChartMotion : IDisposable
         }
         captureFrom();
         IsIntro = false;
-        Start(ChangeDuration, 1, TwEasing.Out);
+        Start(TwMotion.Timings.ChartChange, 1, TwEasing.Out);
     }
 
     /// <summary>Called from painting: a chart drawn with data counts as shown (its later changes animate).</summary>
@@ -104,7 +104,7 @@ internal sealed class TwChartMotion : IDisposable
     {
         _tween ??= new TwTween(_owner);
         _duration = durationMs;
-        _stagger = count > 1 ? Math.Min(Stagger, MaxSpread / (count - 1)) : 0;
+        _stagger = count > 1 ? Math.Min(TwMotion.Timings.ChartStagger, MaxSpread / (count - 1)) : 0;
         _total = durationMs + _stagger * Math.Max(0, count - 1);
         _easing = easing;
         _tween.Start(_total, TwEasing.Linear);
