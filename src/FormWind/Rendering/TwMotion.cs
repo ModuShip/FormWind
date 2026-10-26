@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -89,6 +90,34 @@ public static class TwMotion
     /// <summary>Whether <paramref name="control"/> should animate now: animations are on, it is visible and not in a designer.</summary>
     public static bool CanAnimate(Control control) =>
         Enabled && control is not null && control.IsHandleCreated && control.Visible && control.Site?.DesignMode != true;
+
+    /// <summary>
+    /// Completes on the next frame of FormWind's animation clock, once <paramref name="control"/> and its children have
+    /// painted what was pending: for example to show a page first and bind its data after it is on screen. Unlike
+    /// <see cref="Application.Idle"/> it also comes while a control keeps repainting (a chart opening, a pulsing skeleton).
+    /// Completes at once when the control is not shown. Call it on the UI thread.
+    /// <code>
+    /// ShowPage(page);
+    /// await TwMotion.AfterPaintAsync(page);
+    /// grid.DataSource = await LoadAsync();
+    /// </code>
+    /// </summary>
+    public static Task AfterPaintAsync(Control control)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        if (control.IsDisposed || !control.IsHandleCreated || !control.Visible) return Task.CompletedTask;
+
+        var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var frame = new TwFrameTimer { Interval = 0 };
+        frame.Tick += (_, _) =>
+        {
+            frame.Dispose();
+            TwCapture.PaintNow(control);
+            done.TrySetResult(true);
+        };
+        frame.Start();
+        return done.Task;
+    }
 
     /// <summary>
     /// Standard durations (ms) for in-control animations; 1 ms each when animations are off, so a change that waits for

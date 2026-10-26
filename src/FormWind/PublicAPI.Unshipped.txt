@@ -1,1 +1,2 @@
 #nullable enable
+static FormWind.TwMotion.AfterPaintAsync(System.Windows.Forms.Control! control) -> System.Threading.Tasks.Task!
