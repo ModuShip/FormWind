@@ -28,20 +28,12 @@ internal static class TwFadeOut
     public static void Play(Control window, Form? owner, int durationMs, bool roundCorners)
     {
         if (!TwMotion.CanAnimate(window) || durationMs <= 0) return;
-        var bounds = window.Bounds;
+        var bounds = window is Form form ? TwCapture.VisibleFormBounds(form) : window.Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0 || !Screen.AllScreens.Any(s => s.Bounds.IntersectsWith(bounds))) return;
 
-        Bitmap picture;
-        try
-        {
-            picture = new Bitmap(bounds.Width, bounds.Height);
-            using var graphics = Graphics.FromImage(picture);
-            graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
-        }
-        catch (Exception ex) when (ex is Win32Exception or ArgumentException or ExternalException)
-        {
-            return; // kilitli ekran, uzak masaüstü bağlantısı kesik …
-        }
+        // Ekranda görünen hâli; başka bir pencerenin altında kalıyorsa pencere yöneticisinden alınır.
+        var picture = TwCapture.Take(window, bounds);
+        if (picture is null) return;
         PlayPicture(picture, bounds, owner, durationMs, roundCorners, TwEasing.In);
     }
 
@@ -50,6 +42,18 @@ internal static class TwFadeOut
     /// coordinates) and fades it out; <c>false</c> when the window cannot be shown (the picture is then disposed).
     /// </summary>
     public static bool PlayPicture(Bitmap picture, Rectangle bounds, Form? owner, int durationMs, bool roundCorners, TwEasing easing)
+    {
+        var ghost = Cover(picture, bounds, owner, roundCorners);
+        ghost?.Fade(durationMs, easing);
+        return ghost != null;
+    }
+
+    /// <summary>
+    /// Shows <paramref name="picture"/> (which it then owns) in a click-through window at <paramref name="bounds"/> and
+    /// leaves it there until <see cref="Ghost.Fade(int, TwEasing)"/>; <c>null</c> when the window cannot be shown (the picture is then
+    /// disposed). The picture is on screen when this returns.
+    /// </summary>
+    public static Ghost? Cover(Bitmap picture, Rectangle bounds, Form? owner, bool roundCorners)
     {
         var ghost = new Ghost(picture, bounds, roundCorners);
         try
@@ -60,17 +64,17 @@ internal static class TwFadeOut
         catch (Exception ex) when (!TwErrors.IsCritical(ex))
         {
             ghost.Dispose();
-            return false;
+            return null;
         }
         // Görüntü hemen ekrana çıkar; altındaki değişiklik ancak ondan sonra çizilir.
         ghost.Update();
         _active++;
         ghost.FormClosed += (_, _) => _active--;
-        ghost.Fade(durationMs, easing);
-        return true;
+        return ghost;
     }
 
-    private sealed class Ghost : Form
+    /// <summary>A click-through window showing a picture until it fades out.</summary>
+    internal sealed class Ghost : Form
     {
         private const int WsExNoActivate = 0x08000000, WsExToolWindow = 0x00000080, WsExTransparent = 0x00000020;
         private readonly Bitmap _picture;
@@ -105,9 +109,22 @@ internal static class TwFadeOut
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+            DisableTransitions(Handle);
             if (!_roundCorners) return;
             int round = 2;
             try { DwmSetWindowAttribute(Handle, 33, ref round, sizeof(int)); }
+            catch (DllNotFoundException) { }
+            catch (EntryPointNotFoundException) { }
+        }
+
+        /// <summary>
+        /// Turns off Windows' own show and hide animation of a picture window: it would linger on screen after closing
+        /// (and come out in the next picture taken from the screen).
+        /// </summary>
+        internal static void DisableTransitions(IntPtr handle)
+        {
+            int disabled = 1;
+            try { DwmSetWindowAttribute(handle, 3, ref disabled, sizeof(int)); }   // DWMWA_TRANSITIONS_FORCEDISABLED
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
         }
@@ -116,10 +133,21 @@ internal static class TwFadeOut
 
         protected override void OnPaintBackground(PaintEventArgs e) { }
 
-        public void Fade(int durationMs, TwEasing easing)
+        /// <summary>Fades the picture out from now on and closes the window at the end.</summary>
+        public void Fade(int durationMs, TwEasing easing) => Fade(durationMs, easing, Point.Empty);
+
+        /// <summary>Fades the picture out while moving it by <paramref name="offset"/>, and closes the window at the end.</summary>
+        public void Fade(int durationMs, TwEasing easing, Point offset)
         {
+            if (IsDisposed) return;
+            var start = Location;
             _tween = new TwTween(this);
-            _tween.Tick += (_, _) => Opacity = Math.Max(0, 0.99 * (1 - _tween.Progress));
+            _tween.Tick += (_, _) =>
+            {
+                float p = _tween.Progress;
+                Opacity = Math.Max(0, 0.99 * (1 - p));
+                if (!offset.IsEmpty) Location = new Point(start.X + (int)Math.Round(offset.X * p), start.Y + (int)Math.Round(offset.Y * p));
+            };
             _tween.Completed += (_, _) => Close();
             _tween.Start(durationMs, easing);
             if (!_tween.Running) Close();
