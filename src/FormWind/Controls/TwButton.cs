@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FormWind;
@@ -10,8 +11,7 @@ namespace FormWind;
 /// A button that paints its own background, corners and text. <see cref="ButtonBase.Image"/> is not drawn yet;
 /// the <c>Paint</c> event is not raised. While <see cref="IsBusy"/> a spinner turns before the text and clicks are ignored:
 /// <code>
-/// btnSave.IsBusy = true;
-/// try { await SaveAsync(); } finally { btnSave.IsBusy = false; }
+/// await btnSave.RunBusyAsync(() => SaveAsync());   // same as: IsBusy = true; try { await SaveAsync(); } finally { IsBusy = false; }
 /// </code>
 /// </summary>
 [ToolboxItem(true)]
@@ -114,6 +114,34 @@ public class TwButton : Button, ITwChrome
             Invalidate();
             AccessibilityNotifyClients(AccessibleEvents.StateChange, -1);
         }
+    }
+
+    /// <summary>
+    /// Runs <paramref name="work"/> with the button busy (<see cref="IsBusy"/>) and makes it usable again when the work ends,
+    /// also when it fails (the exception is passed on). Nothing runs when the button is already busy.
+    /// <code>
+    /// btnSave.Click += async (_, _) => await btnSave.RunBusyAsync(() => SaveAsync());
+    /// </code>
+    /// </summary>
+    /// <returns><c>false</c> when the button was already busy and the work did not run.</returns>
+    public Task<bool> RunBusyAsync(Func<Task> work)
+    {
+        if (work is null) throw new ArgumentNullException(nameof(work));
+        return _busy ? Task.FromResult(false) : RunBusy(work);
+    }
+
+    private async Task<bool> RunBusy(Func<Task> work)
+    {
+        IsBusy = true;
+        try
+        {
+            await work();
+        }
+        finally
+        {
+            if (!IsDisposed) IsBusy = false;
+        }
+        return true;
     }
 
     /// <summary>Ignored while <see cref="IsBusy"/>: no <c>Click</c> and no <see cref="Button.DialogResult"/>.</summary>
