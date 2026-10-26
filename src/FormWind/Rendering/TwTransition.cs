@@ -62,6 +62,198 @@ public static class TwTransition
         }
     }
 
+    /// <summary>
+    /// Shows <paramref name="panel"/> (a side panel, an inspector) sliding in from <paramref name="edge"/> (250 ms). The layout
+    /// is done once: the panel is made visible at once under a picture of the old look, a picture of the panel slides into
+    /// its place and the rest of the parent cross-fades to its new layout. Nothing is laid out or repainted frame by frame,
+    /// so a grid beside the panel does not tear. Without animation the panel is simply shown.
+    /// <code>
+    /// TwTransition.SlideIn(pnlInspector, TwEdge.Right);
+    /// </code>
+    /// </summary>
+    public static void SlideIn(Control panel, TwEdge edge) => Slide(panel, edge, true, TwMotion.Durations.M);
+
+    /// <summary>Shows <paramref name="panel"/> sliding in from <paramref name="edge"/> in <paramref name="durationMs"/> (see <see cref="SlideIn(Control, TwEdge)"/>).</summary>
+    public static void SlideIn(Control panel, TwEdge edge, int durationMs) => Slide(panel, edge, true, durationMs);
+
+    /// <summary>
+    /// Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> (250 ms); the layout is done once, as with
+    /// <see cref="SlideIn(Control, TwEdge)"/>. Without animation the panel is simply hidden.
+    /// </summary>
+    public static void SlideOut(Control panel, TwEdge edge) => Slide(panel, edge, false, TwMotion.Durations.M);
+
+    /// <summary>Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> in <paramref name="durationMs"/>.</summary>
+    public static void SlideOut(Control panel, TwEdge edge, int durationMs) => Slide(panel, edge, false, durationMs);
+
+
+    private static void Slide(Control panel, TwEdge edge, bool show, int durationMs)
+    {
+        if (panel is null) throw new ArgumentNullException(nameof(panel));
+        var host = panel.Parent;
+        _lastCovered = false;
+        if (host is null || panel.Visible == show || !TwMotion.CanAnimate(host) || durationMs <= 0)
+        {
+            panel.Visible = show;
+            return;
+        }
+
+        var hostBounds = VisibleScreenBounds(host, host.RectangleToScreen(host.ClientRectangle));
+        var before = hostBounds.IsEmpty ? null : TwCapture.Take(host, hostBounds);
+        if (before is null)
+        {
+            panel.Visible = show;
+            return;
+        }
+
+        // Kapanışta panelin resmi ve yeri eski görüntüden alınır; açılışta yeri ancak yerleşimden sonra bilinir, eski
+        // görüntünün tamamı arka plan için saklanır.
+        var place = Rectangle.Empty;
+        Bitmap? front = null, back = null;
+        if (show) back = (Bitmap)before.Clone();
+        else
+        {
+            place = Rectangle.Intersect(host.RectangleToScreen(panel.Bounds), hostBounds);
+            front = Crop(before, place, hostBounds);
+        }
+
+        // Eski görüntü üstte kalırken yerleşim bir kez yapılır ve boyanır.
+        var cover = TwFadeOut.Cover(before, hostBounds, host.FindForm(), roundCorners: false);
+        try
+        {
+            panel.Visible = show;
+            TwCapture.PaintNow(host);
+        }
+        catch
+        {
+            cover?.Fade(0, TwEasing.Linear);
+            front?.Dispose();
+            back?.Dispose();
+            throw;
+        }
+        if (cover is null)
+        {
+            front?.Dispose();
+            back?.Dispose();
+            return;
+        }
+        _lastCovered = true;
+
+        if (show)
+        {
+            var whole = back!;
+            place = Rectangle.Intersect(host.RectangleToScreen(panel.Bounds), hostBounds);
+            front = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
+            back = front is null ? null : Crop(whole, place, hostBounds);
+            whole.Dispose();
+        }
+        else back = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
+
+        // Panelin yerinde: arka plan üzerinde kayan panel resmi; geri kalan alan yeni yerleşime solar.
+        if (front != null && back != null)
+        {
+            var away = TwWindowMotion.Offset(edge, edge is TwEdge.Left or TwEdge.Right ? place.Width : place.Height);
+            var slider = new SlideGhost(back, front, place, show ? away : Point.Empty, show ? Point.Empty : away);
+            if (slider.TryShow(host.FindForm())) slider.Play(durationMs, show ? TwEasing.Out : TwEasing.In);
+        }
+        else
+        {
+            front?.Dispose();
+            back?.Dispose();
+        }
+        cover.Fade(durationMs, TwEasing.InOut);
+    }
+
+    private static Bitmap? Crop(Bitmap picture, Rectangle part, Rectangle pictureBounds)
+    {
+        var rect = new Rectangle(part.X - pictureBounds.X, part.Y - pictureBounds.Y, part.Width, part.Height);
+        rect.Intersect(new Rectangle(Point.Empty, picture.Size));
+        return rect.Width > 0 && rect.Height > 0 ? picture.Clone(rect, picture.PixelFormat) : null;
+    }
+
+    /// <summary>A click-through window over the panel's place: the background picture with the panel's picture sliding over it.</summary>
+    private sealed class SlideGhost : Form
+    {
+        private const int WsExNoActivate = 0x08000000, WsExToolWindow = 0x00000080, WsExTransparent = 0x00000020;
+        private readonly Bitmap _back, _front;
+        private readonly Point _from, _to;
+        private TwTween? _tween;
+
+        public SlideGhost(Bitmap back, Bitmap front, Rectangle bounds, Point from, Point to)
+        {
+            _back = back;
+            _front = front;
+            _from = from;
+            _to = to;
+            FormBorderStyle = FormBorderStyle.None;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.Manual;
+            Bounds = bounds;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        protected override bool ShowWithoutActivation => true;
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ExStyle |= WsExNoActivate | WsExToolWindow | WsExTransparent;
+                return cp;
+            }
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            TwFadeOut.Ghost.DisableTransitions(Handle);
+        }
+
+        public bool TryShow(Form? owner)
+        {
+            try
+            {
+                if (owner is { IsDisposed: false, Visible: true }) Show(owner);
+                else Show();
+                Update();
+                return true;
+            }
+            catch (Exception ex) when (!TwErrors.IsCritical(ex))
+            {
+                Dispose();
+                return false;
+            }
+        }
+
+        public void Play(int durationMs, TwEasing easing)
+        {
+            _tween = new TwTween(this);
+            _tween.Completed += (_, _) => Close();
+            _tween.Start(durationMs, easing);
+            if (!_tween.Running) Close();
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e) { }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            float p = _tween?.Progress ?? 0f;
+            e.Graphics.DrawImageUnscaled(_back, 0, 0);
+            e.Graphics.DrawImageUnscaled(_front, (int)Math.Round(_from.X + (_to.X - _from.X) * p), (int)Math.Round(_from.Y + (_to.Y - _from.Y) * p));
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _tween?.Dispose();
+                _back.Dispose();
+                _front.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+
     /// <summary>Whether the last <see cref="CrossFade(Control, Action, int)"/> showed a picture (for tests).</summary>
     [ThreadStatic]
     private static bool _lastCovered;

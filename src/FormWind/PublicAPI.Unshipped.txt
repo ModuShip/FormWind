@@ -1,2 +1,17 @@
 #nullable enable
+FormWind.TwEdge
+FormWind.TwEdge.Bottom = 3 -> FormWind.TwEdge
+FormWind.TwEdge.Left = 0 -> FormWind.TwEdge
+FormWind.TwEdge.Right = 2 -> FormWind.TwEdge
+FormWind.TwEdge.Top = 1 -> FormWind.TwEdge
+FormWind.TwWindowMotion
 static FormWind.TwMotion.AfterPaintAsync(System.Windows.Forms.Control! control) -> System.Threading.Tasks.Task!
+static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge) -> void
+static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge, int durationMs) -> void
+static FormWind.TwTransition.SlideOut(System.Windows.Forms.Control! panel, FormWind.TwEdge edge) -> void
+static FormWind.TwTransition.SlideOut(System.Windows.Forms.Control! panel, FormWind.TwEdge edge, int durationMs) -> void
+static FormWind.TwWindowMotion.Attach(System.Windows.Forms.Form! window, FormWind.TwEdge edge) -> void
+static FormWind.TwWindowMotion.FadeOut(System.Windows.Forms.Form! window, FormWind.TwEdge? edge) -> void
+static FormWind.TwWindowMotion.FadeOut(System.Windows.Forms.Form! window, FormWind.TwEdge? edge, int durationMs) -> void
+static FormWind.TwWindowMotion.SlideIn(System.Windows.Forms.Form! window, FormWind.TwEdge edge) -> void
+static FormWind.TwWindowMotion.SlideIn(System.Windows.Forms.Form! window, FormWind.TwEdge edge, int durationMs) -> void
