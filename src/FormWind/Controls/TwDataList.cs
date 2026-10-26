@@ -268,6 +268,30 @@ public class TwDataList : Control, ITwTimed
         }
     }
 
+    /// <summary>
+    /// The list is loading: its rows are hidden and pulsing skeleton rows fill it instead; clicks, keys and the wheel are
+    /// ignored. For data that comes all at once; for data that comes page by page see <see cref="IsItemLoaded"/>.
+    /// <code>
+    /// list.IsLoading = true;
+    /// try { list.ItemCount = (await LoadAsync()).Count; } finally { list.IsLoading = false; }
+    /// </code>
+    /// </summary>
+    [Category("Behavior"), DefaultValue(false)]
+    public bool IsLoading
+    {
+        get => _loading;
+        set
+        {
+            if (_loading == value) return;
+            _loading = value;
+            _hoverIndex = -1;
+            Invalidate();
+            AccessibilityNotifyClients(AccessibleEvents.StateChange, -1);
+        }
+    }
+
+    private bool _loading;
+
     /// <summary>Row height in 96 DPI pixels.</summary>
     [Category("Appearance"), DefaultValue(40)]
     public int ItemHeight
@@ -704,6 +728,7 @@ public class TwDataList : Control, ITwTimed
     protected override void OnMouseWheel(MouseEventArgs e)
     {
         base.OnMouseWheel(e);
+        if (_loading) return;
         int lines = SystemInformation.MouseWheelScrollLines;
         float step = lines < 0 ? ClientSize.Height : Math.Max(1, lines) * ScaledItemHeight;
         ScrollTo(_target - e.Delta / 120f * step);
@@ -713,6 +738,7 @@ public class TwDataList : Control, ITwTimed
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
+        if (_loading) return;
         if (_draggingThumb)
         {
             var track = TrackBounds();
@@ -751,7 +777,7 @@ public class TwDataList : Control, ITwTimed
     {
         base.OnMouseDown(e);
         if (CanFocus) Focus();
-        if (e.Button != MouseButtons.Left) return;
+        if (e.Button != MouseButtons.Left || _loading) return;
 
         if (MaxScrollOffset > 0 && HotTrackBounds().Contains(e.Location))
         {
@@ -819,7 +845,7 @@ public class TwDataList : Control, ITwTimed
     protected override void OnMouseDoubleClick(MouseEventArgs e)
     {
         base.OnMouseDoubleClick(e);
-        if (e.Button == MouseButtons.Left && IndexFromPoint(e.Location) is int index && index >= 0 && index == _selectedIndex && (ModifierKeys & (Keys.Control | Keys.Shift)) == 0)
+        if (e.Button == MouseButtons.Left && !_loading && IndexFromPoint(e.Location) is int index && index >= 0 && index == _selectedIndex && (ModifierKeys & (Keys.Control | Keys.Shift)) == 0)
             Activate();
     }
 
@@ -831,7 +857,7 @@ public class TwDataList : Control, ITwTimed
     {
         base.OnKeyDown(e);
         _focusVisible = true;
-        if (_itemCount == 0) return;
+        if (_itemCount == 0 || _loading) return;
         int page = Math.Max(1, (ClientSize.Height - Padding.Vertical) / ScaledItemHeight - 1);
         int current = _selectedIndex;
         int next = e.KeyCode switch
@@ -899,6 +925,12 @@ public class TwDataList : Control, ITwTimed
         var g = e.Graphics;
         using (var back = new SolidBrush(_colors.Back))
             g.FillRectangle(back, ClientRectangle);
+
+        if (_loading)
+        {
+            PaintLoading(g);
+            return;
+        }
 
         if (_itemCount > 0)
         {
@@ -1041,6 +1073,19 @@ public class TwDataList : Control, ITwTimed
             _pulse.Start();
         }
         else _pulse?.Stop();
+    }
+
+    // Yükleniyor: görünen yüksekliği dolduran iskelet satırlar; gerçek satırlar ve kaydırma çubuğu çizilmez.
+    private void PaintLoading(Graphics g)
+    {
+        int height = ScaledItemHeight;
+        int bottom = ClientSize.Height - Padding.Bottom;
+        for (int i = 0, y = Padding.Top; y < bottom && height > 0; i++, y += height)
+        {
+            var bounds = new Rectangle(Padding.Left, y, Math.Max(0, ClientSize.Width - Padding.Horizontal), height);
+            PaintSkeleton(g, new TwDataListDrawEventArgs(this, g, i, bounds, false, false));
+        }
+        UpdatePulse(true);
     }
 
     // Yüklenmemiş satır: iki gri çubuk.

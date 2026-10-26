@@ -1,5 +1,7 @@
 #nullable enable
 FormWind.TwButton.RunBusyAsync(System.Func<System.Threading.Tasks.Task!>! work) -> System.Threading.Tasks.Task<bool>!
+FormWind.TwDataList.IsLoading.get -> bool
+FormWind.TwDataList.IsLoading.set -> void
 FormWind.TwEdge
 FormWind.TwEdge.Bottom = 3 -> FormWind.TwEdge
 FormWind.TwEdge.Left = 0 -> FormWind.TwEdge
