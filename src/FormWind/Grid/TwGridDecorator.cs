@@ -688,7 +688,7 @@ internal sealed partial class TwGridDecorator
         g.Restore(state);
     }
 
-    private Timer? _pulse;
+    private TwFrameTimer? _pulse;
 
     private void UpdatePulse(bool active)
     {
@@ -696,7 +696,7 @@ internal sealed partial class TwGridDecorator
         {
             if (_pulse is null)
             {
-                _pulse = new Timer { Interval = 33 };
+                _pulse = new TwFrameTimer { Interval = 33 };
                 _pulse.Tick += (_, _) => _grid.Invalidate(BodyBounds);
                 _grid.Disposed += (_, _) => _pulse.Dispose();
             }

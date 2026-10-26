@@ -154,7 +154,7 @@ internal sealed class TwOutset
     private readonly Control _control;
     private Control? _parent;
     private Rectangle _paintedBounds;
-    private readonly Timer _timer = new Timer { Interval = 16 };
+    private readonly TwFrameTimer _timer = new TwFrameTimer();
     private IReadOnlyList<TwShadowLayer> _fromShadows = Array.Empty<TwShadowLayer>();
     private TwOutsetSpec? _fromRing;
     private int _fromExtent;

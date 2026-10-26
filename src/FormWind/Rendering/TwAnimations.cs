@@ -22,7 +22,7 @@ internal static class TwAnimations
     private static HashSet<Control>? _controls;
 
     [ThreadStatic]
-    private static Timer? _timer;
+    private static TwFrameTimer? _timer;
 
     /// <summary>Number of controls with a running animation on this thread (for tests).</summary>
     internal static int Count => _controls?.Count ?? 0;
@@ -41,7 +41,7 @@ internal static class TwAnimations
         control.Disposed += (_, _) => Track(control, TwAnimation.None);
         if (_timer is null)
         {
-            _timer = new Timer { Interval = 16 };
+            _timer = new TwFrameTimer();
             _timer.Tick += (_, _) => Tick();
         }
         _timer.Start();

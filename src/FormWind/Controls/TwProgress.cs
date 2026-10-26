@@ -21,7 +21,7 @@ public class TwProgress : Control, ITwChrome, ITwTimed
     private bool _indeterminate;
     private float _phase;
     private TwChrome _chrome = TwChrome.None;
-    private readonly Timer _timer = new Timer { Interval = 16 };
+    private readonly TwFrameTimer _timer = new TwFrameTimer();
     private TwTween? _fill;
     private float _fillFrom;
     private TwTimingClasses _timing;

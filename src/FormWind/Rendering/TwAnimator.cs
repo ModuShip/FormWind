@@ -14,10 +14,11 @@ internal enum TwColorChannel
 
 /// <summary>
 /// Animates a number of a control (a position, a width, an opacity) and the color transitions of the <c>transition</c>
-/// classes. A single timer per thread (about 60 frames/s) runs all animations with their curve and delay. A new animation
+/// classes. A single clock per thread (about 60 frames/s) runs all animations with their curve and delay. A new animation
 /// of the same control and name replaces the running one; to continue from where it is, pass the last value given to
-/// <c>set</c> as <c>from</c>. Windows generates <c>WM_TIMER</c> only when no other message is queued: while a window
-/// keeps invalidating itself during paint, or the UI thread is busy, animations pause at an intermediate value.
+/// <c>set</c> as <c>from</c>. All FormWind animations share one frame clock per UI thread that does not depend on
+/// <c>WM_TIMER</c>, so a control that keeps repainting (a chart opening, a pulsing skeleton) does not stop the others;
+/// only a busy UI thread delays frames, and the value then jumps to where it should be by time.
 /// <code>
 /// TwAnimator.Animate(panel, "width", panel.Width, 320, TwMotion.Durations.M, w => panel.Width = (int)w);
 /// </code>
@@ -28,7 +29,7 @@ public static class TwAnimator
     private static Dictionary<(Control Control, object Key), Animation>? _active;
 
     [ThreadStatic]
-    private static Timer? _timer;
+    private static TwFrameTimer? _timer;
 
     internal static int ActiveCount => _active?.Count ?? 0;
 
@@ -166,7 +167,7 @@ public static class TwAnimator
 
         if (_timer is null)
         {
-            _timer = new Timer { Interval = 16 };
+            _timer = new TwFrameTimer();
             _timer.Tick += (_, _) => Step(DateTime.UtcNow);
         }
         _timer.Start();

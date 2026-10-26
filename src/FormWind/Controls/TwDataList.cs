@@ -220,7 +220,7 @@ public class TwDataList : Control, ITwTimed
     private TwTween? _hoverFade;
     // Hover zemininin belirişi (120 ms); duration-*, delay-*, ease-* ve transition-none ile değişir.
     private TwTimingClasses _timing;
-    private Timer? _pulse;
+    private TwFrameTimer? _pulse;
 
     // Odak halkası yalnızca odak klavyeyle geldiyse çizilir (bkz. TwFocusVisible).
     private bool _focusVisible;
@@ -1035,7 +1035,7 @@ public class TwDataList : Control, ITwTimed
         {
             if (_pulse is null)
             {
-                _pulse = new Timer { Interval = 50 };
+                _pulse = new TwFrameTimer { Interval = 50 };
                 _pulse.Tick += (_, _) => Invalidate();
             }
             _pulse.Start();

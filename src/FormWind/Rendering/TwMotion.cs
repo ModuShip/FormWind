@@ -171,7 +171,7 @@ public static class TwMotion
 public sealed class TwTween : IDisposable
 {
     private readonly Control _owner;
-    private readonly Timer _timer = new Timer { Interval = 16 };
+    private readonly TwFrameTimer _timer = new TwFrameTimer();
     private DateTime _start;
     private TwTiming _timing;
 
