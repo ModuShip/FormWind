@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
@@ -51,6 +52,8 @@ internal class DataGridViewApplier : WinFormsApplier
         Set(grid.BackgroundColor, background, v => grid.BackgroundColor = v);
         var borderStyle = style.BorderWidth.HasValue ? BorderStyle.None : original.BorderStyle;
         if (grid.BorderStyle != borderStyle) grid.BorderStyle = borderStyle;
+        // DataGridView'de çift tampon varsayılan kapalı ve korumalıdır: veri dolarken tablo satır satır boyanır.
+        SetDoubleBuffered(grid, original.Restoring ? original.DoubleBuffered : true);
 
         // Izgara çizgileri
         Set(grid.GridColor, style.DivideColor ?? original.GridColor, v => grid.GridColor = v);
@@ -282,9 +285,21 @@ internal class DataGridViewApplier : WinFormsApplier
         if (!current.Equals(value)) assign(value);
     }
 
+    private static readonly PropertyInfo? DoubleBufferedProperty =
+        typeof(Control).GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private static bool IsDoubleBuffered(DataGridView grid) => DoubleBufferedProperty?.GetValue(grid) is true;
+
+    internal static void SetDoubleBuffered(DataGridView grid, bool value)
+    {
+        if (DoubleBufferedProperty is null || IsDoubleBuffered(grid) == value) return;
+        DoubleBufferedProperty.SetValue(grid, value);
+    }
+
     private sealed class GridOriginal
     {
         public Color BackgroundColor;
+        public bool DoubleBuffered;
         public BorderStyle BorderStyle;
         public Color GridColor;
         public DataGridViewCellBorderStyle CellBorderStyle;
@@ -343,6 +358,7 @@ internal class DataGridViewApplier : WinFormsApplier
         public static GridOriginal Capture(DataGridView grid) => new GridOriginal
         {
             BackgroundColor = grid.BackgroundColor,
+            DoubleBuffered = IsDoubleBuffered(grid),
             BorderStyle = grid.BorderStyle,
             GridColor = grid.GridColor,
             CellBorderStyle = grid.CellBorderStyle,
