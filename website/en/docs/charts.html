@@ -65,6 +65,7 @@ heat.SetData(new[] { "Line 1", "Line 2" }, new[] { "Mon", "Tue", "Wed" },
 heat.CellClick += (s, e) => status.Text = heat.GetItemText(e.Row, e.Column);
 
 corr.ShowValues = true; corr.ValueFormat = "0.00"; corr.Minimum = -1; corr.Maximum = 1;   // correlation matrix</code></pre>
+<p>When the heatmap is narrow, <code>CreateLegend()</code> returns its legend as a separate <code>TwHeatmapLegend</code> to place elsewhere (a card header, next to a title); the heatmap then stops drawing its own, and the legend follows its data, colors and texts.</p>
 
 <h3 id="progress-rings">Progress rings</h3>
 <p><code>TwRingChart</code> draws concentric rings, outermost first, around a large center text: a single completion ring ("6/9"), or the parts of a product such as OEE = availability × performance × quality. Each ring fills clockwise over a <code>divide-*</code> track; with two or more rings a legend lists the values.</p>

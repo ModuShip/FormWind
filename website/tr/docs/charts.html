@@ -65,6 +65,7 @@ heat.SetData(new[] { "Hat 1", "Hat 2" }, new[] { "Pzt", "Sal", "Çar" },
 heat.CellClick += (s, e) => status.Text = heat.GetItemText(e.Row, e.Column);
 
 corr.ShowValues = true; corr.ValueFormat = "0.00"; corr.Minimum = -1; corr.Maximum = 1;   // korelasyon matrisi</code></pre>
+<p>Isı haritası darsa <code>CreateLegend()</code> göstergesini ayrı bir <code>TwHeatmapLegend</code> olarak döndürür; bu kontrol başka bir yere (kart başlığına, bir başlığın yanına) yerleştirilir. Isı haritası o zaman kendi göstergesini çizmez; gösterge onun verisini, renklerini ve metinlerini izler.</p>
 
 <h3 id="progress-rings">İlerleme halkaları</h3>
 <p><code>TwRingChart</code>, ortada büyük bir metnin çevresinde dıştan içe iç içe halkalar çizer: tek bir tamamlanma halkası ("6/9") ya da OEE = kullanılabilirlik × performans × kalite gibi bir çarpımın parçaları. Her halka <code>divide-*</code> izinin üzerinde saat yönünde dolar; iki ve daha çok halkada değerler bir göstergede listelenir.</p>

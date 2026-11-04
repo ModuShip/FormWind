@@ -5,6 +5,96 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwMotionOptions` gives one transition or window motion its own duration, curve (`Easing` or a `TwCubicBezier`
+  `Curve`), slide distance and panel settings. `TwTransition.CrossFade`, `SlideIn`, `SlideOut`, `TwWindowMotion.SlideIn`
+  and `FadeOut` take it, and `TwWindowMotion.Attach(window, edge, enter, exit)` gives the entrance and the exit their own
+  (for example a spring entrance and an ease-in exit).
+- `TwWindowMotion.Distance` sets how far windows slide (default 24 px); `TwMotionOptions.Distance` sets it for one call.
+- `TwMotion.Timings.CrossFade`, `Slide`, `WindowIn` and `WindowOut` set the default durations of page cross-fades, panel
+  slides and resizes, and window entrances and exits.
+- `TwMotionOptions.IncludeMargin` slides the panel's `Margin` with it, so the gap beside an inspector comes and goes with
+  the panel. `TwMotionOptions.FadeRest = false` puts the rest of the parent in its new layout at once instead of
+  cross-fading it, so text that moves (grid columns) is never seen twice.
+- `TwTransition.Resize(panel, size)` animates the width (or height) of a docked panel, such as a sidebar collapsing to
+  icons, with one layout: the panel's picture opens or closes from its docked edge while the rest cross-fades.
+  `Resize(panel, change)` applies a change that sets the size together with other changes (labels hidden in a collapsed
+  sidebar) under the picture of the old look.
+- `TwMotion.Prewarm(control)` creates the window handles of a control and all its children and lays them out while it is
+  hidden, so a page built in the background opens about twice as fast the first time.
+- `TwMotion.SetDoubleBuffered(control, value)` turns double buffering on for controls that do not expose it, such as a
+  `DataGridView` without classes or a `ListView`.
+- Packages carry their release notes: the section of this file for the version is the package's release notes.
+- `TwHeatmap.SelectedIndex` (with `SelectedIndexChanged`; with `SelectOnClick` a click or Enter selects the cell), `HighlightColumns` (a faint band
+  behind columns such as today), `CellSize` (fixed cells; `GetPreferredSize` shows them all) and `GetCellBounds(row, column)`
+  for placing a popover next to a cell without reflection.
+- `TwGridTree.SetTotal(column, nodes => …)` computes a parent row's value from its children (a ratio that does not add up),
+  and `TwGridTree.GetValue(node, column)` returns a node's own or computed value.
+- `TwStat.ValueScale` (size of the value relative to the font, default 2), `TwStat.Unit` (a small unit on the value's
+  baseline, read with the value by screen readers) and `TwStat.ShowTrend`.
+- `TwDialog.DarkBackColor`, `TwDialog.LightBackColor` and `TwDialogOptions.BackColor` give dialogs the application's own
+  surface instead of `gray-800`; `TwDialogOptions.OkText` names the positive button ("Save");
+  `TwDialog.Prompt(owner, options)` asks for text with every option (`OkText`, `InputMaxLength`, `InputLabel`).
+- `TwIcons.IsKnown(name)`. An unknown icon name on a styled `TwIcon`, `TwButton` or `TwChip` is reported through
+  `TailwindProvider.StyleError`, and the new FW003 analyzer warns about an unknown literal assigned to `IconName`.
+- `TwTextColumn` and `TwSelectColumn`: editable grid columns for data-entry tables. Cells are drawn as input boxes with a
+  placeholder, a red border when `Validate` reports an error and a focus ring; only the focused cell hosts a real editor
+  (`EditOnFocus` opens it when the cell is reached), and a select cell opens its list on click, Space, F4 or Alt+↓.
+- `TwSheet` opens a form as a frameless sheet inside its owner with the owner dimmed (`TwSheetOptions.FullScreen` fills
+  it); `TwSheet.Attach(owner)` turns the owner's existing `ShowDialog(owner)` calls into sheets without code changes.
+- `TwWindowChrome` removes a form's title bar while keeping dragging from empty surfaces, double-click to maximize, Aero
+  Snap and resizing; `TwCaptionButtons` draws minimize / maximize / close.
+- `TwFilterBar`: applied filters as chips with an "Add filter" menu; select, text and fixed filters; `LoadValues` sets
+  values without raising `FiltersChanged`.
+- `TwCommandPalette`: a Ctrl+K palette with grouped, accent-insensitive filtering, ↑/↓/Enter/Esc and "Search … in" rows
+  (`AddSearch`, `QueryCommands`).
+- `TwPeriodPicker`: presets, a custom range picked on a calendar and an optional shift segment, in a popover.
+- `TwCardStrip`: a paged horizontal strip of cards with ‹ › buttons, a "1 / 3" indicator and a minimum card width.
+- `TwChartKind.StackedBar100`: horizontal bars split into each row's shares of 100%.
+- `TwHeatmap.CreateLegend()` returns the legend as its own control (`TwHeatmapLegend`).
+- `TwListBox.BeginUpdate()` / `EndUpdate()` defer re-measuring and repainting while many items change.
+- `TwCapture.Take(control)` and `TwFadeOut` are public: a picture of a control, and a fading cover over a change.
+- The `chip` component has `transition-colors duration-200`, so checking a filter chip fades its colors.
+- `TwTexts` has texts for the new components (`Previous`, `Next`, `AddFilter`, `CommandPlaceholder`, `NoResults`,
+  `SearchIn`, `Today`, `Yesterday`, `LastDays`, `ThisMonth`, `LastMonth`, `ThisYear`, `CustomRange`, `AllShifts`, `Apply`).
+
+### Fixed
+
+- `TwSettingRow` no longer squeezes an `AutoSize` editor below its preferred width (a tab strip moved its last tab to the
+  overflow menu; an auto-sized panel of a status text and a button was cut), and follows it when it grows.
+- `TwSettingRow` keeps the font and color that the application gives `CaptionLabel`, `DescriptionLabel` or `UnitLabel`
+  (classes or properties) when the theme changes; they used to be replaced by the row's.
+- Setting `TwSettingRow.EditorWidth` to its current value no longer lays the row out again, so setting it from the
+  editor's `Layout` or `SizeChanged` no longer loops.
+- `TwGrid.SetTree` builds its rows from `RowTemplate`, so they keep the row height of the classes (`row:h-*`, `table`)
+  instead of the 22 px default.
+- `TwToolbar`: a `Shrink` item no longer collapses to a letter while other items could move to the "more" menu: it
+  shrinks to a readable width (96 px or its `MinimumSize`) first, then items move to the menu, and only then it gets
+  narrower. Its width is measured again when its text or font changes (classes applied after the first layout).
+- `TwChip` with an `h-*` class reports that height as its preferred size, so a `FlowLayoutPanel` no longer shrinks it.
+- `TwSettingRow` inside a container with its own horizontal padding (a `card p-4`) no longer indents its text a second
+  time; `h-*` is the row's minimum height with the content centered; an editor without its own font gets the container's
+  font instead of the row's `text-sm`, so it matches the other inputs of the form.
+- .NET Framework: FormWind initializes WinForms' DPI scaling itself before reading the DPI, so `text-[px]` and spacing are
+  right on the first form of a per-monitor DPI aware application.
+
+### Behavior changes
+
+- `TwWindowMotion.Attach` slides the window in every time it is shown, also when it is shown again after `Hide()` or after
+  `ShowDialog` returned (it used to slide only the first time). A hidden attached window is kept transparent until it
+  slides in again.
+- `TwWindowMotion.SlideIn` on a window that is not on screen yet (created but not shown, or being shown in `Load` or
+  `VisibleChanged`) makes it transparent and slides it in once it is shown, instead of doing nothing.
+- The default durations of `TwTransition` and `TwWindowMotion` come from `TwMotion.Timings` (same values as before:
+  250 ms, window exit 180 ms).
+- Flex and grid layout move a container's children together in one `DeferWindowPos` batch instead of one `SetBounds`
+  per child, so relayout of a page with many controls is faster (a busy page in the samples: about 47 ms to 38 ms). The
+  children get the same bounds as before, but their `LocationChanged`, `SizeChanged` and own layout now run after the
+  container has computed all of its children, not between them. Controls that constrain their own size (`TextBox`,
+  `ComboBox`, an `AutoSize` `Label` stretched wider than its text, controls with `MinimumSize` or `MaximumSize`) and
+  controls without a handle are still placed with `SetBounds`.
+
 ## [0.1.4-preview.1] - 2026-10-26
 
 ### Added
@@ -26,21 +116,29 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwDataList.IsLoading` (also `TwListBox`) fills the list with pulsing skeleton rows and ignores input while data loads.
 - `TwStat.DefaultAnimateValue` turns value counting off (or on) for every stat that does not set `AnimateValue`.
 
-### Changed
+### Behavior changes
+
+These change how existing code behaves without changing the API, so they do not show in an API comparison.
 
 - All animations run on one frame clock per UI thread that no longer depends on `WM_TIMER`. A control that keeps
   repainting (a chart opening, pulsing skeleton rows) used to stop every other animation, such as a page transition.
+  Code that waited for `Application.Idle` or a `WM_TIMER` to know an animation had moved on should use
+  `TwMotion.AfterPaintAsync`.
 - `TwTransition.CrossFade` takes the picture of the old look from the screen after the pending paints are done (from the
   desktop window manager when the part is covered or off screen) instead of `DrawToBitmap`, which redrew the page (40–80
   ms), drew overlapping controls in the wrong order, doubled text in nested scrolled panels and drew a removed title bar
-  back. The fade starts only after the new look is painted, so it is seen whole however long the change takes.
+  back. The fade starts only after the new look is painted, so it is seen whole however long the change takes. Anything
+  above the part on screen (a notification of the same window) is in the picture too.
+- A `DataGridView` with classes is double buffered, so it is no longer painted row by row while data arrives.
+
+### Changed
+
 - A form's picture leaves out the invisible resize borders Windows 10 and 11 count in its bounds.
 - The fade-out of closing dialogs and popovers no longer copies the wrong part of the screen in a DPI-unaware application
   on a scaled display (or a system-aware one on several monitors): the screen is read in physical pixels there and scaled
   to the window's size.
 - Pictures that close or fade (dialogs, popovers, transitions) no longer play Windows' own window animation, which could
   leave them on screen for a moment after closing.
-- A `DataGridView` with classes is double buffered, so it is no longer painted row by row while data arrives.
 
 ## [0.1.3-preview.1] - 2026-10-25
 

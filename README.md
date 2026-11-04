@@ -34,6 +34,7 @@ btnSave  →  Classes: "bg-blue-600 text-white px-4 py-2 rounded-md font-bold ho
 | Krypton Toolkit kullanan bir uygulama | FormWind + `FormWind.Krypton`: Krypton'un ribbon, docking ve gezgin bileşenleri yerinde kalır, palet temayı izler. |
 | Koyu tema, tutarlı renkler, erişilebilirlik (kontrast, High Contrast, UI Automation) | FormWind. |
 | Ribbon, docking, scheduler, rapor, gelişmiş grid gibi ağır bileşenler | Bunları Krypton'dan ya da kullandığınız kontrol paketinden alın; FormWind onların yanında standart kontrolleri stiller. |
+| Tamamen yeni, yalnızca Windows'ta çalışacak, Windows 11'e yerel görünümlü bir uygulama | WinUI 3 daha uygun olabilir: GPU ile çizer, Mica pencerenin tamamında görünür. Arayüz XAML'de baştan yazılır; .NET Framework'ü desteklemez, Windows 10 1809+ ve Windows App SDK ister. Mevcut bir WinForms uygulamasında FormWind bu yeniden yazımı gerektirmez. |
 | Tamamen yeni, çapraz platform bir uygulama | WinForms yerine Avalonia, WPF ya da web tabanlı bir arayüz daha uygun olabilir. |
 
 ## Hızlı başlangıç
@@ -381,6 +382,14 @@ Form'a class verildiğinde koyu tema açıkken başlık çubuğu otomatik koyula
 
 `backdrop-mica`, `backdrop-acrylic`, `backdrop-tabbed` (Mica Alt) ve `backdrop-none` Windows 11 22H2+ sistem zeminini seçer. Zemin başlık çubuğunda ve pencere çerçevesinde görünür; WinForms istemci alanını opak çizdiği için form içinde görünmez. `caption:bg-*` verilirse başlık rengi zeminin önüne geçer.
 
+Başlık çubuğu olmayan, kenar ya da araç çubuğuyla birleşen pencere için `TwWindowChrome.Attach(this)` (bkz. [Kontroller](#kontroller)); pencere gerçek bir Windows penceresi olarak kalır: sürükleme, çift tıkla büyütme, Aero Snap ve kenarlardan boyutlandırma çalışır.
+
+```csharp
+var chrome = TwWindowChrome.Attach(this);
+chrome.AddDragSurface(toolbar);                              // araç çubuğunun boş yeri pencereyi taşır
+toolbar.Controls.Add(new TwCaptionButtons { Dock = DockStyle.Right });
+```
+
 ## Koyu tema: kaydırma çubukları ve ipuçları
 
 `DarkMode = true` iken FormWind'in çizmediği native parçalar da Windows'un koyu temasına geçer:
@@ -467,6 +476,8 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");
 | `TwTagsColumn` | Metinler (ya da `Separator` ile bölünen tek metin) | `Variants` ile birden çok rozet; sığmayanlar `+N` olarak sayılır |
 | `TwActionsColumn` | — | Menülü "⋯" düğmesi: `Actions = "Düzenle; -; Sil"`, `ActionClicked`, `MenuOpening` (satıra göre öğeleri kapatma), `Icon` |
 | `TwExpanderColumn` | — | Satır detayını açan ok ([Satır detayları](#satır-detayları)); tıklama ya da Boşluk |
+| `TwTextColumn` | Metin | Veri girişi tablosu: her hücre bir giriş kutusu (`input` görünümü + `Classes`), boşken `Placeholder`, `Validate` hata verirse kırmızı kenar (metin hücrenin hatasıdır), geçerli hücrede odak halkası. Yalnız odaktaki hücrede gerçek metin kutusu açılır; `EditOnFocus` (varsayılan) onu hücreye gelince açar, oklar/Tab/Enter tabloda form gibi gezer |
+| `TwSelectColumn` | Öğe (ya da `ValueMember`) | `TwSelect` görünümünde hücre (ok, `Placeholder`); tıklama, Boşluk, F4 ya da Alt+↓ listeyi hücrenin altında açar, harf yazmak o harfle başlayan öğeyi seçer. `Items`, `DisplayMember`, `ValueMember`, `Validate` |
 
 Hücre tipleri koyu temayı grid'in sağlayıcısından öğrenir; `dark:` varyantları ayrıca ayar gerektirmez.
 
@@ -542,7 +553,7 @@ TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);        // yaln
 - Grid bağlı olmamalıdır (`DataSource` yok): her düğüm bir satırdır, kapalı dallar gizli satırlardır. Sütun değerleri `TwGridTreeNode.Values`'tan (sütun sırasıyla) ya da `DataItem`'ın `DataPropertyName` özelliklerinden gelir.
 - Ağaç sütunu girintiyi, oku ve `IconName`'i gösterir. Oka tıklamak ya da hücreye çift tıklamak (salt okunur grid'de) açar ve kapatır; ağaç sütununda → açar ya da ilk çocuğa iner, ← kapatır ya da üst düğüme çıkar, `+`/`−` her sütunda çalışır, `*` dalın tamamını açar. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
 - Başlık tıklaması her üst düğümün çocuklarını kendi içinde sıralar; hiyerarşi ve açık dallar korunur (`tree.Sort(column, direction)`).
-- `SetTotal` boş üst hücreleri çocuklarının `Sum`, `Average`, `Count`, `Min` ya da `Max` değeriyle doldurur (toplam çocukların toplamlarını toplar, diğerleri yapraklara bakar). Düğümler değişince `tree.Refresh()`.
+- `SetTotal` boş üst hücreleri çocuklarının `Sum`, `Average`, `Count`, `Min` ya da `Max` değeriyle doldurur (toplam çocukların toplamlarını toplar, diğerleri yapraklara bakar). Oran gibi toplanamayan değerlerde `SetTotal(sütun, düğümler => …)` üst satırın değerini doğrudan çocuklarından hesaplar; `tree.GetValue(düğüm, sütun)` düğümün kendi ya da hesaplanan değerini verir. Düğümler değişince `tree.Refresh()`. Ağaç satırları class'ların satır yüksekliğini (`row:h-*`, `table`) alır.
 
 ### Satır detayları
 
@@ -644,7 +655,13 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwToolTip` | Stillenebilir ipucu: `Classes`; `Provider` verilirse koyu temayı izler. |
 | `TwChip` | Metinli, isteğe bağlı simgeli ya da durum noktalı (`IconName`, `DotColor`) ve isteğe bağlı ✕'li hap (`Removable` → `RemoveClick`; Delete/Backspace de). `Clickable` onu düğme, `Checkable` açılıp kapanan bir süzgeç çipi yapar (`Checked`, `checked:` ile stillenir). Salt gösterim çipleri sekme durağı değildir. Bileşenler `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; ✕ ekran okuyucuya ayrı bir "Kaldır" düğmesidir. |
 | `TwToolbar` | Duyarlı araç çubuğu (bir `TwPanel`): çocuklar `gap-*` aralıkla tek satırda durur; sığmayanlar "daha fazla" (…) düğmesine geçer ve menüden çalışır (düğme tıklanır, onay kutusu değişir, `TwTabStrip` ya da `TwSelect` alt menü olur, diğerleri `OverflowItemClick`'i tetikler). Öğe başına: `SetAlignment` (`Start`/`End`), `SetPriority` (yüksek olan daha geç taşınır), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: başlık bir şey taşınmadan önce daralır, `MinimumSize.Width`'e kadar). Menü `menu:` / `item:` alır, düğme `OverflowButton`'dır. |
-| `TwSettingRow` | Ayar satırı (System Settings tarzı): `LabelText`, `Description` (soluk, satır kaydırır), sağda düzenleyici (çocuk kontrol) ve `UnitText` (`EditorWidth`, varsayılan 160). `card p-0` panelde üst üste duran satırlar aralarına ayırıcı çizer (`divide-*`); dar satırda düzenleyici metnin altına iner. `label:` ve `hint:` parçaları, `setting` bileşeni. |
+| `TwSettingRow` | Ayar satırı (System Settings tarzı): `LabelText`, `Description` (soluk, satır kaydırır), sağda düzenleyici (çocuk kontrol) ve `UnitText` (`EditorWidth`, varsayılan 160; 0 = düzenleyicinin kendi genişliği; sekme şeridi gibi `AutoSize` düzenleyici tercih ettiği genişlikten dar verilmez). `card p-0` panelde üst üste duran satırlar aralarına ayırıcı çizer (`divide-*`); dar satırda düzenleyici metnin altına iner. Etiket ve açıklama satırın `label:` ve `hint:` parçalarıyla stillenir (`label:font-semibold hint:text-xs`); `CaptionLabel`'a doğrudan verilen class'lar da korunur. `setting` bileşeni. |
+| `TwCardStrip` | Sayfalı yatay kart şeridi: çocuklar (`TwStat` …) `MinCardWidth` genişlikte sığdığı kadar yan yana, eşit genişlikte; sağ üstte ‹ › düğmeleri ve "1 / 3" göstergesi (`PageLabel`), ← → da sayfa çevirir. `PageIndex`, `PageCount`, `PageChanged`, `ShowCard(card)`; tek sayfada düğmeler gizlenir. |
+| `TwFilterBar` | Etkin süzgeçler `TwChip` olarak ("Hat: 3", ✕ ile kaldırılır; çipe tıklamak değeri değiştirir), sonda "+ Filtre ekle" menüsü. `TwFilter` türleri: `Select` (`Options`), `Text` (menüde metin kutusu), `Fixed` (her zaman uygulanır, ✕'siz). `FiltersChanged`, `Values`, `SetValue`; `LoadValues` kayıtlı süzgeçleri olay tetiklemeden yükler. Dar çubukta çipler alt satıra geçer. |
+| `TwPeriodPicker` | Dönem seçici (`TwSelect` görünümünde): hazır dönemler (`Presets`: bugün, dün, son 7 / 30 / 90 gün, bu ay, geçen ay, bu yıl), "Özel aralık…" ve iki tıklamayla aralık seçilen takvim bir popover'da; `Shifts` verilirse üstte vardiya bölümü. `Start`, `End` (hazır dönem tarihle ilerler), `Shift`, `PeriodChanged`; kapalı kutuda ↑/↓ hazır dönemler arasında gezer. |
+| `TwCommandPalette` | Ctrl+K komut paleti (bileşen): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) yazdıkça süzülür (aksan ve büyük/küçük harf gözetilmez, baştan eşleşen önce), grup başlıkları altında; ↑/↓, Enter, Esc. `AddSearch("kayıtlar", q => …)` yazılan için "… içinde ara" satırı ekler, `QueryCommands` sorguya göre satır üretir. `Attach(form)` kısayolu formun her yerinde dinler. |
+| `TwSheet` | Formu sahibinin içinde çerçevesiz bir sayfa olarak açar; arkadaki pencere karartılır (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)` ya da `FullScreen = true` ile sahibin içini dolduran sayfa. `TwSheet.Attach(this)` sonrası mevcut `ShowDialog(this)` çağrıları kod değişmeden sayfa olur (`Filter` ile seçilebilir); `DialogResult`, `AcceptButton`/`CancelButton` olduğu gibi çalışır, form kapanınca çerçevesini geri alır. |
+| `TwWindowChrome`, `TwCaptionButtons` | Başlık çubuğu olmayan pencere: `TwWindowChrome.Attach(this)` başlığı kaldırır, içerik üst kenara kadar uzar (kenar ya da araç çubuğu başlığın yerine geçer). Formun ve `AddDragSurface` ile verilen yüzeylerin boş yerinden (üstlerindeki etiket ve ikonlar dahil) pencere sürüklenir; çift tık büyütür, ekran kenarına sürükleme Aero Snap yapar, sağ tık sistem menüsünü açar; kenarlar (üst kenar `ResizeBorder` içinde) boyutlandırır. `TwCaptionButtons` küçült / büyüt / kapat düğmeleridir. |
 
 ### TwDataList
 
@@ -718,6 +735,12 @@ stat.ShortValue = "278 sa";                      // "278 sa 52 dk" sığmazsa g�
 dagilim.Kind = TwChartKind.HorizontalBar;        // her kategori bir satır, tam etiketi solda
 heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN hücreler: taralı gri; göstergede ve ipucunda "Üretim yok"
 heatmap.EmptyCellText = "Üretim yok";
+heatmap.HighlightColumns = new[] { bugun };    // bugünün sütununun arkasında soluk şerit
+heatmap.CellSize = new Size(28, 22);           // kontrolü doldurmak yerine sabit hücreler
+var hucre = heatmap.GetCellBounds(satir, sutun); // seçili hücrenin (SelectedIndex) yanına popover
+
+stat.ValueScale = 1.5f; stat.Unit = "dk";         // daha küçük sayı, birim taban çizgisinde
+stat.ShowTrend = false;
 ```
 
 | Class | Etkisi |
@@ -734,7 +757,8 @@ heatmap.EmptyCellText = "Üretim yok";
 - **Etkileşim:** fareyle ya da ok tuşlarıyla (Home/End) bir kategori vurgulanır ve her serinin değeri ipucunda görünür; Enter ya da tıklama `ItemClick`'i tetikler (`TwChartItemEventArgs.Index`, `Label`), `HoverIndexChanged` vurguyu izler. Halka grafik vurgulanan dilimi ortada gösterir.
 - **Ekran okuyucular:** grafikler `Chart` rolündedir, her kategori ya da dilim bir öğedir (`"Mar: Gelir 170, Hedef 160"`, `"Web: 52 (52%)"`); grafiğin değeri aralıkların özetidir. `TwStat` "başlık: değer, değişim, açıklama" olarak okunur; değişim her zaman ok ve işaretle verilir, yalnızca renkle değil.
 - `TwStat`'ın değişimi temanın `success` ve `danger` renklerini kullanır; hazır görünümler ve tema dosyaları onu da yeniden renklendirir.
-- **Yatay çubuklar** (`TwChartKind.HorizontalBar`, grafiğe verilir): kategoriler satırdır, tam etiketleri soldadır (genişliğin en çok %40'ı, sonra "…"), değer ekseni alttadır ve değerler (`ShowValues`) çubuk uçlarında durur; her seri değerini gösteriyorsa eksen yazılmaz. Seriler yan yana ya da `Stacked`; referans çizgileri dikeydir; ↑/↓ satırlar arasında gezer.
+- **Yatay çubuklar** (`TwChartKind.HorizontalBar`, grafiğe verilir): kategoriler satırdır, tam etiketleri soldadır (genişliğin en çok %40'ı, sonra "…"), değer ekseni alttadır ve değerler (`ShowValues`) çubuk uçlarında durur; her seri değerini gösteriyorsa eksen yazılmaz. Seriler yan yana ya da `Stacked`; referans çizgileri dikeydir; ↑/↓ satırlar arasında gezer. `TwChartKind.StackedBar100` her satırı serilerin paylarına böler ve tam genişliğe yayar (vardiyanın duruş nedenleri gibi): eksen ve ipucu yüzdedir, ipucu değeri de gösterir; negatif değerler 0 sayılır.
+- **Isı haritası göstergesi ayrı:** `heatmap.CreateLegend()` haritanın göstergesini ayrı bir kontrol olarak verir (dar haritada kart başlığına koymak için); harita kendi göstergesini çizmez, ayrı gösterge veriyi ve renkleri izler.
 - **`TwStat`'ta sığdırma:** karttan geniş değer önce `ShortValue`'ya geçer, sonra "…" ile kesilmek (`Ellipsis`) yerine başlık boyutuna kadar küçülür (`ValueFit = Shrink`, varsayılan); ekran okuyucu her zaman tam değeri okur.
 - **Isı haritasında boş hücreler:** `EmptyCells`, `double.NaN` hücreleri en düşük tonla (`Low`, önceki davranış), düz griyle (`Solid`), taralı griyle (`Hatched`) çizer ya da hiç çizmez (`None`); `EmptyCellColor` griyi verir, `EmptyCellText` ("Üretim yok") ipucunda ve ekran okuyucuda "—" yerine geçer ve göstergeye bir anahtar ekler.
 - **Küçük halkalar:** simge boyundaki (32 px) bir `TwRingChart` en az 3 px kalınlıkta halka çizer ve orta yazısını sığacak kadar küçültür; `TwListItem.Score` aynı skor halkasını liste satırında çizer.
@@ -760,7 +784,8 @@ TwToast.Show(this, "Sipariş kaydedildi", TwDialogKind.Success);
 ```
 
 - **`TwDialog`** (MessageBox yerine): ikon, başlık, mesaj, sağa dayalı düğmeler; Enter varsayılan, Esc iptal/hayır. Sahip formun koyu temasını izler. Düğme metinleri [`TwTexts`](#yerelleştirme)'ten gelir, tek tek `TwDialog.Texts[DialogResult.Yes] = "Sil"` ile ezilebilir; `TwDialog.Create(...)` göstermeden özelleştirmeye izin verir.
-- **Metin girişi:** `TwDialog.Prompt(this, "Kayıtlı arama adı", "Aramayı kaydet", placeholder: "örn. Hat 2 · gece vardiyası", validator: ad => adlar.Contains(ad) ? "Bu ad kullanılıyor." : null)` kırpılmış metni, iptalde `null` döndürür. `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
+- **Metin girişi:** `TwDialog.Prompt(this, "Kayıtlı arama adı", "Aramayı kaydet", placeholder: "örn. Hat 2 · gece vardiyası", validator: ad => adlar.Contains(ad) ? "Bu ad kullanılıyor." : null)` kırpılmış metni, iptalde `null` döndürür. `TwDialog.Prompt(this, new TwDialogOptions { Message = …, OkText = "Sakla", InputMaxLength = 40 })` düğmeye eylemin adını verir ve uzunluğu sınırlar.
+- **Zemin:** koyu diyaloglar `gray-800`'dür; `TwDialog.DarkBackColor` (uygulama geneli, ör. `#2a2a2c`) ya da `TwDialogOptions.BackColor` uygulamanın kendi yüzeyini verir. `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
 - **`TwToast`**: sahip formun köşesinde (varsayılan sağ alt, `TwToast.Position`) üst üste dizilen, odak çalmayan, fare üzerindeyken bekleyen ve kendiliğinden kapanan bildirim (`DefaultDuration` 4 sn). Ekran okuyucuya Alert olarak bildirilir.
 
 ## Yerelleştirme
@@ -1395,6 +1420,11 @@ dotnet pack FormWind.sln -c Release
 Paketler `artifacts/packages` klasörüne yazılır (`FormWind`, `FormWind.Krypton` ve `.snupkg` sembol paketleri). `FormWind` paketi FW001 çözümleyicisini `analyzers/dotnet/cs` altında içerir. Paketler SourceLink bilgisi taşır; hata ayıklayıcı FormWind'in kaynağına GitHub'dan girebilir. Derlemeler strong-name ile imzalıdır (`PublicKeyToken=1cea47bdc82de2bf`, anahtar depodaki `FormWind.snk`); imzalı .NET Framework uygulamaları da paketlere başvurabilir. NuGet sayfalarında `docs/nuget/` altındaki kısa İngilizce README'ler kullanılır. Yerel kullanım için bu klasörü Visual Studio'da Package Sources'a ekleyin. `v*` etiketi itildiğinde `.github/workflows/release.yml` paketleri nuget.org'a gönderir ve GitHub Release oluşturur (bkz. [CONTRIBUTING](CONTRIBUTING.md#releasing)).
 
 ## Bilinen sınırlamalar ve yapılacaklar
+
+- Sürekli boyanan kontroller (açılan grafik, nabız atan iskelet satırlar) `TwTransition`'ın resminde o anki halleriyle yer alır; değişen parçanın üstünde duran bir kontrol (aynı pencerenin bildirimi) de resme girer.
+- Bilinmeyen ikon adı hiçbir şey çizmez: kontrol stillenirken FormWind bunu `TailwindProvider.StyleError` ile bildirir, FW003 analizörü de sabit metinler için uyarır (`TwIcons.IsKnown`).
+- `TwWindowChrome` ile `TwCaptionButtons`'ın büyüt düğmesi Windows 11'in yerleşim düzenleri (Snap Layouts) açılır panelini göstermez; Aero Snap sürüklemeyle ve Win+ok tuşlarıyla çalışır.
+- `TwSheet` yalnız sahibin istemci alanını karartır; sayfa sahibi küçültülmüşken açılan form kendi penceresiyle açılır.
 
 - [x] Önizlemede uygulanan renk, font ve boşluklar `Designer.cs`'e yazılmaz (class'ların yönettiği özellikler ve önizlemenin yan etkileri serileştirilmez; CodeDOM serileştirmesi ve kaydet/yeniden aç döngüsüyle test edilir)
 - [x] Smart tag ile hızlı bileşen seçimi (standart kontroller dahil)

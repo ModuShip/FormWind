@@ -34,6 +34,7 @@ btnSave  →  Classes: "bg-blue-600 text-white px-4 py-2 rounded-md font-bold ho
 | An application that uses Krypton Toolkit | FormWind + `FormWind.Krypton`: Krypton's ribbon, docking and navigator stay in place, and its palette follows the theme. |
 | Dark mode, consistent colors, accessibility (contrast, High Contrast, UI Automation) | FormWind. |
 | Heavy components such as ribbon, docking, scheduler, reporting, advanced grids | Take them from Krypton or the control suite you use; FormWind styles the standard controls next to them. |
+| A brand-new, Windows-only application with a native Windows 11 look | WinUI 3 may suit better: it renders on the GPU and Mica shows across the whole window. The UI is rewritten in XAML; it does not support .NET Framework and requires Windows 10 1809+ and the Windows App SDK. In an existing WinForms application, FormWind avoids that rewrite. |
 | A brand-new, cross-platform application | Avalonia, WPF or a web-based UI may suit better than WinForms. |
 
 ## Quick start
@@ -381,6 +382,14 @@ When a Form has classes and dark mode is on, the title bar turns dark automatica
 
 `backdrop-mica`, `backdrop-acrylic`, `backdrop-tabbed` (Mica Alt) and `backdrop-none` select the Windows 11 22H2+ system backdrop. The backdrop is visible in the title bar and window frame; it does not show inside the form because WinForms paints the client area opaque. If `caption:bg-*` is given, the caption color takes precedence over the backdrop.
 
+For a window without a title bar that merges with a side bar or tool bar, use `TwWindowChrome.Attach(this)` (see [Controls](#controls)); the window stays a real Windows window: dragging, double-click to maximize, Aero Snap and resizing from the edges work.
+
+```csharp
+var chrome = TwWindowChrome.Attach(this);
+chrome.AddDragSurface(toolbar);                              // empty areas of the tool bar move the window
+toolbar.Controls.Add(new TwCaptionButtons { Dock = DockStyle.Right });
+```
+
 ## Dark mode: scrollbars and tooltips
 
 With `DarkMode = true`, native parts that FormWind does not paint also switch to Windows' dark theme:
@@ -467,6 +476,8 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");
 | `TwTagsColumn` | Texts (or one text split at `Separator`) | Several badges with `Variants`; the ones that do not fit are counted as `+N` |
 | `TwActionsColumn` | — | A "⋯" button with a menu: `Actions = "Edit; -; Delete"`, `ActionClicked`, `MenuOpening` (disable items per row), `Icon` |
 | `TwExpanderColumn` | — | Chevron that expands the row's details ([Row details](#row-details)); click or Space |
+| `TwTextColumn` | Text | Data-entry tables: every cell is an input box (the `input` look + `Classes`) with a `Placeholder` when empty, a red border when `Validate` reports an error (the text becomes the cell's error) and a focus ring on the current cell. Only the focused cell hosts a real text box; `EditOnFocus` (default) opens it when the cell is reached, so arrows/Tab/Enter move through the table like a form |
+| `TwSelectColumn` | Item (or its `ValueMember`) | Cells look like a `TwSelect` (arrow, `Placeholder`); click, Space, F4 or Alt+↓ opens the list under the cell, typing a letter picks the next item starting with it. `Items`, `DisplayMember`, `ValueMember`, `Validate` |
 
 Cell types learn the dark mode from the grid's provider; `dark:` variants need no extra setup.
 
@@ -542,7 +553,7 @@ TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);          // co
 - The grid must be unbound (no `DataSource`): each node is a row, collapsed branches are hidden rows. Column values come from `TwGridTreeNode.Values` (in column order) or the `DataPropertyName` properties of `DataItem`.
 - The tree column shows the indentation, an arrow and `IconName`. Click the arrow or double-click the cell (read-only grids) to expand and collapse; in the tree column → expands or moves to the first child and ← collapses or moves to the parent, `+`/`−` work in every column and `*` expands the whole branch. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
 - Header clicks sort the children of every parent; the hierarchy and the expanded branches stay (`tree.Sort(column, direction)`).
-- `SetTotal` fills empty parent cells with `Sum`, `Average`, `Count`, `Min` or `Max` of their children (sums add the children's totals, the others look at the leaves). After changing nodes call `tree.Refresh()`.
+- `SetTotal` fills empty parent cells with `Sum`, `Average`, `Count`, `Min` or `Max` of their children (sums add the children's totals, the others look at the leaves). For values that do not add up, such as a ratio, `SetTotal(column, nodes => …)` computes the parent's value from its direct children; `tree.GetValue(node, column)` returns a node's own or computed value. After changing nodes call `tree.Refresh()`. Tree rows take the row height of the classes (`row:h-*`, `table`).
 
 ### Row details
 
@@ -644,7 +655,13 @@ The file is added on top of the default palette and components (or the preset ch
 | `TwToolTip` | Stylable tooltip: `Classes`; follows dark mode when `Provider` is set. |
 | `TwChip` | A pill with a text, an optional icon or status dot (`IconName`, `DotColor`) and an optional ✕ (`Removable` → `RemoveClick`, also Delete/Backspace). `Clickable` makes it a button, `Checkable` a filter chip that turns on and off (`Checked`, styled with `checked:`). Display chips are not tab stops. Components `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; the ✕ is a separate "Remove" button for screen readers. |
 | `TwToolbar` | A responsive toolbar (a `TwPanel`): children sit in one row with `gap-*`; items that do not fit move to a "more" (…) button whose menu runs them (a button is clicked, a check box toggled, a `TwTabStrip` or `TwSelect` becomes a submenu, other items raise `OverflowItemClick`). Per item: `SetAlignment` (`Start`/`End`), `SetPriority` (higher moves later), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: a title gets narrower before anything moves, down to its `MinimumSize.Width`). The menu takes `menu:` / `item:`, the button is `OverflowButton`. |
-| `TwSettingRow` | A settings row (System Settings style): `LabelText`, `Description` (muted, wraps), the editor (the child control) and `UnitText` on the right (`EditorWidth`, 160 by default). Rows stacked in a `card p-0` panel draw dividers between them (`divide-*`); narrow rows put the editor under the text. `label:` and `hint:` parts, `setting` component. |
+| `TwSettingRow` | A settings row (System Settings style): `LabelText`, `Description` (muted, wraps), the editor (the child control) and `UnitText` on the right (`EditorWidth`, 160 by default; 0 = the editor's own width; an `AutoSize` editor such as a tab strip is never made narrower than its preferred width). Rows stacked in a `card p-0` panel draw dividers between them (`divide-*`); narrow rows put the editor under the text. Style the label and description with the row's `label:` and `hint:` parts (`label:font-semibold hint:text-xs`); classes given to `CaptionLabel` directly are kept too. `setting` component. |
+| `TwCardStrip` | Paged horizontal strip of cards: the children (`TwStat` …) share the width equally, as many as fit at `MinCardWidth`; ‹ › buttons and a "1 / 3" indicator (`PageLabel`) in the top right corner turn the pages, ← → too. `PageIndex`, `PageCount`, `PageChanged`, `ShowCard(card)`; with a single page the buttons are hidden. |
+| `TwFilterBar` | Applied filters as `TwChip`s ("Line: 3", removed with ✕; clicking a chip changes the value), followed by a "+ Add filter" menu. `TwFilter` kinds: `Select` (`Options`), `Text` (a text box in the menu), `Fixed` (always applied, no ✕). `FiltersChanged`, `Values`, `SetValue`; `LoadValues` restores saved filters without raising events. Chips wrap onto more lines when the bar is narrow. |
+| `TwPeriodPicker` | Period picker (looks like a `TwSelect`): presets (`Presets`: today, yesterday, last 7 / 30 / 90 days, this month, last month, this year), "Custom range…" and a calendar where two clicks pick a range, in a popover; with `Shifts`, a shift segment on top. `Start`, `End` (a preset moves on with the date), `Shift`, `PeriodChanged`; ↑/↓ on the closed box step through the presets. |
+| `TwCommandPalette` | Ctrl+K command palette (component): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) are filtered as you type (ignoring case and accents, prefix matches first) under group headings; ↑/↓, Enter, Esc. `AddSearch("records", q => …)` adds a "Search … in records" row for the query, `QueryCommands` adds rows of its own. `Attach(form)` listens for the shortcut anywhere in the form. |
+| `TwSheet` | Opens a form as a frameless sheet inside its owner, with the owner dimmed behind it (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)`, or with `FullScreen = true` a sheet that fills the owner. After `TwSheet.Attach(this)`, existing `ShowDialog(this)` calls open sheets without code changes (`Filter` picks which); `DialogResult` and `AcceptButton`/`CancelButton` work as before, and the form gets its frame back when it closes. |
+| `TwWindowChrome`, `TwCaptionButtons` | Window without a title bar: `TwWindowChrome.Attach(this)` removes the caption so the content reaches the top edge (a side bar or tool bar takes its place). Empty areas of the form and of the surfaces given to `AddDragSurface` (with their labels and icons) move the window; double-click maximizes, dragging to a screen edge snaps (Aero Snap), right-click opens the system menu, and the edges resize (the top edge within `ResizeBorder`). `TwCaptionButtons` are the minimize / maximize / close buttons. |
 
 ### TwDataList
 
@@ -718,6 +735,12 @@ stat.ShortValue = "278 h";                       // shown when "278 h 52 min" do
 breakdown.Kind = TwChartKind.HorizontalBar;      // one row per category with its full label on the left
 heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN cells: hatched gray, "No production" in the legend and tooltip
 heatmap.EmptyCellText = "No production";
+heatmap.HighlightColumns = new[] { today };    // faint band behind today's column
+heatmap.CellSize = new Size(28, 22);           // fixed cells instead of filling the control
+var cell = heatmap.GetCellBounds(row, column);   // place a popover next to the selected cell (SelectedIndex)
+
+stat.ValueScale = 1.5f; stat.Unit = "min";        // smaller number, unit on its baseline
+stat.ShowTrend = false;
 ```
 
 | Class | Effect |
@@ -734,7 +757,8 @@ heatmap.EmptyCellText = "No production";
 - **Interaction:** hovering or the arrow keys (Home/End) highlight a category and show a tooltip with every series' value; Enter or a click raises `ItemClick` (`TwChartItemEventArgs.Index`, `Label`), `HoverIndexChanged` follows the highlight. The donut highlights a slice and shows it in the middle.
 - **Screen readers:** the charts have the `Chart` role with one item per category or slice (`"Mar: Revenue 170, Target 160"`, `"Web: 52 (52%)"`); the value of the chart is a summary of the ranges. `TwStat` reads as "title: value, change, caption"; the change always carries an arrow and a sign, never color alone.
 - `TwStat`'s change uses the theme's `success` and `danger` colors, so presets and theme files recolor it.
-- **Horizontal bars** (`TwChartKind.HorizontalBar`, set on the chart): categories are rows with their full label on the left (up to 40% of the width, then "…"), the value axis runs along the bottom and values (`ShowValues`) sit at the bar ends, with no axis when every series shows them. Series are side by side or `Stacked`; reference lines are vertical; ↑/↓ move between rows.
+- **Horizontal bars** (`TwChartKind.HorizontalBar`, set on the chart): categories are rows with their full label on the left (up to 40% of the width, then "…"), the value axis runs along the bottom and values (`ShowValues`) sit at the bar ends, with no axis when every series shows them. Series are side by side or `Stacked`; reference lines are vertical; ↑/↓ move between rows. `TwChartKind.StackedBar100` splits each row into its series' shares across the full width (a shift's downtime by cause): the axis and tooltip are in percent, the tooltip shows the value too; negative values count as 0.
+- **Separate heatmap legend:** `heatmap.CreateLegend()` returns the heatmap's legend as its own control (for a card header when the heatmap is narrow); the heatmap stops drawing its own, and the legend follows its data and colors.
 - **Fitting `TwStat`:** a value wider than the card switches to `ShortValue`, then gets smaller down to the title's size (`ValueFit = Shrink`, the default) instead of being cut with "…" (`Ellipsis`); screen readers always read the full value.
 - **Empty heatmap cells:** `EmptyCells` draws `double.NaN` cells in the lowest shade (`Low`, as before), flat gray (`Solid`), hatched gray (`Hatched`) or not at all (`None`); `EmptyCellColor` sets the gray, and `EmptyCellText` ("No production") replaces "—" in the tooltip and for screen readers and adds a key to the legend.
 - **Small rings:** a `TwRingChart` the size of an icon (32 px) keeps a ring at least 3 px thick and shrinks its center text to fit; `TwListItem.Score` draws the same score ring inside a list row.
@@ -760,7 +784,8 @@ TwToast.Show(this, "Order saved", TwDialogKind.Success);
 ```
 
 - **`TwDialog`** (instead of MessageBox): icon, title, message and right-aligned buttons; Enter is the default, Esc cancels/answers no. Follows the owner form's dark mode. Button texts come from [`TwTexts`](#localization) and can be overridden one by one with `TwDialog.Texts[DialogResult.Yes] = "Delete"`; `TwDialog.Create(...)` allows customization before showing.
-- **Text input:** `TwDialog.Prompt(this, "Name of the saved search", "Save search", placeholder: "e.g. Line 2 · night shift", validator: name => names.Contains(name) ? "This name is taken." : null)` returns the trimmed text, or `null` when cancelled. With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
+- **Text input:** `TwDialog.Prompt(this, "Name of the saved search", "Save search", placeholder: "e.g. Line 2 · night shift", validator: name => names.Contains(name) ? "This name is taken." : null)` returns the trimmed text, or `null` when cancelled. `TwDialog.Prompt(this, new TwDialogOptions { Message = …, OkText = "Save", InputMaxLength = 40 })` names the button after the action and limits the length.
+- **Surface:** dark dialogs are `gray-800` unless `TwDialog.DarkBackColor` (app-wide, e.g. `#2a2a2c`) or `TwDialogOptions.BackColor` gives the application's own surface. With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
 - **`TwToast`**: a notification that stacks in a corner of the owner form (bottom-right by default, `TwToast.Position`), does not steal focus, pauses while hovered and closes by itself (`DefaultDuration` 4 s). Announced to screen readers as an Alert.
 
 ## Localization
@@ -1395,6 +1420,11 @@ dotnet pack FormWind.sln -c Release
 Packages are written to `artifacts/packages` (`FormWind`, `FormWind.Krypton` and `.snupkg` symbol packages). The `FormWind` package includes the FW001 analyzer under `analyzers/dotnet/cs`. Packages include SourceLink information, so the debugger can step into FormWind's source from GitHub. The assemblies are strong-named (`PublicKeyToken=1cea47bdc82de2bf`, key `FormWind.snk` in the repository), so strong-named .NET Framework applications can reference them. The NuGet pages use the short READMEs in `docs/nuget/`. For local use, add this folder to Package Sources in Visual Studio. Pushing a `v*` tag runs `.github/workflows/release.yml`, which publishes the packages to nuget.org and creates the GitHub Release (see [CONTRIBUTING](CONTRIBUTING.md#releasing)).
 
 ## Known limitations and roadmap
+
+- Controls that keep repainting (a chart opening, pulsing skeleton rows) are captured as they are at that moment by `TwTransition`; a control that lies over the changing part (a floating notification of the same window) is in its picture too.
+- An unknown icon name draws nothing: FormWind reports it through `TailwindProvider.StyleError` when the control is styled, and the FW003 analyzer warns about literals (`TwIcons.IsKnown`).
+- The maximize button of `TwWindowChrome` with `TwCaptionButtons` does not show the Windows 11 Snap Layouts flyout; Aero Snap works by dragging and with Win+arrow keys.
+- `TwSheet` dims only the owner's client area; a form opened while the owner is minimized opens in its own window.
 
 - [x] Colors, fonts and spacing applied by the preview are not written to `Designer.cs` (properties managed by the classes and the preview's side effects are not serialized; tested with CodeDOM serialization and a save/reopen loop)
 - [x] Quick component selection via smart tag (standard controls included)
