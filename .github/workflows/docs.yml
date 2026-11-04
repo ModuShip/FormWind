@@ -3,13 +3,21 @@ name: Docs
 # Web sitesi (website/: tanıtım ve belgeler) ve class referansı (tools/FormWind.Docs: örnekler gerçek FormWind ile
 # Windows'ta çizilir, reference/ altına). Site her çalışmada "website" yapıtı olarak yüklenir. GitHub Pages'e yayım için depo ayarlarında
 # Pages kaynağını "GitHub Actions" yapıp DEPLOY_DOCS=true depo değişkenini tanımlayın.
+#
+# Pull request'lerde site derlenir ve tools/check-docs.ps1 denetimleri (TR/EN sayfa eşliği, kenar çubuğu, strings.json,
+# README başlıkları, sürüm numaraları, iç linkler ve çapalar) çalışır; yayım ve dış link denetimi yalnızca main'de yapılır.
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -24,9 +32,18 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Kaynak denetimleri derlemeden önce: hata varsa referansın çizilmesi beklenmez.
+      - name: Check docs sources
+        shell: pwsh
+        run: ./tools/check-docs.ps1
+
       - name: Build site
         shell: pwsh
         run: ./website/build.ps1 -Reference -Output artifacts/website
+
+      - name: Check internal links
+        shell: pwsh
+        run: ./tools/check-docs.ps1 -Site artifacts/website
 
       - name: Upload site
         uses: actions/upload-artifact@v4
@@ -35,8 +52,29 @@ jobs:
           path: artifacts/website
           include-hidden-files: true
 
+  # Dış linkler zamanla bozulur ve geçici olarak yanıt vermeyebilir; PR'ları bekletmemek için yalnızca main'de ve elle denetlenir.
+  external-links:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: website
+          path: site
+
+      - name: Check external links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # GitHub'ın düzenleme linkleri oturum ister; localhost örnekleri gerçek adres değildir.
+          args: >-
+            --no-progress --scheme https --scheme http --max-retries 3 --accept 200,206,429
+            --exclude "github\.com/ModuShip/FormWind/edit/" --exclude "localhost" --exclude "127\.0\.0\.1"
+            "site/**/*.html"
+          fail: true
+
   deploy:
-    if: vars.DEPLOY_DOCS == 'true'
+    if: vars.DEPLOY_DOCS == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:

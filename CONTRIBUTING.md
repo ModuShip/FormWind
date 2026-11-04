@@ -58,6 +58,8 @@ project. Do not include code, images or fonts whose license is incompatible with
   windows belong to `[Collection(UiCollection.Name)]` and run on an STA thread (`Sta.Run`).
 - Keep the build free of warnings.
 - Update both READMEs (`README.md` in Turkish, `README.en.md` in English) and `CHANGELOG.md` (*Unreleased*).
+  A change in how existing API behaves (timing, painting, defaults) goes under *Behavior changes*, since an API
+  comparison does not show it. The version's section is also the package's release notes.
 - Match the style of the surrounding code. Public API documentation (XML comments) and all developer- and
   user-facing strings are in English; user-facing strings go through `TwTexts`. Inline comments may be in Turkish,
   as in most existing files.
@@ -88,15 +90,32 @@ checks binary compatibility against the previous version.
 
 ## Releasing
 
-1. Move the *Unreleased* changelog entries under the new version with the date.
-2. Move `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt` and the analyzer rules into `AnalyzerReleases.Shipped.md`.
-3. Update `<Version>` in `Directory.Build.props` (and `PackageValidationBaselineVersion` after the first release).
-4. Tag the commit (`v1.2.3`) and push the tag. The release workflow (`.github/workflows/release.yml`) checks that the
-   tag matches `<Version>` and that the changelog entry has a date, runs `build.ps1`, pushes the packages to nuget.org
-   with Trusted Publishing and creates the GitHub Release with the changelog entry as notes (versions with a `-` suffix
-   are marked as prereleases). Publishing waits for the `nuget` environment's approval if one is configured.
-5. After the first release, set `PackageValidationBaselineVersion` in `FormWind.csproj` and `FormWind.Krypton.csproj`
-   to the released version, so package validation checks binary compatibility against it.
+1. Run `.\tools\bump-version.ps1 -Version 1.2.3`. It moves the *Unreleased* changelog entries under the new version
+   with today's date (`-Date` sets another) and updates the comparison links, moves `PublicAPI.Unshipped.txt` into
+   `PublicAPI.Shipped.txt` and the analyzer rules into `AnalyzerReleases.Shipped.md`, sets `<Version>` in
+   `Directory.Build.props`, sets `PackageValidationBaselineVersion` to the previous version, replaces the previous
+   version in the READMEs, `docs/nuget` and the website, and runs `tools/check-docs.ps1`. It stops without changing
+   anything if *Unreleased* is empty.
+2. Review `git diff` and commit (`chore: release 1.2.3`).
+3. Tag the commit (`v1.2.3`) and push the tag. The release workflow (`.github/workflows/release.yml`) checks that the
+   tag matches `<Version>`, that the changelog entry has a date and that the documentation is consistent, runs
+   `build.ps1`, pushes the packages to nuget.org with Trusted Publishing and creates the GitHub Release with the
+   changelog entry as notes (versions with a `-` suffix are marked as prereleases). Publishing waits for the `nuget`
+   environment's approval if one is configured. The website is deployed by the docs workflow when the release commit
+   reaches `main`.
+
+## Documentation checks
+
+`.\tools\check-docs.ps1` checks that `website/en` and `website/tr` have the same pages with a title and description,
+that the sidebar list in `website/build.ps1` matches the pages, that `website/strings.json` has the same non-empty keys
+in both languages, that both READMEs have the same headings, and that every version number in the READMEs,
+`docs/nuget` and the website is the current `<Version>`. With `-Site artifacts/website` (after `website/build.ps1`) it
+also checks the internal links and anchors of the built site. `DocsCoverageTests` checks that every public control is
+named in the documentation or `llms.txt`, and that the Turkish pages name the same types as the English ones.
+
+On pull requests the docs workflow builds the site and runs these checks, and the PR checks workflow fails when `src/`
+changes without a `CHANGELOG.md` entry; add the `no-changelog` label for changes that need none (refactoring, tests).
+External links are checked on `main` and on manual runs.
 
 One-time setup for publishing: on nuget.org add a Trusted Publishing policy for the `ModuShip/FormWind` repository,
 the `release.yml` workflow and the `nuget` environment; on GitHub create the `nuget` environment and add the

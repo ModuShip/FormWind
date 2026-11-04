@@ -1,0 +1,42 @@
+name: PR checks
+
+# Pull request'e özgü hızlı denetimler. Etiket eklenip kaldırılınca da çalışır (no-changelog), bu yüzden ci.yml'den ayrıdır;
+# Windows derlemesi tekrarlanmaz.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  changelog:
+    # Yeniden düzenleme, test ya da yalnızca araç değişiklikleri için PR'a no-changelog etiketi eklenir.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require a CHANGELOG entry for src/ changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=$(git diff --name-only "$BASE...$HEAD")
+          if ! echo "$files" | grep -q '^src/'; then
+            echo "No changes under src/."
+            exit 0
+          fi
+          if ! echo "$files" | grep -qx 'CHANGELOG.md'; then
+            echo "::error file=CHANGELOG.md::src/ changed but CHANGELOG.md did not. Add an entry under [Unreleased] (see CONTRIBUTING.md) or label the PR no-changelog."
+            exit 1
+          fi
+          # Girdi [Unreleased] bölümüne eklenmeli; yayımlanmış bir sürümün bölümüne değil.
+          added=$(git diff -U0 "$BASE...$HEAD" -- CHANGELOG.md | grep -E '^\+[-*] ' || true)
+          if [ -z "$added" ]; then
+            echo "::error file=CHANGELOG.md::CHANGELOG.md changed but no entry ('- ...') was added."
+            exit 1
+          fi
+          echo "CHANGELOG.md has new entries."

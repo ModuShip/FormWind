@@ -43,4 +43,18 @@
     <None Include="$(MSBuildThisFileDirectory)docs\icon.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
+
+  <!--
+    Paketin sürüm notları (nuspec releaseNotes) CHANGELOG.md'deki bu sürümün bölümüdür; GitHub Release'in notlarıyla aynı
+    metin (release.yml). Bölüm yoksa CHANGELOG'un bağlantısı yazılır.
+  -->
+  <Target Name="FormWindReleaseNotes" BeforeTargets="GenerateNuspec" Condition="'$(IsPackable)' == 'true' And '$(PackageReleaseNotes)' == ''">
+    <PropertyGroup>
+      <_FwChangelog>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)CHANGELOG.md').Replace('&#13;', ''))</_FwChangelog>
+      <_FwHeader>## [$(Version)] - </_FwHeader>
+      <_FwSection Condition="$(_FwChangelog.Contains('$(_FwHeader)'))">$([System.Text.RegularExpressions.Regex]::Replace($(_FwChangelog), '(?s)^.*?\n## \[$([System.Text.RegularExpressions.Regex]::Escape($(Version)))\] - [^\n]*\n(.*?)(\n## \[|\n\[[^\]]+\]: |$).*$', '$1').Trim())</_FwSection>
+      <PackageReleaseNotes Condition="'$(_FwSection)' != ''">$(_FwSection)</PackageReleaseNotes>
+      <PackageReleaseNotes Condition="'$(_FwSection)' == ''">$(PackageProjectUrl)/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    </PropertyGroup>
+  </Target>
 </Project>

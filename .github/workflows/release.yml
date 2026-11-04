@@ -56,6 +56,11 @@ jobs:
           "version=$version" >> $env:GITHUB_OUTPUT
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
+      # README, docs/nuget ve sitedeki sürüm numaraları bu sürüm mü, TR/EN belgeler eş mi (tools/bump-version.ps1 hazırlar).
+      - name: Check docs
+        shell: pwsh
+        run: ./tools/check-docs.ps1
+
       # ci.yml ile aynı adımlar: derleme, tüm hedeflerde testler, ayrı süreçteki kategoriler, Krypton matrisi, kapsam, paketleme.
       - name: Build, test and pack
         shell: pwsh
