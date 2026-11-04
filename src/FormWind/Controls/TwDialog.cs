@@ -40,6 +40,15 @@ public sealed class TwDialogOptions
     public bool? Dark { get; set; }
 
     /// <summary>
+    /// The dialog's surface (and title bar) color; when not set, <see cref="TwDialog.LightBackColor"/> or
+    /// <see cref="TwDialog.DarkBackColor"/>, so the dialog can match the application's own surface (<c>#2a2a2c</c>).
+    /// </summary>
+    public Color? BackColor { get; set; }
+
+    /// <summary>Text of the positive button (OK / Yes), e.g. "Save"; when not set, <see cref="TwDialog.Texts"/>.</summary>
+    public string? OkText { get; set; }
+
+    /// <summary>
     /// A text box under the message (a name for a saved search); the dialog gets OK and Cancel unless <see cref="Buttons"/>
     /// says otherwise. After OK, <see cref="TwDialogForm.InputText"/> holds the text.
     /// </summary>
@@ -79,6 +88,15 @@ public static class TwDialog
     /// </summary>
     public static Dictionary<DialogResult, string> Texts { get; } = new Dictionary<DialogResult, string>();
 
+    /// <summary>Surface of light dialogs and toasts' dialogs app-wide; <see cref="Color.Empty"/> = white.</summary>
+    public static Color LightBackColor { get; set; } = Color.Empty;
+
+    /// <summary>
+    /// Surface of dark dialogs app-wide; <see cref="Color.Empty"/> = <c>gray-800</c>. Set it to the application's dark
+    /// surface (e.g. <c>ColorTranslator.FromHtml("#2a2a2c")</c>) so dialogs do not look bluish next to it.
+    /// </summary>
+    public static Color DarkBackColor { get; set; } = Color.Empty;
+
     internal static string TextFor(DialogResult result)
     {
         if (Texts.TryGetValue(result, out var text)) return text;
@@ -112,12 +130,23 @@ public static class TwDialog
             Message = message ?? "",
             Title = title ?? "",
             Kind = TwDialogKind.Question,
-            ShowInput = true,
             InputText = text ?? "",
             InputPlaceholder = placeholder ?? "",
             InputRequired = true,
             InputValidator = validator,
         };
+        return Prompt(owner, options);
+    }
+
+    /// <summary>
+    /// Asks for a line of text with every option: the positive button's text (<see cref="TwDialogOptions.OkText"/>, e.g.
+    /// "Save"), the longest text (<see cref="TwDialogOptions.InputMaxLength"/>), the label and the surface. The dialog always
+    /// has the text box. Returns the text (trimmed), or <c>null</c> when cancelled.
+    /// </summary>
+    public static string? Prompt(IWin32Window? owner, TwDialogOptions options)
+    {
+        if (options is null) throw new ArgumentNullException(nameof(options));
+        options.ShowInput = true;
         using var dialog = Create(options, owner as Control);
         var result = owner is null ? dialog.ShowDialog() : dialog.ShowDialog(owner);
         return result == DialogResult.OK ? dialog.InputText : null;
@@ -209,7 +238,8 @@ public sealed class TwDialogForm : Form
         var primary = results[results.Length - 1];
         foreach (var result in results)
         {
-            var button = new TwButton { Text = TwDialog.TextFor(result), DialogResult = result, AutoSize = true, MinimumSize = new Size(88, 0) };
+            var label = result == primary && !string.IsNullOrEmpty(options.OkText) ? options.OkText! : TwDialog.TextFor(result);
+            var button = new TwButton { Text = label, DialogResult = result, AutoSize = true, MinimumSize = new Size(88, 0) };
             row.Controls.Add(button);
             _buttons.Add(button);
             _tw.SetClasses(button, result == primary ? (options.Danger ? "btn-danger" : "btn-primary") : "btn-ghost");
@@ -221,8 +251,14 @@ public sealed class TwDialogForm : Form
         AcceptButton = _buttons.Find(b => b.DialogResult == defaultResult) ?? _buttons[_buttons.Count - 1];
         CancelButton = _buttons.Find(b => b.DialogResult is DialogResult.Cancel or DialogResult.No) ?? (results.Length == 1 ? _buttons[0] : null);
 
-        _tw.SetClasses(this, "font-sans bg-white dark:bg-gray-800 dark:caption:bg-gray-800 dark:caption:text-gray-100");
-        _tw.SetClasses(root, "flex flex-col gap-6 p-6 bg-white dark:bg-gray-800");
+        // Zemin: seçenek ya da uygulama geneli renk (TwDialog.DarkBackColor), yoksa beyaz / gray-800.
+        var surface = options.BackColor ?? (dark ? TwDialog.DarkBackColor : TwDialog.LightBackColor);
+        string back = surface is { IsEmpty: false, A: > 0 } own
+            ? $"bg-[#{own.R:x2}{own.G:x2}{own.B:x2}]"
+            : "bg-white dark:bg-gray-800";
+        string caption = surface is { IsEmpty: false, A: > 0 } ? "caption:" + back : "dark:caption:bg-gray-800";
+        _tw.SetClasses(this, $"font-sans {back} {caption}{(dark ? " dark:caption:text-gray-100" : "")}");
+        _tw.SetClasses(root, $"flex flex-col gap-6 p-6 {back}");
         _tw.SetClasses(body, "flex items-start gap-4");
         _tw.SetClasses(badge, $"rounded-full bg-{tone}-100 dark:bg-{tone}-900");
         _tw.SetClasses(IconBadge, $"text-xl text-{tone}-600 dark:text-{tone}-300");

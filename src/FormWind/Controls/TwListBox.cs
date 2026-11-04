@@ -31,10 +31,38 @@ public class TwListBox : TwDataList
         ItemHeights = TemplateHeight;
         _items.ListChanged += (_, _) =>
         {
-            ItemCount = _items.Count;
-            if (ItemHeights == (Func<int, int>)TemplateHeight) InvalidateItemHeights();
-            Invalidate();
+            if (_updating > 0)
+            {
+                _changedWhileUpdating = true;
+                return;
+            }
+            ApplyItemChanges();
         };
+    }
+
+    private int _updating;
+    private bool _changedWhileUpdating;
+
+    private void ApplyItemChanges()
+    {
+        ItemCount = _items.Count;
+        if (ItemHeights == (Func<int, int>)TemplateHeight) InvalidateItemHeights();
+        Invalidate();
+    }
+
+    /// <summary>
+    /// Stops the list from updating its rows (count, heights, painting) for each change to <see cref="Items"/> until
+    /// <see cref="EndUpdate"/>; adding many items is then one update. Calls nest.
+    /// </summary>
+    public void BeginUpdate() => _updating++;
+
+    /// <summary>Ends <see cref="BeginUpdate"/>; the last matching call applies the changes made since.</summary>
+    public void EndUpdate()
+    {
+        if (_updating == 0) return;
+        if (--_updating > 0 || !_changedWhileUpdating) return;
+        _changedWhileUpdating = false;
+        ApplyItemChanges();
     }
 
     // İki satırlı şablon satırı (alt satır ya da değer açıklaması olan TwListItem) en az iki satır yüksekliğindedir.
