@@ -52,8 +52,21 @@ internal static class TwDpi
         if (!_initialized)
         {
             _initialized = true;
-            // Handle oluşturmaz; yalnızca WinForms'un DPI başlatmasını tetikler.
-            using (new Control()) { }
+            // WinForms DPI ayarını (app.config DpiAwareness) ilk Control'de uygular. Kontrol oluşturmadan aynı başlatıcı
+            // çağrılır: FormWind Main'den önce (statik alanda TwFonts.Register) başlasa da uygulamanın
+            // SetCompatibleTextRenderingDefault ve EnableVisualStyles çağrılarına bir kontrol önce gelmiş olmaz.
+            var init = typeof(Control).Assembly.GetType("System.Windows.Forms.DpiHelper")?.GetMethod("InitializeDpiHelperForWinforms",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+                null, System.Type.EmptyTypes, null);
+            try
+            {
+                if (init != null) init.Invoke(null, null);
+                else using (new Control()) { }
+            }
+            catch (System.Reflection.TargetInvocationException)
+            {
+                using (new Control()) { }
+            }
         }
 #endif
         return true;
