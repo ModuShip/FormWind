@@ -108,6 +108,9 @@ internal sealed class TwBinding
     {
         _parsed = theme.Parse(Classes);
         if (_parsed.Unknown.Count > 0) _owner.ReportUnknown(_control, _parsed);
+        // Bilinmeyen ikon adı hiçbir şey çizmez; sessiz kalmasın diye StyleError'a bildirilir.
+        if (TwIcons.UnknownIconOf(_control, theme) is string icon)
+            _owner.ReportError(_control, Classes, new ArgumentException($"Unknown icon name '{icon}'. Use a name from TwIcons.Names, a code point (#E710) or TwIcons.Register.", "IconName"));
 
         IsGroup = _parsed.Resolve(TwState.None).IsGroup == true;
         // İmleç bir konteynere doğrudan çocuğunun üzerinden girerse konteynerin MouseEnter'ı tetiklenmez;

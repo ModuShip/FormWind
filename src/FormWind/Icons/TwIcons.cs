@@ -63,6 +63,26 @@ public static class TwIcons
         lock (Map) return Map.TryGetValue(name, out glyph);
     }
 
+    /// <summary>
+    /// Whether <paramref name="name"/> draws an icon: a built-in or registered name, an icon of <see cref="TwTheme.Current"/>, or a code
+    /// point (<c>#E710</c>). An empty name counts as known (no icon). An unknown name draws nothing; FormWind reports it
+    /// through <see cref="TailwindProvider.StyleError"/> when the control is styled, and the FW003 analyzer warns about literals.
+    /// </summary>
+    public static bool IsKnown(string? name) => string.IsNullOrWhiteSpace(name) || TwTheme.Current.HasIcon(name);
+
+    // Stillenen kontrolün bilinmeyen ikon adı (TwIcon, TwButton, TwChip); null = ikon yok ya da temada/tabloda var.
+    internal static string? UnknownIconOf(System.Windows.Forms.Control control, TwTheme theme)
+    {
+        var name = control switch
+        {
+            TwIcon icon => icon.IconName,
+            TwButton button => button.IconName,
+            TwChip chip => chip.IconName,
+            _ => null,
+        };
+        return string.IsNullOrWhiteSpace(name) || theme.HasIcon(name) ? null : name;
+    }
+
     /// <summary>Parses a code point in the form "E710", "#E710" or "U+E710" (BMP only).</summary>
     public static bool TryParseCodePoint(string? value, out char glyph)
     {

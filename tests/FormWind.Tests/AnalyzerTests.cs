@@ -187,5 +187,41 @@ public class AnalyzerTests
     [Fact]
     public void Ignores_font_assigned_before_auto_scale_dimensions() =>
         Assert.Empty(AnalyzeFontScaling(FontModeSource("Font", fontFirst: true), "net472"));
+
+    private static ImmutableArray<Diagnostic> AnalyzeIcons(string body)
+    {
+        var platform = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
+        var references = platform.Select(path => MetadataReference.CreateFromFile(path))
+            .Concat(new[] { MetadataReference.CreateFromFile(typeof(Control).Assembly.Location), MetadataReference.CreateFromFile(typeof(TailwindProvider).Assembly.Location) })
+            .GroupBy(r => Path.GetFileName(r.FilePath)).Select(g => g.First());
+        var source = "using FormWind;\nclass Sample { void Init() {\n" + body + "\n} }";
+        var compilation = CSharpCompilation.Create("Sample", new[] { CSharpSyntaxTree.ParseText(source) }, references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.Empty(compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error));
+        return compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new UnknownIconAnalyzer()))
+            .GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
+    }
+
+    [Fact]
+    public void Reports_unknown_icon_names_but_not_known_registered_or_code_points()
+    {
+        var diagnostics = AnalyzeIcons("""
+            new TwIcon().IconName = "sidebar";
+            new TwButton().IconName = "save";
+            new TwButton { IconName = "#E710" };
+            new TwChip { IconName = "Plus" };
+            TwIcons.Register("gauge", (char)0xEC4A);
+            new TwIcon { IconName = "gauge" };
+            new TwChip { IconName = "add" };
+            """);
+        Assert.Equal(new[] { "FW003", "FW003" }, diagnostics.Select(d => d.Id).ToArray());
+        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'sidebar'"));
+        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'add'"));
+    }
+
+    [Fact]
+    public void Icon_analyzer_knows_every_built_in_icon() =>
+        Assert.Equal(TwIcons.Names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
+            UnknownIconAnalyzer.KnownIcons.OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
 }
 #endif
