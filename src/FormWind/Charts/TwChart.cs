@@ -22,6 +22,13 @@ public enum TwChartKind
     /// <see cref="TwChart.Stacked"/>, <see cref="TwChart.ReferenceLines"/> are vertical, markers and the right axis are not drawn.
     /// </summary>
     HorizontalBar,
+
+    /// <summary>
+    /// Horizontal bars where each row is split into its series' shares and fills the whole width (100%): the breakdown of a
+    /// shift's downtime by cause, of a line's output by product. The axis and value labels are percentages; the tooltip shows
+    /// each share with its value. Negative values count as 0.
+    /// </summary>
+    StackedBar100,
 }
 
 /// <summary>Which points of a line or area series get a marker.</summary>
@@ -507,7 +514,10 @@ public partial class TwChart : Control, ITwChartControl, ITwChartItems
     // Yatay çubuk grafikte her seri yatay çubuktur.
     private TwChartKind KindOf(TwChartSeries series) => IsHorizontal ? TwChartKind.HorizontalBar : series.Kind ?? _kind;
 
-    private bool IsHorizontal => _kind == TwChartKind.HorizontalBar;
+    private bool IsHorizontal => _kind is TwChartKind.HorizontalBar or TwChartKind.StackedBar100;
+
+    /// <summary>Each row is split into shares of 100% (<see cref="TwChartKind.StackedBar100"/>).</summary>
+    private bool IsPercent => _kind == TwChartKind.StackedBar100;
 
     private static bool IsBar(TwChartKind kind) => kind is TwChartKind.Bar or TwChartKind.HorizontalBar;
 

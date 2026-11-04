@@ -76,6 +76,9 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private Color _emptyCellColor = Color.Empty;
     private string _emptyCellText = "";
     private int _hover = -1;
+    private int _selected = -1;
+    private IReadOnlyList<int> _highlightColumns = Array.Empty<int>();
+    private Size _cellSize = Size.Empty;
     private Point? _mouse;
     private TwChartColors _colors = new TwChartColors();
     private TwChartMotion? _motion;
@@ -325,6 +328,86 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         }
     }
 
+    /// <summary>
+    /// The selected cell as <c>row × ColumnCount + column</c> (-1 = none), drawn with an <c>accent-*</c> outline that stays
+    /// when the mouse moves on. Set it from code, or turn <see cref="SelectOnClick"/> on so a click or Enter selects the cell
+    /// (before <see cref="CellClick"/>).
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int SelectedIndex
+    {
+        get => _selected;
+        set
+        {
+            value = value < 0 || value >= RowCount * ColumnCount ? -1 : value;
+            if (value == _selected) return;
+            _selected = value;
+            Invalidate();
+            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+            if (value >= 0) AccessibilityNotifyClients(AccessibleEvents.Selection, value);
+        }
+    }
+
+    /// <summary>Raised when <see cref="SelectedIndex"/> changes.</summary>
+    public event EventHandler? SelectedIndexChanged;
+
+    /// <summary>A click or Enter selects the cell (<see cref="SelectedIndex"/>); off by default, so only code selects.</summary>
+    [Category("Behavior"), DefaultValue(false)]
+    public bool SelectOnClick { get; set; }
+
+    /// <summary>
+    /// Columns drawn on a faint band with their label in the text color (today, the current shift, a weekend); empty = none.
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IReadOnlyList<int> HighlightColumns
+    {
+        get => _highlightColumns;
+        set
+        {
+            _highlightColumns = (value ?? Array.Empty<int>()).ToArray();
+            Invalidate();
+        }
+    }
+
+    /// <summary>
+    /// Fixed size of a cell (96 DPI pixels); <see cref="Size.Empty"/> (the default) fills the control. A width or height of 0
+    /// fills in that direction only. With a fixed size the grid starts at the top left and <c>GetPreferredSize</c> (and
+    /// <c>AutoSize</c>) give the size that shows every cell.
+    /// </summary>
+    [Category("Layout")]
+    public Size CellSize
+    {
+        get => _cellSize;
+        set
+        {
+            value = new Size(Math.Max(0, value.Width), Math.Max(0, value.Height));
+            if (value == _cellSize) return;
+            _cellSize = value;
+            if (AutoSize) Parent?.PerformLayout(this, nameof(CellSize));
+            Invalidate();
+        }
+    }
+
+    private bool ShouldSerializeCellSize() => !_cellSize.IsEmpty;
+
+    private void ResetCellSize() => CellSize = Size.Empty;
+
+    /// <summary>
+    /// Where a cell is drawn, in client coordinates (<see cref="Rectangle.Empty"/> when the row or column does not exist), for
+    /// placing a popover or an editor next to it.
+    /// </summary>
+    public Rectangle GetCellBounds(int row, int column) =>
+        row < 0 || column < 0 || row >= RowCount || column >= ColumnCount ? Rectangle.Empty : Rectangle.Round(ComputeLayout().Cell(row, column));
+
+    public override Size GetPreferredSize(Size proposedSize)
+    {
+        if (_cellSize.IsEmpty) return base.GetPreferredSize(proposedSize);
+        var layout = ComputeLayout();
+        int width = _cellSize.Width > 0 ? (int)Math.Ceiling(layout.Grid.Left + layout.CellWidth * ColumnCount) + Padding.Right : Width;
+        int height = _cellSize.Height > 0 ? (int)Math.Ceiling(layout.Grid.Top + layout.CellHeight * RowCount) + Padding.Bottom : Height;
+        return new Size(width, height);
+    }
+
     /// <summary>Replaces the labels and values in one step.</summary>
     public void SetData(IEnumerable<string> rows, IEnumerable<string> columns, double[,] values)
     {
@@ -345,9 +428,19 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
 
     private string ColumnLabel(int column) => column < _columns.Count ? _columns[column] : "";
 
+    /// <summary>Raised after the data, scale or colors change (the legend control repaints).</summary>
+    internal event EventHandler? AppearanceChanged;
+
+    protected override void OnInvalidated(InvalidateEventArgs e)
+    {
+        base.OnInvalidated(e);
+        AppearanceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private void OnDataChanged()
     {
         if (_hover >= RowCount * ColumnCount) _hover = -1;
+        if (_selected >= RowCount * ColumnCount) SelectedIndex = -1;
         Motion.DataChanged(AnimateOnShow, AnimateChanges, _values.Length > 0, IntroCount,
             () => _fromColors = new Dictionary<(int, int), Color>(_shownColors));
         Invalidate();
@@ -532,8 +625,10 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         int left = content.Left + (layout.RowLabelWidth > 0 ? layout.RowLabelWidth + (int)(12 * s) : 0);
         layout.Grid = Rectangle.FromLTRB(left, top, Math.Max(left + 1, content.Right), Math.Max(top + 1, content.Bottom));
         int rows = RowCount, columns = ColumnCount;
-        layout.CellWidth = columns == 0 ? layout.Grid.Width : layout.Grid.Width / (float)columns;
-        layout.CellHeight = rows == 0 ? layout.Grid.Height : layout.Grid.Height / (float)rows;
+        layout.CellWidth = _cellSize.Width > 0 ? _cellSize.Width * s : columns == 0 ? layout.Grid.Width : layout.Grid.Width / (float)columns;
+        layout.CellHeight = _cellSize.Height > 0 ? _cellSize.Height * s : rows == 0 ? layout.Grid.Height : layout.Grid.Height / (float)rows;
+        if (_cellSize.Width > 0) layout.Grid.Width = Math.Max(1, (int)Math.Ceiling(layout.CellWidth * columns));
+        if (_cellSize.Height > 0) layout.Grid.Height = Math.Max(1, (int)Math.Ceiling(layout.CellHeight * rows));
         // Sığmayan sütun etiketleri atlanır (gün numaraları gibi).
         int widest = _columns.SelectMany(x => x.Split('\n')).Select(x => TextRenderer.MeasureText(x, Font, Size.Empty, Flags).Width).DefaultIfEmpty(0).Max();
         layout.ColumnLabelStep = Math.Max(1, (int)Math.Ceiling((widest + 6 * s) / Math.Max(1f, layout.CellWidth)));
@@ -564,8 +659,19 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             if (text.Length > 0)
                 TextRenderer.DrawText(g, text, Font, new Rectangle(Padding.Left, (int)cell.Y, layout.RowLabelWidth, (int)Math.Ceiling(cell.Height)), muted, Flags | TextFormatFlags.VerticalCenter);
         }
-        for (int c = 0; c < columns; c += layout.ColumnLabelStep)
+        // Vurgulu sütunlar: hücrelerin arkasında soluk bir şerit, etiketi metin renginde.
+        foreach (int c in _highlightColumns)
         {
+            if (c < 0 || c >= columns || rows == 0) continue;
+            var band = RectangleF.Union(layout.Cell(0, c), layout.Cell(rows - 1, c));
+            band.Inflate(0, gap);
+            TwPainter.FillRounded(g, Rectangle.Round(band), Math.Min(6 * s, band.Width / 4),
+                TwCharts.Blend(surface, ForeColor, _colors.Dark ? 0.14f : 0.08f));
+        }
+        for (int c = 0; c < columns; c++)
+        {
+            bool highlighted = _highlightColumns.Contains(c);
+            if (c % layout.ColumnLabelStep != 0 && !highlighted) continue;
             var text = ColumnLabel(c);
             if (text.Length == 0) continue;
             var cell = layout.Cell(0, c);
@@ -575,7 +681,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             foreach (var part in parts)
             {
                 var size = TextRenderer.MeasureText(part, Font, Size.Empty, Flags);
-                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), muted, Flags);
+                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), highlighted ? ForeColor : muted, Flags);
                 y += line;
             }
         }
@@ -593,7 +699,9 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                 if (!double.IsNaN(value)) color = ShownCellColor(r, c, color, surface);
                 if (double.IsNaN(value)) PaintEmptyCell(g, box, radius, s, surface);
                 else TwPainter.FillRounded(g, box, radius, color);
-                if (r * columns + c == _hover)
+                if (r * columns + c == _selected)
+                    TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, _colors.Accent ?? TwCharts.SeriesColor(0, _colors.Dark, null));
+                else if (r * columns + c == _hover)
                     TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, ForeColor);
                 if (_showValues && !double.IsNaN(value))
                 {
@@ -625,17 +733,49 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             TwPainter.StrokeRounded(g, ClientRectangle, 6 * s, 2 * s, Color.FromArgb(160, _colors.Accent ?? TwCharts.SeriesColor(0, _colors.Dark, null)));
     }
 
-    // Gösterge: sağ üstte min ve max metinleri arasında bir renk geçişi.
-    private void PaintLegend(Graphics g, Rectangle area, Color muted, float s)
+    /// <summary>
+    /// A separate control that draws this heatmap's legend (the gradient between the scale's ends and the empty-cell key),
+    /// for placing it elsewhere when the heatmap is narrow: in a card header, next to a title. The heatmap stops drawing its
+    /// own legend (<see cref="ShowLegend"/> = <c>false</c>); the legend follows the heatmap's data, colors and texts.
+    /// </summary>
+    public TwHeatmapLegend CreateLegend()
+    {
+        ShowLegend = false;
+        return new TwHeatmapLegend { Heatmap = this };
+    }
+
+    private void PaintLegend(Graphics g, Rectangle area, Color muted, float s) => PaintLegend(g, area, muted, s, Font);
+
+    /// <summary>Width the legend needs in <paramref name="font"/>.</summary>
+    internal Size LegendSize(Font font, float s)
+    {
+        var (low, high) = LegendTexts();
+        var lowSize = TextRenderer.MeasureText(low, font, Size.Empty, Flags);
+        var highSize = TextRenderer.MeasureText(high, font, Size.Empty, Flags);
+        int gap = (int)(8 * s);
+        int width = highSize.Width + gap + (int)(96 * s) + gap + lowSize.Width;
+        if (EmptyInLegend)
+            width += gap * 2 + TextRenderer.MeasureText(_emptyCellText, font, Size.Empty, Flags).Width + (int)(6 * s) + (int)(12 * s);
+        return new Size(width, Math.Max(lowSize.Height, highSize.Height));
+    }
+
+    private (string Low, string High) LegendTexts()
     {
         var (min, max) = Scale();
-        string low = _legendMinText.Length > 0 ? _legendMinText : TwCharts.Format(min, _valueFormat);
-        string high = _legendMaxText.Length > 0 ? _legendMaxText : TwCharts.Format(max, _valueFormat);
-        var lowSize = TextRenderer.MeasureText(low, Font, Size.Empty, Flags);
-        var highSize = TextRenderer.MeasureText(high, Font, Size.Empty, Flags);
+        return (_legendMinText.Length > 0 ? _legendMinText : TwCharts.Format(min, _valueFormat),
+            _legendMaxText.Length > 0 ? _legendMaxText : TwCharts.Format(max, _valueFormat));
+    }
+
+    // Gösterge: alanın sağında min ve max metinleri arasında bir renk geçişi (varsa solunda boş hücre anahtarı).
+    internal void PaintLegend(Graphics g, Rectangle area, Color muted, float s, Font font)
+    {
+        var (min, max) = Scale();
+        var (low, high) = LegendTexts();
+        var lowSize = TextRenderer.MeasureText(low, font, Size.Empty, Flags);
+        var highSize = TextRenderer.MeasureText(high, font, Size.Empty, Flags);
         int bar = (int)(96 * s), gap = (int)(8 * s), height = (int)(6 * s);
         int x = area.Right - highSize.Width;
-        TextRenderer.DrawText(g, high, Font, new Point(x, area.Top), muted, Flags);
+        TextRenderer.DrawText(g, high, font, new Point(x, area.Top), muted, Flags);
         x -= gap + bar;
         var strip = new Rectangle(x, area.Top + (area.Height - height) / 2, bar, height);
         // Geçiş, ıraksak ölçekte negatif uçtan başlar; parçalı çizim her iki ucun rengini doğru gösterir.
@@ -647,19 +787,22 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             g.FillRectangle(brush, strip.X + strip.Width * i / (float)steps, strip.Y, strip.Width / (float)steps + 0.5f, strip.Height);
         }
         x -= gap + lowSize.Width;
-        TextRenderer.DrawText(g, low, Font, new Point(x, area.Top), muted, Flags);
+        TextRenderer.DrawText(g, low, font, new Point(x, area.Top), muted, Flags);
         if (!EmptyInLegend) return;
 
         // Boş hücre anahtarı: geçişin solunda küçük bir örnek kutu ve anlamı.
-        var emptySize = TextRenderer.MeasureText(_emptyCellText, Font, Size.Empty, Flags);
+        var emptySize = TextRenderer.MeasureText(_emptyCellText, font, Size.Empty, Flags);
         x -= gap * 2 + emptySize.Width;
-        TextRenderer.DrawText(g, _emptyCellText, Font, new Point(x, area.Top), muted, Flags);
+        TextRenderer.DrawText(g, _emptyCellText, font, new Point(x, area.Top), muted, Flags);
         int swatch = Math.Min(area.Height, (int)(12 * s));
         x -= (int)(6 * s) + swatch;
         var box = new Rectangle(x, area.Top + (area.Height - swatch) / 2, swatch, swatch);
         if (_emptyCells == TwHeatmapEmptyCell.Hatched) TwCharts.FillHatched(g, box, 2 * s, Empty, HatchLine, s);
         else TwPainter.FillRounded(g, box, 2 * s, Empty);
     }
+
+    /// <summary>The muted text color the legend uses.</summary>
+    internal Color LegendTextColor => TwCharts.Muted(this, _colors);
 
     // ---- Etkileşim ----
 
@@ -706,6 +849,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private void RaiseCellClick(int index)
     {
         int columns = ColumnCount;
+        if (SelectOnClick) SelectedIndex = index;
         CellClick?.Invoke(this, new TwHeatmapCellEventArgs(index / columns, index % columns, GetValue(index / columns, index % columns)));
     }
 
@@ -764,7 +908,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     Rectangle ITwChartItems.ItemBounds(int index)
     {
         int columns = ColumnCount;
-        return columns == 0 ? Rectangle.Empty : Rectangle.Round(ComputeLayout().Cell(index / columns, index % columns));
+        return columns == 0 ? Rectangle.Empty : GetCellBounds(index / columns, index % columns);
     }
 
     /// <summary>Text of a cell for screen readers: row, column and value.</summary>
@@ -786,4 +930,77 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     }
 
     protected override AccessibleObject CreateAccessibilityInstance() => new TwChartAccessibleObject(this, this);
+}
+
+/// <summary>
+/// The legend of a <see cref="TwHeatmap"/> as its own control (<see cref="TwHeatmap.CreateLegend"/>): the gradient between the
+/// scale's ends and, with <see cref="TwHeatmap.EmptyCellText"/>, a sample of the empty cell. <c>AutoSize</c> by default.
+/// </summary>
+[ToolboxItem(false)]
+public class TwHeatmapLegend : Control
+{
+    private TwHeatmap? _heatmap;
+
+    public TwHeatmapLegend()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
+                 | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+        SetStyle(ControlStyles.Selectable, false);
+        TabStop = false;
+        BackColor = Color.Transparent;
+        AutoSize = true;
+    }
+
+    /// <summary>The heatmap whose legend is drawn.</summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public TwHeatmap? Heatmap
+    {
+        get => _heatmap;
+        set
+        {
+            if (_heatmap == value) return;
+            if (_heatmap != null) _heatmap.AppearanceChanged -= OnHeatmapChanged;
+            _heatmap = value;
+            if (_heatmap != null) _heatmap.AppearanceChanged += OnHeatmapChanged;
+            OnHeatmapChanged(this, EventArgs.Empty);
+        }
+    }
+
+    [Browsable(true), EditorBrowsable(EditorBrowsableState.Always), DefaultValue(true)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public override bool AutoSize
+    {
+        get => base.AutoSize;
+        set => base.AutoSize = value;
+    }
+
+    private float DpiScale => TwDpi.DeviceDpi(this) / 96f;
+
+    private void OnHeatmapChanged(object? sender, EventArgs e)
+    {
+        if (AutoSize && _heatmap != null && GetPreferredSize(Size.Empty) != Size) Parent?.PerformLayout(this, nameof(Heatmap));
+        Invalidate();
+    }
+
+    public override Size GetPreferredSize(Size proposedSize)
+    {
+        if (_heatmap is null) return new Size(Padding.Horizontal, Padding.Vertical);
+        var size = _heatmap.LegendSize(Font, DpiScale);
+        return new Size(size.Width + Padding.Horizontal, size.Height + Padding.Vertical);
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        TwPainter.PaintParentBackground(this, e.Graphics);
+        if (BackColor.A > 0) using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, ClientRectangle);
+        if (_heatmap is null) return;
+        var area = Rectangle.FromLTRB(Padding.Left, Padding.Top, Width - Padding.Right, Height - Padding.Bottom);
+        _heatmap.PaintLegend(e.Graphics, area, _heatmap.LegendTextColor, DpiScale, Font);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) Heatmap = null;
+        base.Dispose(disposing);
+    }
 }

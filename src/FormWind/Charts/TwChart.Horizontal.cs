@@ -28,11 +28,31 @@ public partial class TwChart
 
     private string RowLabel(int index) => CategoryLabel(index).Replace('\n', ' ');
 
-    private bool AnyValueLabels => Series.Any(x => x.ShowValues);
+    // %100 yığılmış çubukta seriler yan yana durmaz; her satır payların toplamıdır.
+    private bool HStacked => _stacked || IsPercent;
+
+    // Satırda gösterilen değer: %100 yığında satır toplamına oranı (negatifler 0 sayılır), yoksa serinin değeri.
+    private double HValue(int series, int category)
+    {
+        double value = Series[series].ValueAt(category);
+        if (!IsPercent || double.IsNaN(value)) return value;
+        double total = 0;
+        foreach (var other in Series)
+        {
+            double v = other.ValueAt(category);
+            if (!double.IsNaN(v) && v > 0) total += v;
+        }
+        return total <= 0 ? double.NaN : Math.Max(0, value) / total;
+    }
+
+    private string HFormat(double value) => IsPercent ? TwCharts.Format(value, "0.#%") : TwCharts.Format(value, _valueFormat);
+
+    // %100 yığında satır sonu değeri (her zaman %100) yazılmaz; paylar ipucunda.
+    private bool AnyValueLabels => !IsPercent && Series.Any(x => x.ShowValues);
 
     // Yığılmış satırın değer etiketi toplamdır; yan yana çubuklarda her çubuğun değeri.
     private string ValueLabel(int series, int category) =>
-        TwCharts.Format(_stacked ? StackTotal(category) : Series[series].ValueAt(category), _valueFormat);
+        IsPercent ? HFormat(HValue(series, category)) : HFormat(HStacked ? StackTotal(category) : Series[series].ValueAt(category));
 
     private double StackTotal(int category)
     {
@@ -65,7 +85,7 @@ public partial class TwChart
         int widest = Enumerable.Range(0, count).Select(i => TextRenderer.MeasureText(RowLabel(i), Font, Size.Empty, HorizontalFlags).Width).DefaultIfEmpty(0).Max();
         layout.LabelWidth = Math.Min(widest, (int)(content.Width * 0.4f));
         // Her seri değerini çubuğun ucunda gösteriyorsa alt eksen yazılmaz.
-        layout.Axis = !(Series.Count > 0 && Series.All(x => x.ShowValues));
+        layout.Axis = IsPercent || !(Series.Count > 0 && Series.All(x => x.ShowValues));
         int bottom = content.Bottom - (layout.Axis ? line + (int)(6 * s) : 0);
         int left = content.Left + (layout.LabelWidth > 0 ? layout.LabelWidth + (int)(10 * s) : 0);
         int valueWidth = 0;
@@ -76,12 +96,14 @@ public partial class TwChart
                     if (Series[i].ShowValues) valueWidth = Math.Max(valueWidth, TextRenderer.MeasureText(ValueLabel(i, c), Font, Size.Empty, HorizontalFlags).Width);
             valueWidth += (int)(6 * s);
         }
-        var (min, max, includeZero) = ValueRange(TwChartAxis.Primary);
+        var (min, max, includeZero) = IsPercent ? (0d, 1d, true) : ValueRange(TwChartAxis.Primary);
         int plotWidth = Math.Max(1, content.Right - valueWidth - left);
         int ticks = Math.Max(2, Math.Min(8, plotWidth / (int)Math.Max(1, 72 * s) + 1));
-        (layout.Min, layout.Max, layout.Step) = Override(TwCharts.NiceScale(min, max, ticks, includeZero), _axisMinimum, _axisMaximum, _axisInterval);
+        (layout.Min, layout.Max, layout.Step) = IsPercent
+            ? (0d, 1d, plotWidth >= 320 * s ? 0.25 : 0.5)
+            : Override(TwCharts.NiceScale(min, max, ticks, includeZero), _axisMinimum, _axisMaximum, _axisInterval);
         // Son tik etiketi plot'un sağından taşmasın.
-        int lastTick = layout.Axis ? TextRenderer.MeasureText(TickText(layout.Max), Font, Size.Empty, HorizontalFlags).Width / 2 : 0;
+        int lastTick = layout.Axis ? TextRenderer.MeasureText(HTickText(layout.Max), Font, Size.Empty, HorizontalFlags).Width / 2 : 0;
         int right = content.Right - Math.Max(valueWidth, lastTick);
         layout.Plot = new Rectangle(left, top, Math.Max(1, right - left), Math.Max(1, bottom - top));
         layout.Band = count == 0 ? layout.Plot.Height : layout.Plot.Height / (float)count;
@@ -90,19 +112,21 @@ public partial class TwChart
     }
 
     /// <summary>Bounds of a horizontal bar (or stacked segment); empty when it has no bar.</summary>
+    private string HTickText(double value) => IsPercent ? TwCharts.Format(value, "0%") : TickText(value);
+
     internal RectangleF HorizontalBarBounds(HorizontalLayout layout, int seriesIndex, int category)
     {
-        double value = Series[seriesIndex].ValueAt(category);
+        double value = HValue(seriesIndex, category);
         if (double.IsNaN(value) || double.IsInfinity(value)) return RectangleF.Empty;
         float s = DpiScale, gap = 2 * s;
         float center = layout.Y(category);
-        if (_stacked)
+        if (HStacked)
         {
             float thickness = Math.Min(_maxBarWidth * s, layout.Band * 0.6f);
             double baseValue = 0;
             for (int p = 0; p < seriesIndex; p++)
             {
-                double v = Series[p].ValueAt(category);
+                double v = HValue(p, category);
                 if (!double.IsNaN(v) && (v >= 0) == (value >= 0)) baseValue += v;
             }
             float from = layout.X(baseValue), to = layout.X(baseValue + value);
@@ -140,7 +164,7 @@ public partial class TwChart
                 int x = (int)Math.Round(layout.X(tick));
                 if (_showGrid || Math.Abs(tick) < layout.Step / 1000) g.DrawLine(pen, x, plot.Top, x, plot.Bottom);
                 if (!layout.Axis) continue;
-                var text = TickText(tick);
+                var text = HTickText(tick);
                 var size = TextRenderer.MeasureText(text, Font, Size.Empty, HorizontalFlags);
                 TextRenderer.DrawText(g, text, Font, new Point(x - size.Width / 2, plot.Bottom + (int)(6 * s)), muted, HorizontalFlags);
             }
@@ -169,10 +193,10 @@ public partial class TwChart
             {
                 var bar = ShownBar(HorizontalBarBounds(layout, i, c), i, c, zero, horizontal: true);
                 if (bar.Width < 0.5f || bar.Height < 0.5f) continue;
-                double value = Series[i].ValueAt(c);
-                bool outer = !_stacked || Enumerable.Range(i + 1, Series.Count - i - 1).All(b =>
+                double value = HValue(i, c);
+                bool outer = !HStacked || Enumerable.Range(i + 1, Series.Count - i - 1).All(b =>
                 {
-                    double v = Series[b].ValueAt(c);
+                    double v = HValue(b, c);
                     return double.IsNaN(v) || v == 0 || (v >= 0) != (value >= 0);
                 });
                 var point = Series[i].PointColor(c);
@@ -205,21 +229,21 @@ public partial class TwChart
         {
             for (int i = 0; i < Series.Count; i++)
             {
-                if (!Series[i].ShowValues) continue;
+                if (!Series[i].ShowValues || IsPercent) continue;
                 RectangleF bar;
-                if (_stacked)
+                if (HStacked)
                 {
                     bar = Enumerable.Range(0, Series.Count).Select(j => PaintedBar(HorizontalBarBounds(layout, j, c), j, c)).Where(b => !b.IsEmpty)
                         .Aggregate(RectangleF.Empty, (a, b) => a.IsEmpty ? b : RectangleF.Union(a, b));
                 }
                 else bar = PaintedBar(HorizontalBarBounds(layout, i, c), i, c);
                 if (bar.IsEmpty) continue;
-                double value = _stacked ? StackTotal(c) : Series[i].ValueAt(c);
+                double value = HStacked ? StackTotal(c) : Series[i].ValueAt(c);
                 var text = ValueLabel(i, c);
                 var size = TextRenderer.MeasureText(g, text, Font, Size.Empty, HorizontalFlags);
                 int x = value >= 0 ? (int)bar.Right + (int)(6 * s) : (int)bar.Left - (int)(6 * s) - size.Width;
                 TextRenderer.DrawText(g, text, Font, new Point(x, (int)(bar.Top + bar.Height / 2 - size.Height / 2f)), ForeColor, HorizontalFlags);
-                if (_stacked) break;
+                if (HStacked) break;
             }
         }
 
@@ -229,7 +253,8 @@ public partial class TwChart
             float end = Enumerable.Range(0, Series.Count).Select(i => HorizontalBarBounds(layout, i, _hover)).Where(b => !b.IsEmpty)
                 .Select(b => b.Right).DefaultIfEmpty(plot.Left + plot.Width / 2f).Max();
             var anchor = new Point(_mouse?.X ?? (int)end, (int)layout.Y(_hover));
-            var lines = Series.Select((x, i) => ((Color?)GetSeriesColor(i), (Series.Count > 1 ? x.Name + ": " : "") + TwCharts.Format(x.ValueAt(_hover), _valueFormat))).ToList();
+            var lines = Series.Select((x, i) => ((Color?)GetSeriesColor(i), (Series.Count > 1 ? x.Name + ": " : "")
+                + (IsPercent ? HFormat(HValue(i, _hover)) + " (" + TwCharts.Format(x.ValueAt(_hover), _valueFormat) + ")" : TwCharts.Format(x.ValueAt(_hover), _valueFormat)))).ToList();
             TwCharts.DrawTooltip(g, this, anchor, RowLabel(_hover), lines, s);
         }
         if (Focused && ShowFocusCues)

@@ -47,6 +47,9 @@ public class TwStat : Control, ITwChrome, ITwChartControl
     private Font? _valueFont;
     private string _shortValue = "";
     private TwStatFit _valueFit = TwStatFit.Shrink;
+    private float _valueScale = 2f;
+    private string _unit = "";
+    private bool _showTrend = true;
     private (int Width, string Value, string Short, TwStatFit Fit, Font? Font, string Text, float Points) _fit;
 
     public TwStat()
@@ -146,6 +149,49 @@ public class TwStat : Control, ITwChrome, ITwChartControl
     {
         if (_countTo is null || _count is null || !_count.Running || text != _value) return text;
         return _countTo.Format(_countFrom + (_countTo.Value - _countFrom) * _count.Progress);
+    }
+
+    /// <summary>
+    /// Size of <see cref="Value"/> relative to the control's font (default 2: twice the size). A plain KPI card uses 1.5–1.75
+    /// so the number does not dwarf the title.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(2f)]
+    public float ValueScale
+    {
+        get => _valueScale;
+        set
+        {
+            value = Math.Max(1f, Math.Min(6f, value));
+            if (Math.Abs(value - _valueScale) < 0.001f) return;
+            _valueScale = value;
+            _valueFont?.Dispose();
+            _valueFont = null;
+            Invalidate();
+        }
+    }
+
+    /// <summary>
+    /// Unit after the value ("min", "%", "pcs"), in the control's font and muted color, sitting on the value's baseline; it is
+    /// not counted, shrunk or cut with the value. Empty = none.
+    /// </summary>
+    [Category("Appearance"), DefaultValue("")]
+    public string Unit
+    {
+        get => _unit;
+        set => Set(ref _unit, value ?? "");
+    }
+
+    /// <summary>Whether <see cref="Trend"/> is drawn (default <c>true</c>); <c>false</c> keeps the values but shows no sparkline.</summary>
+    [Category("Appearance"), DefaultValue(true)]
+    public bool ShowTrend
+    {
+        get => _showTrend;
+        set
+        {
+            if (_showTrend == value) return;
+            _showTrend = value;
+            Invalidate();
+        }
     }
 
     /// <summary>A shorter form of <see cref="Value"/> shown when the value does not fit ("278 h" for "278 h 52 min").</summary>
@@ -321,7 +367,23 @@ public class TwStat : Control, ITwChrome, ITwChartControl
         base.OnFontChanged(e);
     }
 
-    private Font ValueFont => _valueFont ??= new Font(Font.FontFamily, Font.SizeInPoints * 2f, FontStyle.Bold, GraphicsUnit.Point);
+    private Font ValueFont => _valueFont ??= new Font(Font.FontFamily, Font.SizeInPoints * _valueScale, FontStyle.Bold, GraphicsUnit.Point);
+
+    // Birim, değerin taban çizgisine oturur: iki fontun yükseklik (ascent) farkı kadar aşağıda başlar.
+    private static int Ascent(Graphics g, Font font)
+    {
+        var family = font.FontFamily;
+        float em = family.GetEmHeight(font.Style);
+        return (int)Math.Round(font.SizeInPoints * family.GetCellAscent(font.Style) / em * g.DpiY / 72f);
+    }
+
+    /// <summary>The unit's width and the gap before it (0 without a unit).</summary>
+    private int UnitWidth(Graphics g, TextFormatFlags flags)
+    {
+        if (_unit.Length == 0) return 0;
+        var size = TextRenderer.MeasureText(g, _unit, Font, Size.Empty, flags);
+        return size.Width + (int)Math.Round(4 * TwDpi.DeviceDpi(this) / 96f);
+    }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -348,15 +410,33 @@ public class TwStat : Control, ITwChrome, ITwChartControl
         {
             // Satır yüksekliği tam boyuttan alınır; küçülen değer aynı satırda dikeyde ortalanır, alttaki satırlar kaymaz.
             int h = TextRenderer.MeasureText(g, _value, ValueFont, Size.Empty, flags).Height;
-            var (text, points) = FitValue(content.Width);
+            int unit = UnitWidth(g, flags);
+            var (text, points) = FitValue(Math.Max(1, content.Width - unit));
             text = CountedText(text);
-            var line = new Rectangle(content.X, y, content.Width, h);
-            if (points >= ValueFont.SizeInPoints)
-                TextRenderer.DrawText(g, text, ValueFont, line, Enabled ? ForeColor : muted, flags);
-            else
+            var line = new Rectangle(content.X, y, Math.Max(1, content.Width - unit), h);
+            var drawn = ValueFont;
+            Font? small = points >= ValueFont.SizeInPoints ? null : new Font(ValueFont.FontFamily, points, FontStyle.Bold, GraphicsUnit.Point);
+            try
             {
-                using var small = new Font(ValueFont.FontFamily, points, FontStyle.Bold, GraphicsUnit.Point);
-                TextRenderer.DrawText(g, text, small, line, Enabled ? ForeColor : muted, flags | TextFormatFlags.Bottom);
+                if (small is null) TextRenderer.DrawText(g, text, ValueFont, line, Enabled ? ForeColor : muted, flags);
+                else
+                {
+                    drawn = small;
+                    TextRenderer.DrawText(g, text, small, line, Enabled ? ForeColor : muted, flags | TextFormatFlags.Bottom);
+                }
+                if (unit > 0)
+                {
+                    var size = TextRenderer.MeasureText(g, text, drawn, Size.Empty, flags & ~TextFormatFlags.EndEllipsis);
+                    int valueTop = small is null ? y : y + h - size.Height;
+                    int baseline = valueTop + Ascent(g, drawn);
+                    int x = Math.Min(content.X + size.Width, content.Right - unit) + (int)Math.Round(4 * scale);
+                    var unitSize = TextRenderer.MeasureText(g, _unit, Font, Size.Empty, flags);
+                    TextRenderer.DrawText(g, _unit, Font, new Rectangle(x, baseline - Ascent(g, Font), content.Right - x, unitSize.Height), muted, flags);
+                }
+            }
+            finally
+            {
+                small?.Dispose();
             }
             y += h + gap;
         }
@@ -386,7 +466,7 @@ public class TwStat : Control, ITwChrome, ITwChartControl
             y += h + gap * 2;
         }
 
-        if (_trend.Count > 0)
+        if (_trend.Count > 0 && _showTrend)
         {
             var area = Rectangle.FromLTRB(content.Left, y, content.Right, content.Bottom);
             if (area.Height >= (int)(16 * scale))
@@ -429,7 +509,7 @@ public class TwStat : Control, ITwChrome, ITwChartControl
             get
             {
                 var parts = new List<string>();
-                if (_owner.Value.Length > 0) parts.Add(_owner.Value);
+                if (_owner.Value.Length > 0) parts.Add(_owner.Unit.Length > 0 ? _owner.Value + " " + _owner.Unit : _owner.Value);
                 if (_owner.DeltaDisplay.Length > 0) parts.Add(_owner.DeltaDisplay);
                 if (_owner.Caption.Length > 0) parts.Add(_owner.Caption);
                 return string.Join(", ", parts);
