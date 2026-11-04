@@ -435,7 +435,9 @@ public class ReportFixTests
             Assert.Equal(strip.PageCount - 1, strip.PageIndex);
 
             // Genişleyince her şey tek sayfaya sığar: düğmeler gizlenir, sayfa geri çekilir.
-            form.ClientSize = new Size(7 * 230, 200);
+            // Form ekrandan geniş olamaz (CI ekranı dar), bu yüzden şerit doğrudan genişletilir.
+            strip.Dock = DockStyle.None;
+            strip.Width = (int)(7 * 230 * TwDpi.DeviceDpi(strip) / 96f);
             Assert.Equal(1, strip.PageCount);
             Assert.Equal(0, strip.PageIndex);
             Assert.False(strip.NextButton.Visible);
