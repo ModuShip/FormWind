@@ -21,8 +21,8 @@ namespace FormWind;
 /// </summary>
 public static class TwTransition
 {
-    /// <summary>Applies <paramref name="change"/> to <paramref name="host"/> and cross-fades from its old look (250 ms).</summary>
-    public static void CrossFade(Control host, Action change) => CrossFade(host, change, TwMotion.Durations.M);
+    /// <summary>Applies <paramref name="change"/> to <paramref name="host"/> and cross-fades from its old look (<see cref="TwMotion.Timings.CrossFade"/>).</summary>
+    public static void CrossFade(Control host, Action change) => CrossFade(host, change, (TwMotionOptions?)null);
 
     /// <summary>
     /// Applies <paramref name="change"/> to <paramref name="host"/> (a form, a panel) and fades its old look away over the new
@@ -30,11 +30,19 @@ public static class TwTransition
     /// however long the change takes. The picture lets clicks through and covers only the visible part of the host.
     /// When animations are off, the host is not visible or no picture can be taken, the change is simply applied.
     /// </summary>
-    public static void CrossFade(Control host, Action change, int durationMs)
+    public static void CrossFade(Control host, Action change, int durationMs) =>
+        CrossFade(host, change, new TwMotionOptions { DurationMs = durationMs });
+
+    /// <summary>
+    /// Applies <paramref name="change"/> to <paramref name="host"/> and cross-fades from its old look with <paramref name="options"/>
+    /// (duration and curve; ease-in-out by default). See <see cref="CrossFade(Control, Action, int)"/>.
+    /// </summary>
+    public static void CrossFade(Control host, Action change, TwMotionOptions? options)
     {
         if (host is null) throw new ArgumentNullException(nameof(host));
         if (change is null) throw new ArgumentNullException(nameof(change));
-        if (!TwMotion.CanAnimate(host) || durationMs <= 0 || host.Width <= 0 || host.Height <= 0)
+        var timing = TwMotionOptions.Timing(options, TwMotion.Timings.CrossFade, TwEasing.InOut);
+        if (!TwMotion.CanAnimate(host) || timing.TotalMs <= 0 || host.Width <= 0 || host.Height <= 0)
         {
             _lastCovered = false;
             change();
@@ -57,41 +65,58 @@ public static class TwTransition
             if (cover != null)
             {
                 TwCapture.PaintNow(host);
-                cover.Fade(durationMs, TwEasing.InOut);
+                cover.Fade(timing, Point.Empty);
             }
         }
     }
 
     /// <summary>
-    /// Shows <paramref name="panel"/> (a side panel, an inspector) sliding in from <paramref name="edge"/> (250 ms). The layout
-    /// is done once: the panel is made visible at once under a picture of the old look, a picture of the panel slides into
-    /// its place and the rest of the parent cross-fades to its new layout. Nothing is laid out or repainted frame by frame,
-    /// so a grid beside the panel does not tear. Without animation the panel is simply shown.
+    /// Shows <paramref name="panel"/> (a side panel, an inspector) sliding in from <paramref name="edge"/>
+    /// (<see cref="TwMotion.Timings.Slide"/>). The layout is done once: the panel is made visible at once under a picture of
+    /// the old look, a picture of the panel slides into its place and the rest of the parent cross-fades to its new layout.
+    /// Nothing is laid out or repainted frame by frame, so a grid beside the panel does not tear. Without animation the panel
+    /// is simply shown.
     /// <code>
     /// TwTransition.SlideIn(pnlInspector, TwEdge.Right);
     /// </code>
     /// </summary>
-    public static void SlideIn(Control panel, TwEdge edge) => Slide(panel, edge, true, TwMotion.Durations.M);
+    public static void SlideIn(Control panel, TwEdge edge) => Slide(panel, edge, true, null);
 
     /// <summary>Shows <paramref name="panel"/> sliding in from <paramref name="edge"/> in <paramref name="durationMs"/> (see <see cref="SlideIn(Control, TwEdge)"/>).</summary>
-    public static void SlideIn(Control panel, TwEdge edge, int durationMs) => Slide(panel, edge, true, durationMs);
+    public static void SlideIn(Control panel, TwEdge edge, int durationMs) =>
+        Slide(panel, edge, true, new TwMotionOptions { DurationMs = durationMs });
 
     /// <summary>
-    /// Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> (250 ms); the layout is done once, as with
-    /// <see cref="SlideIn(Control, TwEdge)"/>. Without animation the panel is simply hidden.
+    /// Shows <paramref name="panel"/> sliding in from <paramref name="edge"/> with <paramref name="options"/>: duration and curve
+    /// (ease-out by default), <see cref="TwMotionOptions.IncludeMargin"/> to slide the gap beside the panel with it and
+    /// <see cref="TwMotionOptions.FadeRest"/> to put the rest of the parent in its new layout at once.
     /// </summary>
-    public static void SlideOut(Control panel, TwEdge edge) => Slide(panel, edge, false, TwMotion.Durations.M);
+    public static void SlideIn(Control panel, TwEdge edge, TwMotionOptions? options) => Slide(panel, edge, true, options);
+
+    /// <summary>
+    /// Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> (<see cref="TwMotion.Timings.Slide"/>); the
+    /// layout is done once, as with <see cref="SlideIn(Control, TwEdge)"/>. Without animation the panel is simply hidden.
+    /// </summary>
+    public static void SlideOut(Control panel, TwEdge edge) => Slide(panel, edge, false, null);
 
     /// <summary>Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> in <paramref name="durationMs"/>.</summary>
-    public static void SlideOut(Control panel, TwEdge edge, int durationMs) => Slide(panel, edge, false, durationMs);
+    public static void SlideOut(Control panel, TwEdge edge, int durationMs) =>
+        Slide(panel, edge, false, new TwMotionOptions { DurationMs = durationMs });
 
+    /// <summary>
+    /// Hides <paramref name="panel"/> sliding out toward <paramref name="edge"/> with <paramref name="options"/> (ease-in by
+    /// default; see <see cref="SlideIn(Control, TwEdge, TwMotionOptions)"/>).
+    /// </summary>
+    public static void SlideOut(Control panel, TwEdge edge, TwMotionOptions? options) => Slide(panel, edge, false, options);
 
-    private static void Slide(Control panel, TwEdge edge, bool show, int durationMs)
+    private static void Slide(Control panel, TwEdge edge, bool show, TwMotionOptions? options)
     {
         if (panel is null) throw new ArgumentNullException(nameof(panel));
         var host = panel.Parent;
         _lastCovered = false;
-        if (host is null || panel.Visible == show || !TwMotion.CanAnimate(host) || durationMs <= 0)
+        var timing = TwMotionOptions.Timing(options, TwMotion.Timings.Slide, show ? TwEasing.Out : TwEasing.In);
+        bool fadeRest = options?.FadeRest ?? true, margin = options?.IncludeMargin ?? false;
+        if (host is null || panel.Visible == show || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
         {
             panel.Visible = show;
             return;
@@ -112,7 +137,7 @@ public static class TwTransition
         if (show) back = (Bitmap)before.Clone();
         else
         {
-            place = Rectangle.Intersect(host.RectangleToScreen(panel.Bounds), hostBounds);
+            place = Rectangle.Intersect(host.RectangleToScreen(Place(panel, margin)), hostBounds);
             front = Crop(before, place, hostBounds);
         }
 
@@ -141,26 +166,182 @@ public static class TwTransition
         if (show)
         {
             var whole = back!;
-            place = Rectangle.Intersect(host.RectangleToScreen(panel.Bounds), hostBounds);
+            place = Rectangle.Intersect(host.RectangleToScreen(Place(panel, margin)), hostBounds);
             front = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
-            back = front is null ? null : Crop(whole, place, hostBounds);
+            // Kalan alan solmadan yeni yerleşimine geçince panelin yerindeki eski içerik (tablo sütunları) görünmesin.
+            back = front is null ? null : fadeRest ? Crop(whole, place, hostBounds) : Fill(place.Size, host.BackColor);
             whole.Dispose();
         }
         else back = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
 
-        // Panelin yerinde: arka plan üzerinde kayan panel resmi; geri kalan alan yeni yerleşime solar.
+        // Panelin yerinde: arka plan üzerinde kayan panel resmi; geri kalan alan yeni yerleşime solar ya da hemen açılır.
         if (front != null && back != null)
         {
             var away = TwWindowMotion.Offset(edge, edge is TwEdge.Left or TwEdge.Right ? place.Width : place.Height);
             var slider = new SlideGhost(back, front, place, show ? away : Point.Empty, show ? Point.Empty : away);
-            if (slider.TryShow(host.FindForm())) slider.Play(durationMs, show ? TwEasing.Out : TwEasing.In);
+            if (slider.TryShow(host.FindForm())) slider.Play(timing);
         }
         else
         {
             front?.Dispose();
             back?.Dispose();
         }
-        cover.Fade(durationMs, TwEasing.InOut);
+        cover.Fade(RestTiming(timing, fadeRest), Point.Empty);
+    }
+
+    /// <summary>
+    /// Changes the size of a docked panel (a sidebar collapsing to icons, an inspector widening) to <paramref name="size"/>
+    /// (<see cref="TwMotion.Timings.Slide"/>): the width for a panel docked left, right or not docked, the height for one
+    /// docked top or bottom. As with <see cref="SlideIn(Control, TwEdge)"/> the layout is done once: the new size is applied
+    /// under a picture of the old look, the picture of the panel at its larger size opens or closes from its docked edge and
+    /// the rest cross-fades to its new layout. Without animation the size is simply set.
+    /// <code>
+    /// TwTransition.Resize(sidebar, collapsed ? 56 : 240);
+    /// </code>
+    /// </summary>
+    public static void Resize(Control panel, int size) => Resize(panel, size, null);
+
+    /// <summary>
+    /// Changes the size of a docked panel with <paramref name="options"/> (duration, curve — ease-in-out by default —
+    /// and <see cref="TwMotionOptions.FadeRest"/>); see <see cref="Resize(Control, int)"/>.
+    /// </summary>
+    public static void Resize(Control panel, int size, TwMotionOptions? options)
+    {
+        if (panel is null) throw new ArgumentNullException(nameof(panel));
+        if (size < 0) throw new ArgumentOutOfRangeException(nameof(size), size, "A size cannot be negative.");
+        bool vertical = panel.Dock is DockStyle.Top or DockStyle.Bottom;
+        _lastCovered = false;
+        if ((vertical ? panel.Height : panel.Width) == size) return;
+        Resize(panel, () =>
+        {
+            if (vertical) panel.Height = size;
+            else panel.Width = size;
+        }, options);
+    }
+
+    /// <summary>
+    /// Applies <paramref name="change"/>, which changes the size of a docked panel and anything else that goes with it (labels
+    /// hidden in a collapsed sidebar), under a picture of the old look and animates the panel to its new size (see
+    /// <see cref="Resize(Control, int)"/>).
+    /// <code>
+    /// TwTransition.Resize(sidebar, () =>
+    /// {
+    ///     foreach (var label in navLabels) label.Visible = !collapsed;
+    ///     sidebar.Width = collapsed ? 56 : 240;
+    /// });
+    /// </code>
+    /// </summary>
+    public static void Resize(Control panel, Action change) => Resize(panel, change, null);
+
+    /// <summary>Applies <paramref name="change"/> and animates the docked panel to its new size with <paramref name="options"/> (see <see cref="Resize(Control, Action)"/>).</summary>
+    public static void Resize(Control panel, Action change, TwMotionOptions? options)
+    {
+        if (panel is null) throw new ArgumentNullException(nameof(panel));
+        if (change is null) throw new ArgumentNullException(nameof(change));
+        bool vertical = panel.Dock is DockStyle.Top or DockStyle.Bottom, far = panel.Dock is DockStyle.Right or DockStyle.Bottom;
+
+        var host = panel.Parent;
+        _lastCovered = false;
+        var timing = TwMotionOptions.Timing(options, TwMotion.Timings.Slide, TwEasing.InOut);
+        if (host is null || !panel.Visible || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
+        {
+            change();
+            return;
+        }
+
+        var hostBounds = VisibleScreenBounds(host, host.RectangleToScreen(host.ClientRectangle));
+        var before = hostBounds.IsEmpty ? null : TwCapture.Take(host, hostBounds);
+        if (before is null)
+        {
+            change();
+            return;
+        }
+        var oldPlace = host.RectangleToScreen(panel.Bounds);
+        var cover = TwFadeOut.Cover((Bitmap)before.Clone(), hostBounds, host.FindForm(), roundCorners: false);
+        try
+        {
+            change();
+            TwCapture.PaintNow(host);
+        }
+        catch
+        {
+            cover?.Fade(0, TwEasing.Linear);
+            before.Dispose();
+            throw;
+        }
+        if (cover is null)
+        {
+            before.Dispose();
+            return;
+        }
+        // Boyu değişmeyen bir değişiklik yalnızca çapraz solar.
+        _lastCovered = true;
+        if (host.RectangleToScreen(panel.Bounds) == oldPlace)
+        {
+            before.Dispose();
+            cover.Fade(timing, Point.Empty);
+            return;
+        }
+
+        // Panelin büyük hâlinin resmi, küçük hâlin görüntüsü üstünde yapıştığı kenardan açılır ya da kapanır.
+        var newPlace = host.RectangleToScreen(panel.Bounds);
+        var place = Rectangle.Intersect(Rectangle.Union(oldPlace, newPlace), hostBounds);
+        bool grows = (vertical ? newPlace.Height : newPlace.Width) > (vertical ? oldPlace.Height : oldPlace.Width);
+        var after = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
+        var oldPart = place.IsEmpty ? null : Crop(before, place, hostBounds);
+        before.Dispose();
+        var wide = Rectangle.Intersect(grows ? newPlace : oldPlace, place);
+        var large = grows ? after : oldPart;
+        var front = large is null || wide.IsEmpty ? null : Crop(large, wide, place);
+        // Büyürken panelin henüz örtmediği şeritte eski yerleşimin içeriği kalmaz (yeni yerine geçmiş yazılar iki kez
+        // görünürdü): zemin rengi üstünde panelin eski resmi. Küçülürken arka plan zaten yeni yerleşimdir.
+        var back = grows ? Underlay(oldPart, Rectangle.Intersect(oldPlace, place), place, host.BackColor) : after;
+        if (grows) after?.Dispose();
+        oldPart?.Dispose();
+        if (front != null && back != null)
+        {
+            var reveal = new RevealGhost(back, front, place, new Point(wide.X - place.X, wide.Y - place.Y), vertical, far,
+                vertical ? oldPlace.Height : oldPlace.Width, vertical ? newPlace.Height : newPlace.Width);
+            if (reveal.TryShow(host.FindForm())) reveal.Play(timing);
+        }
+        else
+        {
+            front?.Dispose();
+            back?.Dispose();
+        }
+        cover.Fade(RestTiming(timing, options?.FadeRest ?? true), Point.Empty);
+    }
+
+    // Zemin rengiyle dolu bir resim; üstünde yalnızca panelin eski yeri (part) eski resimden alınır.
+    private static Bitmap? Underlay(Bitmap? picture, Rectangle part, Rectangle pictureBounds, Color color)
+    {
+        if (picture is null) return null;
+        var under = Fill(picture.Size, color);
+        if (part.IsEmpty) return under;
+        var rect = new Rectangle(part.X - pictureBounds.X, part.Y - pictureBounds.Y, part.Width, part.Height);
+        using (var g = Graphics.FromImage(under)) g.DrawImage(picture, rect, rect, GraphicsUnit.Pixel);
+        return under;
+    }
+
+    // Kalan alan ya ana geçişle aynı sürede solar ya da kayan resim ekrana çıktıktan sonra hemen açılır.
+    private static TwTiming RestTiming(TwTiming timing, bool fade) =>
+        fade ? new TwTiming(timing.DurationMs, 0, TwEasing.InOut) : TwTiming.None;
+
+    // Panelin yeri; istenirse kenar payıyla birlikte (Margin'in bıraktığı boşluk da panelle kayar).
+    private static Rectangle Place(Control panel, bool margin)
+    {
+        var bounds = panel.Bounds;
+        if (!margin) return bounds;
+        var m = panel.Margin;
+        return Rectangle.FromLTRB(bounds.Left - m.Left, bounds.Top - m.Top, bounds.Right + m.Right, bounds.Bottom + m.Bottom);
+    }
+
+    private static Bitmap Fill(Size size, Color color)
+    {
+        var picture = new Bitmap(size.Width, size.Height);
+        using var g = Graphics.FromImage(picture);
+        g.Clear(Color.FromArgb(255, color));
+        return picture;
     }
 
     private static Bitmap? Crop(Bitmap picture, Rectangle part, Rectangle pictureBounds)
@@ -170,26 +351,25 @@ public static class TwTransition
         return rect.Width > 0 && rect.Height > 0 ? picture.Clone(rect, picture.PixelFormat) : null;
     }
 
-    /// <summary>A click-through window over the panel's place: the background picture with the panel's picture sliding over it.</summary>
-    private sealed class SlideGhost : Form
+    /// <summary>A click-through window over a panel's place that draws a background picture and a moving picture over it.</summary>
+    private abstract class PictureGhost : Form
     {
         private const int WsExNoActivate = 0x08000000, WsExToolWindow = 0x00000080, WsExTransparent = 0x00000020;
-        private readonly Bitmap _back, _front;
-        private readonly Point _from, _to;
+        protected readonly Bitmap Back, Front;
         private TwTween? _tween;
 
-        public SlideGhost(Bitmap back, Bitmap front, Rectangle bounds, Point from, Point to)
+        protected PictureGhost(Bitmap back, Bitmap front, Rectangle bounds)
         {
-            _back = back;
-            _front = front;
-            _from = from;
-            _to = to;
+            Back = back;
+            Front = front;
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             Bounds = bounds;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
         }
+
+        protected float Progress => _tween?.Progress ?? 0f;
 
         protected override bool ShowWithoutActivation => true;
 
@@ -225,32 +405,74 @@ public static class TwTransition
             }
         }
 
-        public void Play(int durationMs, TwEasing easing)
+        public void Play(TwTiming timing)
         {
             _tween = new TwTween(this);
             _tween.Completed += (_, _) => Close();
-            _tween.Start(durationMs, easing);
+            _tween.Start(timing);
             if (!_tween.Running) Close();
         }
 
         protected override void OnPaintBackground(PaintEventArgs e) { }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            float p = _tween?.Progress ?? 0f;
-            e.Graphics.DrawImageUnscaled(_back, 0, 0);
-            e.Graphics.DrawImageUnscaled(_front, (int)Math.Round(_from.X + (_to.X - _from.X) * p), (int)Math.Round(_from.Y + (_to.Y - _from.Y) * p));
-        }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
                 _tween?.Dispose();
-                _back.Dispose();
-                _front.Dispose();
+                Back.Dispose();
+                Front.Dispose();
             }
             base.Dispose(disposing);
+        }
+    }
+
+    /// <summary>The panel's picture sliding over the background picture.</summary>
+    private sealed class SlideGhost : PictureGhost
+    {
+        private readonly Point _from, _to;
+
+        public SlideGhost(Bitmap back, Bitmap front, Rectangle bounds, Point from, Point to) : base(back, front, bounds)
+        {
+            _from = from;
+            _to = to;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            float p = Progress;
+            e.Graphics.DrawImageUnscaled(Back, 0, 0);
+            e.Graphics.DrawImageUnscaled(Front, (int)Math.Round(_from.X + (_to.X - _from.X) * p), (int)Math.Round(_from.Y + (_to.Y - _from.Y) * p));
+        }
+    }
+
+    /// <summary>The picture of the panel at its larger size, shown from its docked edge up to the size reached so far.</summary>
+    private sealed class RevealGhost : PictureGhost
+    {
+        private readonly Point _at;
+        private readonly bool _vertical, _far;
+        private readonly int _from, _to;
+
+        public RevealGhost(Bitmap back, Bitmap front, Rectangle bounds, Point at, bool vertical, bool far, int from, int to)
+            : base(back, front, bounds)
+        {
+            _at = at;
+            _vertical = vertical;
+            _far = far;
+            _from = from;
+            _to = to;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.DrawImageUnscaled(Back, 0, 0);
+            int length = _vertical ? Front.Height : Front.Width;
+            int shown = Math.Max(0, Math.Min(length, (int)Math.Round(_from + (_to - _from) * Progress)));
+            var clip = _vertical
+                ? new Rectangle(_at.X, _far ? _at.Y + length - shown : _at.Y, Front.Width, shown)
+                : new Rectangle(_far ? _at.X + length - shown : _at.X, _at.Y, shown, Front.Height);
+            e.Graphics.SetClip(clip);
+            e.Graphics.DrawImageUnscaled(Front, _at.X, _at.Y);
         }
     }
 

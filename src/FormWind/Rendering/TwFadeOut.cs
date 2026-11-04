@@ -13,7 +13,7 @@ namespace FormWind;
 /// non-activating window at the same place, which fades out and disappears. Nothing happens when animations are off, the
 /// window is not on a screen or the screen cannot be read.
 /// </summary>
-internal static class TwFadeOut
+public static class TwFadeOut
 {
     /// <summary>Number of fading pictures on this thread (for tests).</summary>
     [ThreadStatic]
@@ -53,7 +53,7 @@ internal static class TwFadeOut
     /// leaves it there until <see cref="Ghost.Fade(int, TwEasing)"/>; <c>null</c> when the window cannot be shown (the picture is then
     /// disposed). The picture is on screen when this returns.
     /// </summary>
-    public static Ghost? Cover(Bitmap picture, Rectangle bounds, Form? owner, bool roundCorners)
+    internal static Ghost? Cover(Bitmap picture, Rectangle bounds, Form? owner, bool roundCorners)
     {
         var ghost = new Ghost(picture, bounds, roundCorners);
         try
@@ -137,7 +137,10 @@ internal static class TwFadeOut
         public void Fade(int durationMs, TwEasing easing) => Fade(durationMs, easing, Point.Empty);
 
         /// <summary>Fades the picture out while moving it by <paramref name="offset"/>, and closes the window at the end.</summary>
-        public void Fade(int durationMs, TwEasing easing, Point offset)
+        public void Fade(int durationMs, TwEasing easing, Point offset) => Fade(new TwTiming(durationMs, 0, easing), offset);
+
+        /// <summary>Fades the picture out with <paramref name="timing"/> while moving it by <paramref name="offset"/>, and closes the window at the end.</summary>
+        public void Fade(TwTiming timing, Point offset)
         {
             if (IsDisposed) return;
             var start = Location;
@@ -149,7 +152,7 @@ internal static class TwFadeOut
                 if (!offset.IsEmpty) Location = new Point(start.X + (int)Math.Round(offset.X * p), start.Y + (int)Math.Round(offset.Y * p));
             };
             _tween.Completed += (_, _) => Close();
-            _tween.Start(durationMs, easing);
+            _tween.Start(timing);
             if (!_tween.Running) Close();
         }
 

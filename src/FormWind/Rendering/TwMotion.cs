@@ -120,6 +120,49 @@ public static class TwMotion
     }
 
     /// <summary>
+    /// Creates the window handles of <paramref name="control"/> and all its children and lays them out, also while the control
+    /// is hidden, so that showing it later costs only painting: for example to build the next pages while the application is
+    /// idle. Controls whose handles exist are only laid out again. Call it on the UI thread.
+    /// <code>
+    /// Application.Idle += (_, _) => TwMotion.Prewarm(reportsPage);   // once; the page stays hidden until it is opened
+    /// </code>
+    /// </summary>
+    public static void Prewarm(Control control)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        if (control.IsDisposed) return;
+        CreateHandles(control);
+        Layout(control);
+
+        static void CreateHandles(Control parent)
+        {
+            // Handle'a erişmek görünmeyen kontrolün de tutamacını oluşturur (CreateControl görünmeyenleri atlar).
+            if (!parent.IsHandleCreated) _ = parent.Handle;
+            foreach (Control child in parent.Controls) CreateHandles(child);
+        }
+
+        static void Layout(Control parent)
+        {
+            parent.PerformLayout();
+            foreach (Control child in parent.Controls) Layout(child);
+        }
+    }
+
+    /// <summary>
+    /// Turns double buffering of <paramref name="control"/> on or off. Controls such as <see cref="DataGridView"/> and
+    /// <see cref="ListView"/> keep it off and do not expose it, so they are painted piece by piece while data arrives or under a
+    /// transition. A <see cref="DataGridView"/> with classes is double buffered already.
+    /// </summary>
+    public static void SetDoubleBuffered(Control control, bool value)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        DoubleBufferedProperty?.SetValue(control, value);
+    }
+
+    private static readonly System.Reflection.PropertyInfo? DoubleBufferedProperty =
+        typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+    /// <summary>
     /// Standard durations (ms) for in-control animations; 1 ms each when animations are off, so a change that waits for
     /// one ends at once.
     /// </summary>
@@ -154,7 +197,10 @@ public static class TwMotion
         private static int _chartIntro = TwChartMotion.IntroDuration, _chartChange = TwChartMotion.ChangeDuration,
             _chartStagger = TwChartMotion.Stagger, _statCount = TwStat.CountDuration, _popupOpen = TwPopupMotion.OpenDuration,
             _popupClose = TwPopupMotion.CloseDuration, _attentionPulse = TwOutset.PingDuration,
-            _dialogFade = TwDialogForm.FadeDuration, _toastFade = TwToastForm.FadeDuration;
+            _dialogFade = TwDialogForm.FadeDuration, _toastFade = TwToastForm.FadeDuration, _crossFade = DefaultCrossFade,
+            _slide = DefaultSlide, _windowIn = DefaultWindowIn, _windowOut = DefaultWindowOut;
+
+        internal const int DefaultCrossFade = 250, DefaultSlide = 250, DefaultWindowIn = 250, DefaultWindowOut = 180;
 
         /// <summary>Opening of one chart item: a bar growing, a ring filling, a dot popping up (default 600).</summary>
         public static int ChartIntro { get => _chartIntro; set => _chartIntro = Check(value); }
@@ -186,6 +232,21 @@ public static class TwMotion
         /// <summary>Fade-out of a notification (default 150; it slides in for twice as long).</summary>
         public static int ToastFade { get => _toastFade; set => _toastFade = Check(value); }
 
+        /// <summary><see cref="TwTransition.CrossFade(Control, Action)"/> from the old look to the new (default 250).</summary>
+        public static int CrossFade { get => _crossFade; set => _crossFade = Check(value); }
+
+        /// <summary>
+        /// <see cref="TwTransition.SlideIn(Control, TwEdge)"/>, <c>SlideOut</c> and <see cref="TwTransition.Resize(Control, int)"/>
+        /// (default 250).
+        /// </summary>
+        public static int Slide { get => _slide; set => _slide = Check(value); }
+
+        /// <summary>A window sliding in with <see cref="TwWindowMotion"/> (default 250).</summary>
+        public static int WindowIn { get => _windowIn; set => _windowIn = Check(value); }
+
+        /// <summary>The last picture of a window fading out with <see cref="TwWindowMotion"/> (default 180).</summary>
+        public static int WindowOut { get => _windowOut; set => _windowOut = Check(value); }
+
         /// <summary>Sets every duration back to its default.</summary>
         public static void Reset()
         {
@@ -198,6 +259,10 @@ public static class TwMotion
             _attentionPulse = TwOutset.PingDuration;
             _dialogFade = TwDialogForm.FadeDuration;
             _toastFade = TwToastForm.FadeDuration;
+            _crossFade = DefaultCrossFade;
+            _slide = DefaultSlide;
+            _windowIn = DefaultWindowIn;
+            _windowOut = DefaultWindowOut;
         }
 
         private static int Check(int durationMs, [System.Runtime.CompilerServices.CallerMemberName] string name = "") =>

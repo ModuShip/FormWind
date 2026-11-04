@@ -97,7 +97,7 @@ public static class TwAnimator
         TwCubicBezier curve, int delayMs, Action? completed) =>
         Animate(control, name, from, to, new TwTiming(durationMs, delayMs, curve), set, completed);
 
-    private static void Animate(Control control, string name, double from, double to, TwTiming timing, Action<double> set, Action? completed)
+    internal static void Animate(Control control, string name, double from, double to, TwTiming timing, Action<double> set, Action? completed)
     {
         if (control is null) throw new ArgumentNullException(nameof(control));
         if (name is null) throw new ArgumentNullException(nameof(name));

@@ -8,13 +8,13 @@ using System.Windows.Forms;
 namespace FormWind;
 
 /// <summary>
-/// Pictures of a part of a window as it looks on screen, for transitions and fades. <see cref="Control.DrawToBitmap"/>
+/// Pictures of a part of a window as it looks on screen, for transitions, fades and image viewers. <see cref="Control.DrawToBitmap"/>
 /// repaints the controls into the bitmap in reverse order: overlapping controls come out wrong, text in nested scrolled
 /// panels is drawn twice and a form's removed title bar is drawn back. So the picture is copied from the screen when the
 /// part is on screen and not covered by another application's window; otherwise the window's own content is asked from
 /// the desktop window manager (<c>PrintWindow</c>), and <c>DrawToBitmap</c> is only the last resort.
 /// </summary>
-internal static class TwCapture
+public static class TwCapture
 {
     private const int RdwInvalidate = 0x0001, RdwAllChildren = 0x0080, RdwUpdateNow = 0x0100, RdwFrame = 0x0400;
     private const int PwRenderFullContent = 0x00000002;
@@ -24,7 +24,7 @@ internal static class TwCapture
     private const int HorzRes = 8, VertRes = 10, DesktopVertRes = 117, DesktopHorzRes = 118;
     private const int DwmwaExtendedFrameBounds = 9, DwmwaCloaked = 14;
 
-    /// <summary>How the last <see cref="Take"/> got its picture (for tests).</summary>
+    /// <summary>How the last <see cref="Take(Control, Rectangle)"/> got its picture (for tests).</summary>
     internal enum Source
     {
         None,
@@ -53,8 +53,15 @@ internal static class TwCapture
     }
 
     /// <summary>
+    /// Picture of <paramref name="control"/> as it looks on screen (a form without its invisible resize borders); <c>null</c>
+    /// when none can be taken. The caller owns (and disposes) the bitmap.
+    /// </summary>
+    public static Bitmap? Take(Control control) =>
+        control is { IsHandleCreated: true } ? Take(control, control is Form form ? VisibleFormBounds(form) : control.RectangleToScreen(control.ClientRectangle)) : null;
+
+    /// <summary>
     /// Picture of <paramref name="screenBounds"/> (a part of <paramref name="control"/>, screen coordinates) after the
-    /// pending paints are done; <c>null</c> when none can be taken.
+    /// pending paints are done; <c>null</c> when none can be taken. The caller owns (and disposes) the bitmap.
     /// </summary>
     public static Bitmap? Take(Control control, Rectangle screenBounds)
     {
@@ -90,7 +97,7 @@ internal static class TwCapture
     /// for the moment of the copy (Windows 10 2004 and later); otherwise the content is asked from the desktop window
     /// manager, which renders the whole window and is several times slower.
     /// </summary>
-    public static Bitmap? TakeContent(Control control, Rectangle screenBounds, Form? cover)
+    internal static Bitmap? TakeContent(Control control, Rectangle screenBounds, Form? cover)
     {
         _lastSource = Source.None;
         if (control is null || !control.IsHandleCreated || screenBounds.Width <= 0 || screenBounds.Height <= 0) return null;
