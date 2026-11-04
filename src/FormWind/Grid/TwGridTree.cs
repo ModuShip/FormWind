@@ -15,7 +15,7 @@ public static partial class TwGrid
     /// <paramref name="treeColumn"/>, which gets an expand arrow. The grid must be unbound (no <c>DataSource</c>); its rows are
     /// replaced. Click the arrow or double-click the cell to expand and collapse; in the tree column → expands or moves to the
     /// first child and ← collapses or moves to the parent, + and − work in every column. Header clicks sort the children of
-    /// each parent. Parent rows can show the totals of their children (<see cref="TwGridTree.SetTotal"/>), and a
+    /// each parent. Parent rows can show the totals of their children (<see cref="TwGridTree.SetTotal(DataGridViewColumn, TwAggregate)"/>), and a
     /// <see cref="TwGridFooter"/> counts only the rows without children, so totals are not counted twice.
     /// <code>
     /// var tree = TwGrid.SetTree(grid, colName, new[]
@@ -192,6 +192,8 @@ public sealed class TwGridTree
     private readonly List<TwGridTreeNode> _roots = new List<TwGridTreeNode>();
     private readonly List<TwGridTreeNode> _rows = new List<TwGridTreeNode>();
     private readonly Dictionary<DataGridViewColumn, TwAggregate> _totals = new Dictionary<DataGridViewColumn, TwAggregate>();
+    private readonly Dictionary<DataGridViewColumn, Func<IEnumerable<TwGridTreeNode>, object?>> _customTotals =
+        new Dictionary<DataGridViewColumn, Func<IEnumerable<TwGridTreeNode>, object?>>();
     private DataGridViewColumn? _column;
     private DataGridViewColumn? _sortColumn;
     private ListSortDirection _sortDirection;
@@ -210,6 +212,7 @@ public sealed class TwGridTree
         grid.ColumnRemoved += (_, e) =>
         {
             _totals.Remove(e.Column);
+            _customTotals.Remove(e.Column);
             if (e.Column == _column) _column = null;
         };
     }
@@ -272,9 +275,36 @@ public sealed class TwGridTree
     public void SetTotal(DataGridViewColumn column, TwAggregate aggregate)
     {
         if (column is null) throw new ArgumentNullException(nameof(column));
+        _customTotals.Remove(column);
         if (aggregate == TwAggregate.None) _totals.Remove(column);
         else _totals[column] = aggregate;
         Refresh();
+    }
+
+    /// <summary>
+    /// Parent rows show what <paramref name="total"/> computes from their direct children (where their own value is empty), for
+    /// values that do not add up, such as a ratio. Children that are parents pass their own computed value through
+    /// <see cref="GetValue"/>; <c>null</c> removes the total.
+    /// <code>
+    /// // Solved rate of a group: solved / total, from the counts of its children.
+    /// tree.SetTotal(colRate, nodes =&gt; Ratio(nodes.Sum(n =&gt; (int)tree.GetValue(n, colSolved)!), nodes.Sum(n =&gt; (int)tree.GetValue(n, colTotal)!)));
+    /// </code>
+    /// </summary>
+    public void SetTotal(DataGridViewColumn column, Func<IEnumerable<TwGridTreeNode>, object?>? total)
+    {
+        if (column is null) throw new ArgumentNullException(nameof(column));
+        _totals.Remove(column);
+        if (total is null) _customTotals.Remove(column);
+        else _customTotals[column] = total;
+        Refresh();
+    }
+
+    /// <summary>The value a node shows in a column: its own value, or the total of its children when that is empty.</summary>
+    public object? GetValue(TwGridTreeNode node, DataGridViewColumn column)
+    {
+        if (node is null) throw new ArgumentNullException(nameof(node));
+        if (column is null) throw new ArgumentNullException(nameof(column));
+        return ValueOf(node, column);
     }
 
     /// <summary>Rebuilds the rows after nodes or their values changed; expanded nodes, the current node and sorting are kept.</summary>
@@ -306,7 +336,8 @@ public sealed class TwGridTree
             {
                 var node = _rows[i];
                 node.RowIndex = i;
-                var row = new DataGridViewRow();
+                // RowTemplate'ten: row:h-* (RowTemplate.Height) ve şablonun stili yeni satırlara da geçer.
+                var row = (DataGridViewRow)_grid.RowTemplate.Clone();
                 row.CreateCells(_grid);
                 foreach (DataGridViewColumn c in _grid.Columns) row.Cells[c.Index].Value = ValueOf(node, c);
                 row.Visible = node.IsVisible;
@@ -331,8 +362,11 @@ public sealed class TwGridTree
         if (node.Values != null) value = column.Index < node.Values.Length ? node.Values[column.Index] : null;
         else if (node.DataItem != null && !string.IsNullOrEmpty(column.DataPropertyName))
             value = TypeDescriptor.GetProperties(node.DataItem).Find(column.DataPropertyName, true)?.GetValue(node.DataItem);
-        if ((value is null || value == DBNull.Value) && node.HasChildren && _totals.TryGetValue(column, out var aggregate))
-            value = Total(node, column, aggregate);
+        if ((value is null || value == DBNull.Value) && node.HasChildren)
+        {
+            if (_customTotals.TryGetValue(column, out var custom)) value = custom(node.Nodes.ToList());
+            else if (_totals.TryGetValue(column, out var aggregate)) value = Total(node, column, aggregate);
+        }
         return value;
     }
 
