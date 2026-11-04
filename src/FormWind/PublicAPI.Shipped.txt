@@ -2354,3 +2354,348 @@ static FormWind.TwWindowMotion.FadeOut(System.Windows.Forms.Form! window, FormWi
 static FormWind.TwWindowMotion.FadeOut(System.Windows.Forms.Form! window, FormWind.TwEdge? edge, int durationMs) -> void
 static FormWind.TwWindowMotion.SlideIn(System.Windows.Forms.Form! window, FormWind.TwEdge edge) -> void
 static FormWind.TwWindowMotion.SlideIn(System.Windows.Forms.Form! window, FormWind.TwEdge edge, int durationMs) -> void
+FormWind.TwMotionOptions
+FormWind.TwMotionOptions.TwMotionOptions() -> void
+FormWind.TwMotionOptions.Curve.get -> FormWind.TwCubicBezier?
+FormWind.TwMotionOptions.Curve.set -> void
+FormWind.TwMotionOptions.Distance.get -> int?
+FormWind.TwMotionOptions.Distance.set -> void
+FormWind.TwMotionOptions.DurationMs.get -> int?
+FormWind.TwMotionOptions.DurationMs.set -> void
+FormWind.TwMotionOptions.Easing.get -> FormWind.TwEasing?
+FormWind.TwMotionOptions.Easing.set -> void
+FormWind.TwMotionOptions.FadeRest.get -> bool
+FormWind.TwMotionOptions.FadeRest.set -> void
+FormWind.TwMotionOptions.IncludeMargin.get -> bool
+FormWind.TwMotionOptions.IncludeMargin.set -> void
+static FormWind.TwMotion.Prewarm(System.Windows.Forms.Control! control) -> void
+static FormWind.TwMotion.SetDoubleBuffered(System.Windows.Forms.Control! control, bool value) -> void
+static FormWind.TwMotion.Timings.CrossFade.get -> int
+static FormWind.TwMotion.Timings.CrossFade.set -> void
+static FormWind.TwMotion.Timings.Slide.get -> int
+static FormWind.TwMotion.Timings.Slide.set -> void
+static FormWind.TwMotion.Timings.WindowIn.get -> int
+static FormWind.TwMotion.Timings.WindowIn.set -> void
+static FormWind.TwMotion.Timings.WindowOut.get -> int
+static FormWind.TwMotion.Timings.WindowOut.set -> void
+static FormWind.TwTransition.CrossFade(System.Windows.Forms.Control! host, System.Action! change, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwTransition.Resize(System.Windows.Forms.Control! panel, int size) -> void
+static FormWind.TwTransition.Resize(System.Windows.Forms.Control! panel, int size, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwTransition.SlideIn(System.Windows.Forms.Control! panel, FormWind.TwEdge edge, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwTransition.SlideOut(System.Windows.Forms.Control! panel, FormWind.TwEdge edge, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwWindowMotion.Attach(System.Windows.Forms.Form! window, FormWind.TwEdge edge, FormWind.TwMotionOptions? enter, FormWind.TwMotionOptions? exit) -> void
+static FormWind.TwWindowMotion.Distance.get -> int
+static FormWind.TwWindowMotion.Distance.set -> void
+static FormWind.TwWindowMotion.FadeOut(System.Windows.Forms.Form! window, FormWind.TwEdge? edge, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwWindowMotion.SlideIn(System.Windows.Forms.Form! window, FormWind.TwEdge edge, FormWind.TwMotionOptions? options) -> void
+static FormWind.TwTransition.Resize(System.Windows.Forms.Control! panel, System.Action! change) -> void
+static FormWind.TwTransition.Resize(System.Windows.Forms.Control! panel, System.Action! change, FormWind.TwMotionOptions? options) -> void
+FormWind.TwHeatmap.CellSize.get -> System.Drawing.Size
+FormWind.TwHeatmap.CellSize.set -> void
+FormWind.TwHeatmap.GetCellBounds(int row, int column) -> System.Drawing.Rectangle
+FormWind.TwHeatmap.HighlightColumns.get -> System.Collections.Generic.IReadOnlyList<int>!
+FormWind.TwHeatmap.HighlightColumns.set -> void
+FormWind.TwHeatmap.SelectedIndex.get -> int
+FormWind.TwHeatmap.SelectedIndex.set -> void
+FormWind.TwHeatmap.SelectedIndexChanged -> System.EventHandler?
+override FormWind.TwHeatmap.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+FormWind.TwDialogOptions.BackColor.get -> System.Drawing.Color?
+FormWind.TwDialogOptions.BackColor.set -> void
+FormWind.TwDialogOptions.OkText.get -> string?
+FormWind.TwDialogOptions.OkText.set -> void
+static FormWind.TwDialog.DarkBackColor.get -> System.Drawing.Color
+static FormWind.TwDialog.DarkBackColor.set -> void
+static FormWind.TwDialog.LightBackColor.get -> System.Drawing.Color
+static FormWind.TwDialog.LightBackColor.set -> void
+static FormWind.TwDialog.Prompt(System.Windows.Forms.IWin32Window? owner, FormWind.TwDialogOptions! options) -> string?
+static FormWind.TwIcons.IsKnown(string? name) -> bool
+FormWind.TwGridTree.GetValue(FormWind.TwGridTreeNode! node, System.Windows.Forms.DataGridViewColumn! column) -> object?
+FormWind.TwGridTree.SetTotal(System.Windows.Forms.DataGridViewColumn! column, System.Func<System.Collections.Generic.IEnumerable<FormWind.TwGridTreeNode!>!, object?>? total) -> void
+FormWind.TwStat.ShowTrend.get -> bool
+FormWind.TwStat.ShowTrend.set -> void
+FormWind.TwStat.Unit.get -> string!
+FormWind.TwStat.Unit.set -> void
+FormWind.TwStat.ValueScale.get -> float
+FormWind.TwStat.ValueScale.set -> void
+FormWind.TwHeatmap.SelectOnClick.get -> bool
+FormWind.TwHeatmap.SelectOnClick.set -> void
+FormWind.TwListBox.BeginUpdate() -> void
+FormWind.TwListBox.EndUpdate() -> void
+FormWind.TwCapture
+static FormWind.TwCapture.PaintNow(System.Windows.Forms.Control! control) -> void
+static FormWind.TwCapture.RepaintNow(System.Windows.Forms.Control! control) -> void
+static FormWind.TwCapture.Take(System.Windows.Forms.Control! control) -> System.Drawing.Bitmap?
+static FormWind.TwCapture.Take(System.Windows.Forms.Control! control, System.Drawing.Rectangle screenBounds) -> System.Drawing.Bitmap?
+static FormWind.TwCapture.VisibleFormBounds(System.Windows.Forms.Form! form) -> System.Drawing.Rectangle
+FormWind.TwFadeOut
+static FormWind.TwFadeOut.Play(System.Windows.Forms.Control! window, System.Windows.Forms.Form? owner, int durationMs, bool roundCorners) -> void
+static FormWind.TwFadeOut.PlayPicture(System.Drawing.Bitmap! picture, System.Drawing.Rectangle bounds, System.Windows.Forms.Form? owner, int durationMs, bool roundCorners, FormWind.TwEasing easing) -> bool
+FormWind.TwHeatmap.CreateLegend() -> FormWind.TwHeatmapLegend!
+FormWind.TwHeatmapLegend
+FormWind.TwHeatmapLegend.TwHeatmapLegend() -> void
+FormWind.TwHeatmapLegend.Heatmap.get -> FormWind.TwHeatmap?
+FormWind.TwHeatmapLegend.Heatmap.set -> void
+override FormWind.TwHeatmapLegend.AutoSize.get -> bool
+override FormWind.TwHeatmapLegend.AutoSize.set -> void
+override FormWind.TwHeatmapLegend.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwHeatmapLegend.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwHeatmapLegend.Dispose(bool disposing) -> void
+override FormWind.TwHeatmap.OnInvalidated(System.Windows.Forms.InvalidateEventArgs! e) -> void
+FormWind.TwChartKind.StackedBar100 = 4 -> FormWind.TwChartKind
+FormWind.TwTexts.Previous.get -> string!
+FormWind.TwTexts.Previous.set -> void
+FormWind.TwTexts.Next.get -> string!
+FormWind.TwTexts.Next.set -> void
+FormWind.TwTexts.AddFilter.get -> string!
+FormWind.TwTexts.AddFilter.set -> void
+FormWind.TwTexts.CommandPlaceholder.get -> string!
+FormWind.TwTexts.CommandPlaceholder.set -> void
+FormWind.TwTexts.NoResults.get -> string!
+FormWind.TwTexts.NoResults.set -> void
+FormWind.TwTexts.SearchIn.get -> string!
+FormWind.TwTexts.SearchIn.set -> void
+FormWind.TwTexts.Today.get -> string!
+FormWind.TwTexts.Today.set -> void
+FormWind.TwTexts.Yesterday.get -> string!
+FormWind.TwTexts.Yesterday.set -> void
+FormWind.TwTexts.LastDays.get -> string!
+FormWind.TwTexts.LastDays.set -> void
+FormWind.TwTexts.ThisMonth.get -> string!
+FormWind.TwTexts.ThisMonth.set -> void
+FormWind.TwTexts.LastMonth.get -> string!
+FormWind.TwTexts.LastMonth.set -> void
+FormWind.TwTexts.ThisYear.get -> string!
+FormWind.TwTexts.ThisYear.set -> void
+FormWind.TwTexts.CustomRange.get -> string!
+FormWind.TwTexts.CustomRange.set -> void
+FormWind.TwTexts.AllShifts.get -> string!
+FormWind.TwTexts.AllShifts.set -> void
+FormWind.TwTexts.Apply.get -> string!
+FormWind.TwTexts.Apply.set -> void
+FormWind.TwCardStrip
+FormWind.TwCardStrip.TwCardStrip() -> void
+FormWind.TwCardStrip.MinCardWidth.get -> int
+FormWind.TwCardStrip.MinCardWidth.set -> void
+FormWind.TwCardStrip.Gap.get -> int
+FormWind.TwCardStrip.Gap.set -> void
+FormWind.TwCardStrip.PageIndex.get -> int
+FormWind.TwCardStrip.PageIndex.set -> void
+FormWind.TwCardStrip.PageCount.get -> int
+FormWind.TwCardStrip.CardsPerPage.get -> int
+FormWind.TwCardStrip.Cards.get -> System.Windows.Forms.Control![]!
+FormWind.TwCardStrip.PreviousButton.get -> FormWind.TwButton!
+FormWind.TwCardStrip.NextButton.get -> FormWind.TwButton!
+FormWind.TwCardStrip.PageLabel.get -> System.Windows.Forms.Label!
+FormWind.TwCardStrip.PageChanged -> System.EventHandler?
+FormWind.TwCardStrip.ShowCard(System.Windows.Forms.Control! card) -> void
+override FormWind.TwCardStrip.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwCardStrip.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwCardStrip.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwCardStrip.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwCardStrip.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwCardStrip.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwCardStrip.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+FormWind.TwTextColumn
+FormWind.TwTextColumn.TwTextColumn() -> void
+FormWind.TwTextColumn.Placeholder.get -> string!
+FormWind.TwTextColumn.Placeholder.set -> void
+FormWind.TwTextColumn.Classes.get -> string!
+FormWind.TwTextColumn.Classes.set -> void
+FormWind.TwTextColumn.EditOnFocus.get -> bool
+FormWind.TwTextColumn.EditOnFocus.set -> void
+FormWind.TwTextColumn.Validate.get -> System.Func<object?, string?>?
+FormWind.TwTextColumn.Validate.set -> void
+override FormWind.TwTextColumn.OnDataGridViewChanged() -> void
+override FormWind.TwTextColumn.Clone() -> object!
+FormWind.TwTextCell
+FormWind.TwTextCell.TwTextCell() -> void
+FormWind.TwTextCell.GetError(int rowIndex) -> string?
+override FormWind.TwTextCell.GetErrorText(int rowIndex) -> string!
+override FormWind.TwTextCell.GetPreferredSize(System.Drawing.Graphics! graphics, System.Windows.Forms.DataGridViewCellStyle! cellStyle, int rowIndex, System.Drawing.Size constraintSize) -> System.Drawing.Size
+override FormWind.TwTextCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwTextCell.InitializeEditingControl(int rowIndex, object! initialFormattedValue, System.Windows.Forms.DataGridViewCellStyle! dataGridViewCellStyle) -> void
+override FormWind.TwTextCell.PositionEditingControl(bool setLocation, bool setSize, System.Drawing.Rectangle cellBounds, System.Drawing.Rectangle cellClip, System.Windows.Forms.DataGridViewCellStyle! cellStyle, bool singleVerticalBorderAdded, bool singleHorizontalBorderAdded, bool isFirstDisplayedColumn, bool isFirstDisplayedRow) -> void
+FormWind.TwSelectColumn
+FormWind.TwSelectColumn.TwSelectColumn() -> void
+FormWind.TwSelectColumn.Items.get -> System.Collections.Generic.List<object!>!
+FormWind.TwSelectColumn.DisplayMember.get -> string!
+FormWind.TwSelectColumn.DisplayMember.set -> void
+FormWind.TwSelectColumn.ValueMember.get -> string!
+FormWind.TwSelectColumn.ValueMember.set -> void
+FormWind.TwSelectColumn.Placeholder.get -> string!
+FormWind.TwSelectColumn.Placeholder.set -> void
+FormWind.TwSelectColumn.Classes.get -> string!
+FormWind.TwSelectColumn.Classes.set -> void
+FormWind.TwSelectColumn.Validate.get -> System.Func<object?, string?>?
+FormWind.TwSelectColumn.Validate.set -> void
+FormWind.TwSelectColumn.ValueOf(object? item) -> object?
+FormWind.TwSelectColumn.TextOf(object? item) -> string!
+FormWind.TwSelectColumn.ItemOf(object? value) -> object?
+override FormWind.TwSelectColumn.CellTemplate.get -> System.Windows.Forms.DataGridViewCell!
+override FormWind.TwSelectColumn.CellTemplate.set -> void
+override FormWind.TwSelectColumn.Clone() -> object!
+FormWind.TwSelectCell
+FormWind.TwSelectCell.TwSelectCell() -> void
+FormWind.TwSelectCell.GetError(int rowIndex) -> string?
+FormWind.TwSelectCell.ShowDropDown(int rowIndex) -> void
+override FormWind.TwSelectCell.ValueType.get -> System.Type!
+override FormWind.TwSelectCell.EditType.get -> System.Type?
+override FormWind.TwSelectCell.KeyEntersEditMode(System.Windows.Forms.KeyEventArgs! e) -> bool
+override FormWind.TwSelectCell.GetErrorText(int rowIndex) -> string!
+override FormWind.TwSelectCell.GetFormattedValue(object! value, int rowIndex, ref System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.ComponentModel.TypeConverter! valueTypeConverter, System.ComponentModel.TypeConverter! formattedValueTypeConverter, System.Windows.Forms.DataGridViewDataErrorContexts context) -> object!
+override FormWind.TwSelectCell.GetPreferredSize(System.Drawing.Graphics! graphics, System.Windows.Forms.DataGridViewCellStyle! cellStyle, int rowIndex, System.Drawing.Size constraintSize) -> System.Drawing.Size
+override FormWind.TwSelectCell.Paint(System.Drawing.Graphics! graphics, System.Drawing.Rectangle clipBounds, System.Drawing.Rectangle cellBounds, int rowIndex, System.Windows.Forms.DataGridViewElementStates cellState, object! value, object! formattedValue, string! errorText, System.Windows.Forms.DataGridViewCellStyle! cellStyle, System.Windows.Forms.DataGridViewAdvancedBorderStyle! advancedBorderStyle, System.Windows.Forms.DataGridViewPaintParts paintParts) -> void
+override FormWind.TwSelectCell.OnMouseClick(System.Windows.Forms.DataGridViewCellMouseEventArgs! e) -> void
+override FormWind.TwSelectCell.OnKeyDown(System.Windows.Forms.KeyEventArgs! e, int rowIndex) -> void
+override FormWind.TwSelectCell.OnKeyPress(System.Windows.Forms.KeyPressEventArgs! e, int rowIndex) -> void
+FormWind.TwWindowChrome
+static FormWind.TwWindowChrome.Attach(System.Windows.Forms.Form! form) -> FormWind.TwWindowChrome!
+static FormWind.TwWindowChrome.Get(System.Windows.Forms.Form! form) -> FormWind.TwWindowChrome?
+FormWind.TwWindowChrome.Form.get -> System.Windows.Forms.Form!
+FormWind.TwWindowChrome.ResizeBorder.get -> int
+FormWind.TwWindowChrome.ResizeBorder.set -> void
+FormWind.TwWindowChrome.DragFromForm.get -> bool
+FormWind.TwWindowChrome.DragFromForm.set -> void
+FormWind.TwWindowChrome.AddDragSurface(System.Windows.Forms.Control! control) -> void
+FormWind.TwWindowChrome.RemoveDragSurface(System.Windows.Forms.Control! control) -> void
+FormWind.TwWindowChrome.Detach() -> void
+FormWind.TwWindowChrome.IsDragPoint(System.Drawing.Point screen) -> bool
+FormWind.TwCaptionButtons
+FormWind.TwCaptionButtons.TwCaptionButtons() -> void
+FormWind.TwCaptionButtons.ShowMinimize.get -> bool
+FormWind.TwCaptionButtons.ShowMinimize.set -> void
+FormWind.TwCaptionButtons.ShowMaximize.get -> bool
+FormWind.TwCaptionButtons.ShowMaximize.set -> void
+FormWind.TwCaptionButtons.CloseHoverBackColor.get -> System.Drawing.Color
+FormWind.TwCaptionButtons.CloseHoverBackColor.set -> void
+override FormWind.TwCaptionButtons.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwCaptionButtons.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwCaptionButtons.OnParentChanged(System.EventArgs! e) -> void
+override FormWind.TwCaptionButtons.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwCaptionButtons.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwCaptionButtons.OnMouseDown(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwCaptionButtons.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwCaptionButtons.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwCaptionButtons.Dispose(bool disposing) -> void
+FormWind.TwSheetOptions
+FormWind.TwSheetOptions.TwSheetOptions() -> void
+FormWind.TwSheetOptions.FullScreen.get -> bool
+FormWind.TwSheetOptions.FullScreen.set -> void
+FormWind.TwSheetOptions.Margin.get -> int
+FormWind.TwSheetOptions.Margin.set -> void
+FormWind.TwSheetOptions.DimColor.get -> System.Drawing.Color
+FormWind.TwSheetOptions.DimColor.set -> void
+FormWind.TwSheetOptions.DimOpacity.get -> double
+FormWind.TwSheetOptions.DimOpacity.set -> void
+FormWind.TwSheetOptions.Filter.get -> System.Func<System.Windows.Forms.Form!, bool>?
+FormWind.TwSheetOptions.Filter.set -> void
+FormWind.TwSheet
+static FormWind.TwSheet.ShowDialog(System.Windows.Forms.Form! sheet, System.Windows.Forms.Form! owner) -> System.Windows.Forms.DialogResult
+static FormWind.TwSheet.ShowDialog(System.Windows.Forms.Form! sheet, System.Windows.Forms.Form! owner, FormWind.TwSheetOptions? options) -> System.Windows.Forms.DialogResult
+static FormWind.TwSheet.Attach(System.Windows.Forms.Form! host) -> void
+static FormWind.TwSheet.Attach(System.Windows.Forms.Form! host, FormWind.TwSheetOptions? options) -> void
+static FormWind.TwSheet.Detach(System.Windows.Forms.Form! host) -> void
+static FormWind.TwSheet.IsSheet(System.Windows.Forms.Form! form) -> bool
+FormWind.TwPeriodPreset
+FormWind.TwPeriodPreset.TwPeriodPreset(string! text, System.Func<System.DateTime, (System.DateTime Start, System.DateTime End)>! range) -> void
+FormWind.TwPeriodPreset.Text.get -> string!
+FormWind.TwPeriodPreset.Range.get -> System.Func<System.DateTime, (System.DateTime Start, System.DateTime End)>!
+static FormWind.TwPeriodPreset.Today() -> FormWind.TwPeriodPreset!
+static FormWind.TwPeriodPreset.Yesterday() -> FormWind.TwPeriodPreset!
+static FormWind.TwPeriodPreset.LastDays(int days) -> FormWind.TwPeriodPreset!
+static FormWind.TwPeriodPreset.ThisMonth() -> FormWind.TwPeriodPreset!
+static FormWind.TwPeriodPreset.LastMonth() -> FormWind.TwPeriodPreset!
+static FormWind.TwPeriodPreset.ThisYear() -> FormWind.TwPeriodPreset!
+override FormWind.TwPeriodPreset.ToString() -> string!
+FormWind.TwPeriodPicker
+FormWind.TwPeriodPicker.TwPeriodPicker() -> void
+FormWind.TwPeriodPicker.PeriodChanged -> System.EventHandler?
+FormWind.TwPeriodPicker.Presets.get -> System.Collections.ObjectModel.ObservableCollection<FormWind.TwPeriodPreset!>!
+FormWind.TwPeriodPicker.Shifts.get -> System.Collections.ObjectModel.ObservableCollection<string!>!
+FormWind.TwPeriodPicker.PresetIndex.get -> int
+FormWind.TwPeriodPicker.PresetIndex.set -> void
+FormWind.TwPeriodPicker.Preset.get -> FormWind.TwPeriodPreset?
+FormWind.TwPeriodPicker.Start.get -> System.DateTime
+FormWind.TwPeriodPicker.End.get -> System.DateTime
+FormWind.TwPeriodPicker.Shift.get -> string?
+FormWind.TwPeriodPicker.Shift.set -> void
+FormWind.TwPeriodPicker.SetRange(System.DateTime start, System.DateTime end) -> void
+FormWind.TwPeriodPicker.PeriodText.get -> string!
+FormWind.TwPeriodPicker.DroppedDown.get -> bool
+FormWind.TwPeriodPicker.ShowPanel() -> void
+override FormWind.TwPeriodPicker.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwPeriodPicker.Dispose(bool disposing) -> void
+FormWind.TwFilterKind
+FormWind.TwFilterKind.Select = 0 -> FormWind.TwFilterKind
+FormWind.TwFilterKind.Text = 1 -> FormWind.TwFilterKind
+FormWind.TwFilterKind.Fixed = 2 -> FormWind.TwFilterKind
+FormWind.TwFilter
+FormWind.TwFilter.TwFilter(string! key, string! label, FormWind.TwFilterKind kind) -> void
+FormWind.TwFilter.Key.get -> string!
+FormWind.TwFilter.Label.get -> string!
+FormWind.TwFilter.Kind.get -> FormWind.TwFilterKind
+FormWind.TwFilter.Options.get -> System.Collections.Generic.List<string!>!
+FormWind.TwFilter.Placeholder.get -> string?
+FormWind.TwFilter.Placeholder.set -> void
+FormWind.TwFilter.Format.get -> System.Func<string!, string!>?
+FormWind.TwFilter.Format.set -> void
+FormWind.TwFilter.Value.get -> string?
+FormWind.TwFilterBar
+FormWind.TwFilterBar.TwFilterBar() -> void
+FormWind.TwFilterBar.FiltersChanged -> System.EventHandler?
+FormWind.TwFilterBar.Filters.get -> System.Collections.ObjectModel.ObservableCollection<FormWind.TwFilter!>!
+FormWind.TwFilterBar.AddButton.get -> FormWind.TwButton!
+FormWind.TwFilterBar.Gap.get -> int
+FormWind.TwFilterBar.Gap.set -> void
+FormWind.TwFilterBar.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+FormWind.TwFilterBar.Find(string! key) -> FormWind.TwFilter?
+FormWind.TwFilterBar.GetValue(string! key) -> string?
+FormWind.TwFilterBar.ChipOf(string! key) -> FormWind.TwChip?
+FormWind.TwFilterBar.SetValue(string! key, string? value) -> void
+FormWind.TwFilterBar.LoadValues(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string?>>! values) -> void
+FormWind.TwFilterBar.ClearFilters() -> void
+FormWind.TwFilterBar.ShowAddMenu() -> void
+FormWind.TwFilterBar.ShowEditor(string! key) -> void
+override FormWind.TwFilterBar.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwFilterBar.AutoSize.get -> bool
+override FormWind.TwFilterBar.AutoSize.set -> void
+override FormWind.TwFilterBar.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwFilterBar.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwFilterBar.Dispose(bool disposing) -> void
+FormWind.TwCommand
+FormWind.TwCommand.TwCommand(string! text, System.Action! execute) -> void
+FormWind.TwCommand.Text.get -> string!
+FormWind.TwCommand.Execute.get -> System.Action!
+FormWind.TwCommand.Group.get -> string?
+FormWind.TwCommand.Group.set -> void
+FormWind.TwCommand.IconName.get -> string?
+FormWind.TwCommand.IconName.set -> void
+FormWind.TwCommand.Shortcut.get -> string?
+FormWind.TwCommand.Shortcut.set -> void
+FormWind.TwCommand.Keywords.get -> string?
+FormWind.TwCommand.Keywords.set -> void
+override FormWind.TwCommand.ToString() -> string!
+FormWind.TwCommandEventArgs
+FormWind.TwCommandEventArgs.TwCommandEventArgs(FormWind.TwCommand! command) -> void
+FormWind.TwCommandEventArgs.Command.get -> FormWind.TwCommand!
+FormWind.TwCommandPalette
+FormWind.TwCommandPalette.TwCommandPalette() -> void
+FormWind.TwCommandPalette.TwCommandPalette(System.ComponentModel.IContainer! container) -> void
+FormWind.TwCommandPalette.Executed -> System.EventHandler<FormWind.TwCommandEventArgs!>?
+FormWind.TwCommandPalette.Commands.get -> System.Collections.Generic.List<FormWind.TwCommand!>!
+FormWind.TwCommandPalette.QueryCommands.get -> System.Func<string!, System.Collections.Generic.IEnumerable<FormWind.TwCommand!>!>?
+FormWind.TwCommandPalette.QueryCommands.set -> void
+FormWind.TwCommandPalette.Shortcut.get -> System.Windows.Forms.Keys
+FormWind.TwCommandPalette.Shortcut.set -> void
+FormWind.TwCommandPalette.Placeholder.get -> string?
+FormWind.TwCommandPalette.Placeholder.set -> void
+FormWind.TwCommandPalette.MaxResults.get -> int
+FormWind.TwCommandPalette.MaxResults.set -> void
+FormWind.TwCommandPalette.IsOpen.get -> bool
+FormWind.TwCommandPalette.AddSearch(string! source, System.Action<string!>! search, string? group) -> void
+FormWind.TwCommandPalette.Attach(System.Windows.Forms.Form! form) -> void
+FormWind.TwCommandPalette.Detach(System.Windows.Forms.Form! form) -> void
+FormWind.TwCommandPalette.Show(System.Windows.Forms.Form! owner) -> void
+FormWind.TwCommandPalette.Close() -> void
+FormWind.TwCommandPalette.Find(string? query) -> System.Collections.Generic.IReadOnlyList<FormWind.TwCommand!>!
+override FormWind.TwCommandPalette.Dispose(bool disposing) -> void

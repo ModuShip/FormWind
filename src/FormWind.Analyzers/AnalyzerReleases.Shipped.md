@@ -9,3 +9,11 @@ Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 FW001 | FormWind | Warning | StyleOverrideAnalyzer
 FW002 | FormWind | Warning | FontScalingAnalyzer
+
+## Release 0.1.5
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+FW003 | FormWind | Warning | UnknownIconAnalyzer
