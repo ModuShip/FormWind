@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Forms.Layout;
 
@@ -44,7 +47,7 @@ internal sealed class TwLayoutEngine : LayoutEngine
         TwLayout.Enter();
         try
         {
-            Run(area, props, entries);
+            Run(parent, area, props, entries);
 
             // Dikey kaydırma çubuğu yerleşimden sonra belirip görünen alanı daraltır (ve yatay çubuk çıkarır);
             // içerik taşıyorsa çubuğun yeri baştan ayrılıp yerleşim bir kez daha yapılır.
@@ -52,7 +55,7 @@ internal sealed class TwLayoutEngine : LayoutEngine
                 && ContentBottom(entries) - area.Y > scroll.ClientRectangle.Height)
             {
                 area.Width = Math.Max(0, area.Width - SystemInformation.VerticalScrollBarWidth);
-                Run(area, props, entries);
+                Run(parent, area, props, entries);
             }
         }
         finally
@@ -64,10 +67,11 @@ internal sealed class TwLayoutEngine : LayoutEngine
         return parent.AutoSize;
     }
 
-    private static void Run(Rectangle area, TwContainerProps props, List<Entry> entries)
+    private static void Run(Control parent, Rectangle area, TwContainerProps props, List<Entry> entries)
     {
         if (props.Display == TwDisplay.Grid) LayoutGrid(area, props, entries);
         else LayoutFlex(area, props, entries);
+        Apply(parent, entries);
     }
 
     private static int ContentBottom(List<Entry> entries)
@@ -172,7 +176,7 @@ internal sealed class TwLayoutEngine : LayoutEngine
                 };
 
                 SyncMargin(entry);
-                Place(entry.Control, row, cursor, crossCursor + entry.MarginCrossStart + crossOffset, entry.Main, crossLength);
+                Place(entry, row, cursor, crossCursor + entry.MarginCrossStart + crossOffset, entry.Main, crossLength);
                 cursor += entry.Main + entry.MarginMainEnd + mainGap + spacing;
             }
 
@@ -343,7 +347,7 @@ internal sealed class TwLayoutEngine : LayoutEngine
             };
 
             SyncMargin(entry);
-            Place(entry.Control, row: true, cellX + margin.Left, tops[cell.Row] + margin.Top + yOffset, width, height);
+            Place(entry, row: true, cellX + margin.Left, tops[cell.Row] + margin.Top + yOffset, width, height);
         }
     }
 
@@ -370,7 +374,7 @@ internal sealed class TwLayoutEngine : LayoutEngine
         return Clamp(height, props.MinHeight ?? 0, props.MaxHeight ?? Infinity);
     }
 
-    private static void Place(Control control, bool row, float main, float cross, float mainLength, float crossLength)
+    private static void Place(Entry entry, bool row, float main, float cross, float mainLength, float crossLength)
     {
         int main0 = Round(main), main1 = Round(main + mainLength);
         int cross0 = Round(cross), cross1 = Round(cross + crossLength);
@@ -378,9 +382,100 @@ internal sealed class TwLayoutEngine : LayoutEngine
             ? new Rectangle(main0, cross0, Math.Max(0, main1 - main0), Math.Max(0, cross1 - cross0))
             : new Rectangle(cross0, main0, Math.Max(0, cross1 - cross0), Math.Max(0, main1 - main0));
         if (_mirror) bounds.X = _mirrorAxis - bounds.Right;
-        if (control.Bounds != bounds)
-            control.SetBounds(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        entry.Bounds = bounds;
     }
+
+    // Her SetBounds ayrı bir SetWindowPos'tur; çok pencereli sayfada yerleşimin neredeyse tamamı bu çağrılarda geçer. Bu
+    // yüzden konteynerin çocukları tek bir DeferWindowPos işiyle taşınır. İşe yalnızca SetBounds'un vereceği sonucu birebir
+    // veren öğeler girer; kalanlar (tutamaksız, boyutunu kendi sınırlayan) ve iş başarısız olursa hepsi SetBounds'la yerleşir.
+    private static void Apply(Control parent, List<Entry> entries)
+    {
+        int count = 0;
+        foreach (var entry in entries)
+        {
+            entry.Deferred = parent.IsHandleCreated && entry.Control.Bounds != entry.Bounds && CanDefer(entry.Control, entry.Bounds);
+            if (entry.Deferred) count++;
+        }
+
+        // Tek pencere için toplu iş bir şey kazandırmaz.
+        if (count > 1)
+        {
+            // Pencereler EndDeferWindowPos'ta taşınır; WM_WINDOWPOSCHANGED, SetBounds'taki gibi Bounds'u günceller ve
+            // boyutu değişen çocuğun kendi yerleşimini çalıştırır.
+            var batch = BeginDeferWindowPos(count);
+            foreach (var entry in entries)
+            {
+                if (batch == IntPtr.Zero) break;
+                if (!entry.Deferred) continue;
+                var control = entry.Control;
+                var bounds = entry.Bounds;
+                int flags = SwpNoZOrder | SwpNoActivate;
+                if (control.Location == bounds.Location) flags |= SwpNoMove;
+                if (control.Size == bounds.Size) flags |= SwpNoSize;
+                batch = DeferWindowPos(batch, control.Handle, IntPtr.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height, flags);
+            }
+            if (batch != IntPtr.Zero) EndDeferWindowPos(batch);
+        }
+
+        foreach (var entry in entries)
+        {
+            var bounds = entry.Bounds;
+            if (entry.Control.Bounds != bounds)
+                entry.Control.SetBounds(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        }
+    }
+
+    // Control.SetBoundsCore'un sınırlara dokunmadan SetWindowPos çağırdığı durumlar: tür SetBoundsCore'u, sınır
+    // kısıtlarını ve OnBoundsUpdate'i değiştirmemiş, MinimumSize/MaximumSize yok. Label yalnızca AutoSize iken boyutu
+    // PreferredSize'a çeker; hedef boyut zaten oysa sonuç aynıdır. TextBox (tek satır yüksekliği), ComboBox, Form… dışarıda kalır.
+    private static bool CanDefer(Control control, Rectangle bounds)
+    {
+        if (!control.IsHandleCreated || !control.MinimumSize.IsEmpty || !control.MaximumSize.IsEmpty) return false;
+        return Kinds.GetOrAdd(control.GetType(), Classify) switch
+        {
+            BoundsKind.Plain => true,
+            BoundsKind.Label => !control.AutoSize || control.PreferredSize == bounds.Size,
+            _ => false,
+        };
+    }
+
+    private static readonly ConcurrentDictionary<Type, BoundsKind> Kinds = new ConcurrentDictionary<Type, BoundsKind>();
+    private static readonly Func<Type, BoundsKind> Classify = type =>
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        Type? DeclaredBy(string name, params Type[] parameters) =>
+            type.GetMethod(name, flags, null, parameters, null)?.DeclaringType;
+
+        var four = new[] { typeof(int), typeof(int), typeof(int), typeof(int) };
+        var constraints = DeclaredBy("ApplyBoundsConstraints", four);
+        var update = DeclaredBy("OnBoundsUpdate", four);
+        if ((constraints != null && constraints != typeof(Control)) || (update != null && update != typeof(Control)))
+            return BoundsKind.Custom;
+        var core = DeclaredBy("SetBoundsCore", typeof(int), typeof(int), typeof(int), typeof(int), typeof(BoundsSpecified));
+        return core == typeof(Control) ? BoundsKind.Plain : core == typeof(Label) ? BoundsKind.Label : BoundsKind.Custom;
+    };
+
+    private enum BoundsKind
+    {
+        Plain,
+        Label,
+        Custom,
+    }
+
+    private const int SwpNoSize = 0x0001;
+    private const int SwpNoMove = 0x0002;
+    private const int SwpNoZOrder = 0x0004;
+    private const int SwpNoActivate = 0x0010;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr BeginDeferWindowPos(int nNumWindows);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr DeferWindowPos(IntPtr hWinPosInfo, IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, int uFlags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EndDeferWindowPos(IntPtr hWinPosInfo);
 
     // Motor Control.Margin'i değil class margin'ini kullanır; ancak WinForms AutoScroll alanını Control.Margin'le
     // hesaplar (Panel varsayılanı 3 px gereksiz yatay kaydırma çubuğu çıkarır). İkisi eşitlenir.
@@ -440,6 +535,8 @@ internal sealed class TwLayoutEngine : LayoutEngine
         public float MarginMainEnd;
         public float MarginCrossStart;
         public float MarginCrossEnd;
+        public Rectangle Bounds;
+        public bool Deferred;
 
         public float MarginMain => MarginMainStart + MarginMainEnd;
         public float MarginCross => MarginCrossStart + MarginCrossEnd;
