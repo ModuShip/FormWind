@@ -66,6 +66,21 @@ public sealed class TwTexts
         NextMonth = "Sonraki ay",
         Item = "Öğe {0}",
         Page = "Sayfa {0} / {1}",
+        Previous = "Önceki",
+        Next = "Sonraki",
+        AddFilter = "Filtre ekle",
+        CommandPlaceholder = "Komut yazın veya arayın…",
+        NoResults = "Sonuç yok",
+        SearchIn = "\"{0}\" için {1} içinde ara",
+        Today = "Bugün",
+        Yesterday = "Dün",
+        LastDays = "Son {0} gün",
+        ThisMonth = "Bu ay",
+        LastMonth = "Geçen ay",
+        ThisYear = "Bu yıl",
+        CustomRange = "Özel aralık…",
+        AllShifts = "Tümü",
+        Apply = "Uygula",
     };
 
     /// <summary>Texts for a language: <see cref="Turkish"/> for Turkish, <see cref="English"/> for other languages.</summary>
@@ -142,4 +157,28 @@ public sealed class TwTexts
     public string Item { get; set; } = "Item {0}";
     /// <summary><see cref="TwPager"/>; {0}: page, {1}: page count.</summary>
     public string Page { get; set; } = "Page {0} of {1}";
+    /// <summary>Previous page button of <see cref="TwCardStrip"/>.</summary>
+    public string Previous { get; set; } = "Previous";
+    /// <summary>Next page button of <see cref="TwCardStrip"/>.</summary>
+    public string Next { get; set; } = "Next";
+    /// <summary>The "+ Add filter" button of <see cref="TwFilterBar"/>.</summary>
+    public string AddFilter { get; set; } = "Add filter";
+    /// <summary>Placeholder of <see cref="TwCommandPalette"/>'s search box.</summary>
+    public string CommandPlaceholder { get; set; } = "Type a command or search…";
+    /// <summary>Shown when nothing matches in <see cref="TwCommandPalette"/>.</summary>
+    public string NoResults { get; set; } = "No results";
+    /// <summary>Dynamic "search in" row of <see cref="TwCommandPalette"/>; {0}: the query, {1}: the source.</summary>
+    public string SearchIn { get; set; } = "Search \"{0}\" in {1}";
+    /// <summary>Presets of <see cref="TwPeriodPicker"/>.</summary>
+    public string Today { get; set; } = "Today";
+    public string Yesterday { get; set; } = "Yesterday";
+    /// <summary>{0}: number of days.</summary>
+    public string LastDays { get; set; } = "Last {0} days";
+    public string ThisMonth { get; set; } = "This month";
+    public string LastMonth { get; set; } = "Last month";
+    public string ThisYear { get; set; } = "This year";
+    public string CustomRange { get; set; } = "Custom range…";
+    /// <summary>The "all shifts" segment of <see cref="TwPeriodPicker"/>.</summary>
+    public string AllShifts { get; set; } = "All";
+    public string Apply { get; set; } = "Apply";
 }

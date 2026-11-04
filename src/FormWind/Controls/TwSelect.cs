@@ -213,7 +213,7 @@ public class TwSelect : Control, ITwChrome
         CultureInfo.InvariantCulture.CompareInfo.IsPrefix(Fold(item), Fold(prefix), CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
 
     // Aksanlar IgnoreNonSpace ile yok sayılır; ı/İ ise ayrı harf olduğundan elle i'ye katlanır ("sanli" → "Şanlıurfa").
-    private static string Fold(string text) => text.Replace('ı', 'i').Replace('İ', 'i').ToLowerInvariant();
+    internal static string Fold(string text) => text.Replace('ı', 'i').Replace('İ', 'i').ToLowerInvariant();
 
     protected override void OnKeyPress(KeyPressEventArgs e)
     {
@@ -255,8 +255,11 @@ public class TwSelect : Control, ITwChrome
     {
         base.OnClick(e);
         Focus();
-        ShowDropDown();
+        OpenDropDown();
     }
+
+    /// <summary>What a click, Enter or Space opens: the item menu (<see cref="TwPeriodPicker"/> opens its own panel).</summary>
+    private protected virtual void OpenDropDown() => ShowDropDown();
 
     protected override bool IsInputKey(Keys keyData) =>
         keyData is Keys.Up or Keys.Down || base.IsInputKey(keyData);
@@ -269,7 +272,7 @@ public class TwSelect : Control, ITwChrome
             case Keys.Down: SelectedIndex = Math.Min(_items.Count - 1, _selectedIndex + 1); e.Handled = true; break;
             case Keys.Up: SelectedIndex = Math.Max(0, _selectedIndex - 1); e.Handled = true; break;
             case Keys.Enter:
-            case Keys.Space: ShowDropDown(); e.Handled = true; break;
+            case Keys.Space: OpenDropDown(); e.Handled = true; break;
         }
     }
 

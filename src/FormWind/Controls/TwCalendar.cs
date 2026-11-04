@@ -30,6 +30,7 @@ public class TwCalendar : Control
 {
     private DateTime _displayMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime? _selectedDate;
+    private (DateTime Start, DateTime End)? _range;
     private DateTime _focusDate = DateTime.Today;
     private DateTime? _hoverDate;
     private CultureInfo _culture = CultureInfo.CurrentCulture;
@@ -56,6 +57,17 @@ public class TwCalendar : Control
 
     /// <summary>When a day is clicked or Enter is pressed.</summary>
     public event EventHandler? DateSelected;
+
+    /// <summary>Days drawn as a selected range (<see cref="TwPeriodPicker"/>): a band between the two ends, the ends as selected.</summary>
+    internal (DateTime Start, DateTime End)? Range
+    {
+        get => _range;
+        set
+        {
+            _range = value is var (a, b) ? (a.Date <= b.Date ? (a.Date, b.Date) : (b.Date, a.Date)) : null;
+            Invalidate();
+        }
+    }
 
     /// <summary>When Esc is pressed.</summary>
     public event EventHandler? Cancelled;
@@ -265,7 +277,17 @@ public class TwCalendar : Control
             var date = first.AddDays(i);
             var cell = GetDayBounds(date);
             var dot = Rectangle.Inflate(cell, -Scale(3), -Scale(3));
-            bool selected = _selectedDate == date;
+            bool endpoint = _range is var (rangeStart, rangeEnd) && (date == rangeStart || date == rangeEnd);
+            bool selected = _selectedDate == date || endpoint;
+            if (_range is var (bandStart, bandEnd) && date >= bandStart && date <= bandEnd && bandStart != bandEnd)
+            {
+                // Aralık bandı: uçlarda yarım hücre, aradakilerde tam hücre.
+                var band = Rectangle.Inflate(cell, 0, -Scale(3));
+                if (date == bandStart) band = Rectangle.FromLTRB(band.Left + band.Width / 2, band.Top, band.Right, band.Bottom);
+                if (date == bandEnd) band = Rectangle.FromLTRB(band.Left, band.Top, band.Left + band.Width / 2, band.Bottom);
+                using var bandBrush = new SolidBrush(Color.FromArgb(40, _colors.Accent));
+                g.FillRectangle(bandBrush, band);
+            }
             bool inMonth = date.Month == _displayMonth.Month;
             bool enabled = IsInRange(date);
 

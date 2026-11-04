@@ -88,6 +88,7 @@ public class WinFormsApplier : IStyleApplier
             toolbar.MenuColors = ToolStripApplier.BuildColors(style, context);
         }
         if (control is TwDatePicker picker) picker.CalendarColors = CalendarColors(style, context);
+        if (control is TwPeriodPicker period) period.CalendarColors = CalendarColors(style, context);
         if (control is TwCalendar calendar) calendar.Colors = CalendarColors(style, context);
         if (control is TwDataList list) ApplyDataListColors(list, style, context);
         if (control is TwSlider slider) ApplySliderColors(slider, style, context);

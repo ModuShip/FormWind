@@ -239,7 +239,7 @@ public sealed class TwTheme
         ["muted"] = "text-sm text-surface-500 dark:text-surface-400",
         ["badge"] = "text-xs font-semibold rounded-full px-2 text-center bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-100",
         // TwChip: nötr çip ve tonları; checked: işaretlenebilir süzgeç çipleri için.
-        ["chip"] = "text-xs font-medium rounded-full px-2.5 py-0.5 bg-surface-100 text-surface-700 checked:bg-primary-600 checked:text-white " +
+        ["chip"] = "text-xs font-medium rounded-full px-2.5 py-0.5 transition-colors duration-200 bg-surface-100 text-surface-700 checked:bg-primary-600 checked:text-white " +
                    "dark:bg-surface-700 dark:text-surface-200 dark:checked:bg-primary-600 dark:checked:text-white",
         ["chip-primary"] = "chip bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300",
         ["chip-success"] = "chip bg-success-100 text-success-800 dark:bg-success-950 dark:text-success-300",
