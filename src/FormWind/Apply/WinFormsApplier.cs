@@ -726,11 +726,16 @@ public class WinFormsApplier : IStyleApplier
             var value = (int)Math.Round(width.Value * scale);
             if (control.Width != value) control.Width = value;
         }
-        if (style.Height is { IsPixels: true } height)
+        int? classHeight = style.Height is { IsPixels: true } height ? (int)Math.Round(height.Value * scale) : null;
+        // AutoSize çipin boyunu üst yerleşim (FlowLayoutPanel) GetPreferredSize'dan alır; h-* tercih edilen boya da girer.
+        if (control is TwChip chip) chip.ClassHeight = classHeight;
+        // Ayar satırı kendi boyunu içerikten hesaplar; h-* en küçük yüksekliğidir.
+        if (control is TwSettingRow row)
         {
-            var value = (int)Math.Round(height.Value * scale);
-            if (control.Height != value) control.Height = value;
+            row.ClassHeight = classHeight;
+            return;
         }
+        if (classHeight is int pixels && control.Height != pixels) control.Height = pixels;
     }
 
     private static void ApplyTextAlign(Control control, TwStyle style)

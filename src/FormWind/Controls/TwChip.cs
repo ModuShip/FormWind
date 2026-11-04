@@ -36,6 +36,7 @@ public class TwChip : Control, ITwChrome, ITwCheckable
     private string? _iconName;
     private Color _dotColor = Color.Empty;
     private bool _removable;
+    private int? _classHeight;
     private bool _clickable;
     private bool _checkable;
     private bool _checked;
@@ -198,8 +199,20 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         int leading = LeadingWidth;
         if (leading > 0) width += leading + (Text.Length > 0 ? gap + (LeadingIcon is null ? ScalePixels(1) : 0) : 0);
         if (_removable) width += RemoveSize + (Text.Length > 0 || leading > 0 ? gap : 0);
-        int height = Math.Max(text.Height, Math.Max(leading, _removable ? RemoveSize : 0)) + Padding.Vertical;
+        int height = _classHeight ?? Math.Max(text.Height, Math.Max(leading, _removable ? RemoveSize : 0)) + Padding.Vertical;
         return new Size(Math.Max(width, height), height);
+    }
+
+    /// <summary>Height from an <c>h-*</c> class (device pixels); <c>null</c> = from the text and padding.</summary>
+    internal int? ClassHeight
+    {
+        get => _classHeight;
+        set
+        {
+            if (_classHeight == value) return;
+            _classHeight = value;
+            if (AutoSize) Parent?.PerformLayout(this, nameof(Height));
+        }
     }
 
     /// <summary>The ✕'s area in client coordinates (empty when not <see cref="Removable"/>).</summary>

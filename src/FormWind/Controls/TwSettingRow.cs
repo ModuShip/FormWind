@@ -33,6 +33,12 @@ public class TwSettingRow : TwPanel
     private Color _dividerColor = Color.Empty;
     private Font? _labelFont;
     private Font? _hintFont;
+    // Parça etiketlere en son verdiğimiz font ve renk: başkası (etiketin kendi class'ları) değiştirdiyse ona dokunulmaz.
+    private readonly PartState _labelState = new PartState(), _descriptionState = new PartState(), _unitState = new PartState();
+    private bool _arranging;
+    private Font? _editorFont;
+    private Control? _fontParent;
+    private int? _classHeight;
 
     public TwSettingRow()
     {
@@ -88,14 +94,21 @@ public class TwSettingRow : TwPanel
         }
     }
 
-    /// <summary>Width of the editor (96 DPI pixels); 0 = the editor's own width.</summary>
+    /// <summary>
+    /// Width of the editor (96 DPI pixels); 0 = the editor's own width (its preferred width when it is <c>AutoSize</c>, its
+    /// <c>Width</c> otherwise). An <c>AutoSize</c> editor (a tab strip, an auto-sized panel of a status text and a button) is
+    /// never made narrower than its preferred width, and the row lays out again when that width changes.
+    /// </summary>
     [Category("Layout"), DefaultValue(160)]
     public int EditorWidth
     {
         get => _editorWidth;
         set
         {
-            _editorWidth = Math.Max(0, value);
+            value = Math.Max(0, value);
+            // Düzenleyicinin Layout/SizeChanged'ında aynı değer yeniden atanabilir; yerleşim döngüsü olmasın.
+            if (_editorWidth == value) return;
+            _editorWidth = value;
             PerformLayout();
         }
     }
@@ -127,13 +140,31 @@ public class TwSettingRow : TwPanel
 
     private void ApplyPartStyles()
     {
-        _label.ForeColor = _labelColor.IsEmpty ? ForeColor : _labelColor;
         var hint = _hintColor.IsEmpty ? TwCharts.Blend(ForeColor, TwCharts.Surface(this), 0.4f) : _hintColor;
-        _description.ForeColor = hint;
-        _unit.ForeColor = hint;
-        _label.Font = _labelFont ?? Font;
-        _description.Font = _hintFont ?? Font;
-        _unit.Font = _hintFont ?? Font;
+        _labelState.Apply(_label, _labelColor.IsEmpty ? ForeColor : _labelColor, _labelFont ?? Font);
+        _descriptionState.Apply(_description, hint, _hintFont ?? Font);
+        _unitState.Apply(_unit, hint, _hintFont ?? Font);
+    }
+
+    // Etiketin fontu ve rengi satırdan gelir; uygulama (ör. SetClasses(row.CaptionLabel, ...)) değiştirdiyse onunki kalır.
+    private sealed class PartState
+    {
+        private Font? _font;
+        private Color? _color;
+
+        public void Apply(Label label, Color color, Font font)
+        {
+            if (_color is null || label.ForeColor == _color.Value)
+            {
+                label.ForeColor = color;
+                _color = label.ForeColor;
+            }
+            if (_font is null || ReferenceEquals(label.Font, _font))
+            {
+                label.Font = font;
+                _font = label.Font;
+            }
+        }
     }
 
     protected override void OnForeColorChanged(EventArgs e)
@@ -152,20 +183,63 @@ public class TwSettingRow : TwPanel
     protected override void OnParentChanged(EventArgs e)
     {
         base.OnParentChanged(e);
+        if (_fontParent != null) _fontParent.FontChanged -= OnParentFontChanged;
+        _fontParent = Parent;
+        if (_fontParent != null) _fontParent.FontChanged += OnParentFontChanged;
         ApplyPartStyles();
+        SyncEditorFont();
     }
 
     protected override void OnFontChanged(EventArgs e)
     {
+        // Font değişmeden önce düzenleyici satırın eski fontunu (ortam) taşıyor olabilir; yeni değer gelince de bakılır.
         base.OnFontChanged(e);
         ApplyPartStyles();
+        SyncEditorFont();
     }
 
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
+        SyncEditorFont();
         PerformLayout();
     }
+
+    /// <summary>
+    /// Horizontal padding in use: none when the row sits in a container that has its own horizontal padding (a <c>card p-4</c>),
+    /// so the text lines up with the card's content instead of being indented twice.
+    /// </summary>
+    private Padding HorizontalPadding => Parent is { Padding: { Left: > 0 } or { Right: > 0 } } && Parent is not TwSettingRow
+        ? new Padding(0, Padding.Top, 0, Padding.Bottom)
+        : Padding;
+
+    /// <summary>Height from an <c>h-*</c> class (device pixels): the row is at least this tall; <c>null</c> = from the content.</summary>
+    internal int? ClassHeight
+    {
+        get => _classHeight;
+        set
+        {
+            if (_classHeight == value) return;
+            _classHeight = value;
+            PerformLayout();
+        }
+    }
+
+    // Düzenleyici satırın yazı boyutunu (text-sm) devralmaz: kendi fontu yoksa satırın üst kabınınkini alır, formdaki diğer
+    // girişlerle aynı boyda olur. Uygulamanın verdiği font (class'lar) korunur.
+    private void SyncEditorFont()
+    {
+        if (Editor is not Control editor) return;
+        var target = Parent?.Font ?? Font;
+        bool ours = _editorFont != null && ReferenceEquals(editor.Font, _editorFont);
+        bool ambient = ReferenceEquals(editor.Font, Font);
+        if (!ours && !ambient) return;
+        if (ReferenceEquals(target, Font) && !ours) return;
+        editor.Font = target;
+        _editorFont = editor.Font;
+    }
+
+    private void OnParentFontChanged(object? sender, EventArgs e) => SyncEditorFont();
 
     protected override void OnControlRemoved(ControlEventArgs e)
     {
@@ -183,11 +257,14 @@ public class TwSettingRow : TwPanel
     private (Rectangle Label, Rectangle Description, Rectangle Editor, Rectangle Unit, int Height) Measure(int width)
     {
         var border = BorderInsets();
-        int left = border.Left + Padding.Left, right = width - border.Right - Padding.Right, top = border.Top + Padding.Top;
+        var inset = HorizontalPadding;
+        int left = border.Left + inset.Left, right = width - border.Right - inset.Right, top = border.Top + Padding.Top;
         int inner = Math.Max(0, right - left);
         var editor = Editor;
         var editorSize = editor is null ? Size.Empty : editor.AutoSize ? editor.GetPreferredSize(Size.Empty) : editor.Size;
-        if (editor != null && _editorWidth > 0) editorSize.Width = Scale(_editorWidth);
+        // AutoSize düzenleyici tercih ettiği genişlikten dar verilmez (sekme şeridi taşma menüsüne sekme atmasın).
+        if (editor != null && _editorWidth > 0)
+            editorSize.Width = editor.AutoSize ? Math.Max(Scale(_editorWidth), editorSize.Width) : Scale(_editorWidth);
         int gap = Scale(8), between = Scale(16);
         var unitSize = _unit.Visible ? TextRenderer.MeasureText(_unit.Text, _unit.Font, Size.Empty, Flags | TextFormatFlags.SingleLine) : Size.Empty;
         int block = editor is null ? 0 : editorSize.Width + (_unit.Visible ? gap + unitSize.Width : 0);
@@ -225,7 +302,18 @@ public class TwSettingRow : TwPanel
                 if (_unit.Visible) unit = new Rectangle(editorBounds.Right + gap, top + (height - unitSize.Height) / 2, unitSize.Width, unitSize.Height);
             }
         }
-        return (label, description, editorBounds, unit, height + Padding.Vertical + border.Vertical);
+        int total = height + Padding.Vertical + border.Vertical;
+        if (_classHeight is int fixedHeight && fixedHeight > total)
+        {
+            // h-*: satır en az bu yüksekliktedir; içerik dikeyde ortalanır.
+            int shift = (fixedHeight - total) / 2;
+            label.Offset(0, shift);
+            description.Offset(0, shift);
+            editorBounds.Offset(0, shift);
+            unit.Offset(0, shift);
+            total = fixedHeight;
+        }
+        return (label, description, editorBounds, unit, total);
     }
 
     public override Size GetPreferredSize(Size proposedSize)
@@ -235,6 +323,20 @@ public class TwSettingRow : TwPanel
     }
 
     private void Arrange()
+    {
+        if (_arranging) return;
+        _arranging = true;
+        try
+        {
+            ArrangeCore();
+        }
+        finally
+        {
+            _arranging = false;
+        }
+    }
+
+    private void ArrangeCore()
     {
         var (label, description, editor, unit, height) = Measure(Width);
         bool rtl = TwRtl.NeedsMirroring(this);
@@ -259,7 +361,7 @@ public class TwSettingRow : TwPanel
         // Ayırıcı metin hizasından başlar (System Settings gibi), sağ kenara kadar gider.
         var color = !_dividerColor.IsEmpty ? _dividerColor : TwCharts.Blend(TwCharts.Surface(this), ForeColor, 0.12f);
         using var pen = new Pen(color, 1);
-        int inset = BorderInsets().Left + Padding.Left;
+        int inset = BorderInsets().Left + HorizontalPadding.Left;
         if (TwRtl.NeedsMirroring(this)) e.Graphics.DrawLine(pen, 0, 0, Width - inset, 0);
         else e.Graphics.DrawLine(pen, inset, 0, Width, 0);
     }

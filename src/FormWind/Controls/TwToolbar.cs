@@ -186,12 +186,25 @@ public class TwToolbar : TwPanel
         _options.Remove(e.Control);
         if (_overflowed.Remove(e.Control)) e.Control.Visible = true;
         e.Control.VisibleChanged -= OnItemVisibleChanged;
+        e.Control.FontChanged -= OnItemContentChanged;
+        e.Control.TextChanged -= OnItemContentChanged;
     }
 
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
-        if (e.Control != null && e.Control != OverflowButton) e.Control.VisibleChanged += OnItemVisibleChanged;
+        if (e.Control is null || e.Control == OverflowButton) return;
+        e.Control.VisibleChanged += OnItemVisibleChanged;
+        e.Control.FontChanged += OnItemContentChanged;
+        e.Control.TextChanged += OnItemContentChanged;
+    }
+
+    // AutoSize'ı kapatılmış (Shrink) öğe yazı tipi ya da metni değişince kendisi yerleşim istemez; içerik genişliği yeniden
+    // ölçülür (class'larla gelen font-semibold text-[15px] ilk yerleşimden sonra uygulanır).
+    private void OnItemContentChanged(object? sender, EventArgs e)
+    {
+        if (_arranging) return;
+        PerformLayout();
     }
 
     // Uygulama gizlediğimiz bir öğeyi kendisi gösterirse öğe yeniden yerleşime katılır.
@@ -263,14 +276,23 @@ public class TwToolbar : TwPanel
         }
 
         // Önce Shrink öğeleri en küçük genişliklerine kadar daralır, sonra öğeler (önceliği düşük ve sondakiler önce) menüye geçer.
-        int deficit = Needed(hidden.Count > 0) - area.Width;
-        foreach (var item in items.Where(i => GetOverflow(i) == TwToolbarOverflow.Shrink))
+        // MinimumSize'ı olmayan öğe önce okunur bir genişliğe (en çok 96 px) kadar daralır; tek harfe ancak menüye geçecek
+        // öğe kalmayınca iner.
+        var shrinking = items.Where(i => GetOverflow(i) == TwToolbarOverflow.Shrink).ToList();
+        int SoftMinimum(Control item) => item.MinimumSize.Width > 0 ? item.MinimumSize.Width : Math.Min(widths[item], Scale(96));
+        var soft = shrinking.ToDictionary(i => i, SoftMinimum);
+        void Shrink(Func<Control, int> minimum)
         {
-            if (deficit <= 0) break;
-            int give = Math.Min(deficit, Math.Max(0, widths[item] - item.MinimumSize.Width));
-            widths[item] -= give;
-            deficit -= give;
+            int deficit = Needed(hidden.Count > 0) - area.Width;
+            foreach (var item in shrinking)
+            {
+                if (deficit <= 0) break;
+                int give = Math.Min(deficit, Math.Max(0, widths[item] - minimum(item)));
+                widths[item] -= give;
+                deficit -= give;
+            }
         }
+        Shrink(i => soft[i]);
         var candidates = items.Where(i => GetOverflow(i) == TwToolbarOverflow.AsNeeded)
             .Select((item, index) => (item, index)).OrderBy(x => GetPriority(x.item)).ThenByDescending(x => x.index).Select(x => x.item).ToList();
         foreach (var item in candidates)
@@ -278,6 +300,7 @@ public class TwToolbar : TwPanel
             if (Needed(hidden.Count > 0) <= area.Width) break;
             hidden.Add(item);
         }
+        Shrink(i => i.MinimumSize.Width);
         // Menüye geçenler yer açtıysa daralan öğeler geri genişler.
         int spare = area.Width - Needed(hidden.Count > 0);
         foreach (var item in items.Where(i => GetOverflow(i) == TwToolbarOverflow.Shrink))
