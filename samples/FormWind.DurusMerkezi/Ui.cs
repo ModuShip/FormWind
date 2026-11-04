@@ -110,6 +110,15 @@ namespace DurusMerkezi
             return panel;
         }
 
+        /// <summary><paramref name="root"/> ve içindeki tüm kontroller, üstten alta (önce ebeveyn, sonra çocukları).</summary>
+        public static List<Control> Descendants(Control root)
+        {
+            var all = new List<Control> { root };
+            for (int i = 0; i < all.Count; i++)
+                foreach (Control child in all[i].Controls) all.Add(child);
+            return all;
+        }
+
         public TwPanel Row(string classes, params Control[] children) => Box("flex items-center gap-2 " + classes, children);
 
         public TwPanel Col(string classes, params Control[] children) => Box("flex flex-col " + classes, children);

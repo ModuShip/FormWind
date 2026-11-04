@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using FormWind;
@@ -28,7 +29,7 @@ namespace DurusMerkezi
         {
             Ui.Segments("Tümü 10", "Zenginleştirilmemiş 5", "İncelemede 2", "Kapatıldı 3"),
             Ui.Search("DR no, makine, ERP kodu", "w-64"),
-            Ui.Plain("Toplu giriş"),
+            BulkEntryButton(),
         };
 
         public override Control[] SecondaryToolbar => _secondary ??= new Control[]
@@ -39,6 +40,53 @@ namespace DurusMerkezi
         private Control[] _secondary;
         private TwPanel _detail;
 
+        // Toplu giriş: pencerenin sağ kenarına yapışık bir sheet. Pencere bir kez oluşturulur, kapanınca gizlenir ve her
+        // açılışta yeniden kayar (giriş yaylı, çıkış yavaş başlayıp hızlanır; mesafe ve süreler Program'daki ayarlardan).
+        private Form _bulkSheet;
+
+        private TwButton BulkEntryButton()
+        {
+            var button = Ui.Plain("Toplu giriş");
+            button.Click += (_, _) =>
+            {
+                var owner = button.FindForm();
+                if (owner is null) return;
+                _bulkSheet ??= BulkSheet();
+                var client = owner.RectangleToScreen(owner.ClientRectangle);
+                _bulkSheet.Bounds = new Rectangle(client.Right - _bulkSheet.Width, client.Top, _bulkSheet.Width, client.Height);
+                _bulkSheet.ShowDialog(owner);
+            };
+            return button;
+        }
+
+        private Form BulkSheet()
+        {
+            var sheet = new Form
+            {
+                FormBorderStyle = FormBorderStyle.None, ShowInTaskbar = false, StartPosition = FormStartPosition.Manual,
+                Width = 380, KeyPreview = true, Text = "Toplu giriş",
+            };
+            var save = Ui.Primary("Kaydet");
+            save.Click += (_, _) => sheet.DialogResult = DialogResult.OK;
+            var cancel = Ui.Plain("Vazgeç");
+            cancel.Click += (_, _) => sheet.DialogResult = DialogResult.Cancel;
+            sheet.KeyDown += (_, e) => { if (e.KeyCode == Keys.Escape) sheet.DialogResult = DialogResult.Cancel; };
+            var body = Ui.Col("gap-4 px-6 pt-6 pb-6",
+                Ui.Col("gap-1", Ui.Text("Toplu giriş", "h1"), Ui.Text("Seçili duruşlara aynı nedeni ve sınıfı uygulayın.", "muted")),
+                Ui.Col("gap-1.5", Ui.Text("Neden", "small"), Ui.Input("Neden", "Kaynak teli besleme arızası")),
+                Ui.Col("gap-1.5", Ui.Text("Sınıf", "small"), Ui.Select(new[] { "Mekanik", "Elektrik", "Malzeme", "Operatör" }, 0)),
+                Ui.Col("gap-1.5", Ui.Text("Not", "small"), Ui.Input("Not")),
+                Ui.Spacer(),
+                Ui.Row("gap-2", Ui.Spacer(), cancel, save));
+            body.Dock = DockStyle.Fill;
+            sheet.Controls.Add(body);
+            Ui.Tw.SetClasses(sheet, "page");
+            TwWindowMotion.Attach(sheet, TwEdge.Right,
+                enter: new TwMotionOptions { Easing = TwEasing.Spring },
+                exit: new TwMotionOptions { Easing = TwEasing.In });
+            return sheet;
+        }
+
         // Ayrıntı paneli sağdan kayarak açılır ve kapanır; kayıt listesi bir kez yerleşir, her karede yeniden boyutlanmaz.
         private TwButton DetailToggle()
         {
@@ -47,8 +95,9 @@ namespace DurusMerkezi
             {
                 if (_detail is null) return;
                 bool show = !_detail.Visible;
-                if (show) TwTransition.SlideIn(_detail, TwEdge.Right);
-                else TwTransition.SlideOut(_detail, TwEdge.Right);
+                // Panelin solundaki 16 px boşluk (ml-4) panelle birlikte kayar; açılış yaylı, kapanış yavaş başlayıp hızlanır.
+                if (show) TwTransition.SlideIn(_detail, TwEdge.Right, new TwMotionOptions { IncludeMargin = true, Easing = TwEasing.Spring });
+                else TwTransition.SlideOut(_detail, TwEdge.Right, new TwMotionOptions { IncludeMargin = true });
                 toggle.AccessibleName = show ? "Ayrıntı panelini gizle" : "Ayrıntı panelini göster";
             };
             return toggle;
@@ -58,7 +107,7 @@ namespace DurusMerkezi
             "Duruş Kayıtları & Kök Neden",
             "ERP'den düşen ham duruşları zenginleştirin: neden, sınıf, parça, maliyet ve kanıt.",
             new Control[] { Ui.Chip("5  kayıt kök neden bekliyor", Tone.Red), Ui.Chip("Ort. giriş süresi 6 dk", Tone.Gray) },
-            Ui.Row("items-start gap-4", RecordList(), _detail = Detail()));
+            Ui.Row("items-start", RecordList(), _detail = Detail()));
 
         // ---- Kayıt listesi ----
 
@@ -178,7 +227,7 @@ namespace DurusMerkezi
             var actions = Ui.Row("gap-2 px-5 h-[60px] flex-none bg-surface-50 dark:bg-[#242426] border-t border-surface-200 dark:border-surface-700",
                 Ui.Spacer(), Ui.Button("Taslak kaydet", "btn-sm text-sm py-1.5"), Ui.Button("Kronik incelemeye gönder", "btn-sm text-sm py-1.5"), SendButton());
 
-            return Ui.Box("card flex flex-col gap-0 p-0 flex-1", header, Ui.Divider(), body, actions);
+            return Ui.Box("card flex flex-col gap-0 p-0 flex-1 ml-4", header, Ui.Divider(), body, actions);
         }
 
         // Gönderim sürerken düğme meşguldür; bitince araç çubuğunun altında bir bildirim çıkar.

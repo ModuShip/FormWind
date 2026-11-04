@@ -19,6 +19,12 @@ namespace DurusMerkezi
             Application.SetCompatibleTextRenderingDefault(false);
             TwTheme.Current = TwTheme.FromJson(Theme.Json);
             TwToast.Position = TwToastPosition.TopRight;
+            // design.md süreleri: sayfa geçişi 180 ms, panel kayması 260 ms, sheet girişi 320 ms ve çıkışı 200 ms; sheet 12 px kayar.
+            TwMotion.Timings.CrossFade = 180;
+            TwMotion.Timings.Slide = 260;
+            TwMotion.Timings.WindowIn = 320;
+            TwMotion.Timings.WindowOut = 200;
+            TwWindowMotion.Distance = 12;
             bool light = Array.IndexOf(args, "--light") >= 0;
             int pageIndex = Array.IndexOf(args, "--page");
             int page = pageIndex >= 0 && pageIndex + 1 < args.Length ? int.Parse(args[pageIndex + 1]) : 0;

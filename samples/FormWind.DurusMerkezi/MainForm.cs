@@ -174,16 +174,44 @@ namespace DurusMerkezi
         // Daraltılmış kenar çubuğu: trafik lambaları ve gezinme ikonları kalır; metinler ve listeler gizlenir.
         private bool _collapsed;
 
+        // Metinler gizlenir ve genişlik değişir; ikisi de eski görüntünün altında bir kez yerleşir, kenar çubuğu kayarak daralır.
+        // Sayfanın tamamı yana kaydığından kalan alan solmaz (yazılar iki kez görünmesin), hemen yeni yerine geçer.
         private void ToggleSidebar()
         {
             _collapsed = !_collapsed;
-            SuspendLayout();
-            foreach (var item in _nav)
-                for (int i = 1; i < item.Controls.Count; i++) item.Controls[i].Visible = !_collapsed;
-            _sideSection.Visible = _sideFooter.Visible = _user.Visible = _navTitle.Visible = !_collapsed;
-            _sidebar.Width = _collapsed ? 112 : 232;
+            TwTransition.Resize(_sidebar, () =>
+            {
+                SuspendLayout();
+                // Kenar çubuğundaki her kutu kendi içeriğinden boyutlanır: her gizlenen metin satırı, listeyi ve kenar
+                // çubuğunu yeniden yerleştirirdi. Hepsi askıya alınır, sonunda her biri bir kez yerleşir.
+                var boxes = Ui.Descendants(_sidebar);
+                foreach (var box in boxes) box.SuspendLayout();
+                foreach (var item in _nav)
+                    for (int i = 1; i < item.Controls.Count; i++) item.Controls[i].Visible = !_collapsed;
+                _sideSection.Visible = _sideFooter.Visible = _user.Visible = _navTitle.Visible = !_collapsed;
+                _sidebar.Width = _collapsed ? 112 : 232;
+                for (int i = boxes.Count - 1; i >= 0; i--) boxes[i].ResumeLayout(true);
+                ResumeLayout(true);
+            }, new TwMotionOptions { FadeRest = false });
             _sidebarIcon.AccessibleName = _collapsed ? "Kenar çubuğunu genişlet" : "Kenar çubuğunu daralt";
-            ResumeLayout(true);
+        }
+
+        // Boşta kalınca görünmeyen ekranlar birer birer önceden oluşturulur; ilk açılışları yalnızca boyamadan ibaret kalır.
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            int next = 0;
+            void Prewarm(object sender, EventArgs args)
+            {
+                while (next < _pages.Length && next == _current) next++;
+                if (next >= _pages.Length || IsDisposed)
+                {
+                    Application.Idle -= Prewarm;
+                    return;
+                }
+                TwMotion.Prewarm(_pages[next++].Content);
+            }
+            Application.Idle += Prewarm;
         }
 
         /// <summary>
@@ -194,7 +222,7 @@ namespace DurusMerkezi
         {
             index = Math.Max(0, Math.Min(_pages.Length - 1, index));
             if (index == _current) return;
-            if (_current >= 0 && Visible) TwTransition.CrossFade(this, () => SwitchPage(index), TwMotion.Durations.S);
+            if (_current >= 0 && Visible) TwTransition.CrossFade(this, () => SwitchPage(index));
             else SwitchPage(index);
         }
 
