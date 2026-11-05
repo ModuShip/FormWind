@@ -79,3 +79,61 @@ FormWind.TwGridTree.SubtitleSelector.get -> System.Func<FormWind.TwGridTreeNode!
 FormWind.TwGridTree.SubtitleSelector.set -> void
 FormWind.TwGridTreeNode.Subtitle.get -> string?
 FormWind.TwGridTreeNode.Subtitle.set -> void
+FormWind.TwBadge
+FormWind.TwBadge.Classes.get -> string!
+FormWind.TwBadge.Text.get -> string?
+FormWind.TwBadge.TwBadge() -> void
+FormWind.TwBadge.TwBadge(string? text, string? classes) -> void
+FormWind.TwBadgeColumn.Selector.get -> System.Func<object?, FormWind.TwBadge>?
+FormWind.TwBadgeColumn.Selector.set -> void
+FormWind.TwDataList.ColumnGap.get -> int
+FormWind.TwDataList.ColumnGap.set -> void
+FormWind.TwDataList.Columns.get -> System.Collections.ObjectModel.ObservableCollection<FormWind.TwDataListColumn!>!
+FormWind.TwDataList.CreateHeader() -> FormWind.TwDataListHeader!
+FormWind.TwDataList.GetColumnBounds(int column, int index) -> System.Drawing.Rectangle
+FormWind.TwDataList.SortChanged -> System.EventHandler?
+FormWind.TwDataList.SortColumn.get -> int
+FormWind.TwDataList.SortColumn.set -> void
+FormWind.TwDataList.SortOrder.get -> System.Windows.Forms.SortOrder
+FormWind.TwDataList.SortOrder.set -> void
+FormWind.TwDataList.ToggleSort(int column) -> void
+FormWind.TwDataListColumn
+FormWind.TwDataListColumn.Alignment.get -> System.Windows.Forms.HorizontalAlignment
+FormWind.TwDataListColumn.Alignment.set -> void
+FormWind.TwDataListColumn.Key.get -> string?
+FormWind.TwDataListColumn.Key.set -> void
+FormWind.TwDataListColumn.Sortable.get -> bool
+FormWind.TwDataListColumn.Sortable.set -> void
+FormWind.TwDataListColumn.Text.get -> string!
+FormWind.TwDataListColumn.Text.set -> void
+FormWind.TwDataListColumn.TwDataListColumn(string! text, int width = 0) -> void
+FormWind.TwDataListColumn.Weight.get -> float
+FormWind.TwDataListColumn.Weight.set -> void
+FormWind.TwDataListColumn.Width.get -> int
+FormWind.TwDataListColumn.Width.set -> void
+FormWind.TwDataListDrawEventArgs.GetColumnBounds(int column) -> System.Drawing.Rectangle
+FormWind.TwDataListHeader
+FormWind.TwDataListHeader.List.get -> FormWind.TwDataList!
+FormWind.TwDataListHeader.TwDataListHeader(FormWind.TwDataList! list) -> void
+FormWind.TwFilter.Period.get -> FormWind.TwPeriodPicker?
+FormWind.TwFilterBar.GetPeriod(string! key) -> (System.DateTime Start, System.DateTime End)?
+FormWind.TwFilterBar.SetPeriod(string! key, System.DateTime start, System.DateTime end) -> void
+FormWind.TwFilterKind.Period = 3 -> FormWind.TwFilterKind
+FormWind.TwTexts.SortBy.get -> string!
+FormWind.TwTexts.SortBy.set -> void
+FormWind.TwTexts.SortedAscending.get -> string!
+FormWind.TwTexts.SortedAscending.set -> void
+FormWind.TwTexts.SortedDescending.get -> string!
+FormWind.TwTexts.SortedDescending.set -> void
+override FormWind.TwDataListColumn.ToString() -> string!
+override FormWind.TwDataListHeader.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwDataListHeader.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwDataListHeader.Dispose(bool disposing) -> void
+override FormWind.TwDataListHeader.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwDataListHeader.OnGotFocus(System.EventArgs! e) -> void
+override FormWind.TwDataListHeader.OnKeyDown(System.Windows.Forms.KeyEventArgs! e) -> void
+override FormWind.TwDataListHeader.OnLostFocus(System.EventArgs! e) -> void
+override FormWind.TwDataListHeader.OnMouseLeave(System.EventArgs! e) -> void
+override FormWind.TwDataListHeader.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataListHeader.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwDataListHeader.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void

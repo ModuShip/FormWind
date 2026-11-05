@@ -69,6 +69,7 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
   <li><strong>Groups:</strong> <code>SetGroups(new[] { (0, "Today"), (12, "Yesterday") })</code>; the current header sticks while scrolling.</li>
   <li><strong>Variable heights:</strong> <code>ItemHeights = i => orders[i].HasNote ? 72 : 52</code>.</li>
   <li><strong>Incremental loading:</strong> <code>IsItemLoaded</code> draws skeleton rows and <code>ItemsNeeded(first, last)</code> asks for the visible range.</li>
+  <li><strong>Columns and a sortable header:</strong> <code>Columns.Add(new TwDataListColumn("Amount", 90) { Sortable = true })</code> lines the parts of a row up (<code>e.GetColumnBounds(column)</code>); <code>list.CreateHeader()</code> returns a <code>TwDataListHeader</code> to dock above the list. A click or Enter on a sortable name toggles <code>SortColumn</code> / <code>SortOrder</code> (▴ / ▾) and raises <code>SortChanged</code>; you sort the data.</li>
 </ul>
 
 <h2>Menus and toolbars</h2>

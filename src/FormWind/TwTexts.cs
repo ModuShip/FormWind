@@ -79,6 +79,9 @@ public sealed class TwTexts
         ThisMonth = "Bu ay",
         LastMonth = "Geçen ay",
         ThisYear = "Bu yıl",
+        SortBy = "Sırala",
+        SortedAscending = "artan sıralı",
+        SortedDescending = "azalan sıralı",
         CustomRange = "Özel aralık…",
         AllShifts = "Tümü",
         Apply = "Uygula",
@@ -180,6 +183,12 @@ public sealed class TwTexts
     public string ThisMonth { get; set; } = "This month";
     public string LastMonth { get; set; } = "Last month";
     public string ThisYear { get; set; } = "This year";
+    /// <summary>Default action of a sortable <see cref="TwDataListHeader"/> column (screen readers).</summary>
+    public string SortBy { get; set; } = "Sort";
+    /// <summary>Added to the name of the column a <see cref="TwDataList"/> is sorted by, ascending.</summary>
+    public string SortedAscending { get; set; } = "sorted ascending";
+    /// <summary>Added to the name of the column a <see cref="TwDataList"/> is sorted by, descending.</summary>
+    public string SortedDescending { get; set; } = "sorted descending";
     public string CustomRange { get; set; } = "Custom range…";
     /// <summary>The "all shifts" segment of <see cref="TwPeriodPicker"/>.</summary>
     public string AllShifts { get; set; } = "All";

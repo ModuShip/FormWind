@@ -66,6 +66,8 @@ internal static class TwCellPainting
 /// <c>*</c> is for all other values:
 /// <c>Alive: bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100; Dead: bg-red-100 text-red-800; *: bg-gray-100 text-gray-700</c>.
 /// Default look: <c>rounded-full px-2 py-0.5 text-xs font-medium</c>.
+/// For text and colors that depend on the value ("+12 %" green, "-3 %" red, "new") set <see cref="Selector"/>; it wins over
+/// <see cref="Variants"/>.
 /// </summary>
 [ToolboxItem(false)]
 public class TwBadgeColumn : DataGridViewColumn
@@ -73,6 +75,7 @@ public class TwBadgeColumn : DataGridViewColumn
     private const string BaseClasses = "rounded-full px-2 py-0.5 text-xs font-medium";
     private string _variants = "*: bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100";
     private Dictionary<string, string>? _parsed;
+    private Func<object?, TwBadge>? _selector;
 
     public TwBadgeColumn() : base(new TwBadgeCell())
     {
@@ -90,6 +93,30 @@ public class TwBadgeColumn : DataGridViewColumn
             DataGridView?.InvalidateColumn(Index);
         }
     }
+
+    /// <summary>
+    /// Chooses the badge from the cell's value: its text and its classes. When set, it wins over <see cref="Variants"/>
+    /// (<see cref="TwBadge.Classes"/> are added to the default look); <see cref="TwBadge.Text"/> <c>null</c> keeps the
+    /// cell's formatted text and an empty text draws no badge. <see cref="TwTagsColumn"/> ignores it.
+    /// <code>
+    /// column.Selector = v => v is double d
+    ///     ? new TwBadge($"{d:+0.#;-0.#} %", d >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")
+    ///     : new TwBadge("new", "bg-blue-100 text-blue-800");
+    /// </code>
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Func<object?, TwBadge>? Selector
+    {
+        get => _selector;
+        set
+        {
+            _selector = value;
+            DataGridView?.InvalidateColumn(Index);
+        }
+    }
+
+    internal TwStyle StyleForClasses(string? classes, DataGridView? grid) =>
+        TwTheme.Current.Parse(BaseClasses + " " + classes).Resolve(TwGridState.State(grid));
 
     internal TwStyle StyleFor(string value, DataGridView? grid)
     {
@@ -116,8 +143,25 @@ public class TwBadgeColumn : DataGridViewColumn
     {
         var clone = (TwBadgeColumn)base.Clone();
         clone.Variants = Variants;
+        clone.Selector = Selector;
         return clone;
     }
+}
+
+/// <summary>The badge <see cref="TwBadgeColumn.Selector"/> picks for a value: its text and its Tailwind classes.</summary>
+public readonly struct TwBadge
+{
+    public TwBadge(string? text, string? classes)
+    {
+        Text = text;
+        Classes = classes ?? "";
+    }
+
+    /// <summary>The text on the badge; <c>null</c> = the cell's formatted text, empty = no badge.</summary>
+    public string? Text { get; }
+
+    /// <summary>Classes added to the badge's default look (<c>bg-green-100 text-green-800 dark:bg-green-900</c>).</summary>
+    public string Classes { get; }
 }
 
 public class TwBadgeCell : DataGridViewTextBoxCell
@@ -131,10 +175,24 @@ public class TwBadgeCell : DataGridViewTextBoxCell
         if ((paintParts & DataGridViewPaintParts.ContentForeground) == 0) return;
 
         var text = formattedValue as string;
-        if (string.IsNullOrEmpty(text) || !(OwningColumn is TwBadgeColumn column)) return;
+        if (!(OwningColumn is TwBadgeColumn column)) return;
+
+        // Seçici varsa metin ve sınıflar değerden gelir; Variants yok sayılır.
+        TwStyle style;
+        if (column.Selector is { } selector)
+        {
+            var badge = selector(value);
+            text = badge.Text ?? text;
+            if (string.IsNullOrEmpty(text)) return;
+            style = column.StyleForClasses(badge.Classes, DataGridView);
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            style = column.StyleFor(text!, DataGridView);
+        }
 
         var scale = TwCellPainting.Scale(DataGridView);
-        var style = column.StyleFor(text!, DataGridView);
         var font = TwFonts.Create(style, cellStyle.Font ?? DataGridView!.Font, TwTheme.Current, TwDpi.FontScale(DataGridView!));
         var textSize = TextRenderer.MeasureText(graphics, text, font, Size.Empty, TextFormatFlags.NoPadding);
         var padding = style.Padding.ApplyTo(Padding.Empty, scale);

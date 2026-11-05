@@ -68,6 +68,7 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
   <li><strong>Çoklu seçim:</strong> <code>SelectionMode = MultiExtended</code>; Ctrl+tık, Shift+tık, Shift+oklar, Ctrl+A. Dizinler saklanmaz, milyon satırda da çalışır.</li>
   <li><strong>Gruplar:</strong> <code>SetGroups(new[] { (0, "Bugün"), (12, "Dün") })</code>; geçerli grubun başlığı kaydırırken üstte kalır.</li>
   <li><strong>Farklı yükseklikler:</strong> <code>ItemHeights = i => orders[i].HasNote ? 72 : 52</code>.</li>
+  <li><strong>Sütunlar ve sıralanabilir başlık:</strong> <code>Columns.Add(new TwDataListColumn("Tutar", 90) { Sortable = true })</code> satırın parçalarını hizalar (<code>e.GetColumnBounds(column)</code>); <code>list.CreateHeader()</code> listenin üstüne yaslanacak bir <code>TwDataListHeader</code> döndürür. Sıralanabilir ada tık ya da Enter <code>SortColumn</code> / <code>SortOrder</code> değerini değiştirir (▴ / ▾) ve <code>SortChanged</code> tetikler; veriyi siz sıralarsınız.</li>
   <li><strong>Artımlı yükleme:</strong> <code>IsItemLoaded</code> iskelet satırlar çizer, <code>ItemsNeeded(first, last)</code> görünen aralığı ister.</li>
 </ul>
 

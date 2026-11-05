@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Drawing;
@@ -128,6 +130,12 @@ public sealed class TwDataListDrawEventArgs : EventArgs
 
     public bool Hovered { get; }
 
+    /// <summary>
+    /// The cell of a column (<see cref="TwDataList.Columns"/>) in this row: the column's horizontal extent within
+    /// <see cref="ContentBounds"/>, so parts drawn in the same column line up from row to row and with the header.
+    /// </summary>
+    public Rectangle GetColumnBounds(int column) => _owner.ColumnRect(column, ContentBounds);
+
     /// <summary>The row's primary text color (the selected text color when selected).</summary>
     public Color ForeColor => Selected ? _owner.Colors.SelectedFore : _owner.Colors.Fore;
 
@@ -221,6 +229,10 @@ public class TwDataList : Control, ITwTimed
     // Hover zemininin belirişi (120 ms); duration-*, delay-*, ease-* ve transition-none ile değişir.
     private TwTimingClasses _timing;
     private TwFrameTimer? _pulse;
+    private int _columnGap = 8;
+    private int _sortColumn = -1;
+    private SortOrder _sortOrder = SortOrder.None;
+    private int _headerRowWidth = -1;
 
     // Odak halkası yalnızca odak klavyeyle geldiyse çizilir (bkz. TwFocusVisible).
     private bool _focusVisible;
@@ -233,6 +245,8 @@ public class TwDataList : Control, ITwTimed
         TabStop = true;
         Padding = new Padding(4);
         _scrollTimer.Tick += (_, _) => StepScroll();
+        Columns = new ObservableCollection<TwDataListColumn>();
+        Columns.CollectionChanged += OnColumnsChanged;
     }
 
     /// <summary>Drawing of a visible row.</summary>
@@ -251,6 +265,163 @@ public class TwDataList : Control, ITwTimed
 
     /// <summary>Enter or double-click.</summary>
     public event EventHandler? ItemActivate;
+
+    /// <summary>
+    /// The user clicked (or pressed Enter on) a sortable header cell (see <see cref="CreateHeader"/>). Read
+    /// <see cref="SortColumn"/> and <see cref="SortOrder"/>, order your data and call <see cref="Control.Invalidate()"/>; the
+    /// list does not sort anything itself. Not raised when you set the properties.
+    /// </summary>
+    public event EventHandler? SortChanged;
+
+    /// <summary>The header changes (columns, sort, colors, scrollbar) and the header control has to redraw.</summary>
+    internal event EventHandler? HeaderChanged;
+
+    /// <summary>
+    /// Columns that line up the parts of a row: <see cref="TwDataListDrawEventArgs.GetColumnBounds"/> returns the cell of a
+    /// column in the row being drawn, and the header made by <see cref="CreateHeader"/> shows the same columns. Without
+    /// columns nothing changes.
+    /// <code>
+    /// list.Columns.Add(new TwDataListColumn("Name") { Weight = 2, Sortable = true });
+    /// list.Columns.Add(new TwDataListColumn("Amount", 90) { Alignment = HorizontalAlignment.Right, Sortable = true });
+    /// list.DrawItem += (_, e) => { e.DrawText(name, e.GetColumnBounds(0)); e.DrawText(amount, e.GetColumnBounds(1), alignment: ContentAlignment.MiddleRight); };
+    /// panel.Controls.Add(list); panel.Controls.Add(list.CreateHeader());   // the header docks above the list
+    /// list.SortChanged += (_, _) => Resort(list.SortColumn, list.SortOrder);
+    /// </code>
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public ObservableCollection<TwDataListColumn> Columns { get; }
+
+    /// <summary>Space between columns (96 DPI pixels).</summary>
+    [Category("Layout"), DefaultValue(8)]
+    public int ColumnGap
+    {
+        get => _columnGap;
+        set
+        {
+            _columnGap = Math.Max(0, value);
+            Invalidate();
+            HeaderChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>The column the rows are sorted by; -1 = none. Shown on the header; setting it does not raise <see cref="SortChanged"/>.</summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int SortColumn
+    {
+        get => _sortColumn;
+        set
+        {
+            value = value < 0 || value >= Columns.Count ? -1 : value;
+            if (_sortColumn == value) return;
+            _sortColumn = value;
+            if (value < 0) _sortOrder = SortOrder.None;
+            else if (_sortOrder == SortOrder.None) _sortOrder = SortOrder.Ascending;
+            HeaderChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>The direction of the sort on <see cref="SortColumn"/>.</summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public SortOrder SortOrder
+    {
+        get => _sortOrder;
+        set
+        {
+            if (_sortColumn < 0) value = SortOrder.None;
+            if (_sortOrder == value) return;
+            _sortOrder = value;
+            HeaderChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>
+    /// Sorts by a column as a click on its header does: a new column ascending, the same column the other way. Raises
+    /// <see cref="SortChanged"/>. Nothing happens for a column that is not <see cref="TwDataListColumn.Sortable"/>.
+    /// </summary>
+    public void ToggleSort(int column)
+    {
+        if (column < 0 || column >= Columns.Count || !Columns[column].Sortable) return;
+        _sortOrder = column == _sortColumn && _sortOrder == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending;
+        _sortColumn = column;
+        HeaderChanged?.Invoke(this, EventArgs.Empty);
+        SortChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>A header control for <see cref="Columns"/>, docked to the top: add it to the list's parent after the list.</summary>
+    public TwDataListHeader CreateHeader() => new TwDataListHeader(this);
+
+    /// <summary>The cell of a column in a row, in client coordinates (the row's <see cref="ItemPadding"/> applied).</summary>
+    public Rectangle GetColumnBounds(int column, int index)
+    {
+        var bounds = GetItemBounds(index);
+        var padding = ScaledItemPadding;
+        return ColumnRect(column, new Rectangle(bounds.X + padding.Left, bounds.Y + padding.Top,
+            Math.Max(0, bounds.Width - padding.Horizontal), Math.Max(0, bounds.Height - padding.Vertical)));
+    }
+
+    /// <summary>The area the columns share, in client coordinates (x and width; the height is the row's).</summary>
+    internal Rectangle ColumnArea
+    {
+        get
+        {
+            var padding = ScaledItemPadding;
+            return new Rectangle(Padding.Left + padding.Left, 0, Math.Max(0, RowWidth - padding.Horizontal), 0);
+        }
+    }
+
+    /// <summary>The column's cell inside <paramref name="content"/> (the same x and width for every row).</summary>
+    internal Rectangle ColumnRect(int column, Rectangle content)
+    {
+        if (column < 0 || column >= Columns.Count) return Rectangle.Empty;
+        var widths = ColumnWidths(content.Width);
+        int x = content.X;
+        for (int i = 0; i < column; i++) x += widths[i] + ScalePixels(_columnGap);
+        return new Rectangle(x, content.Y, widths[column], content.Height);
+    }
+
+    // Sabit genişlikli sütunlar ve aralıklar düşüldükten sonra kalan yer, Width = 0 olan sütunlara Weight oranında dağıtılır.
+    internal int[] ColumnWidths(int total)
+    {
+        int count = Columns.Count;
+        var widths = new int[count];
+        int gap = ScalePixels(_columnGap), fixedWidth = Math.Max(0, count - 1) * gap;
+        float weights = 0;
+        for (int i = 0; i < count; i++)
+        {
+            if (Columns[i].Width > 0) fixedWidth += widths[i] = ScalePixels(Columns[i].Width);
+            else weights += Math.Max(0.01f, Columns[i].Weight);
+        }
+        int rest = Math.Max(0, total - fixedWidth), given = 0, last = -1;
+        for (int i = 0; i < count; i++)
+        {
+            if (Columns[i].Width > 0) continue;
+            widths[i] = (int)(rest * Math.Max(0.01f, Columns[i].Weight) / weights);
+            given += widths[i];
+            last = i;
+        }
+        if (last >= 0) widths[last] += rest - given;
+        return widths;
+    }
+
+    private void OnColumnsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (TwDataListColumn column in e.NewItems) column.Changed += OnColumnChanged;
+        if (e.OldItems != null)
+            foreach (TwDataListColumn column in e.OldItems) column.Changed -= OnColumnChanged;
+        if (_sortColumn >= Columns.Count)
+        {
+            _sortColumn = -1;
+            _sortOrder = SortOrder.None;
+        }
+        OnColumnChanged(this, EventArgs.Empty);
+    }
+
+    private void OnColumnChanged(object? sender, EventArgs e)
+    {
+        Invalidate();
+        HeaderChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>Number of rows; the data is not stored in the list, rows are requested by index while drawing.</summary>
     [Category("Data"), DefaultValue(0)]
@@ -542,6 +713,7 @@ public class TwDataList : Control, ITwTimed
         {
             _colors = value ?? new TwDataListColors();
             Invalidate();
+            HeaderChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -701,6 +873,12 @@ public class TwDataList : Control, ITwTimed
     public void ScrollTo(float offset, bool animate = true)
     {
         _target = Math.Max(0, Math.Min(offset, MaxScrollOffset));
+        // Kaydırma çubuğu çıkıp kalkınca satır genişliği (ve sütunlar) değişir; başlık yeniden çizilir.
+        if (RowWidth != _headerRowWidth)
+        {
+            _headerRowWidth = RowWidth;
+            HeaderChanged?.Invoke(this, EventArgs.Empty);
+        }
         if (animate && SmoothScrolling && IsHandleCreated && Visible)
         {
             _scrollTimer.Start();

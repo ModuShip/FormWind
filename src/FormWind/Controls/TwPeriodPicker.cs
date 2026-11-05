@@ -190,7 +190,10 @@ public class TwPeriodPicker : TwSelect
     internal TwPeriodPanel? Panel => DroppedDown ? _panel : null;
 
     /// <summary>Opens the panel with the presets, the calendar and the shifts.</summary>
-    public void ShowPanel()
+    public void ShowPanel() => ShowPanel(this);
+
+    // Seçici bir forma yerleşmemişse (TwFilterBar'ın dönem filtresi) panel verilen denetimin altında açılır.
+    internal void ShowPanel(Control anchor)
     {
         if (_popover is null)
         {
@@ -198,7 +201,7 @@ public class TwPeriodPicker : TwSelect
             _popover = new TwPopover { Content = _panel };
             _popover.Opening += (_, _) => _panel.Prepare();
         }
-        _popover.Show(this);
+        _popover.Show(anchor);
     }
 
     internal void ClosePanel() => _popover?.Close();

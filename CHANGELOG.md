@@ -69,6 +69,28 @@ All notable changes to FormWind are documented in this file. The format follows
   and right-to-left layouts, and shares its drawing with `TwListItem` rows.
 - `TwGridTreeNode.Subtitle` and `TwGridTree.SubtitleSelector` give the tree column a bold name with a muted second line ("Line ·
   2 sub-groups"); rows with a second line get the height two lines need. `TwGridTree.GetSubtitle(node)` returns it.
+### Added
+
+- `TwBadgeColumn.Selector` (`Func<object?, TwBadge>`) chooses a badge's text and classes from the cell's value, so a "+12 %" chip
+  colored by sign or a "new" chip no longer needs a hand-drawn cell. It wins over `Variants`; `TwBadge` is a small struct
+  (`Text`, `Classes`) rather than a tuple, which is friendlier to .NET Framework callers and to the public API files. A `null`
+  text keeps the cell's text and an empty text draws no badge.
+- `TwDataList.Columns` (`TwDataListColumn`: `Text`, `Width`, `Weight`, `Alignment`, `Sortable`, `Key`), `ColumnGap`,
+  `TwDataListDrawEventArgs.GetColumnBounds(column)` and `TwDataList.GetColumnBounds(column, index)` line up the parts of a row
+  like a table. `TwDataList.CreateHeader()` returns a `TwDataListHeader` with the column names; a click, Enter or Space on a
+  sortable name toggles `SortColumn` / `SortOrder` (▴ / ▾) and raises `SortChanged` (the list does not sort the data). The
+  header is a tab stop (←/→, Home/End move between sortable columns) and its columns are accessible column headers that name
+  their sort state. `TwTexts.SortBy`, `SortedAscending` and `SortedDescending` hold the screen reader texts.
+- `TwFilterKind.Period`: a `TwFilterBar` filter whose value comes from a `TwPeriodPicker` panel opened under the chip
+  ("Tarih: Son 90 gün"). `TwFilter.Period` is the picker (presets, shifts), `TwFilterBar.GetPeriod(key)` returns the days and
+  `SetPeriod(key, start, end)` sets a custom range.
+
+### Changed
+
+- Documentation: `TwMotionOptions.IncludeMargin` is for panels whose gap comes from `Margin` (FlowLayout, TableLayout, manual
+  layout); Dock layout ignores `Margin`. The README explains the wait before a `TwTransition.CrossFade` starts (the page's
+  paint time) and `TwMotion.Prewarm`, that `text-[..px]` sizes are 96 DPI pixels (an application's own scale factor scales them
+  twice), and that the FW003 analyzer only sees icon names given as literals (use `StyleError` / `TwIcons.IsKnown` for the rest).
 
 ## [0.1.5-preview.1] - 2026-11-04
 

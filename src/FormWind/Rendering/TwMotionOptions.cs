@@ -41,7 +41,11 @@ public sealed class TwMotionOptions
 
     /// <summary>
     /// With <see cref="TwTransition.SlideIn(System.Windows.Forms.Control, TwEdge, TwMotionOptions)"/> and <c>SlideOut</c>: the
-    /// panel's <c>Margin</c> slides with it, so the gap beside the panel comes and goes with the panel.
+    /// panel's <c>Margin</c> slides with it, so the gap beside the panel comes and goes with the panel. The panel's bounds are
+    /// simply inflated by <c>Margin</c>, so this is meant for panels whose gap comes from <c>Margin</c> in a FlowLayout, a
+    /// TableLayout or a manual layout. Dock layout ignores <c>Margin</c>: with a docked panel the slid area would include a
+    /// strip of the neighboring control, so keep the gap of a docked panel in the parent's <c>Padding</c>, or in a spacer
+    /// panel docked together with it.
     /// </summary>
     public bool IncludeMargin { get; set; }
 

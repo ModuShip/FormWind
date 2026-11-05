@@ -21,6 +21,10 @@ public enum TwFilterKind
     /// <summary>Always applied (the user's own site, the open period): shown as a chip without ✕; its value can still change
     /// when it has <see cref="TwFilter.Options"/>.</summary>
     Fixed,
+
+    /// <summary>A date range picked in a <see cref="TwPeriodPicker"/> popup ("Tarih: Son 90 gün"). The filter's
+    /// <see cref="TwFilter.Period"/> is the picker (presets, shifts); its text is the filter's value.</summary>
+    Period,
 }
 
 /// <summary>A filter of <see cref="TwFilterBar"/>: the field it narrows, how its value is picked and the value.</summary>
@@ -31,7 +35,13 @@ public sealed class TwFilter
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Label = label ?? throw new ArgumentNullException(nameof(label));
         Kind = kind;
+        if (kind == TwFilterKind.Period) Period = new TwPeriodPicker();
     }
+
+    /// <summary>The picker of a <see cref="TwFilterKind.Period"/> filter (<c>null</c> for other kinds): change its
+    /// <see cref="TwPeriodPicker.Presets"/> or <see cref="TwPeriodPicker.Shifts"/> before use. It is never placed on a form;
+    /// the bar shows its panel under the chip. Read the chosen days with <see cref="TwFilterBar.GetPeriod"/>.</summary>
+    public TwPeriodPicker? Period { get; }
 
     /// <summary>The name the application uses for the filter (a column, a query parameter).</summary>
     public string Key { get; }
@@ -50,7 +60,8 @@ public sealed class TwFilter
     /// <summary>Chip text for a value; <c>null</c> = "Label: value".</summary>
     public Func<string, string>? Format { get; set; }
 
-    /// <summary>The current value; <c>null</c> = not applied. Set it with <see cref="TwFilterBar.SetValue"/>.</summary>
+    /// <summary>The current value; <c>null</c> = not applied. Set it with <see cref="TwFilterBar.SetValue"/>. For a
+    /// <see cref="TwFilterKind.Period"/> filter it is the picker's text ("Son 90 gün", "01.01.2026 – 31.03.2026").</summary>
     public string? Value { get; internal set; }
 
     internal string ChipText => Value is null ? Label : Format?.Invoke(Value) ?? Label + ": " + Value;
@@ -79,11 +90,22 @@ public class TwFilterBar : TwPanel
     private bool _addVisible = true;
     private int _gap = 6;
     private ContextMenuStrip? _menu;
+    private bool _syncingPeriod;
 
     public TwFilterBar()
     {
         Filters = new ObservableCollection<TwFilter>();
-        Filters.CollectionChanged += (_, _) => Rebuild();
+        Filters.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems != null)
+                foreach (TwFilter filter in e.NewItems)
+                    if (filter.Period is TwPeriodPicker picker)
+                    {
+                        var owner = filter;
+                        picker.PeriodChanged += (_, _) => OnPeriodChanged(owner);
+                    }
+            Rebuild();
+        };
         AddButton = new TwButton { Text = TwTexts.Current.AddFilter, IconName = "plus", AutoSize = true };
         AddButton.Click += (_, _) => ShowAddMenu();
         Controls.Add(AddButton);
@@ -135,6 +157,50 @@ public class TwFilterBar : TwPanel
 
     public string? GetValue(string key) => Find(key)?.Value;
 
+    /// <summary>The first and last day (inclusive) of an applied <see cref="TwFilterKind.Period"/> filter; <c>null</c> when
+    /// the filter is not applied or is of another kind. The shift is <c>Find(key).Period.Shift</c>.</summary>
+    public (DateTime Start, DateTime End)? GetPeriod(string key) =>
+        Find(key) is { Value: not null, Period: TwPeriodPicker picker } ? (picker.Start, picker.End) : null;
+
+    /// <summary>Applies a custom range to a <see cref="TwFilterKind.Period"/> filter and raises <see cref="FiltersChanged"/>.</summary>
+    public void SetPeriod(string key, DateTime start, DateTime end)
+    {
+        if (Find(key) is not { Period: TwPeriodPicker picker } filter) throw new ArgumentException("Not a period filter: " + key, nameof(key));
+        Sync(() => picker.SetRange(start, end));
+        if (Assign(filter, picker.PeriodText)) Changed();
+    }
+
+    // Seçicinin değişimi (panelden) uygulanmış filtrenin değerine yansır; kodla ayarlarken olay iki kez doğmasın diye susturulur.
+    private void Sync(Action change)
+    {
+        bool before = _syncingPeriod;
+        _syncingPeriod = true;
+        try { change(); }
+        finally { _syncingPeriod = before; }
+    }
+
+    private void OnPeriodChanged(TwFilter filter)
+    {
+        if (_syncingPeriod || filter.Value is null || filter.Period is not TwPeriodPicker picker || !Filters.Contains(filter)) return;
+        if (Assign(filter, picker.PeriodText)) Changed();
+    }
+
+    // Dönem filtresinin değeri hazır dönemin metnidir (ya da SetPeriod ile özel aralık); tanımadığı metni yok sayar.
+    private bool AssignPeriod(TwFilter filter, string? value)
+    {
+        var picker = filter.Period!;
+        if (value != null)
+        {
+            int index = picker.Presets.ToList().FindIndex(p => p.Text == value);
+            if (index < 0 && value != picker.PeriodText) return false;
+            if (index >= 0) Sync(() => picker.PresetIndex = index);
+            value = picker.PeriodText;
+        }
+        if (filter.Value == value) return false;
+        filter.Value = value;
+        return true;
+    }
+
     /// <summary>The chip of a filter; <c>null</c> when the filter is not applied.</summary>
     public TwChip? ChipOf(string key) => Find(key) is TwFilter filter && _chips.TryGetValue(filter, out var chip) ? chip : null;
 
@@ -163,9 +229,10 @@ public class TwFilterBar : TwPanel
         if (changed) Changed();
     }
 
-    private static bool Assign(TwFilter filter, string? value)
+    private bool Assign(TwFilter filter, string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) value = null;
+        if (filter.Period != null) return AssignPeriod(filter, value);
         if (filter.Kind == TwFilterKind.Fixed && value is null) return false;
         if (filter.Value == value) return false;
         filter.Value = value;
@@ -226,7 +293,17 @@ public class TwFilterBar : TwPanel
         {
             if (filter.Value != null || filter.Kind == TwFilterKind.Fixed) continue;
             var item = new ToolStripMenuItem(filter.Label);
-            AddValueItems(item.DropDownItems, filter, item);
+            if (filter.Period != null)
+            {
+                // Dönem: tıklayınca seçicinin o anki dönemi uygulanır ve panel değiştirmek için açılır.
+                var owner = filter;
+                item.Click += (_, _) =>
+                {
+                    if (Assign(owner, owner.Period!.PeriodText)) Changed();
+                    ShowPeriodPanel(owner, ChipOf(owner.Key) ?? (Control)AddButton);
+                };
+            }
+            else AddValueItems(item.DropDownItems, filter, item);
             menu.Items.Add(item);
         }
         if (menu.Items.Count == 0)
@@ -242,9 +319,40 @@ public class TwFilterBar : TwPanel
     {
         if (Find(key) is not TwFilter filter) return;
         if (filter.Kind == TwFilterKind.Fixed && filter.Options.Count == 0) return;
+        if (filter.Period != null)
+        {
+            ShowPeriodPanel(filter, ChipOf(key) ?? (Control)AddButton);
+            return;
+        }
         var menu = NewMenu();
         AddValueItems(menu.Items, filter, null);
         Open(menu, ChipOf(key) ?? (Control)AddButton);
+    }
+
+    // Dönem filtresi menüyle değil seçicinin paneliyle düzenlenir; çipin altında açılır.
+    private void ShowPeriodPanel(TwFilter filter, Control anchor)
+    {
+        CloseMenu();
+        var picker = filter.Period!;
+        picker.Font = Font;
+        picker.CalendarColors = PeriodColors();
+        picker.ShowPanel(anchor);
+    }
+
+    private TwCalendarColors PeriodColors()
+    {
+        var back = TwColorsOf.EffectiveBack(this);
+        if (back.GetBrightness() >= 0.4f) return new TwCalendarColors();
+        return new TwCalendarColors
+        {
+            Back = ColorTranslator.FromHtml("#1f2937"),
+            Border = ColorTranslator.FromHtml("#374151"),
+            Fore = ColorTranslator.FromHtml("#e5e7eb"),
+            Muted = ColorTranslator.FromHtml("#9ca3af"),
+            Accent = ColorTranslator.FromHtml("#60a5fa"),
+            AccentFore = ColorTranslator.FromHtml("#111827"),
+            Hover = ColorTranslator.FromHtml("#374151"),
+        };
     }
 
     private void AddValueItems(ToolStripItemCollection items, TwFilter filter, ToolStripMenuItem? parent)
@@ -426,7 +534,11 @@ public class TwFilterBar : TwPanel
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _menu?.Dispose();
+        if (disposing)
+        {
+            _menu?.Dispose();
+            foreach (var filter in Filters) filter.Period?.Dispose();
+        }
         base.Dispose(disposing);
     }
 
