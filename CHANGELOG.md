@@ -53,6 +53,22 @@ All notable changes to FormWind are documented in this file. The format follows
 - `TwMotion.Timings.Reset()` also sets `Scale` back to 1.
 - The documentation of `UnknownClasses` and `StyleError` now says which reports what: a class FormWind does not recognize
   (including `duration-[120]`) goes to `UnknownClasses`; `StyleError` is for errors while applying styles.
+### Added
+
+- `TwListItem` row parts that remove the last owner-drawn lists: a clickable toggle icon (`ToggleIconName`, `ToggledIconName`,
+  `IsToggled`, `ToggleColor`, `ToggleText`), an inline action button (`ActionText`, `ActionClasses`) and an inline progress bar
+  with text (`ProgressValue`, `ProgressText`, `ProgressColor`). `TwListBox` raises `ItemToggle` and `ItemActionClick`
+  (`TwListItemEventArgs`), flips and presses them from the keyboard (Space, Ctrl+Enter) and from code (`ToggleItem`,
+  `PerformItemAction`), exposes the click areas (`GetToggleBounds`, `GetActionBounds`), shows hover and pressed looks, mirrors
+  in right-to-left layouts and offers the parts to screen readers as child objects of the row (`TwTexts.Toggle` names an
+  unnamed toggle).
+- `TwTwoLineColumn` and `TwTwoLine`: a table cell with a bold title, a muted second line and an optional status dot, with an
+  optional monospace title (`MonospaceTitle`) for record codes. The value is a `TwTwoLine`, or any value whose second line and dot
+  come from the row's data object (`SubtitleMember`, `DotColorMember`, `ValueSelector`). The cell reports the height of two
+  lines as its preferred height and `FitRowHeight()` sets the grid's rows to it; it follows selection colors, dark mode, DPI
+  and right-to-left layouts, and shares its drawing with `TwListItem` rows.
+- `TwGridTreeNode.Subtitle` and `TwGridTree.SubtitleSelector` give the tree column a bold name with a muted second line ("Line ·
+  2 sub-groups"); rows with a second line get the height two lines need. `TwGridTree.GetSubtitle(node)` returns it.
 
 ## [0.1.5-preview.1] - 2026-11-04
 

@@ -146,6 +146,11 @@ internal sealed class TwDataListAccessibleObject : TwListAccessibleObject
             _list.Activate();
         }
 
+        // Satırdaki tıklanabilir parçalar (anahtar simgesi, eylem düğmesi) alt öğe olarak görünür.
+        public override int GetChildCount() => _list.GetItemParts(Index).Count;
+
+        public override AccessibleObject? GetChild(int index) => index >= 0 && index < _list.GetItemParts(Index).Count ? new Part(_list, this, Index, index) : null;
+
         public override void Select(AccessibleSelection flags)
         {
             if ((flags & AccessibleSelection.TakeSelection) != 0) _list.SelectedIndex = Index;
@@ -154,7 +159,71 @@ internal sealed class TwDataListAccessibleObject : TwListAccessibleObject
             if ((flags & (AccessibleSelection.TakeSelection | AccessibleSelection.AddSelection)) != 0) _list.EnsureVisible(Index, animate: false);
             if ((flags & AccessibleSelection.TakeFocus) != 0) _list.Focus();
         }
+
+        private sealed class Part : AccessibleObject
+        {
+            private readonly TwDataList _list;
+            private readonly AccessibleObject _parent;
+            private readonly int _row, _part;
+
+            public Part(TwDataList list, AccessibleObject parent, int row, int part)
+            {
+                _list = list;
+                _parent = parent;
+                _row = row;
+                _part = part;
+            }
+
+            private TwItemPartInfo? Info => _list.GetItemParts(_row) is { } parts && _part < parts.Count ? parts[_part] : null;
+
+            public override AccessibleObject Parent => _parent;
+
+            public override string? Name
+            {
+                get => Info?.Name;
+                set { }
+            }
+
+            public override AccessibleRole Role => Info?.Role ?? AccessibleRole.None;
+
+            public override AccessibleStates State => (Info?.State ?? AccessibleStates.None) | AccessibleStates.Focusable
+                | (_list.Enabled ? AccessibleStates.None : AccessibleStates.Unavailable);
+
+            public override string? DefaultAction => Info?.DefaultAction;
+
+            public override void DoDefaultAction() => Info?.Invoke?.Invoke();
+
+            public override Rectangle Bounds
+            {
+                get
+                {
+                    var bounds = Rectangle.Intersect(Info?.Bounds ?? Rectangle.Empty, _list.ClientRectangle);
+                    return _list.IsHandleCreated && !bounds.IsEmpty ? _list.RectangleToScreen(bounds) : Rectangle.Empty;
+                }
+            }
+        }
     }
+}
+
+/// <summary>A clickable part inside a list row, as screen readers see it (a child of the row's accessible object).</summary>
+internal sealed class TwItemPartInfo
+{
+    public TwItemPartInfo(string name, AccessibleRole role, AccessibleStates state, Rectangle bounds, string? defaultAction, Action? invoke)
+    {
+        Name = name;
+        Role = role;
+        State = state;
+        Bounds = bounds;
+        DefaultAction = defaultAction;
+        Invoke = invoke;
+    }
+
+    public string Name { get; }
+    public AccessibleRole Role { get; }
+    public AccessibleStates State { get; }
+    public Rectangle Bounds { get; }
+    public string? DefaultAction { get; }
+    public Action? Invoke { get; }
 }
 
 internal sealed class TwTabStripAccessibleObject : TwListAccessibleObject

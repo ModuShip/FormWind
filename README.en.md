@@ -470,6 +470,7 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");
 | `TwCheckColumn` | `bool` / `CheckState` | Rounded box, `AccentColor`, `BoxSize`; `ThreeState` shows the indeterminate state as a dash |
 | `TwButtonColumn` | Text (or `Text` + `UseColumnTextForButtonValue`) | `Classes = "rounded-md bg-red-600 text-white hover:bg-red-700"`; clicks via `CellContentClick` |
 | `TwSparklineColumn` | Numbers (`IEnumerable`, or text separated by `;`/spaces) | `Kind` (`Line`, `Area`, `Bar`), `LineColor`, `DarkLineColor`, `NegativeColor` |
+| `TwTwoLineColumn` | `TwTwoLine(title, subtitle) { DotColor }`, or any value (the title) with the second line and dot read from the row's data object | `SubtitleMember`, `DotColorMember`, `ValueSelector`, `MonospaceTitle` (a code such as `PR-2041` in the theme's mono font); preferred height is two lines, `FitRowHeight()` sets the rows to it |
 | `TwDateColumn` | `DateTime` / `DateTimeOffset` | Column format (default `g`); `Relative = true` shows the past week as "5 min ago" (`TwTexts.MinutesAgo` …); editing shows the date |
 | `TwNumberColumn` | Number | Right-aligned, format `N2` (`C2` for currency), `Culture = "tr-TR"`, `NegativeClasses` (default `text-red-600 dark:text-red-400`), `PositiveClasses` |
 | `TwLinkColumn` | Text | Theme blue (`DarkLinkColor` in dark mode), underlined under the mouse; clicks via `CellContentClick` |
@@ -554,6 +555,7 @@ TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);          // co
 - The tree column shows the indentation, an arrow and `IconName`. Click the arrow or double-click the cell (read-only grids) to expand and collapse; in the tree column → expands or moves to the first child and ← collapses or moves to the parent, `+`/`−` work in every column and `*` expands the whole branch. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
 - Header clicks sort the children of every parent; the hierarchy and the expanded branches stay (`tree.Sort(column, direction)`).
 - `SetTotal` fills empty parent cells with `Sum`, `Average`, `Count`, `Min` or `Max` of their children (sums add the children's totals, the others look at the leaves). For values that do not add up, such as a ratio, `SetTotal(column, nodes => …)` computes the parent's value from its direct children; `tree.GetValue(node, column)` returns a node's own or computed value. After changing nodes call `tree.Refresh()`. Tree rows take the row height of the classes (`row:h-*`, `table`).
+- **Two-line names:** `node.Subtitle = "Line · 2 sub-groups"`, or `tree.SubtitleSelector = node => …` for the nodes that have none, shows a bold name with a muted second line (the same drawing as `TwTwoLineColumn` and `TwListItem`). Rows with a second line are as tall as two lines need (never shorter than the row height of the classes); rows without one stay single-line. If the tree column is a `TwTwoLineColumn`, it receives the subtitle as a `TwTwoLine` value.
 
 ### Row details
 
@@ -704,7 +706,11 @@ list.Items.Add(new TwListItem("Press 3 · spindle bearing", "Line 2 · 6 stops i
 });
 ```
 
-- Rows with a second line (`Subtitle` or `ValueCaption`) get two lines' height on their own; single-line rows keep `ItemHeight`.
+- Rows with a second line (`Subtitle`, `ValueCaption` or a progress bar) get two lines' height on their own; single-line rows keep `ItemHeight`.
+- **Toggle icon:** `ToggleIconName = "star"` (and `ToggledIconName = "star-filled"`, `ToggleColor`) puts a clickable icon at the start; clicking it or pressing Space on the selected row flips `IsToggled` and raises `list.ItemToggle` (`e.Index`, `e.Item`, already the new state). `list.ToggleItem(index)` does the same from code.
+- **Action button:** `ActionText = "Sign in"` draws a button before the badge (`ActionClasses`, default `btn-ghost px-3 py-1 text-xs`, with its `hover:` and `active:` look); a click or Ctrl+Enter on the selected row raises `list.ItemActionClick`. `list.PerformItemAction(index)` does it from code.
+- **Inline progress:** `ProgressValue = 0.5` (0–1) and `ProgressText = "1 / 2 done"` draw a small bar with its text on the second line (`ProgressColor`; the `Subtitle`, if any, follows the text).
+- `GetToggleBounds(index)` and `GetActionBounds(index)` return the clickable areas (list coordinates; empty when the row has none). The parts mirror in right-to-left layouts and are exposed to screen readers as child objects of the row (a check button named `ToggleText` or `TwTexts.Toggle`, and a push button named after `ActionText`). After changing an item in place call `list.Invalidate()` (and `InvalidateItemHeights()` if it gains or loses a second line).
 - The badge takes its colors, padding, corners and font from `BadgeClasses` (default `chip`, with `dark:` variants); the score ring's arc is `ScoreColor` or `accent-*`.
 - Screen readers read the parts joined (`"Press 3 · spindle bearing, Line 2 · 6 stops in 30 days, 540 min, 30 days, Chronic"`). Handling `DrawItem` turns the template off.
 

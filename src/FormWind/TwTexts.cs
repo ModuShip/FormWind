@@ -58,6 +58,7 @@ public sealed class TwTexts
         StepPending = "bekliyor",
         Open = "Aç",
         Select = "Seç",
+        Toggle = "Değiştir",
         Expand = "Genişlet",
         Collapse = "Daralt",
         Remove = "Kaldır",
@@ -145,6 +146,8 @@ public sealed class TwTexts
     // Ekran okuyucular (UI Automation adları ve varsayılan eylemler).
     public string Open { get; set; } = "Open";
     public string Select { get; set; } = "Select";
+    /// <summary>The toggle icon of a <see cref="TwListItem"/> row (screen reader name and action) when the item gives none.</summary>
+    public string Toggle { get; set; } = "Toggle";
     public string Expand { get; set; } = "Expand";
     public string Collapse { get; set; } = "Collapse";
     /// <summary>The ✕ of a removable <see cref="TwChip"/>.</summary>

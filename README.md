@@ -470,6 +470,7 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");
 | `TwCheckColumn` | `bool` / `CheckState` | Yuvarlak köşeli kutu, `AccentColor`, `BoxSize`; `ThreeState` belirsiz durumu çizgiyle gösterir |
 | `TwButtonColumn` | Metin (ya da `Text` + `UseColumnTextForButtonValue`) | `Classes = "rounded-md bg-red-600 text-white hover:bg-red-700"`; tıklama `CellContentClick` ile |
 | `TwSparklineColumn` | Sayılar (`IEnumerable` ya da `;`/boşlukla ayrılmış metin) | `Kind` (`Line`, `Area`, `Bar`), `LineColor`, `DarkLineColor`, `NegativeColor` |
+| `TwTwoLineColumn` | `TwTwoLine(başlık, altSatır) { DotColor }` ya da herhangi bir değer (başlık olur); alt satır ve nokta satırın veri nesnesinden okunur | `SubtitleMember`, `DotColorMember`, `ValueSelector`, `MonospaceTitle` (`PR-2041` gibi bir kod tema'nın mono yazı tipinde); istenen yükseklik iki satırdır, `FitRowHeight()` satırları bu yüksekliğe getirir |
 | `TwDateColumn` | `DateTime` / `DateTimeOffset` | Kolon biçimi (varsayılan `g`); `Relative = true` son haftayı "5 dk önce" gösterir (`TwTexts.MinutesAgo` …); düzenlerken tarihin kendisi görünür |
 | `TwNumberColumn` | Sayı | Sağa hizalı, `N2` biçimi (para için `C2`), `Culture = "tr-TR"`, `NegativeClasses` (varsayılan `text-red-600 dark:text-red-400`), `PositiveClasses` |
 | `TwLinkColumn` | Metin | Tema mavisi (koyu temada `DarkLinkColor`), üzerine gelince altı çizili; tıklama `CellContentClick` ile |
@@ -554,6 +555,7 @@ TwGrid.AddFooter(grid).SetAggregate(colMinutes, TwAggregate.Sum);        // yaln
 - Ağaç sütunu girintiyi, oku ve `IconName`'i gösterir. Oka tıklamak ya da hücreye çift tıklamak (salt okunur grid'de) açar ve kapatır; ağaç sütununda → açar ya da ilk çocuğa iner, ← kapatır ya da üst düğüme çıkar, `+`/`−` her sütunda çalışır, `*` dalın tamamını açar. `NodeExpanded`, `NodeCollapsed`, `ExpandAll`, `CollapseAll`, `node.IsExpanded`.
 - Başlık tıklaması her üst düğümün çocuklarını kendi içinde sıralar; hiyerarşi ve açık dallar korunur (`tree.Sort(column, direction)`).
 - `SetTotal` boş üst hücreleri çocuklarının `Sum`, `Average`, `Count`, `Min` ya da `Max` değeriyle doldurur (toplam çocukların toplamlarını toplar, diğerleri yapraklara bakar). Oran gibi toplanamayan değerlerde `SetTotal(sütun, düğümler => …)` üst satırın değerini doğrudan çocuklarından hesaplar; `tree.GetValue(düğüm, sütun)` düğümün kendi ya da hesaplanan değerini verir. Düğümler değişince `tree.Refresh()`. Ağaç satırları class'ların satır yüksekliğini (`row:h-*`, `table`) alır.
+- **İki satırlı ad:** `node.Subtitle = "Hat · 2 alt grup"` ya da alt satırı olmayan düğümler için `tree.SubtitleSelector = düğüm => …` kalın bir ad ve altında soluk bir satır gösterir (`TwTwoLineColumn` ve `TwListItem` ile aynı çizim). İkinci satırı olan satırlar iki satırın istediği yükseklikte olur (class'ların satır yüksekliğinden kısa olmaz); olmayanlar tek satır kalır. Ağaç sütunu bir `TwTwoLineColumn` ise alt satır ona `TwTwoLine` değeri olarak verilir.
 
 ### Satır detayları
 
@@ -704,7 +706,11 @@ list.Items.Add(new TwListItem("Pres 3 · mil yatağı", "Hat 2 · 30 günde 6 du
 });
 ```
 
-- İkinci satırı olan satırlar (`Subtitle` ya da `ValueCaption`) kendiliğinden iki satır boyunda olur; tek satırlılar `ItemHeight`'te kalır.
+- İkinci satırı olan satırlar (`Subtitle`, `ValueCaption` ya da ilerleme çubuğu) kendiliğinden iki satır boyunda olur; tek satırlılar `ItemHeight`'te kalır.
+- **Anahtar simgesi:** `ToggleIconName = "star"` (ve `ToggledIconName = "star-filled"`, `ToggleColor`) satırın başına tıklanabilir bir simge koyar; tıklamak ya da seçili satırda Boşluk'a basmak `IsToggled`'ı çevirir ve `list.ItemToggle` olayını (`e.Index`, `e.Item`, yeni durumuyla) yükseltir. `list.ToggleItem(index)` aynısını koddan yapar.
+- **Eylem düğmesi:** `ActionText = "Giriş yap"` rozetten önce bir düğme çizer (`ActionClasses`, varsayılan `btn-ghost px-3 py-1 text-xs`; `hover:` ve `active:` görünümüyle); tıklama ya da seçili satırda Ctrl+Enter `list.ItemActionClick` olayını yükseltir. `list.PerformItemAction(index)` koddan yapar.
+- **Satır içi ilerleme:** `ProgressValue = 0.5` (0–1) ve `ProgressText = "1 / 2 kayıt tamam"` ikinci satırda küçük bir çubuğu yazısıyla çizer (`ProgressColor`; varsa `Subtitle` yazının ardından gelir).
+- `GetToggleBounds(index)` ve `GetActionBounds(index)` tıklanabilir alanları verir (liste koordinatı; satırda yoksa boş). Parçalar sağdan sola düzende yer değiştirir ve ekran okuyuculara satırın alt nesneleri olarak görünür (`ToggleText` ya da `TwTexts.Toggle` adlı bir onay düğmesi ve `ActionText` adlı bir basma düğmesi). Bir öğeyi yerinde değiştirince `list.Invalidate()` çağırın (ikinci satır kazanıyor ya da kaybediyorsa `InvalidateItemHeights()` da).
 - Rozet renklerini, dolgusunu, köşesini ve yazısını `BadgeClasses`'tan alır (varsayılan `chip`, `dark:` varyantlarıyla); skor halkasının yayı `ScoreColor` ya da `accent-*`.
 - Ekran okuyucular parçaları birlikte okur (`"Pres 3 · mil yatağı, Hat 2 · 30 günde 6 duruş, 540 dk, 30 gün, Kronik"`). `DrawItem` işlenirse şablon kullanılmaz.
 

@@ -78,6 +78,12 @@ public sealed class TwGridTreeNode
     /// <summary>Icon before the text in the tree column (<see cref="TwIconRenderer.DrawIcon"/>).</summary>
     public string? IconName { get; set; }
 
+    /// <summary>
+    /// Muted second line under the name in the tree column ("Line · 2 sub-groups"); <c>null</c> = <see cref="TwGridTree.SubtitleSelector"/>
+    /// decides. After changing it of a shown tree call <see cref="TwGridTree.Refresh"/>.
+    /// </summary>
+    public string? Subtitle { get; set; }
+
     public object? Tag { get; set; }
 
     public TwGridTreeNodeCollection Nodes { get; }
@@ -205,6 +211,7 @@ public sealed class TwGridTree
         _grid = grid;
         grid.CellFormatting += OnCellFormatting;
         grid.RowPostPaint += OnRowPostPaint;
+        grid.CellPainting += OnCellPainting;
         grid.CellMouseClick += OnCellMouseClick;
         grid.CellMouseDoubleClick += OnCellMouseDoubleClick;
         grid.KeyDown += OnKeyDown;
@@ -243,6 +250,31 @@ public sealed class TwGridTree
             _indent = Math.Max(0, value);
             _grid.Invalidate();
         }
+    }
+
+    /// <summary>
+    /// Gives the muted second line of a node's name ("Line · 2 sub-groups") for nodes whose <see cref="TwGridTreeNode.Subtitle"/> is
+    /// <c>null</c>; <c>null</c> or an empty result = a single line. Rows with a second line are as tall as two lines need (never
+    /// shorter than the grid's row height) and draw the name in bold. Rebuilds the rows when set.
+    /// </summary>
+    public Func<TwGridTreeNode, string?>? SubtitleSelector
+    {
+        get => _subtitleSelector;
+        set
+        {
+            _subtitleSelector = value;
+            if (_column != null) Refresh();
+        }
+    }
+
+    private Func<TwGridTreeNode, string?>? _subtitleSelector;
+
+    /// <summary>The second line a node shows (<c>null</c> = none).</summary>
+    public string? GetSubtitle(TwGridTreeNode node)
+    {
+        if (node is null) throw new ArgumentNullException(nameof(node));
+        var text = node.Subtitle ?? _subtitleSelector?.Invoke(node);
+        return string.IsNullOrEmpty(text) ? null : text;
     }
 
     /// <summary>The node of a row (<c>null</c> for rows that are not part of the tree).</summary>
@@ -332,6 +364,7 @@ public sealed class TwGridTree
             _grid.Rows.Clear();
             if (_grid.ColumnCount == 0) return;
             var rows = new DataGridViewRow[_rows.Count];
+            int twoLineHeight = -1;
             for (int i = 0; i < _rows.Count; i++)
             {
                 var node = _rows[i];
@@ -340,6 +373,15 @@ public sealed class TwGridTree
                 var row = (DataGridViewRow)_grid.RowTemplate.Clone();
                 row.CreateCells(_grid);
                 foreach (DataGridViewColumn c in _grid.Columns) row.Cells[c.Index].Value = ValueOf(node, c);
+                // İkinci satırı olan düğüm iki satırlık yükseklik ister (şablondan kısa olamaz).
+                if (_column != null && GetSubtitle(node) is string subtitle)
+                {
+                    if (twoLineHeight < 0) twoLineHeight = TwoLineRowHeight();
+                    row.Height = Math.Max(row.Height, twoLineHeight);
+                    // Sütun kendi iki satırlı hücresiyse (TwTwoLineColumn) değer onu taşır.
+                    if (_column is TwTwoLineColumn && row.Cells[_column.Index].Value is not TwTwoLine)
+                        row.Cells[_column.Index].Value = new TwTwoLine(Convert.ToString(row.Cells[_column.Index].Value, System.Globalization.CultureInfo.CurrentCulture), subtitle);
+                }
                 row.Visible = node.IsVisible;
                 rows[i] = row;
             }
@@ -465,6 +507,25 @@ public sealed class TwGridTree
         if (cell.IsEmpty) return Rectangle.Empty;
         int x = cell.X + _column.InheritedStyle.Padding.Left + 2 + (int)Math.Round(node.Level * _indent * Scale);
         return new Rectangle(x, cell.Y, ArrowWidth, cell.Height);
+    }
+
+    // Yazı tipine ve DPI'a göre iki satırın istediği satır yüksekliği (aygıt pikseli).
+    private int TwoLineRowHeight()
+    {
+        var style = _column!.InheritedStyle;
+        var (title, subtitle) = TwTwoLineCell.Fonts(_column, style.Font ?? _grid.Font);
+        return TwTwoLinePainter.TextHeight(title, subtitle, Scale) + style.Padding.Vertical + (int)Math.Round(10 * Scale);
+    }
+
+    // İkinci satırı olan düğümün ağaç hücresi: arka plan ve kenarlık hep birlikte çizilir, yazı iki satır olarak.
+    private void OnCellPainting(object? sender, DataGridViewCellPaintingEventArgs e)
+    {
+        if (_column is null or TwTwoLineColumn || e.ColumnIndex != _column.Index || e.RowIndex < 0 || e.CellStyle is null
+            || NodeAt(e.RowIndex) is not TwGridTreeNode node || GetSubtitle(node) is not string subtitle) return;
+        e.Paint(e.ClipBounds, e.PaintParts & ~DataGridViewPaintParts.ContentForeground & ~DataGridViewPaintParts.ContentBackground);
+        // CellFormatting dolguya girinti, ok ve simge payını eklemiştir; iki satırlı çizim o dolgunun içine yazar.
+        TwTwoLineCellPainting.Paint(e.Graphics!, _grid, _column, e.CellBounds, e.State, e.CellStyle, new TwTwoLine(e.FormattedValue as string ?? "", subtitle), 0);
+        e.Handled = true;
     }
 
     // Oklar ve simgeler satır çizildikten sonra, dolgu alanına çizilir.

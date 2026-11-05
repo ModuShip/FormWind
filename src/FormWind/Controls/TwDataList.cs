@@ -914,6 +914,9 @@ public class TwDataList : Control, ITwTimed
 
     internal void Activate() => ItemActivate?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>Clickable parts inside a row (for screen readers); derived lists with such parts override it.</summary>
+    internal virtual IReadOnlyList<TwItemPartInfo> GetItemParts(int index) => Array.Empty<TwItemPartInfo>();
+
     protected override void OnLostFocus(EventArgs e)
     {
         base.OnLostFocus(e);

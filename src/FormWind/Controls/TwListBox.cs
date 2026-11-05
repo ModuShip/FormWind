@@ -96,10 +96,153 @@ public class TwListBox : TwDataList
     {
         if (!HasDrawItemHandler && e.Index < _items.Count && _items[e.Index] is TwListItem item)
         {
-            TwListItemPainter.Paint(this, e, item, Colors.Accent);
+            TwListItemPainter.Paint(this, e, item, Colors.Accent,
+                _hot.Index == e.Index ? _hot.Part : TwListItemPart.None, _pressed.Index == e.Index ? _pressed.Part : TwListItemPart.None);
             return;
         }
         base.OnDrawItem(e);
+    }
+
+    /// <summary>
+    /// When the user flips a <see cref="TwListItem"/>'s toggle icon (click, or Space on the selected row) or
+    /// <see cref="ToggleItem"/> is called; <see cref="TwListItem.IsToggled"/> already has the new value.
+    /// </summary>
+    public event EventHandler<TwListItemEventArgs>? ItemToggle;
+
+    /// <summary>
+    /// When the user presses a <see cref="TwListItem"/>'s action button (click, or Ctrl+Enter on the selected row) or
+    /// <see cref="PerformItemAction"/> is called.
+    /// </summary>
+    public event EventHandler<TwListItemEventArgs>? ItemActionClick;
+
+    private (int Index, TwListItemPart Part) _hot = (-1, TwListItemPart.None);
+    private (int Index, TwListItemPart Part) _pressed = (-1, TwListItemPart.None);
+
+    private TwListItem? ItemAt(int index) => index >= 0 && index < _items.Count ? _items[index] as TwListItem : null;
+
+    // Şablonun satır yerleşimi; DrawItem'ı olan listede ya da TwListItem olmayan satırda yoktur.
+    private TwListItemLayout? LayoutOf(int index)
+    {
+        if (HasDrawItemHandler || this is TwCheckedListBox || ItemAt(index) is not TwListItem item) return null;
+        return TwListItemPainter.Layout(this, item, GetItemBounds(index), Colors.Back.GetBrightness() < 0.5f);
+    }
+
+    /// <summary>The toggle icon's clickable area of a <see cref="TwListItem"/> row (list coordinates); empty when the row has none.</summary>
+    public Rectangle GetToggleBounds(int index)
+    {
+        var area = LayoutOf(index)?.Toggle ?? Rectangle.Empty;
+        return area.IsEmpty ? area : Rectangle.Inflate(area, ScalePixels(4), 0);
+    }
+
+    /// <summary>The action button's area of a <see cref="TwListItem"/> row (list coordinates); empty when the row has none.</summary>
+    public Rectangle GetActionBounds(int index) => LayoutOf(index)?.Action ?? Rectangle.Empty;
+
+    private (int Index, TwListItemPart Part) PartAt(Point point)
+    {
+        int index = IndexFromPoint(point);
+        if (index < 0) return (-1, TwListItemPart.None);
+        if (GetActionBounds(index) is { IsEmpty: false } action && action.Contains(point)) return (index, TwListItemPart.Action);
+        if (GetToggleBounds(index) is { IsEmpty: false } toggle && toggle.Contains(point)) return (index, TwListItemPart.Toggle);
+        return (index, TwListItemPart.None);
+    }
+
+    /// <summary>Flips the toggle of the item at <paramref name="index"/> and raises <see cref="ItemToggle"/>; nothing happens when the row has no toggle.</summary>
+    public void ToggleItem(int index)
+    {
+        if (ItemAt(index) is not TwListItem { ToggleIconName: not null } item) return;
+        item.IsToggled = !item.IsToggled;
+        Invalidate();
+        ItemToggle?.Invoke(this, new TwListItemEventArgs(index, item));
+    }
+
+    /// <summary>Raises <see cref="ItemActionClick"/> for the item at <paramref name="index"/>; nothing happens when the row has no action button.</summary>
+    public void PerformItemAction(int index)
+    {
+        if (ItemAt(index) is not TwListItem { ActionText: { Length: > 0 } } item) return;
+        ItemActionClick?.Invoke(this, new TwListItemEventArgs(index, item));
+    }
+
+    private void SetHot((int Index, TwListItemPart Part) hot)
+    {
+        if (_hot == hot) return;
+        _hot = hot;
+        Invalidate();
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        SetHot(PartAt(e.Location));
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        SetHot((-1, TwListItemPart.None));
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        (int Index, TwListItemPart Part) part = e.Button == MouseButtons.Left ? PartAt(e.Location) : (-1, TwListItemPart.None);
+        base.OnMouseDown(e);
+        if (part.Part == TwListItemPart.None) return;
+        _pressed = part;
+        Invalidate();
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        var pressed = _pressed;
+        if (pressed.Part == TwListItemPart.None) return;
+        _pressed = (-1, TwListItemPart.None);
+        Invalidate();
+        // Düğme üzerinde basılıp yine üzerinde bırakılırsa tıklanmış sayılır.
+        if (e.Button != MouseButtons.Left || PartAt(e.Location) != pressed) return;
+        if (pressed.Part == TwListItemPart.Toggle) ToggleItem(pressed.Index);
+        else PerformItemAction(pressed.Index);
+    }
+
+    protected override void OnMouseDoubleClick(MouseEventArgs e)
+    {
+        // Düğmeye art arda basmak satırı etkinleştirmez.
+        if (PartAt(e.Location).Part != TwListItemPart.None) return;
+        base.OnMouseDoubleClick(e);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!e.Alt && SelectedIndex >= 0 && ItemAt(SelectedIndex) is TwListItem item)
+        {
+            // Boşluk anahtar simgesini çevirir (çoklu seçimde Ctrl+Boşluk seçim içindir); Ctrl+Enter eylem düğmesine basar.
+            if (e.KeyCode == Keys.Space && !e.Control && !e.Shift && item.ToggleIconName != null)
+            {
+                ToggleItem(SelectedIndex);
+                e.Handled = true;
+                return;
+            }
+            if (e.KeyCode == Keys.Enter && e.Control && !string.IsNullOrEmpty(item.ActionText))
+            {
+                PerformItemAction(SelectedIndex);
+                e.Handled = true;
+                return;
+            }
+        }
+        base.OnKeyDown(e);
+    }
+
+    internal override IReadOnlyList<TwItemPartInfo> GetItemParts(int index)
+    {
+        if (ItemAt(index) is not TwListItem item || HasDrawItemHandler) return Array.Empty<TwItemPartInfo>();
+        var parts = new List<TwItemPartInfo>(2);
+        var layout = LayoutOf(index);
+        if (layout is null) return parts;
+        if (item.ToggleIconName != null)
+            parts.Add(new TwItemPartInfo(item.ToggleText ?? TwTexts.Current.Toggle, AccessibleRole.CheckButton,
+                item.IsToggled ? AccessibleStates.Checked : AccessibleStates.None, GetToggleBounds(index), TwTexts.Current.Toggle, () => ToggleItem(index)));
+        if (!string.IsNullOrEmpty(item.ActionText))
+            parts.Add(new TwItemPartInfo(item.ActionText!, AccessibleRole.PushButton, AccessibleStates.None, layout.Action, item.ActionText, () => PerformItemAction(index)));
+        return parts;
     }
 
     [Category("Data"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
