@@ -5,6 +5,69 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwMotionOptions.Completed` runs code once, on the UI thread, when a transition or window motion has fully finished
+  (`CrossFade`, `SlideIn`, `SlideOut`, `Resize`, `TwWindowMotion.SlideIn` and `FadeOut`): move a button to the toolbar after
+  the sidebar collapsed. When nothing is animated (animations off, zero duration, nothing to take a picture of, a panel that
+  is already in the asked state) it is called synchronously after the change is applied. There are no `Task`-returning
+  overloads; complete a `TaskCompletionSource` from `Completed` to `await` a motion.
+- `TwMotion.Timings.Scale` multiplies the duration and delay of every animation (default 1), like Android's animator
+  duration scale: set 5 to watch transitions in slow motion, 0 to make every animation immediate.
+- `TwTheme.Explain(classes)` describes what each class resolves to (`BackColor = #2563EB`, `[Hover] BackColor = #1D4ED8`),
+  with unknown classes flagged and their suggestion, so `Parse(...).Resolve(...)` is no longer needed to see a value.
+- `TwUnknownClassesEventArgs.Suggestions` holds the "did you mean" of each unknown class, and `ToString()` lists them.
+- FW004 analyzer: warns about malformed arbitrary values (a missing or wrong unit such as `duration-[120]`, unbalanced
+  brackets, a color that is not hex) in class strings given to `TailwindProvider.SetClasses`, `SetColumnClasses`,
+  `SetRowClasses` and `Classes` properties.
+- `TwListItem` row parts that remove the last owner-drawn lists: a clickable toggle icon (`ToggleIconName`, `ToggledIconName`,
+  `IsToggled`, `ToggleColor`, `ToggleText`), an inline action button (`ActionText`, `ActionClasses`) and an inline progress bar
+  with text (`ProgressValue`, `ProgressText`, `ProgressColor`). `TwListBox` raises `ItemToggle` and `ItemActionClick`
+  (`TwListItemEventArgs`), flips and presses them from the keyboard (Space, Ctrl+Enter) and from code (`ToggleItem`,
+  `PerformItemAction`), exposes the click areas (`GetToggleBounds`, `GetActionBounds`), shows hover and pressed looks, mirrors
+  in right-to-left layouts and offers the parts to screen readers as child objects of the row (`TwTexts.Toggle` names an
+  unnamed toggle).
+- `TwTwoLineColumn` and `TwTwoLine`: a table cell with a bold title, a muted second line and an optional status dot, with an
+  optional monospace title (`MonospaceTitle`) for record codes. The value is a `TwTwoLine`, or any value whose second line and dot
+  come from the row's data object (`SubtitleMember`, `DotColorMember`, `ValueSelector`). The cell reports the height of two
+  lines as its preferred height and `FitRowHeight()` sets the grid's rows to it; it follows selection colors, dark mode, DPI
+  and right-to-left layouts, and shares its drawing with `TwListItem` rows.
+- `TwGridTreeNode.Subtitle` and `TwGridTree.SubtitleSelector` give the tree column a bold name with a muted second line ("Line ·
+  2 sub-groups"); rows with a second line get the height two lines need. `TwGridTree.GetSubtitle(node)` returns it.
+- `TwBadgeColumn.Selector` (`Func<object?, TwBadge>`) chooses a badge's text and classes from the cell's value, so a "+12 %" chip
+  colored by sign or a "new" chip no longer needs a hand-drawn cell. It wins over `Variants`; `TwBadge` is a small struct
+  (`Text`, `Classes`) rather than a tuple, which is friendlier to .NET Framework callers and to the public API files. A `null`
+  text keeps the cell's text and an empty text draws no badge.
+- `TwDataList.Columns` (`TwDataListColumn`: `Text`, `Width`, `Weight`, `Alignment`, `Sortable`, `Key`), `ColumnGap`,
+  `TwDataListDrawEventArgs.GetColumnBounds(column)` and `TwDataList.GetColumnBounds(column, index)` line up the parts of a row
+  like a table. `TwDataList.CreateHeader()` returns a `TwDataListHeader` with the column names; a click, Enter or Space on a
+  sortable name toggles `SortColumn` / `SortOrder` (▴ / ▾) and raises `SortChanged` (the list does not sort the data). The
+  header is a tab stop (←/→, Home/End move between sortable columns) and its columns are accessible column headers that name
+  their sort state. `TwTexts.SortBy`, `SortedAscending` and `SortedDescending` hold the screen reader texts.
+- `TwFilterKind.Period`: a `TwFilterBar` filter whose value comes from a `TwPeriodPicker` panel opened under the chip
+  ("Tarih: Son 90 gün"). `TwFilter.Period` is the picker (presets, shifts), `TwFilterBar.GetPeriod(key)` returns the days and
+  `SetPeriod(key, start, end)` sets a custom range.
+- `TwOffscreen.Render(form)` pictures a whole window for visual regression tests: a form that is not shown yet is opened
+  off-screen, laid out and painted (motion off), and the content of the form and of every window it owns (`TwSheet`,
+  `TwPopover`, dialogs) is composed with `Opacity`, `TransparencyKey` and `Region` applied. `Control.DrawToBitmap` misses
+  the owned windows and the transparency. `TwOffscreenOptions` sets `IncludeOwned`, `ExpandToOwned`, `Background`,
+  `DisableMotion` and `CloseWhenDone`.
+- `TwCaptionButtons.ButtonStyle = TwCaptionButtonStyle.Dots` draws the minimize, maximize and close buttons as round yellow,
+  green and red dots whose glyphs appear while the mouse is over them (`CloseDotColor`, `MinimizeDotColor`,
+  `MaximizeDotColor`).
+- `TwHeatmap.HighlightTextColor` sets the header text color of `HighlightColumns` (a red Sunday); `TwHeatmap.SelectionColor`
+  sets the outline of the selected cell.
+- `TwDialogKind.None` shows a dialog without an icon; `TwDialog.Prompt(owner, options)` follows `options.Kind`.
+- Built-in icons `log-out` (`sign-out`), `sidebar`, `panel-right`, `wrench` (`tool`), `gauge` and `paperclip` (same glyph as
+  `attach`). The FW003 analyzer knows them.
+
+### Changed
+
+- Documentation: `TwMotionOptions.IncludeMargin` is for panels whose gap comes from `Margin` (FlowLayout, TableLayout, manual
+  layout); Dock layout ignores `Margin`. The README explains the wait before a `TwTransition.CrossFade` starts (the page's
+  paint time) and `TwMotion.Prewarm`, that `text-[..px]` sizes are 96 DPI pixels (an application's own scale factor scales them
+  twice), and that the FW003 analyzer only sees icon names given as literals (use `StyleError` / `TwIcons.IsKnown` for the rest).
+
 ### Fixed
 
 - `TwTransition.Resize(panel, change)` works for a sidebar that `change` hides or shows: a panel that is hidden before or
@@ -30,85 +93,11 @@ All notable changes to FormWind are documented in this file. The format follows
 
 - `TwToolbar` places its items at its padding, not at twice the padding, and gives them the full inner height; the
   preferred size no longer counts the padding twice.
-### Added
-
-- `TwMotionOptions.Completed` runs code once, on the UI thread, when a transition or window motion has fully finished
-  (`CrossFade`, `SlideIn`, `SlideOut`, `Resize`, `TwWindowMotion.SlideIn` and `FadeOut`): move a button to the toolbar after
-  the sidebar collapsed. When nothing is animated (animations off, zero duration, nothing to take a picture of, a panel that
-  is already in the asked state) it is called synchronously after the change is applied. There are no `Task`-returning
-  overloads; complete a `TaskCompletionSource` from `Completed` to `await` a motion.
-- `TwMotion.Timings.Scale` multiplies the duration and delay of every animation (default 1), like Android's animator
-  duration scale: set 5 to watch transitions in slow motion, 0 to make every animation immediate.
-- `TwTheme.Explain(classes)` describes what each class resolves to (`BackColor = #2563EB`, `[Hover] BackColor = #1D4ED8`),
-  with unknown classes flagged and their suggestion, so `Parse(...).Resolve(...)` is no longer needed to see a value.
-- `TwUnknownClassesEventArgs.Suggestions` holds the "did you mean" of each unknown class, and `ToString()` lists them.
-- FW004 analyzer: warns about malformed arbitrary values (a missing or wrong unit such as `duration-[120]`, unbalanced
-  brackets, a color that is not hex) in class strings given to `TailwindProvider.SetClasses`, `SetColumnClasses`,
-  `SetRowClasses` and `Classes` properties.
-
-### Behavior changes
-
 - `TwTheme.SuggestClass` (and so the Debug output and `UnknownClasses` suggestions) fixes an arbitrary value with a missing
   or wrong unit: `duration-[120]` suggests `duration-[120ms]`, `w-[120]` suggests `w-[120px]`.
 - `TwMotion.Timings.Reset()` also sets `Scale` back to 1.
 - The documentation of `UnknownClasses` and `StyleError` now says which reports what: a class FormWind does not recognize
   (including `duration-[120]`) goes to `UnknownClasses`; `StyleError` is for errors while applying styles.
-### Added
-
-- `TwListItem` row parts that remove the last owner-drawn lists: a clickable toggle icon (`ToggleIconName`, `ToggledIconName`,
-  `IsToggled`, `ToggleColor`, `ToggleText`), an inline action button (`ActionText`, `ActionClasses`) and an inline progress bar
-  with text (`ProgressValue`, `ProgressText`, `ProgressColor`). `TwListBox` raises `ItemToggle` and `ItemActionClick`
-  (`TwListItemEventArgs`), flips and presses them from the keyboard (Space, Ctrl+Enter) and from code (`ToggleItem`,
-  `PerformItemAction`), exposes the click areas (`GetToggleBounds`, `GetActionBounds`), shows hover and pressed looks, mirrors
-  in right-to-left layouts and offers the parts to screen readers as child objects of the row (`TwTexts.Toggle` names an
-  unnamed toggle).
-- `TwTwoLineColumn` and `TwTwoLine`: a table cell with a bold title, a muted second line and an optional status dot, with an
-  optional monospace title (`MonospaceTitle`) for record codes. The value is a `TwTwoLine`, or any value whose second line and dot
-  come from the row's data object (`SubtitleMember`, `DotColorMember`, `ValueSelector`). The cell reports the height of two
-  lines as its preferred height and `FitRowHeight()` sets the grid's rows to it; it follows selection colors, dark mode, DPI
-  and right-to-left layouts, and shares its drawing with `TwListItem` rows.
-- `TwGridTreeNode.Subtitle` and `TwGridTree.SubtitleSelector` give the tree column a bold name with a muted second line ("Line ·
-  2 sub-groups"); rows with a second line get the height two lines need. `TwGridTree.GetSubtitle(node)` returns it.
-### Added
-
-- `TwBadgeColumn.Selector` (`Func<object?, TwBadge>`) chooses a badge's text and classes from the cell's value, so a "+12 %" chip
-  colored by sign or a "new" chip no longer needs a hand-drawn cell. It wins over `Variants`; `TwBadge` is a small struct
-  (`Text`, `Classes`) rather than a tuple, which is friendlier to .NET Framework callers and to the public API files. A `null`
-  text keeps the cell's text and an empty text draws no badge.
-- `TwDataList.Columns` (`TwDataListColumn`: `Text`, `Width`, `Weight`, `Alignment`, `Sortable`, `Key`), `ColumnGap`,
-  `TwDataListDrawEventArgs.GetColumnBounds(column)` and `TwDataList.GetColumnBounds(column, index)` line up the parts of a row
-  like a table. `TwDataList.CreateHeader()` returns a `TwDataListHeader` with the column names; a click, Enter or Space on a
-  sortable name toggles `SortColumn` / `SortOrder` (▴ / ▾) and raises `SortChanged` (the list does not sort the data). The
-  header is a tab stop (←/→, Home/End move between sortable columns) and its columns are accessible column headers that name
-  their sort state. `TwTexts.SortBy`, `SortedAscending` and `SortedDescending` hold the screen reader texts.
-- `TwFilterKind.Period`: a `TwFilterBar` filter whose value comes from a `TwPeriodPicker` panel opened under the chip
-  ("Tarih: Son 90 gün"). `TwFilter.Period` is the picker (presets, shifts), `TwFilterBar.GetPeriod(key)` returns the days and
-  `SetPeriod(key, start, end)` sets a custom range.
-
-### Changed
-
-- Documentation: `TwMotionOptions.IncludeMargin` is for panels whose gap comes from `Margin` (FlowLayout, TableLayout, manual
-  layout); Dock layout ignores `Margin`. The README explains the wait before a `TwTransition.CrossFade` starts (the page's
-  paint time) and `TwMotion.Prewarm`, that `text-[..px]` sizes are 96 DPI pixels (an application's own scale factor scales them
-  twice), and that the FW003 analyzer only sees icon names given as literals (use `StyleError` / `TwIcons.IsKnown` for the rest).
-### Added
-
-- `TwOffscreen.Render(form)` pictures a whole window for visual regression tests: a form that is not shown yet is opened
-  off-screen, laid out and painted (motion off), and the content of the form and of every window it owns (`TwSheet`,
-  `TwPopover`, dialogs) is composed with `Opacity`, `TransparencyKey` and `Region` applied. `Control.DrawToBitmap` misses
-  the owned windows and the transparency. `TwOffscreenOptions` sets `IncludeOwned`, `ExpandToOwned`, `Background`,
-  `DisableMotion` and `CloseWhenDone`.
-- `TwCaptionButtons.ButtonStyle = TwCaptionButtonStyle.Dots` draws the minimize, maximize and close buttons as round yellow,
-  green and red dots whose glyphs appear while the mouse is over them (`CloseDotColor`, `MinimizeDotColor`,
-  `MaximizeDotColor`).
-- `TwHeatmap.HighlightTextColor` sets the header text color of `HighlightColumns` (a red Sunday); `TwHeatmap.SelectionColor`
-  sets the outline of the selected cell.
-- `TwDialogKind.None` shows a dialog without an icon; `TwDialog.Prompt(owner, options)` follows `options.Kind`.
-- Built-in icons `log-out` (`sign-out`), `sidebar`, `panel-right`, `wrench` (`tool`), `gauge` and `paperclip` (same glyph as
-  `attach`). The FW003 analyzer knows them.
-
-### Behavior changes
-
 - The outline of the selected `TwHeatmap` cell is drawn in the control's text color by default instead of `accent-*`,
   which blended into a scale in the accent color. Set `SelectionColor` to bring a colored outline back.
 - `TwDialog` takes the surface of the theme's `card` component when `TwDialog.LightBackColor` / `DarkBackColor` and
