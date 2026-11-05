@@ -17,3 +17,11 @@ FW002 | FormWind | Warning | FontScalingAnalyzer
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 FW003 | FormWind | Warning | UnknownIconAnalyzer
+
+## Release 0.1.6
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+FW004 | FormWind | Warning | MalformedClassAnalyzer

@@ -5,6 +5,8 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.6-preview.1] - 2026-11-05
+
 ### Added
 
 - `TwMotionOptions.Completed` runs code once, on the UI thread, when a transition or window motion has fully finished
@@ -531,7 +533,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.5-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.1...HEAD
+[0.1.6-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.5-preview.1...v0.1.6-preview.1
 [0.1.5-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.4-preview.1...v0.1.5-preview.1
 [0.1.4-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.3-preview.1...v0.1.4-preview.1
 [0.1.3-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.2-preview.1...v0.1.3-preview.1
