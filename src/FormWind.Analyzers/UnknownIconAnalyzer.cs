@@ -39,7 +39,8 @@ public sealed class UnknownIconAnalyzer : DiagnosticAnalyzer
         "grid", "heart", "heart-filled", "help", "history", "home", "image", "info", "key", "link", "list", "location", "lock",
         "mail", "map-pin", "menu", "minus", "moon", "more", "paste", "phone", "pin", "plus", "power", "print", "redo", "refresh",
         "save", "search", "send", "settings", "share", "shield", "sort", "star", "star-filled", "sun", "sync", "tag", "trash",
-        "undo", "unlock", "upload", "user", "users", "warning", "x", "zoom-in", "zoom-out");
+        "undo", "unlock", "upload", "user", "users", "warning", "x", "zoom-in", "zoom-out",
+        "log-out", "sign-out", "sidebar", "panel-right", "wrench", "tool", "gauge", "paperclip");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 

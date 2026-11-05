@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -336,9 +337,23 @@ public sealed class TwWindowChrome
     private static extern int GetSystemMetricsForDpi(int index, uint dpi);
 }
 
+/// <summary>How <see cref="TwCaptionButtons"/> draws its buttons.</summary>
+public enum TwCaptionButtonStyle
+{
+    /// <summary>Wide rectangular buttons with line glyphs, like Windows' own; the close button turns red under the mouse.</summary>
+    Windows,
+
+    /// <summary>
+    /// Three round colored dots in a row (close red, minimize yellow, maximize green); the glyphs appear on all of them
+    /// while the mouse is over the group.
+    /// </summary>
+    Dots,
+}
+
 /// <summary>
-/// Minimize, maximize / restore and close buttons drawn like Windows' own, for a window without a title bar
-/// (<see cref="TwWindowChrome"/>). Glyphs use <c>ForeColor</c>; the close button turns red under the mouse.
+/// Minimize, maximize / restore and close buttons for a window without a title bar (<see cref="TwWindowChrome"/>), drawn
+/// like Windows' own (<see cref="TwCaptionButtonStyle.Windows"/>) or as colored dots (<see cref="TwCaptionButtonStyle.Dots"/>).
+/// Glyphs use <c>ForeColor</c>; the close button turns red under the mouse.
 /// </summary>
 [ToolboxItem(true)]
 [Description("Minimize, maximize and close buttons for a window without a title bar.")]
@@ -347,6 +362,7 @@ public class TwCaptionButtons : Control
     private int _hover = -1;
     private int _pressed = -1;
     private Form? _form;
+    private TwCaptionButtonStyle _buttonStyle;
 
     public TwCaptionButtons()
     {
@@ -367,6 +383,42 @@ public class TwCaptionButtons : Control
     [Category("Behavior"), DefaultValue(true)]
     public bool ShowMaximize { get; set; } = true;
 
+    /// <summary>
+    /// <see cref="TwCaptionButtonStyle.Windows"/> (default) or <see cref="TwCaptionButtonStyle.Dots"/>. Switching resizes a
+    /// docked or free control that still has the previous style's preferred width.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(TwCaptionButtonStyle.Windows)]
+    public TwCaptionButtonStyle ButtonStyle
+    {
+        get => _buttonStyle;
+        set
+        {
+            if (_buttonStyle == value) return;
+            bool fitted = Width == GetPreferredSize(Size.Empty).Width;
+            _buttonStyle = value;
+            if (fitted && (Dock == DockStyle.None || Dock == DockStyle.Left || Dock == DockStyle.Right)) Width = GetPreferredSize(Size.Empty).Width;
+            Invalidate();
+        }
+    }
+
+    /// <summary>Color of the close dot (<see cref="TwCaptionButtonStyle.Dots"/>).</summary>
+    [Category("Appearance")]
+    public Color CloseDotColor { get; set; } = ColorTranslator.FromHtml("#ef4444");
+
+    /// <summary>Color of the minimize dot (<see cref="TwCaptionButtonStyle.Dots"/>).</summary>
+    [Category("Appearance")]
+    public Color MinimizeDotColor { get; set; } = ColorTranslator.FromHtml("#f59e0b");
+
+    /// <summary>Color of the maximize / restore dot (<see cref="TwCaptionButtonStyle.Dots"/>).</summary>
+    [Category("Appearance")]
+    public Color MaximizeDotColor { get; set; } = ColorTranslator.FromHtml("#22c55e");
+
+    private bool ShouldSerializeCloseDotColor() => CloseDotColor.ToArgb() != ColorTranslator.FromHtml("#ef4444").ToArgb();
+
+    private bool ShouldSerializeMinimizeDotColor() => MinimizeDotColor.ToArgb() != ColorTranslator.FromHtml("#f59e0b").ToArgb();
+
+    private bool ShouldSerializeMaximizeDotColor() => MaximizeDotColor.ToArgb() != ColorTranslator.FromHtml("#22c55e").ToArgb();
+
     /// <summary>Background of the close button under the mouse.</summary>
     [Category("Appearance")]
     public Color CloseHoverBackColor { get; set; } = ColorTranslator.FromHtml("#c42b1c");
@@ -379,7 +431,16 @@ public class TwCaptionButtons : Control
 
     private int Count => 1 + (ShowMinimize ? 1 : 0) + (ShowMaximize ? 1 : 0);
 
-    public override Size GetPreferredSize(Size proposedSize) => new Size(ButtonWidth * Count, (int)Math.Round(32 * DpiScale));
+    // Noktalar: 12 px çap, 8 px aralık, iki yanda 12 px boşluk.
+    private int DotSize => (int)Math.Round(12 * DpiScale);
+
+    private int DotGap => (int)Math.Round(8 * DpiScale);
+
+    private int DotPad => (int)Math.Round(12 * DpiScale);
+
+    public override Size GetPreferredSize(Size proposedSize) => _buttonStyle == TwCaptionButtonStyle.Dots
+        ? new Size(2 * DotPad + Count * DotSize + (Count - 1) * DotGap, (int)Math.Round(32 * DpiScale))
+        : new Size(ButtonWidth * Count, (int)Math.Round(32 * DpiScale));
 
     // Düğme sırası: küçült, büyüt, kapat (sağdan sola dillerde ayna).
     private enum Kind
@@ -391,6 +452,7 @@ public class TwCaptionButtons : Control
 
     private List<(Kind Kind, Rectangle Bounds)> Buttons()
     {
+        if (_buttonStyle == TwCaptionButtonStyle.Dots) return DotButtons();
         var kinds = new List<Kind>();
         if (ShowMinimize) kinds.Add(Kind.Minimize);
         if (ShowMaximize) kinds.Add(Kind.Maximize);
@@ -406,6 +468,36 @@ public class TwCaptionButtons : Control
             result.Add((kinds[i], new Rectangle(x, 0, width, Height)));
         }
         return result;
+    }
+
+    // Noktalar soldan sağa: kapat, küçült, büyüt (sağdan sola dillerde ayna). Tıklama alanı noktayı ve yarım boşluğu kapsar;
+    // uçtaki alanlar kenara kadar uzanır.
+    private List<(Kind Kind, Rectangle Bounds)> DotButtons()
+    {
+        var kinds = new List<Kind> { Kind.Close };
+        if (ShowMinimize) kinds.Add(Kind.Minimize);
+        if (ShowMaximize) kinds.Add(Kind.Maximize);
+        int dot = DotSize, gap = DotGap;
+        bool rtl = TwRtl.NeedsMirroring(this);
+        var result = new List<(Kind, Rectangle)>();
+        for (int i = 0; i < kinds.Count; i++)
+        {
+            int left = i == 0 ? 0 : DotPad + i * (dot + gap) - gap / 2;
+            int right = i == kinds.Count - 1 ? DotPad * 2 + kinds.Count * dot + (kinds.Count - 1) * gap : DotPad + i * (dot + gap) + dot + (gap - gap / 2);
+            var bounds = new Rectangle(left, 0, right - left, Height);
+            if (rtl) bounds.X = Width - bounds.Right;
+            result.Add((kinds[i], bounds));
+        }
+        return result;
+    }
+
+    // Noktanın kendi dairesi (çizim); tıklama alanı DotButtons'ta.
+    private Rectangle DotCircle(int index)
+    {
+        int dot = DotSize;
+        int x = DotPad + index * (dot + DotGap);
+        if (TwRtl.NeedsMirroring(this)) x = Width - x - dot;
+        return new Rectangle(x, (Height - dot) / 2, dot, dot);
     }
 
     private int IndexAt(Point point)
@@ -472,6 +564,16 @@ public class TwCaptionButtons : Control
         }
     }
 
+    /// <summary>The button at a client point as the number <see cref="Press"/> takes (0 minimize, 1 maximize, 2 close), or -1.</summary>
+    internal int KindAt(Point point)
+    {
+        int index = IndexAt(point);
+        return index < 0 ? -1 : (int)Buttons()[index].Kind;
+    }
+
+    /// <summary>The click areas, in button order (tests).</summary>
+    internal IReadOnlyList<Rectangle> ButtonBounds() => Buttons().Select(b => b.Bounds).ToList();
+
     /// <summary>Does what the button of that kind does: <c>0</c> minimize, <c>1</c> maximize / restore, <c>2</c> close.</summary>
     internal void Press(int kind) => PerformAction((Kind)kind);
 
@@ -483,6 +585,11 @@ public class TwCaptionButtons : Control
         float s = DpiScale;
         var buttons = Buttons();
         bool maximized = FindForm()?.WindowState == FormWindowState.Maximized;
+        if (_buttonStyle == TwCaptionButtonStyle.Dots)
+        {
+            PaintDots(g, buttons, s, maximized);
+            return;
+        }
         for (int i = 0; i < buttons.Count; i++)
         {
             var (kind, bounds) = buttons[i];
@@ -519,6 +626,53 @@ public class TwCaptionButtons : Control
             }
             g.SmoothingMode = smoothing;
         }
+    }
+
+    // Renkli noktalar; fare grubun üstündeyken üçünde de simge görünür, basılı nokta koyulaşır.
+    private void PaintDots(Graphics g, List<(Kind Kind, Rectangle Bounds)> buttons, float s, bool maximized)
+    {
+        var smoothing = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        bool showGlyphs = _hover >= 0;
+        for (int i = 0; i < buttons.Count; i++)
+        {
+            var kind = buttons[i].Kind;
+            var circle = DotCircle(i);
+            var color = kind switch { Kind.Close => CloseDotColor, Kind.Minimize => MinimizeDotColor, _ => MaximizeDotColor };
+            if (!Enabled) color = TwCharts.Blend(color, Color.Gray, 0.6f);
+            else if (i == _pressed) color = TwCharts.Blend(color, Color.Black, 0.25f);
+            using (var fill = new SolidBrush(color)) g.FillEllipse(fill, circle);
+            using (var rim = new Pen(Color.FromArgb(48, 0, 0, 0), Math.Max(1f, s)))
+                g.DrawEllipse(rim, circle.Left + 0.5f, circle.Top + 0.5f, circle.Width - 1, circle.Height - 1);
+            if (!showGlyphs) continue;
+            using var pen = new Pen(Color.FromArgb(170, 0, 0, 0), Math.Max(1f, s)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            float cx = circle.Left + circle.Width / 2f, cy = circle.Top + circle.Height / 2f, r = circle.Width * 0.2f;
+            switch (kind)
+            {
+                case Kind.Close:
+                    g.DrawLine(pen, cx - r, cy - r, cx + r, cy + r);
+                    g.DrawLine(pen, cx + r, cy - r, cx - r, cy + r);
+                    break;
+                case Kind.Minimize:
+                    g.DrawLine(pen, cx - r, cy, cx + r, cy);
+                    break;
+                case Kind.Maximize when maximized:
+                    // Önceki boyuta dön: içe doğru iki ok ucu.
+                    g.DrawLine(pen, cx - r, cy + r * 0.1f, cx - r * 0.1f, cy + r * 0.1f);
+                    g.DrawLine(pen, cx - r * 0.1f, cy + r * 0.1f, cx - r * 0.1f, cy + r);
+                    g.DrawLine(pen, cx + r, cy - r * 0.1f, cx + r * 0.1f, cy - r * 0.1f);
+                    g.DrawLine(pen, cx + r * 0.1f, cy - r * 0.1f, cx + r * 0.1f, cy - r);
+                    break;
+                default:
+                    // Büyüt: köşelere doğru iki ok ucu.
+                    g.DrawLine(pen, cx + r, cy - r, cx + r, cy - r * 0.1f);
+                    g.DrawLine(pen, cx + r, cy - r, cx + r * 0.1f, cy - r);
+                    g.DrawLine(pen, cx - r, cy + r, cx - r, cy + r * 0.1f);
+                    g.DrawLine(pen, cx - r, cy + r, cx - r * 0.1f, cy + r);
+                    break;
+            }
+        }
+        g.SmoothingMode = smoothing;
     }
 
     protected override void Dispose(bool disposing)

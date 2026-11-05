@@ -78,6 +78,8 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private int _hover = -1;
     private int _selected = -1;
     private IReadOnlyList<int> _highlightColumns = Array.Empty<int>();
+    private Color _highlightTextColor = Color.Empty;
+    private Color _selectionColor = Color.Empty;
     private Size _cellSize = Size.Empty;
     private Point? _mouse;
     private TwChartColors _colors = new TwChartColors();
@@ -329,8 +331,8 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     }
 
     /// <summary>
-    /// The selected cell as <c>row × ColumnCount + column</c> (-1 = none), drawn with an <c>accent-*</c> outline that stays
-    /// when the mouse moves on. Set it from code, or turn <see cref="SelectOnClick"/> on so a click or Enter selects the cell
+    /// The selected cell as <c>row × ColumnCount + column</c> (-1 = none), drawn with an outline in <see cref="SelectionColor"/>
+    /// (the text color by default, so it stands out from a scale in the accent color) that stays when the mouse moves on. Set it from code, or turn <see cref="SelectOnClick"/> on so a click or Enter selects the cell
     /// (before <see cref="CellClick"/>).
     /// </summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -368,6 +370,44 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             Invalidate();
         }
     }
+
+    /// <summary>
+    /// Text color of the labels of <see cref="HighlightColumns"/> (a Sunday header in red without the application covering it);
+    /// empty (the default) = the control's text color.
+    /// </summary>
+    [Category("Appearance")]
+    public Color HighlightTextColor
+    {
+        get => _highlightTextColor;
+        set
+        {
+            _highlightTextColor = value;
+            Invalidate();
+        }
+    }
+
+    private bool ShouldSerializeHighlightTextColor() => !_highlightTextColor.IsEmpty;
+
+    private void ResetHighlightTextColor() => HighlightTextColor = Color.Empty;
+
+    /// <summary>
+    /// Outline color of the selected cell (<see cref="SelectedIndex"/>); empty (the default) = the control's text color, which
+    /// stays visible on every shade of the scale. Before 0.1.6 the outline used <c>accent-*</c>, which blends into an accent scale.
+    /// </summary>
+    [Category("Appearance")]
+    public Color SelectionColor
+    {
+        get => _selectionColor;
+        set
+        {
+            _selectionColor = value;
+            Invalidate();
+        }
+    }
+
+    private bool ShouldSerializeSelectionColor() => !_selectionColor.IsEmpty;
+
+    private void ResetSelectionColor() => SelectionColor = Color.Empty;
 
     /// <summary>
     /// Fixed size of a cell (96 DPI pixels); <see cref="Size.Empty"/> (the default) fills the control. A width or height of 0
@@ -681,7 +721,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             foreach (var part in parts)
             {
                 var size = TextRenderer.MeasureText(part, Font, Size.Empty, Flags);
-                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), highlighted ? ForeColor : muted, Flags);
+                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), highlighted ? (_highlightTextColor.IsEmpty ? ForeColor : _highlightTextColor) : muted, Flags);
                 y += line;
             }
         }
@@ -700,7 +740,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                 if (double.IsNaN(value)) PaintEmptyCell(g, box, radius, s, surface);
                 else TwPainter.FillRounded(g, box, radius, color);
                 if (r * columns + c == _selected)
-                    TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, _colors.Accent ?? TwCharts.SeriesColor(0, _colors.Dark, null));
+                    TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, _selectionColor.IsEmpty ? ForeColor : _selectionColor);
                 else if (r * columns + c == _hover)
                     TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, ForeColor);
                 if (_showValues && !double.IsNaN(value))

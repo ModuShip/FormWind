@@ -302,7 +302,7 @@ this.tailwindProvider1.SetClasses(this.icoCustomer, "text-xl text-blue-600 dark:
 this.btnSave.IconName = "save";
 ```
 
-Built-in names: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `mail`, `map-pin`, `menu`, `minus`, `more`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sort`, `star`, `star-filled`, `sync`, `tag`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `x`, `zoom-in`, `zoom-out`.
+Built-in names: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
 
 Any glyph of the font can also be used by code point (`IconName = "#E8A5"`). Extra names and a different icon font come from the theme file:
 
@@ -663,7 +663,7 @@ The file is added on top of the default palette and components (or the preset ch
 | `TwPeriodPicker` | Period picker (looks like a `TwSelect`): presets (`Presets`: today, yesterday, last 7 / 30 / 90 days, this month, last month, this year), "Custom range…" and a calendar where two clicks pick a range, in a popover; with `Shifts`, a shift segment on top. `Start`, `End` (a preset moves on with the date), `Shift`, `PeriodChanged`; ↑/↓ on the closed box step through the presets. |
 | `TwCommandPalette` | Ctrl+K command palette (component): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) are filtered as you type (ignoring case and accents, prefix matches first) under group headings; ↑/↓, Enter, Esc. `AddSearch("records", q => …)` adds a "Search … in records" row for the query, `QueryCommands` adds rows of its own. `Attach(form)` listens for the shortcut anywhere in the form. |
 | `TwSheet` | Opens a form as a frameless sheet inside its owner, with the owner dimmed behind it (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)`, or with `FullScreen = true` a sheet that fills the owner. After `TwSheet.Attach(this)`, existing `ShowDialog(this)` calls open sheets without code changes (`Filter` picks which); `DialogResult` and `AcceptButton`/`CancelButton` work as before, and the form gets its frame back when it closes. |
-| `TwWindowChrome`, `TwCaptionButtons` | Window without a title bar: `TwWindowChrome.Attach(this)` removes the caption so the content reaches the top edge (a side bar or tool bar takes its place). Empty areas of the form and of the surfaces given to `AddDragSurface` (with their labels and icons) move the window; double-click maximizes, dragging to a screen edge snaps (Aero Snap), right-click opens the system menu, and the edges resize (the top edge within `ResizeBorder`). `TwCaptionButtons` are the minimize / maximize / close buttons. |
+| `TwWindowChrome`, `TwCaptionButtons` | Window without a title bar: `TwWindowChrome.Attach(this)` removes the caption so the content reaches the top edge (a side bar or tool bar takes its place). Empty areas of the form and of the surfaces given to `AddDragSurface` (with their labels and icons) move the window; double-click maximizes, dragging to a screen edge snaps (Aero Snap), right-click opens the system menu, and the edges resize (the top edge within `ResizeBorder`). `TwCaptionButtons` are the minimize / maximize / close buttons; `ButtonStyle = TwCaptionButtonStyle.Dots` draws them as round red / yellow / green dots (glyphs appear while the mouse is over them; `CloseDotColor`, `MinimizeDotColor`, `MaximizeDotColor`). |
 
 ### TwDataList
 
@@ -743,6 +743,8 @@ breakdown.Kind = TwChartKind.HorizontalBar;      // one row per category with it
 heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN cells: hatched gray, "No production" in the legend and tooltip
 heatmap.EmptyCellText = "No production";
 heatmap.HighlightColumns = new[] { today };    // faint band behind today's column
+heatmap.HighlightTextColor = Color.Crimson;    // their header text (a red Sunday) without covering the header in code
+heatmap.SelectionColor = Color.Empty;          // outline of the selected cell: the text color by default (was accent-*, lost on a blue scale)
 heatmap.CellSize = new Size(28, 22);           // fixed cells instead of filling the control
 var cell = heatmap.GetCellBounds(row, column);   // place a popover next to the selected cell (SelectedIndex)
 
@@ -792,7 +794,7 @@ TwToast.Show(this, "Order saved", TwDialogKind.Success);
 
 - **`TwDialog`** (instead of MessageBox): icon, title, message and right-aligned buttons; Enter is the default, Esc cancels/answers no. Follows the owner form's dark mode. Button texts come from [`TwTexts`](#localization) and can be overridden one by one with `TwDialog.Texts[DialogResult.Yes] = "Delete"`; `TwDialog.Create(...)` allows customization before showing.
 - **Text input:** `TwDialog.Prompt(this, "Name of the saved search", "Save search", placeholder: "e.g. Line 2 · night shift", validator: name => names.Contains(name) ? "This name is taken." : null)` returns the trimmed text, or `null` when cancelled. `TwDialog.Prompt(this, new TwDialogOptions { Message = …, OkText = "Save", InputMaxLength = 40 })` names the button after the action and limits the length.
-- **Surface:** dark dialogs are `gray-800` unless `TwDialog.DarkBackColor` (app-wide, e.g. `#2a2a2c`) or `TwDialogOptions.BackColor` gives the application's own surface. With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
+- **Surface:** dialogs take the surface of the theme's `card` component (white; `surface-800` in dark mode) unless `TwDialog.LightBackColor` / `DarkBackColor` (app-wide, e.g. `#2a2a2c`) or `TwDialogOptions.BackColor` gives the application's own surface. `Kind = TwDialogKind.None` leaves the icon out (also for `Prompt`). With `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) any dialog gets a text box; OK checks it and keeps the dialog open with the error under the box.
 - **`TwToast`**: a notification that stacks in a corner of the owner form (bottom-right by default, `TwToast.Position`), does not steal focus, pauses while hovered and closes by itself (`DefaultDuration` 4 s). Announced to screen readers as an Alert.
 
 ## Localization
@@ -1291,6 +1293,15 @@ $env:FORMWIND_INVARIANT_SEED = "162"; dotnet test tests/FormWind.Tests --filter 
 ```
 
 For every bug these tests found, `ApplierTests` also keeps an explicit regression test; seeds may not reproduce the same scenario if the generator changes.
+
+### Pictures of whole windows (`TwOffscreen`)
+
+`Control.DrawToBitmap` leaves out the windows a form owns (`TwSheet`, `TwPopover`, dialogs) and ignores opacity and transparent areas. `TwOffscreen.Render(form)` returns a 32-bit bitmap of the whole window for visual regression tests: a form that is not shown yet is opened far off-screen (never visible, out of the taskbar), laid out and painted with motion switched off, its content and that of every window it owns are asked from Windows (`PrintWindow`) and composed in z-order with `Opacity`, `TransparencyKey` and `Region` applied. `TwOffscreenOptions` chooses `IncludeOwned`, `ExpandToOwned` (a picture as large as the form and its sheets together), `Background`, `DisableMotion` and `CloseWhenDone`; a form that was already visible is pictured where it is.
+
+```csharp
+using var picture = TwOffscreen.Render(form);
+picture.Save("login-dark.png");
+```
 
 ### Trying real applications (harness)
 

@@ -43,6 +43,10 @@ public static class TwIcons
 
         // Durum
         ["info"] = '', ["warning"] = '', ["error"] = '', ["help"] = '',
+
+        // Sonradan eklenenler (Segoe Fluent Icons ve MDL2'de aynı kod noktaları)
+        ["log-out"] = '', ["sign-out"] = '', ["sidebar"] = '', ["panel-right"] = '',
+        ["wrench"] = '', ["tool"] = '', ["gauge"] = '', ["paperclip"] = '',
     };
 
     /// <summary>The first installed icon font; when none is installed (Windows 7/8) "Segoe MDL2 Assets" is returned and icons are not drawn.</summary>

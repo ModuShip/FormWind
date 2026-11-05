@@ -91,6 +91,29 @@ All notable changes to FormWind are documented in this file. The format follows
   layout); Dock layout ignores `Margin`. The README explains the wait before a `TwTransition.CrossFade` starts (the page's
   paint time) and `TwMotion.Prewarm`, that `text-[..px]` sizes are 96 DPI pixels (an application's own scale factor scales them
   twice), and that the FW003 analyzer only sees icon names given as literals (use `StyleError` / `TwIcons.IsKnown` for the rest).
+### Added
+
+- `TwOffscreen.Render(form)` pictures a whole window for visual regression tests: a form that is not shown yet is opened
+  off-screen, laid out and painted (motion off), and the content of the form and of every window it owns (`TwSheet`,
+  `TwPopover`, dialogs) is composed with `Opacity`, `TransparencyKey` and `Region` applied. `Control.DrawToBitmap` misses
+  the owned windows and the transparency. `TwOffscreenOptions` sets `IncludeOwned`, `ExpandToOwned`, `Background`,
+  `DisableMotion` and `CloseWhenDone`.
+- `TwCaptionButtons.ButtonStyle = TwCaptionButtonStyle.Dots` draws the minimize, maximize and close buttons as round yellow,
+  green and red dots whose glyphs appear while the mouse is over them (`CloseDotColor`, `MinimizeDotColor`,
+  `MaximizeDotColor`).
+- `TwHeatmap.HighlightTextColor` sets the header text color of `HighlightColumns` (a red Sunday); `TwHeatmap.SelectionColor`
+  sets the outline of the selected cell.
+- `TwDialogKind.None` shows a dialog without an icon; `TwDialog.Prompt(owner, options)` follows `options.Kind`.
+- Built-in icons `log-out` (`sign-out`), `sidebar`, `panel-right`, `wrench` (`tool`), `gauge` and `paperclip` (same glyph as
+  `attach`). The FW003 analyzer knows them.
+
+### Behavior changes
+
+- The outline of the selected `TwHeatmap` cell is drawn in the control's text color by default instead of `accent-*`,
+  which blended into a scale in the accent color. Set `SelectionColor` to bring a colored outline back.
+- `TwDialog` takes the surface of the theme's `card` component when `TwDialog.LightBackColor` / `DarkBackColor` and
+  `TwDialogOptions.BackColor` are not set, so dark dialogs follow the theme's palette instead of the bluish `gray-800`.
+  Set `TwDialog.DarkBackColor` to keep the old color.
 
 ## [0.1.5-preview.1] - 2026-11-04
 

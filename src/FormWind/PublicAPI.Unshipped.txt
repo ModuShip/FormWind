@@ -137,3 +137,34 @@ override FormWind.TwDataListHeader.OnMouseLeave(System.EventArgs! e) -> void
 override FormWind.TwDataListHeader.OnMouseMove(System.Windows.Forms.MouseEventArgs! e) -> void
 override FormWind.TwDataListHeader.OnMouseUp(System.Windows.Forms.MouseEventArgs! e) -> void
 override FormWind.TwDataListHeader.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+FormWind.TwDialogKind.None = 5 -> FormWind.TwDialogKind
+FormWind.TwHeatmap.HighlightTextColor.get -> System.Drawing.Color
+FormWind.TwHeatmap.HighlightTextColor.set -> void
+FormWind.TwHeatmap.SelectionColor.get -> System.Drawing.Color
+FormWind.TwHeatmap.SelectionColor.set -> void
+FormWind.TwCaptionButtons.ButtonStyle.get -> FormWind.TwCaptionButtonStyle
+FormWind.TwCaptionButtons.ButtonStyle.set -> void
+FormWind.TwCaptionButtons.CloseDotColor.get -> System.Drawing.Color
+FormWind.TwCaptionButtons.CloseDotColor.set -> void
+FormWind.TwCaptionButtons.MaximizeDotColor.get -> System.Drawing.Color
+FormWind.TwCaptionButtons.MaximizeDotColor.set -> void
+FormWind.TwCaptionButtons.MinimizeDotColor.get -> System.Drawing.Color
+FormWind.TwCaptionButtons.MinimizeDotColor.set -> void
+FormWind.TwCaptionButtonStyle
+FormWind.TwCaptionButtonStyle.Dots = 1 -> FormWind.TwCaptionButtonStyle
+FormWind.TwCaptionButtonStyle.Windows = 0 -> FormWind.TwCaptionButtonStyle
+FormWind.TwOffscreen
+FormWind.TwOffscreenOptions
+FormWind.TwOffscreenOptions.Background.get -> System.Drawing.Color
+FormWind.TwOffscreenOptions.Background.set -> void
+FormWind.TwOffscreenOptions.CloseWhenDone.get -> bool
+FormWind.TwOffscreenOptions.CloseWhenDone.set -> void
+FormWind.TwOffscreenOptions.DisableMotion.get -> bool
+FormWind.TwOffscreenOptions.DisableMotion.set -> void
+FormWind.TwOffscreenOptions.ExpandToOwned.get -> bool
+FormWind.TwOffscreenOptions.ExpandToOwned.set -> void
+FormWind.TwOffscreenOptions.IncludeOwned.get -> bool
+FormWind.TwOffscreenOptions.IncludeOwned.set -> void
+FormWind.TwOffscreenOptions.TwOffscreenOptions() -> void
+static FormWind.TwOffscreen.Render(System.Windows.Forms.Form! form) -> System.Drawing.Bitmap!
+static FormWind.TwOffscreen.Render(System.Windows.Forms.Form! form, FormWind.TwOffscreenOptions? options) -> System.Drawing.Bitmap!

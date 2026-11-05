@@ -12,6 +12,9 @@ public enum TwDialogKind
     Warning,
     Error,
     Question,
+
+    /// <summary>No icon: the title and message start at the left edge (<see cref="TwToast"/> still shows the info icon).</summary>
+    None,
 }
 
 public enum TwDialogButtons
@@ -88,12 +91,13 @@ public static class TwDialog
     /// </summary>
     public static Dictionary<DialogResult, string> Texts { get; } = new Dictionary<DialogResult, string>();
 
-    /// <summary>Surface of light dialogs and toasts' dialogs app-wide; <see cref="Color.Empty"/> = white.</summary>
+    /// <summary>Surface of light dialogs and toasts' dialogs app-wide; <see cref="Color.Empty"/> = the surface of the theme's <c>card</c> component (white by default).</summary>
     public static Color LightBackColor { get; set; } = Color.Empty;
 
     /// <summary>
-    /// Surface of dark dialogs app-wide; <see cref="Color.Empty"/> = <c>gray-800</c>. Set it to the application's dark
-    /// surface (e.g. <c>ColorTranslator.FromHtml("#2a2a2c")</c>) so dialogs do not look bluish next to it.
+    /// Surface of dark dialogs app-wide; <see cref="Color.Empty"/> = the dark surface of the theme's <c>card</c> component, so
+    /// the dialog follows the theme's palette (before 0.1.6 it was always <c>gray-800</c>, which looks bluish next to a neutral
+    /// application). Set it to the application's own dark surface (e.g. <c>ColorTranslator.FromHtml("#2a2a2c")</c>) to match it exactly.
     /// </summary>
     public static Color DarkBackColor { get; set; } = Color.Empty;
 
@@ -201,9 +205,11 @@ public sealed class TwDialogForm : Form
             TwDialogKind.Warning => ("warning", "amber"),
             TwDialogKind.Error => ("error", "red"),
             TwDialogKind.Question => ("help", "blue"),
+            TwDialogKind.None => ("", "blue"),
             _ => ("info", "blue"),
         };
-        var badge = new TwPanel { Size = new Size(40, 40) };
+        // Simgesiz diyalogda rozet gizlenir (başlık ve ileti sol kenardan başlar).
+        var badge = new TwPanel { Size = new Size(40, 40), Visible = options.Kind != TwDialogKind.None };
         body.Controls.Add(badge);
         // Şeffaf zemin: yuvarlak rozetin köşelerini ikonun kare zemini örtmesin.
         IconBadge = new TwIcon { IconName = icon, Dock = DockStyle.Fill, AccessibleName = options.Kind.ToString(), BackColor = Color.Transparent };
@@ -251,8 +257,10 @@ public sealed class TwDialogForm : Form
         AcceptButton = _buttons.Find(b => b.DialogResult == defaultResult) ?? _buttons[_buttons.Count - 1];
         CancelButton = _buttons.Find(b => b.DialogResult is DialogResult.Cancel or DialogResult.No) ?? (results.Length == 1 ? _buttons[0] : null);
 
-        // Zemin: seçenek ya da uygulama geneli renk (TwDialog.DarkBackColor), yoksa beyaz / gray-800.
+        // Zemin: seçenek ya da uygulama geneli renk (TwDialog.DarkBackColor), yoksa temanın card yüzeyi.
         var surface = options.BackColor ?? (dark ? TwDialog.DarkBackColor : TwDialog.LightBackColor);
+        if (surface.IsEmpty && TwTheme.Current.Parse("card").Resolve(dark ? TwState.Dark : TwState.None).BackColor is Color card)
+            surface = card;
         string back = surface is { IsEmpty: false, A: > 0 } own
             ? $"bg-[#{own.R:x2}{own.G:x2}{own.B:x2}]"
             : "bg-white dark:bg-gray-800";

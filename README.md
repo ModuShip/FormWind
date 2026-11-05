@@ -302,7 +302,7 @@ this.tailwindProvider1.SetClasses(this.icoCustomer, "text-xl text-blue-600 dark:
 this.btnSave.IconName = "save";
 ```
 
-Yerleşik adlar: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `mail`, `map-pin`, `menu`, `minus`, `more`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sort`, `star`, `star-filled`, `sync`, `tag`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `x`, `zoom-in`, `zoom-out`.
+Yerleşik adlar: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
 
 Fontun herhangi bir glyph'i kod noktasıyla da kullanılabilir (`IconName = "#E8A5"`). Ek adlar ve farklı bir ikon fontu tema dosyasından verilir:
 
@@ -663,7 +663,7 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwPeriodPicker` | Dönem seçici (`TwSelect` görünümünde): hazır dönemler (`Presets`: bugün, dün, son 7 / 30 / 90 gün, bu ay, geçen ay, bu yıl), "Özel aralık…" ve iki tıklamayla aralık seçilen takvim bir popover'da; `Shifts` verilirse üstte vardiya bölümü. `Start`, `End` (hazır dönem tarihle ilerler), `Shift`, `PeriodChanged`; kapalı kutuda ↑/↓ hazır dönemler arasında gezer. |
 | `TwCommandPalette` | Ctrl+K komut paleti (bileşen): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) yazdıkça süzülür (aksan ve büyük/küçük harf gözetilmez, baştan eşleşen önce), grup başlıkları altında; ↑/↓, Enter, Esc. `AddSearch("kayıtlar", q => …)` yazılan için "… içinde ara" satırı ekler, `QueryCommands` sorguya göre satır üretir. `Attach(form)` kısayolu formun her yerinde dinler. |
 | `TwSheet` | Formu sahibinin içinde çerçevesiz bir sayfa olarak açar; arkadaki pencere karartılır (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)` ya da `FullScreen = true` ile sahibin içini dolduran sayfa. `TwSheet.Attach(this)` sonrası mevcut `ShowDialog(this)` çağrıları kod değişmeden sayfa olur (`Filter` ile seçilebilir); `DialogResult`, `AcceptButton`/`CancelButton` olduğu gibi çalışır, form kapanınca çerçevesini geri alır. |
-| `TwWindowChrome`, `TwCaptionButtons` | Başlık çubuğu olmayan pencere: `TwWindowChrome.Attach(this)` başlığı kaldırır, içerik üst kenara kadar uzar (kenar ya da araç çubuğu başlığın yerine geçer). Formun ve `AddDragSurface` ile verilen yüzeylerin boş yerinden (üstlerindeki etiket ve ikonlar dahil) pencere sürüklenir; çift tık büyütür, ekran kenarına sürükleme Aero Snap yapar, sağ tık sistem menüsünü açar; kenarlar (üst kenar `ResizeBorder` içinde) boyutlandırır. `TwCaptionButtons` küçült / büyüt / kapat düğmeleridir. |
+| `TwWindowChrome`, `TwCaptionButtons` | Başlık çubuğu olmayan pencere: `TwWindowChrome.Attach(this)` başlığı kaldırır, içerik üst kenara kadar uzar (kenar ya da araç çubuğu başlığın yerine geçer). Formun ve `AddDragSurface` ile verilen yüzeylerin boş yerinden (üstlerindeki etiket ve ikonlar dahil) pencere sürüklenir; çift tık büyütür, ekran kenarına sürükleme Aero Snap yapar, sağ tık sistem menüsünü açar; kenarlar (üst kenar `ResizeBorder` içinde) boyutlandırır. `TwCaptionButtons` küçült / büyüt / kapat düğmeleridir; `ButtonStyle = TwCaptionButtonStyle.Dots` onları yuvarlak kırmızı / sarı / yeşil noktalar olarak çizer (fare üstündeyken simgeler görünür; `CloseDotColor`, `MinimizeDotColor`, `MaximizeDotColor`). |
 
 ### TwDataList
 
@@ -743,6 +743,8 @@ dagilim.Kind = TwChartKind.HorizontalBar;        // her kategori bir satır, tam
 heatmap.EmptyCells = TwHeatmapEmptyCell.Hatched; // NaN hücreler: taralı gri; göstergede ve ipucunda "Üretim yok"
 heatmap.EmptyCellText = "Üretim yok";
 heatmap.HighlightColumns = new[] { bugun };    // bugünün sütununun arkasında soluk şerit
+heatmap.HighlightTextColor = Color.Crimson;    // başlıklarının metin rengi (kırmızı Pazar); kodla başlığı örtmeye gerek kalmaz
+heatmap.SelectionColor = Color.Empty;          // seçili hücrenin çerçevesi: varsayılan metin rengi (eskiden accent-*, mavi ölçekte kayboluyordu)
 heatmap.CellSize = new Size(28, 22);           // kontrolü doldurmak yerine sabit hücreler
 var hucre = heatmap.GetCellBounds(satir, sutun); // seçili hücrenin (SelectedIndex) yanına popover
 
@@ -792,7 +794,7 @@ TwToast.Show(this, "Sipariş kaydedildi", TwDialogKind.Success);
 
 - **`TwDialog`** (MessageBox yerine): ikon, başlık, mesaj, sağa dayalı düğmeler; Enter varsayılan, Esc iptal/hayır. Sahip formun koyu temasını izler. Düğme metinleri [`TwTexts`](#yerelleştirme)'ten gelir, tek tek `TwDialog.Texts[DialogResult.Yes] = "Sil"` ile ezilebilir; `TwDialog.Create(...)` göstermeden özelleştirmeye izin verir.
 - **Metin girişi:** `TwDialog.Prompt(this, "Kayıtlı arama adı", "Aramayı kaydet", placeholder: "örn. Hat 2 · gece vardiyası", validator: ad => adlar.Contains(ad) ? "Bu ad kullanılıyor." : null)` kırpılmış metni, iptalde `null` döndürür. `TwDialog.Prompt(this, new TwDialogOptions { Message = …, OkText = "Sakla", InputMaxLength = 40 })` düğmeye eylemin adını verir ve uzunluğu sınırlar.
-- **Zemin:** koyu diyaloglar `gray-800`'dür; `TwDialog.DarkBackColor` (uygulama geneli, ör. `#2a2a2c`) ya da `TwDialogOptions.BackColor` uygulamanın kendi yüzeyini verir. `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
+- **Zemin:** diyaloglar temanın `card` bileşeninin yüzeyini alır (beyaz; koyu modda `surface-800`); `TwDialog.LightBackColor` / `DarkBackColor` (uygulama geneli, ör. `#2a2a2c`) ya da `TwDialogOptions.BackColor` uygulamanın kendi yüzeyini verir. `Kind = TwDialogKind.None` ikonu kaldırır (`Prompt` için de). `TwDialogOptions.ShowInput` (`InputText`, `InputLabel`, `InputPlaceholder`, `InputRequired`, `InputMaxLength`, `InputValidator`) her diyaloğa metin kutusu ekler; Tamam metni denetler, hata varsa diyalog açık kalır ve hata kutunun altında gösterilir.
 - **`TwToast`**: sahip formun köşesinde (varsayılan sağ alt, `TwToast.Position`) üst üste dizilen, odak çalmayan, fare üzerindeyken bekleyen ve kendiliğinden kapanan bildirim (`DefaultDuration` 4 sn). Ekran okuyucuya Alert olarak bildirilir.
 
 ## Yerelleştirme
@@ -1291,6 +1293,15 @@ $env:FORMWIND_INVARIANT_SEED = "162"; dotnet test tests/FormWind.Tests --filter 
 ```
 
 Bu testlerin bulduğu her hata için `ApplierTests` içinde ayrıca açık bir regresyon testi tutulur; seed'ler üretim değişirse aynı senaryoyu vermeyebilir.
+
+### Pencerenin tam resmi (`TwOffscreen`)
+
+`Control.DrawToBitmap` formun sahip olduğu pencereleri (`TwSheet`, `TwPopover`, diyaloglar) atlar, saydamlığı yok sayar. `TwOffscreen.Render(form)` görsel regresyon testleri için pencerenin tamamının 32 bit resmini verir: henüz gösterilmemiş form ekranın çok dışında açılır (hiç görünmez, görev çubuğuna girmez), hareket kapalıyken yerleşir ve boyanır; formun ve sahip olduğu her pencerenin içeriği Windows'tan (`PrintWindow`) alınır, `Opacity`, `TransparencyKey` ve `Region` uygulanarak z sırasıyla birleştirilir. `TwOffscreenOptions`: `IncludeOwned`, `ExpandToOwned` (form ve sheet'leri birlikte kapsayan resim), `Background`, `DisableMotion`, `CloseWhenDone`; zaten görünen form olduğu yerde resmedilir.
+
+```csharp
+using var resim = TwOffscreen.Render(form);
+resim.Save("giris-koyu.png");
+```
 
 ### Gerçek uygulamalarla deneme (harness)
 

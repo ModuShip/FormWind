@@ -110,6 +110,31 @@ public class FontAndIconTests
     [InlineData("#1F600")] // BMP dışı
     public void Rejects_unknown_icons(string name) => Assert.False(_theme.TryGetIcon(name, out _));
 
+    [Theory]
+    [InlineData("log-out", "sign-out")]
+    [InlineData("tool", "wrench")]
+    [InlineData("paperclip", "attach")]
+    public void Icon_aliases_share_a_glyph(string alias, string name)
+    {
+        Assert.True(TwIcons.IsKnown(alias));
+        Assert.True(TwIcons.TryGetGlyph(alias, out var a));
+        Assert.True(TwIcons.TryGetGlyph(name, out var b));
+        Assert.Equal(b, a);
+    }
+
+    [Theory]
+    [InlineData("log-out")]
+    [InlineData("sidebar")]
+    [InlineData("panel-right")]
+    [InlineData("wrench")]
+    [InlineData("gauge")]
+    public void Later_built_in_icons_are_known(string name)
+    {
+        Assert.True(TwIcons.IsKnown(name));
+        Assert.True(TwIcons.TryGetGlyph(name, out var glyph));
+        Assert.True(glyph >= '' && glyph <= ''); // özel kullanım alanı
+    }
+
     [Fact]
     public void Icon_names_are_unique_and_sorted()
     {
