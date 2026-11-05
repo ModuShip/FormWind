@@ -39,6 +39,8 @@ public class TwSettingRow : TwPanel
     private Font? _editorFont;
     private Control? _fontParent;
     private int? _classHeight;
+    // Düzenleyicinin kendi genişliği (EditorWidth = 0 için): eklenirken ve uygulama atadığında kaydedilir, kendi yerleşimimiz yazmaz.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, System.Runtime.CompilerServices.StrongBox<int>> _ownWidths = new();
 
     public TwSettingRow()
     {
@@ -201,6 +203,12 @@ public class TwSettingRow : TwPanel
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
+        if (e.Control is { } added && added != _label && added != _description && added != _unit)
+        {
+            Remember(added);
+            added.SizeChanged -= OnEditorSizeChanged;
+            added.SizeChanged += OnEditorSizeChanged;
+        }
         SyncEditorFont();
         PerformLayout();
     }
@@ -244,8 +252,29 @@ public class TwSettingRow : TwPanel
     protected override void OnControlRemoved(ControlEventArgs e)
     {
         base.OnControlRemoved(e);
+        if (e.Control is { } removed)
+        {
+            removed.SizeChanged -= OnEditorSizeChanged;
+            _ownWidths.Remove(removed);
+        }
         PerformLayout();
     }
+
+    // Genişliği uygulama verdiyse (kendi yerleşimimiz değil) düzenleyicinin kendi genişliği olarak hatırlanır.
+    private void OnEditorSizeChanged(object? sender, EventArgs e)
+    {
+        if (_arranging || sender is not Control control) return;
+        if (_ownWidths.TryGetValue(control, out var box)) box.Value = control.Width;
+    }
+
+    // Eklenirken: ControlAdded'dan önce yerleşim genişliği değiştirmiş olabilir, bu yüzden InitLayout'ta da kaydedilir.
+    internal void Remember(Control child)
+    {
+        if (child == _label || child == _description || child == _unit) return;
+        if (!_ownWidths.TryGetValue(child, out _)) _ownWidths.Add(child, new System.Runtime.CompilerServices.StrongBox<int>(child.Width));
+    }
+
+    private int OwnWidth(Control editor) => _ownWidths.TryGetValue(editor, out var box) ? box.Value : editor.Width;
 
     public override LayoutEngine LayoutEngine => RowLayout.Instance;
 
@@ -261,7 +290,7 @@ public class TwSettingRow : TwPanel
         int left = border.Left + inset.Left, right = width - border.Right - inset.Right, top = border.Top + Padding.Top;
         int inner = Math.Max(0, right - left);
         var editor = Editor;
-        var editorSize = editor is null ? Size.Empty : editor.AutoSize ? editor.GetPreferredSize(Size.Empty) : editor.Size;
+        var editorSize = editor is null ? Size.Empty : editor.AutoSize ? editor.GetPreferredSize(Size.Empty) : new Size(OwnWidth(editor), editor.Height);
         // AutoSize düzenleyici tercih ettiği genişlikten dar verilmez (sekme şeridi taşma menüsüne sekme atmasın).
         if (editor != null && _editorWidth > 0)
             editorSize.Width = editor.AutoSize ? Math.Max(Scale(_editorWidth), editorSize.Width) : Scale(_editorWidth);
@@ -375,6 +404,12 @@ public class TwSettingRow : TwPanel
     private sealed class RowLayout : LayoutEngine
     {
         public static readonly RowLayout Instance = new RowLayout();
+
+        public override void InitLayout(object child, BoundsSpecified specified)
+        {
+            base.InitLayout(child, specified);
+            if (child is Control { Parent: TwSettingRow row } control) row.Remember(control);
+        }
 
         public override bool Layout(object container, LayoutEventArgs layoutEventArgs)
         {

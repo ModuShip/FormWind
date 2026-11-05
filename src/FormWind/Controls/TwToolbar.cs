@@ -224,12 +224,15 @@ public class TwToolbar : TwPanel
     private int Scale(int pixels) => (int)Math.Round(pixels * TwDpi.DeviceDpi(this) / 96f);
 
     private Size Preferred(Control item) =>
-        item.AutoSize || _options.TryGetValue(item, out var o) && o.MeasuresContent ? item.GetPreferredSize(Size.Empty) : item.Size;
+        item.AutoSize || _options.TryGetValue(item, out var o) && (o.MeasuresContent || o.Overflow == TwToolbarOverflow.Shrink)
+            ? item.GetPreferredSize(Size.Empty)
+            : item.Size;
 
     public override Size GetPreferredSize(Size proposedSize)
     {
         var display = DisplayRectangle;
-        int border = Width - display.Width, borderY = Height - display.Height;
+        // DisplayRectangle dolguyu da düşer; dolgu aşağıda ayrıca eklenir.
+        int border = Width - display.Width - Padding.Horizontal, borderY = Height - display.Height - Padding.Vertical;
         var items = Items.Where(Wanted).ToList();
         int width = 0, height = 0;
         foreach (var item in items)
@@ -260,8 +263,8 @@ public class TwToolbar : TwPanel
     {
         // Görünmeyen çubukta çocuklar da görünmez sayılır; yerleşim gösterilince yapılır.
         if (!Visible) return;
-        var area = Rectangle.FromLTRB(DisplayRectangle.Left + Padding.Left, DisplayRectangle.Top + Padding.Top,
-            DisplayRectangle.Right - Padding.Right, DisplayRectangle.Bottom - Padding.Bottom);
+        // DisplayRectangle dolguyu ve kenarlığı zaten düşmüştür; dolgu bir daha düşülürse alan fazla daralır ve Shrink öğe gereksiz kısalır.
+        var area = DisplayRectangle;
         int gap = Scale(_gap);
         var items = Items.Where(Wanted).ToList();
         var widths = items.ToDictionary(i => i, i => Preferred(i).Width);
@@ -372,10 +375,36 @@ public class TwToolbar : TwPanel
     {
         var text = _options.TryGetValue(item, out var o) && o.Text != null ? o.Text
             : !string.IsNullOrEmpty(item.Text) ? item.Text
-            : item.AccessibleName ?? item.Name;
+            : !string.IsNullOrEmpty(item.AccessibleName) ? item.AccessibleName!
+            : FindTabStrip(item) is { } tabs ? TabStripText(tabs)
+            : item.Name;
+        if (string.IsNullOrWhiteSpace(text)) return TwTexts.Current.More;   // menüde boş satır olmaz
         // Kısayol işareti kullanmayan öğelerin & işareti menüde de metin kalır.
         bool mnemonic = item is ButtonBase b ? b.UseMnemonic : item is Label l ? l.UseMnemonic : item is TwTabStrip t && t.UseMnemonic;
         return mnemonic ? text : text.Replace("&", "&&");
+    }
+
+    private static string TabStripText(TwTabStrip tabs) =>
+        tabs.SelectedIndex >= 0 && tabs.SelectedIndex < tabs.Tabs.Count ? tabs.GetDisplayText(tabs.SelectedIndex) : "";
+
+    // Öğenin kendisi ya da (bir kapta sarılıysa) altındaki ilk sekme şeridi.
+    private static TwTabStrip? FindTabStrip(Control item)
+    {
+        if (item is TwTabStrip self) return self;
+        foreach (Control child in item.Controls)
+            if (FindTabStrip(child) is { } found) return found;
+        return null;
+    }
+
+    private static void AddTabItems(ToolStripMenuItem menuItem, TwTabStrip tabs)
+    {
+        for (int i = 0; i < tabs.Tabs.Count; i++)
+        {
+            int index = i;
+            var tab = new ToolStripMenuItem(tabs.UseMnemonic ? tabs.Tabs[i] : tabs.Tabs[i].Replace("&", "&&")) { Checked = i == tabs.SelectedIndex };
+            tab.Click += (_, _) => tabs.SelectedIndex = index;
+            menuItem.DropDownItems.Add(tab);
+        }
     }
 
     // Menü öğesi kontrolün kendisini çalıştırır: düğme tıklanır, onay kutusu değişir, sekme ve seçim alt menü olur.
@@ -385,14 +414,7 @@ public class TwToolbar : TwPanel
         switch (item)
         {
             case TwTabStrip tabs:
-                for (int i = 0; i < tabs.Tabs.Count; i++)
-                {
-                    int index = i;
-                    var tab = new ToolStripMenuItem(tabs.UseMnemonic ? tabs.Tabs[i] : tabs.Tabs[i].Replace("&", "&&")) { Checked = i == tabs.SelectedIndex };
-                    tab.Click += (_, _) => tabs.SelectedIndex = index;
-                    menuItem.DropDownItems.Add(tab);
-                }
-                if (string.IsNullOrEmpty(menuItem.Text)) menuItem.Text = tabs.SelectedIndex >= 0 && tabs.SelectedIndex < tabs.Tabs.Count ? tabs.GetDisplayText(tabs.SelectedIndex) : TwTexts.Current.More;
+                AddTabItems(menuItem, tabs);
                 break;
             case TwSelect select:
                 for (int i = 0; i < select.Items.Count; i++)
@@ -412,6 +434,12 @@ public class TwToolbar : TwPanel
                 menuItem.Click += (_, _) => InvokeOnClick(button, EventArgs.Empty);
                 break;
             default:
+                if (FindTabStrip(item) is { } inner)
+                {
+                    // Bir kapta sarılı sekme şeridi de alt menü olur.
+                    AddTabItems(menuItem, inner);
+                    break;
+                }
                 menuItem.Click += (_, _) =>
                 {
                     InvokeOnClick(item, EventArgs.Empty);
@@ -419,6 +447,7 @@ public class TwToolbar : TwPanel
                 };
                 break;
         }
+        if (string.IsNullOrWhiteSpace(menuItem.Text)) menuItem.Text = TwTexts.Current.More;
         return menuItem;
     }
 

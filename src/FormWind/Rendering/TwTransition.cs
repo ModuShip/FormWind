@@ -211,6 +211,7 @@ public static class TwTransition
         if (size < 0) throw new ArgumentOutOfRangeException(nameof(size), size, "A size cannot be negative.");
         bool vertical = panel.Dock is DockStyle.Top or DockStyle.Bottom;
         _lastCovered = false;
+        _lastRevealed = false;
         if ((vertical ? panel.Height : panel.Width) == size) return;
         Resize(panel, () =>
         {
@@ -242,26 +243,37 @@ public static class TwTransition
 
         var host = panel.Parent;
         _lastCovered = false;
+        _lastRevealed = false;
         var timing = TwMotionOptions.Timing(options, TwMotion.Timings.Slide, TwEasing.InOut);
-        if (host is null || !panel.Visible || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
+        if (host is null || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
         {
             change();
             return;
         }
 
-        var hostBounds = VisibleScreenBounds(host, host.RectangleToScreen(host.ClientRectangle));
-        var before = hostBounds.IsEmpty ? null : TwCapture.Take(host, hostBounds);
+        // Örtü yalnızca ebeveyni değil formun istemci alanını kaplar: change, kontrolleri ebeveynin dışına (forma) taşıyabilir.
+        var root = host.FindForm() ?? host;
+        var coverBounds = VisibleScreenBounds(root, root.RectangleToScreen(root.ClientRectangle));
+        var before = coverBounds.IsEmpty ? null : TwCapture.Take(root, coverBounds);
         if (before is null)
         {
             change();
             return;
         }
-        var oldPlace = host.RectangleToScreen(panel.Bounds);
-        var cover = TwFadeOut.Cover((Bitmap)before.Clone(), hostBounds, host.FindForm(), roundCorners: false);
+        bool wasShown = panel.Visible;
+        var oldPlace = wasShown ? host.RectangleToScreen(panel.Bounds) : Rectangle.Empty;
+        var cover = TwFadeOut.Cover((Bitmap)before.Clone(), coverBounds, host.FindForm(), roundCorners: false);
+        bool isShown;
+        Rectangle newPlace;
         try
         {
             change();
-            TwCapture.PaintNow(host);
+            // Sonradan gösterilen ya da panele taşınan çocukların tutamacı olmayabilir; boyanmamış kalırlarsa resimde arkası görünür.
+            isShown = panel.Visible;
+            if (isShown) CreateHandles(panel);
+            newPlace = isShown ? host.RectangleToScreen(panel.Bounds) : Rectangle.Empty;
+            if (isShown) TwCapture.RepaintNow(panel);
+            TwCapture.PaintNow(root);
         }
         catch
         {
@@ -274,9 +286,15 @@ public static class TwTransition
             before.Dispose();
             return;
         }
-        // Boyu değişmeyen bir değişiklik yalnızca çapraz solar.
         _lastCovered = true;
-        if (host.RectangleToScreen(panel.Bounds) == oldPlace)
+
+        // Gizli bir panel, yapıştığı kenarda kalınlığı sıfır bir şerit sayılır: açılış ve kapanış aynı yoldan oynar.
+        bool animated = wasShown || isShown;
+        if (!wasShown && isShown) oldPlace = Flat(newPlace, vertical, far);
+        else if (wasShown && !isShown) newPlace = Flat(oldPlace, vertical, far);
+
+        // Yeri değişmeyen (ya da hep gizli kalan) bir değişiklik yalnızca çapraz solar.
+        if (!animated || newPlace == oldPlace)
         {
             before.Dispose();
             cover.Fade(timing, Point.Empty);
@@ -284,15 +302,14 @@ public static class TwTransition
         }
 
         // Panelin büyük hâlinin resmi, küçük hâlin görüntüsü üstünde yapıştığı kenardan açılır ya da kapanır.
-        var newPlace = host.RectangleToScreen(panel.Bounds);
-        var place = Rectangle.Intersect(Rectangle.Union(oldPlace, newPlace), hostBounds);
+        var place = Rectangle.Intersect(Rectangle.Union(oldPlace, newPlace), coverBounds);
         bool grows = (vertical ? newPlace.Height : newPlace.Width) > (vertical ? oldPlace.Height : oldPlace.Width);
-        var after = place.IsEmpty ? null : TwCapture.TakeContent(host, place, cover);
-        var oldPart = place.IsEmpty ? null : Crop(before, place, hostBounds);
+        var after = place.Width <= 0 || place.Height <= 0 ? null : TwCapture.TakeContent(root, place, cover);
+        var oldPart = after is null ? null : Crop(before, place, coverBounds);
         before.Dispose();
         var wide = Rectangle.Intersect(grows ? newPlace : oldPlace, place);
         var large = grows ? after : oldPart;
-        var front = large is null || wide.IsEmpty ? null : Crop(large, wide, place);
+        var front = large is null || wide.Width <= 0 || wide.Height <= 0 ? null : Crop(large, wide, place);
         // Büyürken panelin henüz örtmediği şeritte eski yerleşimin içeriği kalmaz (yeni yerine geçmiş yazılar iki kez
         // görünürdü): zemin rengi üstünde panelin eski resmi. Küçülürken arka plan zaten yeni yerleşimdir.
         var back = grows ? Underlay(oldPart, Rectangle.Intersect(oldPlace, place), place, host.BackColor) : after;
@@ -302,7 +319,11 @@ public static class TwTransition
         {
             var reveal = new RevealGhost(back, front, place, new Point(wide.X - place.X, wide.Y - place.Y), vertical, far,
                 vertical ? oldPlace.Height : oldPlace.Width, vertical ? newPlace.Height : newPlace.Width);
-            if (reveal.TryShow(host.FindForm())) reveal.Play(timing);
+            if (reveal.TryShow(host.FindForm()))
+            {
+                _lastRevealed = true;
+                reveal.Play(timing);
+            }
         }
         else
         {
@@ -312,12 +333,25 @@ public static class TwTransition
         cover.Fade(RestTiming(timing, options?.FadeRest ?? true), Point.Empty);
     }
 
+    // Yapıştığı kenarda kalınlığı sıfır olan şerit (gizli panelin yeri).
+    private static Rectangle Flat(Rectangle place, bool vertical, bool far) =>
+        vertical ? new Rectangle(place.X, far ? place.Bottom : place.Y, place.Width, 0)
+                 : new Rectangle(far ? place.Right : place.X, place.Y, 0, place.Height);
+
+    // Görünür alt kontrollerin tutamaçlarını oluşturur (boyanabilsinler diye); görünmeyenlere dokunmaz.
+    private static void CreateHandles(Control parent)
+    {
+        if (!parent.IsHandleCreated) _ = parent.Handle;
+        foreach (Control child in parent.Controls)
+            if (child.Visible) CreateHandles(child);
+    }
+
     // Zemin rengiyle dolu bir resim; üstünde yalnızca panelin eski yeri (part) eski resimden alınır.
     private static Bitmap? Underlay(Bitmap? picture, Rectangle part, Rectangle pictureBounds, Color color)
     {
         if (picture is null) return null;
         var under = Fill(picture.Size, color);
-        if (part.IsEmpty) return under;
+        if (part.Width <= 0 || part.Height <= 0) return under;
         var rect = new Rectangle(part.X - pictureBounds.X, part.Y - pictureBounds.Y, part.Width, part.Height);
         using (var g = Graphics.FromImage(under)) g.DrawImage(picture, rect, rect, GraphicsUnit.Pixel);
         return under;
@@ -481,6 +515,12 @@ public static class TwTransition
     private static bool _lastCovered;
 
     internal static bool LastCovered => _lastCovered;
+
+    /// <summary>Whether the last <see cref="Resize(Control, Action)"/> showed the panel opening or closing, not only a cross-fade (for tests).</summary>
+    [ThreadStatic]
+    private static bool _lastRevealed;
+
+    internal static bool LastRevealed => _lastRevealed;
 
     // Form: pencerenin görünen tamamı (başlık çubuğu dahil, görünmez kenarlıklar hariç); alt kontrol: ebeveyn içindeki sınırları.
     private static Rectangle ScreenBounds(Control host) =>

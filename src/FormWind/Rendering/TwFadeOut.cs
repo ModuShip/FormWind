@@ -68,6 +68,8 @@ public static class TwFadeOut
         }
         // Görüntü hemen ekrana çıkar; altındaki değişiklik ancak ondan sonra çizilir.
         ghost.Update();
+        // Pencere yöneticisi birleştirmesini bekle: aksi halde alttaki değişiklik örtüden önce ekrana ulaşabilir.
+        TwCapture.Flush();
         _active++;
         ghost.FormClosed += (_, _) => _active--;
         return ghost;

@@ -5,6 +5,32 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `TwTransition.Resize(panel, change)` works for a sidebar that `change` hides or shows: a panel that is hidden before or
+  after the change is treated as a zero-thickness strip at its docked edge, so opening a hidden panel animates (it
+  returned without animation) and closing one reveals its picture instead of only cross-fading. A width of 0 animates
+  too.
+- `Resize` covers the form's client area, not only the panel's parent: controls that `change` moves out of the parent (a
+  row moved to the form) no longer show their new layout for a frame. The panel's subtree gets its window handles and is
+  repainted before the "after" picture is taken, so newly shown or reparented children are in it.
+- The picture that covers a transition (`TwFadeOut.Cover`) waits for the desktop window manager before it returns, so the
+  change underneath cannot reach the screen first (a one-frame flash).
+- `TwSettingRow.EditorWidth = 0` keeps the editor's own width (a `TwSelect` of 180 px stays 180) instead of the 160 px
+  the row had laid it out with. The row remembers the width the application gave the editor.
+- `TwToolbar` no longer subtracts its padding twice when it computes the room for its items (`DisplayRectangle` already
+  excludes it), so a `Shrink` item is not shortened (an ellipsized title) while everything fits. A `Shrink` item whose
+  `AutoSize` is off is measured by its content, so it grows back when there is room.
+- `TwToolbar`'s overflow menu never shows an empty row: the text falls back to `AccessibleName`, then to the selected tab
+  of a `TwTabStrip` inside the item, then to `TwTexts.More`. A `TwTabStrip` wrapped in a container becomes a submenu too.
+- `TwChip` asks its parent layout for its preferred size again when it gets a parent, so an `h-*` class set before the chip
+  is added applies.
+
+### Behavior changes
+
+- `TwToolbar` places its items at its padding, not at twice the padding, and gives them the full inner height; the
+  preferred size no longer counts the padding twice.
+
 ## [0.1.5-preview.1] - 2026-11-04
 
 ### Added

@@ -156,7 +156,7 @@ public static class TwCapture
     // Bu iş parçacığının bir penceresinde bekleyen boyama var mı (QS_PAINT).
     private static bool IsPaintPending() => (GetQueueStatus(QsPaint) & QsPaint) != 0;
 
-    private static bool Flush()
+    internal static bool Flush()
     {
         try { DwmFlush(); }
         catch (DllNotFoundException) { }

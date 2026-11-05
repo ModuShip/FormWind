@@ -230,6 +230,13 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         }
     }
 
+    // h-* üst yerleşim yokken verilmiş olabilir (sınıflar önce, ekleme sonra): ebeveyne girince tercih edilen boy yeniden sorulur.
+    protected override void OnParentChanged(EventArgs e)
+    {
+        base.OnParentChanged(e);
+        if (_classHeight != null) Relayout();
+    }
+
     private void Relayout()
     {
         if (AutoSize) Parent?.PerformLayout(this, nameof(AutoSize));
