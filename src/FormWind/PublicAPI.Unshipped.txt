@@ -1,2 +1,9 @@
 #nullable enable
 override FormWind.TwChip.OnParentChanged(System.EventArgs! e) -> void
+FormWind.TwMotionOptions.Completed.get -> System.Action?
+FormWind.TwMotionOptions.Completed.set -> void
+static FormWind.TwMotion.Timings.Scale.get -> double
+static FormWind.TwMotion.Timings.Scale.set -> void
+FormWind.TwTheme.Explain(string? classes) -> string!
+FormWind.TwUnknownClassesEventArgs.Suggestions.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+override FormWind.TwUnknownClassesEventArgs.ToString() -> string!

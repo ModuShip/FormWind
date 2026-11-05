@@ -59,14 +59,22 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         container.Add(this);
     }
 
-    /// <summary>Raised when a control's classes contain unknown values. Written to the Debug output when nobody listens.</summary>
+    /// <summary>
+    /// Raised when a control's classes contain classes FormWind does not recognize: a misspelled name, a value that is not
+    /// in the scale, or an arbitrary value without its unit (<c>duration-[120]</c> instead of <c>duration-[120ms]</c>). Such
+    /// a class is ignored; it is a mistake in the class string, not an error while styling, so it is reported here and not
+    /// through <see cref="StyleError"/>. <see cref="TwUnknownClassesEventArgs.Suggestions"/> holds a "did you mean" for each
+    /// class that has one. Written to the Debug output, with the suggestions, when nobody listens.
+    /// </summary>
     public event EventHandler<TwUnknownClassesEventArgs>? UnknownClasses;
 
     /// <summary>
     /// Raised when an error occurs while applying styles (e.g. a custom <see cref="IStyleApplier"/> or a
     /// <see cref="SetRowClasses"/> rule threw). The error is swallowed: the application keeps running and the control keeps
     /// the style applied so far. Written to the Debug output when nobody listens; a listener may rethrow the exception.
-    /// Critical exceptions such as out-of-memory are not caught.
+    /// Critical exceptions such as out-of-memory are not caught. Unknown or malformed classes are not errors of this kind:
+    /// they are reported through <see cref="UnknownClasses"/>. (A few values that are wrong in a way nothing can be drawn,
+    /// such as an unknown icon name, are reported here.)
     /// </summary>
     public event EventHandler<TwStyleErrorEventArgs>? StyleError;
 
@@ -790,12 +798,20 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         Debug.WriteLine($"FormWind: error while styling '{name}' ({classes}): {exception}");
     }
 
+    private Dictionary<string, string> SuggestionsFor(IReadOnlyList<string> unknown)
+    {
+        var suggestions = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var token in unknown)
+            if (TwSuggestions.For(token, Theme) is string suggestion) suggestions[token] = suggestion;
+        return suggestions;
+    }
+
     internal void ReportUnknown(Control control, TwParsed parsed)
     {
         var handler = UnknownClasses;
         if (handler != null)
         {
-            handler(this, new TwUnknownClassesEventArgs(control, parsed.Unknown));
+            handler(this, new TwUnknownClassesEventArgs(control, parsed.Unknown, SuggestionsFor(parsed.Unknown)));
             return;
         }
         Debug.WriteLine($"FormWind: unknown classes on '{control.Name}': {TwSuggestions.Describe(parsed.Unknown, Theme)}");
@@ -863,15 +879,33 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     }
 }
 
+/// <summary>Data of the <see cref="TailwindProvider.UnknownClasses"/> event.</summary>
 public sealed class TwUnknownClassesEventArgs : EventArgs
 {
     public TwUnknownClassesEventArgs(Control control, IReadOnlyList<string> unknown)
+        : this(control, unknown, new Dictionary<string, string>())
+    {
+    }
+
+    internal TwUnknownClassesEventArgs(Control control, IReadOnlyList<string> unknown, IReadOnlyDictionary<string, string> suggestions)
     {
         Control = control;
         Unknown = unknown;
+        Suggestions = suggestions;
     }
 
     public Control Control { get; }
 
+    /// <summary>The unknown classes, each with its variant prefixes as written.</summary>
     public IReadOnlyList<string> Unknown { get; }
+
+    /// <summary>
+    /// A "did you mean" for the unknown classes that have one (<c>duration-[120]</c> → <c>duration-[120ms]</c>,
+    /// <c>bg-blu-600</c> → <c>bg-blue-600</c>), by unknown class. Empty when the event was created in code.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Suggestions { get; }
+
+    /// <summary>The unknown classes with their suggestions: <c>bg-blu-600 (did you mean bg-blue-600?)</c>.</summary>
+    public override string ToString() =>
+        string.Join(", ", System.Linq.Enumerable.Select(Unknown, token => Suggestions.TryGetValue(token, out var s) ? $"{token} (did you mean {s}?)" : token));
 }

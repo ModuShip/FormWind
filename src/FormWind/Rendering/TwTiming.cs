@@ -185,12 +185,30 @@ internal readonly struct TwTiming
     public static readonly TwTiming None = default;
 
     public TwTiming(int durationMs, int delayMs = 0, TwEasing easing = TwEasing.Out, TwTransitionProperty properties = TwTransitionProperty.All)
+        : this(durationMs, delayMs, easing, properties, TwMotion.Timings.Scale)
     {
-        DurationMs = Math.Max(0, durationMs);
-        DelayMs = Math.Max(0, delayMs);
+    }
+
+    /// <summary>A timing whose values are used as given, not multiplied by <see cref="TwMotion.Timings.Scale"/> again (for a duration that was scaled already).</summary>
+    public static TwTiming Exact(int durationMs, int delayMs, TwEasing easing) => new TwTiming(durationMs, delayMs, easing, TwTransitionProperty.All, 1.0);
+
+    private TwTiming(int durationMs, int delayMs, TwEasing easing, TwTransitionProperty properties, double scale)
+    {
+        DurationMs = Scaled(durationMs, scale);
+        DelayMs = Scaled(delayMs, scale);
         Easing = easing;
         Properties = properties;
         Curve = null;
+    }
+
+    // Süre ve gecikme yavaş çekim çarpanıyla çarpılır; sıfırdan büyük bir değer çarpan > 0 iken en az 1 ms kalır.
+    private static int Scaled(int ms, double scale)
+    {
+        ms = Math.Max(0, ms);
+        if (scale == 1.0 || ms == 0) return ms;
+        if (scale <= 0) return 0;
+        double scaled = Math.Round(ms * scale);
+        return scaled >= int.MaxValue ? int.MaxValue : Math.Max(1, (int)scaled);
     }
 
     /// <summary>A transition with a custom curve (<see cref="Easing"/> is ignored).</summary>

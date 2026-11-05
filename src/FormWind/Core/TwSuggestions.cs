@@ -65,6 +65,9 @@ internal static class TwSuggestions
         // Ön ekler düzeltildikten sonra class zaten tanınıyorsa yalnızca ön ek yanlıştı.
         if (Known(prefix + utility, theme)) return prefix + utility == token ? null : prefix + utility;
 
+        // Keyfi değerde birimi eksik ya da yanlış (duration-[120] → duration-[120ms]).
+        if (FixUnit(utility, theme, prefix) is string withUnit) return withUnit;
+
         // Saydamlık (/50) sözlükte yok: ayrılıp öneriye geri eklenir.
         var opacity = "";
         int slash = utility.LastIndexOf('/');
@@ -75,6 +78,21 @@ internal static class TwSuggestions
         }
         var closest = Closest(utility, Vocabulary(theme));
         return closest != null && Known(prefix + closest + opacity, theme) ? prefix + closest + opacity : null;
+    }
+
+    // Keyfi değer alan class'ların beklediği birim (TwParser'daki düzenli ifadelerle uyumlu).
+    private static readonly System.Text.RegularExpressions.Regex ArbitraryRx = new System.Text.RegularExpressions.Regex(
+        @"^(?<name>duration|delay|text|rounded|(?:min-|max-)?[wh]|[pm][xytrbl]?|gap(?:-[xy])?|basis)-\[\s*(?<number>\d+(?:\.\d+)?)\s*(?<unit>[A-Za-z%]*)\s*\]$",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static string? FixUnit(string utility, TwTheme theme, string prefix)
+    {
+        var match = ArbitraryRx.Match(utility);
+        if (!match.Success) return null;
+        var name = match.Groups["name"].Value;
+        var unit = name is "duration" or "delay" ? "ms" : "px";
+        var fixedClass = $"{prefix}{name}-[{match.Groups["number"].Value}{unit}]";
+        return fixedClass != prefix + utility && Known(fixedClass, theme) ? fixedClass : null;
     }
 
     private static bool ColorLike(string utility) => ColorTargets.Any(target => utility.StartsWith(target + "-", StringComparison.Ordinal));

@@ -507,6 +507,18 @@ public sealed class TwTheme
     /// </summary>
     public string? SuggestClass(string unknownClass) => TwSuggestions.For(unknownClass, this);
 
+    /// <summary>
+    /// Describes what each class of <paramref name="classes"/> resolves to, as text for a person reading a log or a debugger
+    /// watch: one block per class with the properties it sets (<c>BackColor = #2563EB</c>), per variant and part for
+    /// <c>hover:</c>, <c>dark:</c>, <c>header:</c> and so on (<c>[Hover] BackColor = #1D4ED8</c>). A component is shown with
+    /// everything it expands to. An unknown class is flagged with the <see cref="SuggestClass"/> suggestion. Pixel values are at
+    /// 96 DPI. The text is meant to be read, not parsed: its exact layout can change between versions.
+    /// <code>
+    /// Debug.WriteLine(TwTheme.Current.Explain("bg-blue-600 hover:bg-blue-700 px-4 duration-[120]"));
+    /// </code>
+    /// </summary>
+    public string Explain(string? classes) => TwExplain.Describe(classes, this);
+
     /// <summary>Parses a class string. Returns the same result instance for the same (normalized) string.</summary>
     [Experimental(TwExperimental.DiagnosticId, UrlFormat = TwExperimental.UrlFormat)]
     public TwParsed Parse(string? classes)

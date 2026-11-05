@@ -223,5 +223,84 @@ public class AnalyzerTests
     public void Icon_analyzer_knows_every_built_in_icon() =>
         Assert.Equal(TwIcons.Names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
             UnknownIconAnalyzer.KnownIcons.OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+    private static ImmutableArray<Diagnostic> AnalyzeClasses(string body)
+    {
+        var platform = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
+        var references = platform.Select(path => MetadataReference.CreateFromFile(path))
+            .Concat(new[] { MetadataReference.CreateFromFile(typeof(Control).Assembly.Location), MetadataReference.CreateFromFile(typeof(TailwindProvider).Assembly.Location) })
+            .GroupBy(r => Path.GetFileName(r.FilePath)).Select(g => g.First());
+        var source = "using System.Windows.Forms;\nusing FormWind;\nclass Sample { void Init(TailwindProvider tw, Button button, DataGridView grid, DataGridViewColumn column, string dynamic) {\n" + body + "\n} }";
+        var compilation = CSharpCompilation.Create("Sample", new[] { CSharpSyntaxTree.ParseText(source) }, references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.Empty(compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error));
+        return compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new MalformedClassAnalyzer()))
+            .GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
+    }
+
+    [Fact]
+    public void Reports_arbitrary_values_without_their_unit()
+    {
+        var diagnostics = AnalyzeClasses("""
+            tw.SetClasses(button, "px-4 duration-[120] hover:w-[80] delay-[50ms] h-[40px]");
+            """);
+        Assert.Equal(new[] { "FW004", "FW004" }, diagnostics.Select(d => d.Id).ToArray());
+        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'duration-[120]'") && d.GetMessage().Contains("did you mean 'duration-[120ms]'"));
+        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'hover:w-[80]'") && d.GetMessage().Contains("did you mean 'hover:w-[80px]'"));
+        // Konum yalnızca sorunlu sınıfı kapsar.
+        var first = diagnostics.OrderBy(d => d.Location.SourceSpan.Start).First();
+        Assert.Equal("duration-[120]", first.Location.SourceTree!.ToString().Substring(first.Location.SourceSpan.Start, first.Location.SourceSpan.Length));
+    }
+
+    [Theory]
+    [InlineData("w-[120px", "brackets are not balanced")]
+    [InlineData("w-120px]", "brackets are not balanced")]
+    [InlineData("duration-[120px]", "unit must be 'ms'")]
+    [InlineData("w-[120em]", "unit must be 'px'")]
+    [InlineData("w-[12.5px]", "only whole numbers")]
+    [InlineData("w-[auto]", "followed by 'px'")]
+    [InlineData("bg-[ff0000]", "did you mean 'bg-[#ff0000]'")]
+    [InlineData("text-[red]", "followed by 'px'")]
+    [InlineData("bg-[red]", "hex color")]
+    [InlineData("grid-cols-[1fr_2fr]", "supported only for")]
+    [InlineData("w-[12]px", "must wrap the whole value")]
+    public void Reports_malformed_arbitrary_values(string token, string expected)
+    {
+        var diagnostic = Assert.Single(AnalyzeClasses($"tw.SetClasses(button, \"flex {token}\");"));
+        Assert.Equal("FW004", diagnostic.Id);
+        Assert.Contains(expected, diagnostic.GetMessage());
+        Assert.Contains($"'{token}'", diagnostic.GetMessage());
+    }
+
+    [Theory]
+    [InlineData("duration-[120ms] delay-[50ms] w-[120px] min-h-[10px] p-[8px] gap-x-[4px] rounded-[6px]")]
+    [InlineData("text-[13px] text-[13.5px] text-[#2563eb] bg-[#fff] border-[#112233]/50 hover:bg-[#ff0000]")]
+    [InlineData("bg-blu-600 no-such-class")]          // adlar denetlenmez: tema renk ve bileşen ekleyebilir
+    public void Accepts_valid_arbitrary_values_and_leaves_names_to_the_theme(string classes) =>
+        Assert.Empty(AnalyzeClasses($"tw.SetClasses(button, \"{classes}\");"));
+
+    [Fact]
+    public void Checks_the_other_class_taking_apis_but_only_literals()
+    {
+        var diagnostics = AnalyzeClasses("""
+            tw.SetColumnClasses(column, "w-[100]");
+            tw.SetRowClasses(grid, row => row.Index % 2 == 0 ? "bg-gray-50" : "bg-[#fff] h-[20]");
+            new TwToolTip().Classes = "p-[4]";
+            new TwListItem().BadgeClasses = "px-[2]";
+            tw.SetClasses(button, dynamic);
+            tw.SetClasses(button, "w-[" + dynamic + "]");
+            tw.SetClasses(button, null);
+            """);
+        Assert.Equal(4, diagnostics.Length);
+        Assert.All(diagnostics, d => Assert.Equal("FW004", d.Id));
+        foreach (var token in new[] { "'w-[100]'", "'h-[20]'", "'p-[4]'", "'px-[2]'" })
+            Assert.Contains(diagnostics, d => d.GetMessage().Contains(token));
+    }
+
+    [Fact]
+    public void Ignores_methods_with_the_same_name_on_other_types() =>
+        Assert.Empty(AnalyzeClasses("""
+            void SetClasses(Control control, string value) { }
+            SetClasses(button, "w-[120]");
+            """));
 }
 #endif

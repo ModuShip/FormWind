@@ -297,7 +297,8 @@ internal sealed class TwSheetBackdrop : Form
         BackColor = options.DimColor;
         _target = Math.Max(0, Math.Min(1, options.DimOpacity));
         Bounds = host.RectangleToScreen(host.ClientRectangle);
-        bool animate = TwMotion.Enabled && TwMotion.Durations.S > 1;
+        int duration = TwMotion.Timings.Scaled(TwMotion.Durations.S);
+        bool animate = TwMotion.Enabled && duration > 1;
         Opacity = animate ? 0.01 : Math.Max(0.01, _target);
         if (animate)
         {
@@ -305,7 +306,7 @@ internal sealed class TwSheetBackdrop : Form
             _fade = new Timer { Interval = 15 };
             _fade.Tick += (_, _) =>
             {
-                double t = Math.Min(1, (DateTime.UtcNow - _start).TotalMilliseconds / Math.Max(1, TwMotion.Durations.S));
+                double t = Math.Min(1, (DateTime.UtcNow - _start).TotalMilliseconds / Math.Max(1, duration));
                 Opacity = Math.Max(0.01, _target * t);
                 if (t >= 1) _fade?.Stop();
             };

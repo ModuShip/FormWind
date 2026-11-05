@@ -30,6 +30,29 @@ All notable changes to FormWind are documented in this file. The format follows
 
 - `TwToolbar` places its items at its padding, not at twice the padding, and gives them the full inner height; the
   preferred size no longer counts the padding twice.
+### Added
+
+- `TwMotionOptions.Completed` runs code once, on the UI thread, when a transition or window motion has fully finished
+  (`CrossFade`, `SlideIn`, `SlideOut`, `Resize`, `TwWindowMotion.SlideIn` and `FadeOut`): move a button to the toolbar after
+  the sidebar collapsed. When nothing is animated (animations off, zero duration, nothing to take a picture of, a panel that
+  is already in the asked state) it is called synchronously after the change is applied. There are no `Task`-returning
+  overloads; complete a `TaskCompletionSource` from `Completed` to `await` a motion.
+- `TwMotion.Timings.Scale` multiplies the duration and delay of every animation (default 1), like Android's animator
+  duration scale: set 5 to watch transitions in slow motion, 0 to make every animation immediate.
+- `TwTheme.Explain(classes)` describes what each class resolves to (`BackColor = #2563EB`, `[Hover] BackColor = #1D4ED8`),
+  with unknown classes flagged and their suggestion, so `Parse(...).Resolve(...)` is no longer needed to see a value.
+- `TwUnknownClassesEventArgs.Suggestions` holds the "did you mean" of each unknown class, and `ToString()` lists them.
+- FW004 analyzer: warns about malformed arbitrary values (a missing or wrong unit such as `duration-[120]`, unbalanced
+  brackets, a color that is not hex) in class strings given to `TailwindProvider.SetClasses`, `SetColumnClasses`,
+  `SetRowClasses` and `Classes` properties.
+
+### Behavior changes
+
+- `TwTheme.SuggestClass` (and so the Debug output and `UnknownClasses` suggestions) fixes an arbitrary value with a missing
+  or wrong unit: `duration-[120]` suggests `duration-[120ms]`, `w-[120]` suggests `w-[120px]`.
+- `TwMotion.Timings.Reset()` also sets `Scale` back to 1.
+- The documentation of `UnknownClasses` and `StyleError` now says which reports what: a class FormWind does not recognize
+  (including `duration-[120]`) goes to `UnknownClasses`; `StyleError` is for errors while applying styles.
 
 ## [0.1.5-preview.1] - 2026-11-04
 

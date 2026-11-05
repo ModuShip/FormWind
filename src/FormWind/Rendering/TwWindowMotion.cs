@@ -143,11 +143,16 @@ public static class TwWindowMotion
     private static void Slide(Form window, TwEdge edge, TwMotionOptions? options, double opacity)
     {
         var timing = TwMotionOptions.Timing(options, TwMotion.Timings.WindowIn, TwEasing.Out);
-        if (TwAnimator.IsAnimating(window, SlideName)) return;
+        if (TwAnimator.IsAnimating(window, SlideName))
+        {
+            TwMotionOptions.Complete(options);
+            return;
+        }
         var target = window.Location;
         if (!TwMotion.CanAnimate(window) || timing.TotalMs <= 0)
         {
             window.Opacity = opacity;
+            TwMotionOptions.Complete(options);
             return;
         }
         var offset = Offset(edge, Scaled(window, options));
@@ -164,6 +169,7 @@ public static class TwWindowMotion
             if (window.IsDisposed) return;
             window.Location = target;
             window.Opacity = opacity;
+            TwMotionOptions.Complete(options);
         });
     }
 
@@ -183,13 +189,22 @@ public static class TwWindowMotion
     {
         if (window is null) throw new ArgumentNullException(nameof(window));
         var timing = TwMotionOptions.Timing(options, TwMotion.Timings.WindowOut, TwEasing.In);
-        if (!window.Visible || !TwMotion.CanAnimate(window) || timing.TotalMs <= 0) return;
+        if (!window.Visible || !TwMotion.CanAnimate(window) || timing.TotalMs <= 0)
+        {
+            TwMotionOptions.Complete(options);
+            return;
+        }
         TwAnimator.Cancel(window, SlideName);
         var bounds = TwCapture.VisibleFormBounds(window);
         var picture = TwCapture.Take(window, bounds);
-        if (picture is null) return;
-        var ghost = TwFadeOut.Cover(picture, bounds, window.Owner, roundCorners: true);
-        ghost?.Fade(timing, edge is TwEdge to ? Offset(to, Scaled(window, options)) : Point.Empty);
+        var ghost = picture is null ? null : TwFadeOut.Cover(picture, bounds, window.Owner, roundCorners: true);
+        if (ghost is null)
+        {
+            TwMotionOptions.Complete(options);
+            return;
+        }
+        ghost.FormClosed += (_, _) => TwMotionOptions.Complete(options);
+        ghost.Fade(timing, edge is TwEdge to ? Offset(to, Scaled(window, options)) : Point.Empty);
     }
 
     private static bool IsOnScreen(Form window) => window.Visible && window.IsHandleCreated && IsWindowVisible(window.Handle);

@@ -200,6 +200,11 @@ public static class TwMotion
             _dialogFade = TwDialogForm.FadeDuration, _toastFade = TwToastForm.FadeDuration, _crossFade = DefaultCrossFade,
             _slide = DefaultSlide, _windowIn = DefaultWindowIn, _windowOut = DefaultWindowOut;
 
+        private static double _scale = 1.0;
+
+        /// <summary>A duration (ms) multiplied by <see cref="Scale"/>, for animations that keep their own clock.</summary>
+        internal static int Scaled(int durationMs) => new TwTiming(durationMs).DurationMs;
+
         internal const int DefaultCrossFade = 250, DefaultSlide = 250, DefaultWindowIn = 250, DefaultWindowOut = 180;
 
         /// <summary>Opening of one chart item: a bar growing, a ring filling, a dot popping up (default 600).</summary>
@@ -247,9 +252,28 @@ public static class TwMotion
         /// <summary>The last picture of a window fading out with <see cref="TwWindowMotion"/> (default 180).</summary>
         public static int WindowOut { get => _windowOut; set => _windowOut = Check(value); }
 
-        /// <summary>Sets every duration back to its default.</summary>
+        /// <summary>
+        /// Multiplies the duration and delay of every animation by this factor (default 1), like the animator duration scale
+        /// of Android's developer options: set 5 to see transitions in slow motion while debugging them, 0 to make every
+        /// animation immediate. It applies to the built-in animations, <see cref="TwTransition"/>, <see cref="TwWindowMotion"/>,
+        /// <see cref="TwTween"/> and <c>duration-*</c> / <c>delay-*</c> classes that start afterwards; a value under 1 never
+        /// makes a non-zero duration shorter than 1 ms. Must be 0 or more.
+        /// <code>
+        /// TwMotion.Timings.Scale = 5;   // a 250 ms slide now takes 1.25 s
+        /// </code>
+        /// </summary>
+        public static double Scale
+        {
+            get => _scale;
+            set => _scale = double.IsNaN(value) || double.IsInfinity(value) || value < 0
+                ? throw new ArgumentOutOfRangeException(nameof(value), value, "The scale must be 0 or more.")
+                : value;
+        }
+
+        /// <summary>Sets every duration back to its default, and <see cref="Scale"/> to 1.</summary>
         public static void Reset()
         {
+            _scale = 1.0;
             _chartIntro = TwChartMotion.IntroDuration;
             _chartChange = TwChartMotion.ChangeDuration;
             _chartStagger = TwChartMotion.Stagger;

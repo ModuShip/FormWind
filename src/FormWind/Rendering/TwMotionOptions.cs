@@ -52,6 +52,29 @@ public sealed class TwMotionOptions
     /// </summary>
     public bool FadeRest { get; set; } = true;
 
+    /// <summary>
+    /// Called once, on the UI thread, when the motion has fully finished: the last picture is gone, or the window has reached
+    /// its place. Use it to continue after a transition (move a button to the toolbar after the sidebar collapsed). When
+    /// nothing is animated (animations off, zero duration, nothing on screen to take a picture of) it is called
+    /// synchronously, after the change is applied and before the method returns; otherwise it is called later from the
+    /// message loop. It is not called when the change itself throws. With <see cref="TwWindowMotion.Attach(System.Windows.Forms.Form, TwEdge, TwMotionOptions?, TwMotionOptions?)"/>
+    /// it is called each time that entrance or exit has finished. A slide that is cancelled (the window is hidden or disposed meanwhile) does not call it. For <c>await</c>, complete a
+    /// <c>TaskCompletionSource</c> from it; no Task-returning overloads exist, to keep the number of overloads small. When a window slide is already running, the new
+    /// <see cref="TwWindowMotion.SlideIn(System.Windows.Forms.Form, TwEdge, TwMotionOptions?)"/> does nothing and calls it at once.
+    /// <code>
+    /// TwTransition.Resize(sidebar, 56, new TwMotionOptions { Completed = () => toolbar.Controls.Add(btnMenu) });
+    /// </code>
+    /// </summary>
+    public Action? Completed { get; set; }
+
+    internal static void Complete(TwMotionOptions? options) => options?.Completed?.Invoke();
+
+    // Birden çok parça (örtü, kayan resim) bittiğinde Completed'ı bir kez çağıran sayaç.
+    internal static Action Latch(TwMotionOptions? options, int count) => () =>
+    {
+        if (--count == 0) Complete(options);
+    };
+
     internal TwTiming Timing(int defaultDurationMs, TwEasing defaultEasing) => Timing(this, defaultDurationMs, defaultEasing);
 
     internal static TwTiming Timing(TwMotionOptions? options, int defaultDurationMs, TwEasing defaultEasing)

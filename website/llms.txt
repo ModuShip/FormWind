@@ -56,7 +56,7 @@ Use standard controls first. `Tw*` controls exist where a native control cannot 
 ## Verifying your work
 
 - With the `formwind-mcp` server (`dotnet tool install -g FormWind.Mcp --prerelease`): `validate_classes` after writing classes, `explain_classes` to check what dark, hover or disabled resolve to, `render` to look at the control in light and dark mode.
-- `provider.UnknownClasses += (s, e) => …` reports unknown classes; `provider.Theme.SuggestClass("bg-blu-600")` returns the closest known class (`"bg-blue-600"`), variant prefixes included. Without a listener, unknown classes and suggestions go to the Debug output.
+- `provider.UnknownClasses += (s, e) => …` reports unknown classes; `provider.Theme.SuggestClass("bg-blu-600")` returns the closest known class (`"bg-blue-600"`), variant prefixes included. Without a listener, unknown classes and suggestions go to the Debug output. A missing unit is suggested too (`duration-[120]` → `duration-[120ms]`). `StyleError` is only for errors while applying styles. `provider.Theme.Explain("bg-blue-600 hover:bg-blue-700")` returns what each class resolves to. Analyzer `FW004` warns about malformed arbitrary values (`duration-[120]`, `w-[120]`) in class literals.
 - `provider.Theme.Parse(classes).Unknown` is empty when every class is recognized (experimental API, diagnostic `FW9001`).
 - `TwContrast` audits a form for WCAG contrast in light and dark mode.
 - `tools/run-harness.ps1` runs a real application with FormWind and takes screenshots without changing its source.

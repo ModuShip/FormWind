@@ -231,7 +231,7 @@ internal sealed class TwOutset
     public void Ping(int count, Color color, float radius)
     {
         _pingStart = DateTime.UtcNow;
-        _pingTime = TwMotion.Timings.AttentionPulse;
+        _pingTime = Math.Max(1, TwMotion.Timings.Scaled(TwMotion.Timings.AttentionPulse));
         _pingCount = Math.Max(1, count);
         _pingColor = color;
         _pingRadius = radius;

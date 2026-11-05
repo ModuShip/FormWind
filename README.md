@@ -197,7 +197,7 @@ Vitrinde görünümler arasında geçiş yapan bir form vardır: `FormWind.Showc
 - Boşluk birimi 4 px'tir (`spacingUnit` ile değiştirilebilir). Sayılar her kültürde nokta ile yazılır: `p-0.5`.
 - Palet: Tailwind v3'ün 22 rengi × 11 tonu (50–950), ayrıca `white`, `black`, `transparent`. Tailwind v4 paleti de seçilebilir (bkz. [Tema dosyası](#tema-dosyası-twconfigjson)).
 - Aynı varyant içinde sonra gelen class kazanır: `p-2 px-4` → dikey 8 px, yatay 16 px.
-- Tanınmayan class'lar `TailwindProvider.UnknownClasses` olayına (dinleyici yoksa Debug çıktısına) bildirilir. `Theme.SuggestClass("hovr:bg-blu-600")` en yakın tanınan class'ı döndürür (`hover:bg-blue-600`); Debug çıktısı, class düzenleyicisi ve akıllı etiket bu önerileri gösterir.
+- Tanınmayan class'lar `TailwindProvider.UnknownClasses` olayına (dinleyici yoksa Debug çıktısına) bildirilir. `Theme.SuggestClass("hovr:bg-blu-600")` en yakın tanınan class'ı döndürür (`hover:bg-blue-600`) ve keyfi değerde eksik ya da yanlış birimi düzeltir (`duration-[120]` → `duration-[120ms]`, `w-[120]` → `w-[120px]`); Debug çıktısı, `TwUnknownClassesEventArgs.Suggestions`, class düzenleyicisi ve akıllı etiket bu önerileri gösterir. **Hangi olay neyi bildirir:** FormWind'in tanımadığı class (biçimi bozuk keyfi değer dahil) yok sayılır ve `UnknownClasses` ile bildirilir; `StyleError` stil uygulanırken oluşan hatalar içindir (uygulayıcı ya da `SetRowClasses` kuralı istisna attı, bilinmeyen ikon adı). `Theme.Explain("bg-blue-600 hover:bg-blue-700 duration-[120]")` her class'ın neye çözüldüğünü (varyant başına özellik ve değer; tanınmayanlar önerisiyle işaretli) günlük ya da hata ayıklayıcı izleme penceresi için metin olarak verir.
 - [`website/llms.txt`](website/llms.txt), kodlama ajanları için class'ları, bileşenleri ve kuralları özetler (sitenin kökünde yayımlanır).
 - Bozuk class'lar uygulamayı düşürmez: `int`'e sığmayan keyfi değerler (`w-[99999999999px]`) ve sıfır boyutlu font (`text-[0px]`) tanınmayan class sayılır. Kendini tekrar tekrar içeren ya da döngü kuran tema bileşenleri bir kez açılır (tekrarlar ayıklanır, sonra gelen class kazanır); döngüyü kapatan ad tanınmayan class olarak raporlanır. Uygulayıcıda çıkan hatalar `StyleError` ile bildirilir ve dışarı taşmaz (`BadInputTests`).
 - CSS'te padding kutuyu büyütür; WinForms'ta boyutu sabit (`AutoSize` kapalı) bir buton ya da etikette ise içeriği daraltır. Bu kontrollerde padding, yazı tek satıra sığacak kadar kısılır (örn. 25 px yüksekliğindeki bir butona `btn` verildiğinde `py-2` küçülür). `AutoSize` açık ama kenetlenmiş (`Dock`) kontrollerde kenetlenen eksenin boyutunu ebeveyn belirlediğinden o eksende de kısılır (örn. `Dock = Right` bir AutoSize butonun yüksekliği; Bulk Crap Uninstaller'ın sihirbazında yazı alttan kırpılıyordu). Kontrol büyüyünce, fontu ya da metni değişince yeniden hesaplanır ve yer varsa tam değere döner. Butonun görseli (`Image`, `ImageList`) yazının yanında ya da üstündeyse onun yeri de ayrılır; görsel form yüklenirken atansa da form görünür olunca yeniden ölçülür (KeePass'in görselli "Tools" butonunda yazı "To" olarak kesiliyordu).
@@ -1069,6 +1069,10 @@ Yalnızca class metni sabit olan çağrılar ve class'ların gerçekten yönetti
 
 .NET Framework projelerinde, `SetClasses` kullanan bir `InitializeComponent` `AutoScaleMode.Font` kuruyor ve formun `Font`'unu `AutoScaleDimensions`'tan sonra atıyorsa uyarır (bkz. [DPI](#dpi)): PerMonitorV2'de form ölçeklenmez. Hedef çerçeve `build_property.TargetFramework`'ten, o yoksa referans verilen WinForms'un sürümünden anlaşılır. Uygulama PerMonitorV2 çalışmıyorsa uyarı `.editorconfig`'te `dotnet_diagnostic.FW002.severity = none` ile kapatılabilir.
 
+### FW004 çözümleyicisi
+
+`TailwindProvider.SetClasses`, `SetColumnClasses`, `SetRowClasses`'a (kuraldaki metinler) verilen ve `Classes` özelliklerine atanan sabit class metinlerindeki bozuk keyfi değerleri uyarır: eksik ya da yanlış birim (`duration-[120]` → `duration-[120ms]`, `w-[120]` → `w-[120px]`), dengesiz köşeli parantez, hex olmayan renk (`bg-[ff0000]` → `bg-[#ff0000]`) ve keyfi değer almayan class'ta köşeli parantez (`grid-cols-[1fr_2fr]`). Böyle bir class çalışma anında yok sayılır ve `UnknownClasses` ile bildirilir. Class adları denetlenmez: tema dosyası çözümleyicinin göremeyeceği renk ve bileşen ekleyebilir; yanlış yazılmış ad (`bg-blu-600`) çalışma anında öneriyle bildirilir. Kapatmak için `.editorconfig`'te `dotnet_diagnostic.FW004.severity = none`.
+
 ## Animasyonlar ve responsive varyantlar
 
 - Sekme göstergesi (alt çizgi, hap, bölme) yeni sekmeye kayar; liste satırlarının hover zemini yumuşakça belirir; iskelet satırlar (liste ve grid) hafifçe nabız atar; `TwSwitch` düğmesi kayar, `TwToast` solarak belirip kaybolur, `TwDialog` ve `TwPopover` açılırken solarak belirir, belirsiz `TwProgress` şeridi ray boyunca kayar. Switch düğmesi, sekme göstergesi ve liste hover'ı kontrolün `duration-*`, `delay-*` ve `ease-*` class'larına uyar; `transition-none` onları anında yapar.
@@ -1106,6 +1110,7 @@ TwMotion.Timings.ChartStagger = 70;      // zaman çizelgesinde noktalar arası
 TwMotion.Timings.AttentionPulse = 1200;  // nabız
 ```
 
+- `TwMotion.Timings.Scale` sonradan başlayan her animasyonun (geçişler, pencere hareketi, `TwTween`, grafikler, açılır pencereler, `duration-*` ve `delay-*` class'ları) süresini ve gecikmesini çarpar; Android'in animatör süre ölçeği gibi: `TwMotion.Timings.Scale = 5;` 250 ms'lik kaymayı 1,25 sn'de gösterir, geçişi gözle hata ayıklamak için; `0` her animasyonu anında yapar. Varsayılan 1'dir, 0 ya da büyük olmalıdır, `Reset()` geri alır.
 - Animasyon ayarını uygulamanın kendi ayarlarında saklamak için `TwMotion.Preference` (`TwMotionPreference.System` Windows'u izler, `On` / `Off` `Enabled`'ı ayarlar): açılışta `TwMotion.Preference = Settings.Default.Motion;`, kullanıcı değiştirince `Settings.Default.Motion = TwMotion.Preference;`.
 - `await TwMotion.AfterPaintAsync(control)` kontrol ve çocukları bekleyen boyamalarını bitirince, animasyon saatinin bir sonraki karesinde tamamlanır; örneğin sayfayı önce gösterip verisini ekrana çıktıktan sonra bağlamak için. `Application.Idle`'ın aksine kendini sürekli boyayan bir kontrol varken de gelir.
 
@@ -1141,6 +1146,12 @@ TwTransition.CrossFade(this, () => provider.DarkMode = !provider.DarkMode);   //
 ```
 
 - **Kayan panel:** `TwTransition.SlideIn(panel, TwEdge.Right)` bir kenar panelini (Inspector, filtreler) kenarından kayarak gösterir, `SlideOut` kayarak gizler (250 ms). Genişlik her karede değiştirilmez: yerleşim bir kez yapılır, panelin resmi yerine kayar ve ebeveynin geri kalanı yeni yerleşimine solar; yanındaki tablo her karede yeniden yerleşip yırtılmaz. Panelin yeni hâli, üstündeki eski görüntü bir anlığına ekran yakalamasından çıkarılarak ekrandan okunur (Windows 10 2004 ve sonrası; öncesinde `PrintWindow`). Ekran kaydı ya da paylaşımı bu anda eski görüntüyü bir kare görmeyebilir.
+- **Hareketten sonra:** `TwMotionOptions.Completed`, bir geçiş ya da pencere hareketi tamamen bitince (son resim kalkınca, pencere yerine oturunca) UI iş parçacığında bir kez çağrılır. Hiçbir şey canlandırılmıyorsa (animasyon kapalı, süre 0, resmi alınacak bir şey yok, panel zaten istenen durumda) değişiklik uygulandıktan sonra, yöntem dönmeden önce eşzamanlı çağrılır. Değişiklik istisna atarsa çağrılmaz. `Task` döndüren aşırı yükler yoktur; bir hareketi `await` etmek için `Completed` içinden bir `TaskCompletionSource` tamamlayın.
+
+```csharp
+TwTransition.Resize(sidebar, 56, new TwMotionOptions { Completed = () => toolbar.Controls.Add(btnMenu) });   // kenar çubuğu daraldıktan sonra
+```
+
 - **Kayan pencere:** `TwWindowMotion.Attach(sheet, TwEdge.Right)` bir pencerenin her gösterilişinde kenarından 24 px kayarak belirmesini, her kapanışında son görüntüsünün aynı kenara kayarak solmasını sağlar; pencere yine hemen kapanır (`DialogResult` ve `ShowDialog`'un dönüşü gecikmez). Tek seferlik kullanım için `SlideIn(window, edge)` (gösterilmiş pencere) ve `FadeOut(window, edge)` (`FormClosing` içinde).
 
 ```csharp

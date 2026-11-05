@@ -46,6 +46,7 @@ public static class TwTransition
         {
             _lastCovered = false;
             change();
+            TwMotionOptions.Complete(options);
             return;
         }
 
@@ -56,18 +57,22 @@ public static class TwTransition
         // Eski görüntü önce ekrana çıkar; değişiklik onun altında uygulanıp boyanır, solma ancak ondan sonra başlar.
         var cover = picture is null ? null : TwFadeOut.Cover(picture, visible, host.FindForm(), roundCorners: host is Form);
         _lastCovered = cover != null;
+        bool applied = false;
         try
         {
             change();
+            applied = true;
         }
         finally
         {
             if (cover != null)
             {
                 TwCapture.PaintNow(host);
+                if (applied) cover.FormClosed += (_, _) => TwMotionOptions.Complete(options);
                 cover.Fade(timing, Point.Empty);
             }
         }
+        if (cover is null) TwMotionOptions.Complete(options);
     }
 
     /// <summary>
@@ -119,6 +124,7 @@ public static class TwTransition
         if (host is null || panel.Visible == show || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
         {
             panel.Visible = show;
+            TwMotionOptions.Complete(options);
             return;
         }
 
@@ -127,6 +133,7 @@ public static class TwTransition
         if (before is null)
         {
             panel.Visible = show;
+            TwMotionOptions.Complete(options);
             return;
         }
 
@@ -159,9 +166,12 @@ public static class TwTransition
         {
             front?.Dispose();
             back?.Dispose();
+            TwMotionOptions.Complete(options);
             return;
         }
         _lastCovered = true;
+        var done = TwMotionOptions.Latch(options, 2);   // örtü + kayan resim
+        cover.FormClosed += (_, _) => done();
 
         if (show)
         {
@@ -179,12 +189,18 @@ public static class TwTransition
         {
             var away = TwWindowMotion.Offset(edge, edge is TwEdge.Left or TwEdge.Right ? place.Width : place.Height);
             var slider = new SlideGhost(back, front, place, show ? away : Point.Empty, show ? Point.Empty : away);
-            if (slider.TryShow(host.FindForm())) slider.Play(timing);
+            if (slider.TryShow(host.FindForm()))
+            {
+                slider.FormClosed += (_, _) => done();
+                slider.Play(timing);
+            }
+            else done();
         }
         else
         {
             front?.Dispose();
             back?.Dispose();
+            done();
         }
         cover.Fade(RestTiming(timing, fadeRest), Point.Empty);
     }
@@ -212,7 +228,11 @@ public static class TwTransition
         bool vertical = panel.Dock is DockStyle.Top or DockStyle.Bottom;
         _lastCovered = false;
         _lastRevealed = false;
-        if ((vertical ? panel.Height : panel.Width) == size) return;
+        if ((vertical ? panel.Height : panel.Width) == size)
+        {
+            TwMotionOptions.Complete(options);
+            return;
+        }
         Resize(panel, () =>
         {
             if (vertical) panel.Height = size;
@@ -248,6 +268,7 @@ public static class TwTransition
         if (host is null || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
         {
             change();
+            TwMotionOptions.Complete(options);
             return;
         }
 
@@ -258,6 +279,7 @@ public static class TwTransition
         if (before is null)
         {
             change();
+            TwMotionOptions.Complete(options);
             return;
         }
         bool wasShown = panel.Visible;
@@ -284,6 +306,7 @@ public static class TwTransition
         if (cover is null)
         {
             before.Dispose();
+            TwMotionOptions.Complete(options);
             return;
         }
         _lastCovered = true;
@@ -293,10 +316,13 @@ public static class TwTransition
         if (!wasShown && isShown) oldPlace = Flat(newPlace, vertical, far);
         else if (wasShown && !isShown) newPlace = Flat(oldPlace, vertical, far);
 
+        var done = TwMotionOptions.Latch(options, 2);   // örtü + açılan resim
+        cover.FormClosed += (_, _) => done();
         // Yeri değişmeyen (ya da hep gizli kalan) bir değişiklik yalnızca çapraz solar.
         if (!animated || newPlace == oldPlace)
         {
             before.Dispose();
+            done();
             cover.Fade(timing, Point.Empty);
             return;
         }
@@ -322,13 +348,16 @@ public static class TwTransition
             if (reveal.TryShow(host.FindForm()))
             {
                 _lastRevealed = true;
+                reveal.FormClosed += (_, _) => done();
                 reveal.Play(timing);
             }
+            else done();
         }
         else
         {
             front?.Dispose();
             back?.Dispose();
+            done();
         }
         cover.Fade(RestTiming(timing, options?.FadeRest ?? true), Point.Empty);
     }
@@ -359,7 +388,7 @@ public static class TwTransition
 
     // Kalan alan ya ana geçişle aynı sürede solar ya da kayan resim ekrana çıktıktan sonra hemen açılır.
     private static TwTiming RestTiming(TwTiming timing, bool fade) =>
-        fade ? new TwTiming(timing.DurationMs, 0, TwEasing.InOut) : TwTiming.None;
+        fade ? TwTiming.Exact(timing.DurationMs, 0, TwEasing.InOut) : TwTiming.None;
 
     // Panelin yeri; istenirse kenar payıyla birlikte (Margin'in bıraktığı boşluk da panelle kayar).
     private static Rectangle Place(Control panel, bool margin)
