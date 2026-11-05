@@ -74,6 +74,9 @@ All notable changes to FormWind are documented in this file. The format follows
   after the change is treated as a zero-thickness strip at its docked edge, so opening a hidden panel animates (it
   returned without animation) and closing one reveals its picture instead of only cross-fading. A width of 0 animates
   too.
+- While a panel grows under `TwTransition.Resize`, the part of its place it has not covered yet fades its old content out
+  instead of turning into the parent's background color at once (a white block that the sidebar then grew into). With
+  `FadeRest = false` the background color stays, so moved text is still never seen twice.
 - `Resize` covers the form's client area, not only the panel's parent: controls that `change` moves out of the parent (a
   row moved to the form) no longer show their new layout for a frame. The panel's subtree gets its window handles and is
   repainted before the "after" picture is taken, so newly shown or reparented children are in it.

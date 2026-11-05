@@ -228,6 +228,7 @@ public static class TwTransition
         bool vertical = panel.Dock is DockStyle.Top or DockStyle.Bottom;
         _lastCovered = false;
         _lastRevealed = false;
+        _lastRevealFadedBack = false;
         if ((vertical ? panel.Height : panel.Width) == size)
         {
             TwMotionOptions.Complete(options);
@@ -264,6 +265,7 @@ public static class TwTransition
         var host = panel.Parent;
         _lastCovered = false;
         _lastRevealed = false;
+        _lastRevealFadedBack = false;
         var timing = TwMotionOptions.Timing(options, TwMotion.Timings.Slide, TwEasing.InOut);
         if (host is null || !TwMotion.CanAnimate(host) || timing.TotalMs <= 0)
         {
@@ -336,18 +338,23 @@ public static class TwTransition
         var wide = Rectangle.Intersect(grows ? newPlace : oldPlace, place);
         var large = grows ? after : oldPart;
         var front = large is null || wide.Width <= 0 || wide.Height <= 0 ? null : Crop(large, wide, place);
-        // Büyürken panelin henüz örtmediği şeritte eski yerleşimin içeriği kalmaz (yeni yerine geçmiş yazılar iki kez
-        // görünürdü): zemin rengi üstünde panelin eski resmi. Küçülürken arka plan zaten yeni yerleşimdir.
-        var back = grows ? Underlay(oldPart, Rectangle.Intersect(oldPlace, place), place, host.BackColor) : after;
+        // Büyürken panelin henüz örtmediği şeritte: kalan alan solarken eski içerik zemin rengi üstünde solarak kaybolur
+        // (bir anda silinip boş bir alan bırakmaz). Kalan alan solmuyorsa (FadeRest = false) yeni yerine geçmiş yazılar iki
+        // kez görünmesin diye eski içerik hiç kalmaz: zemin rengi üstünde panelin eski resmi. Küçülürken arka plan zaten
+        // yeni yerleşimdir.
+        bool fadeBack = grows && (options?.FadeRest ?? true);
+        var back = !grows ? after : fadeBack ? oldPart : Underlay(oldPart, Rectangle.Intersect(oldPlace, place), place, host.BackColor);
         if (grows) after?.Dispose();
-        oldPart?.Dispose();
+        if (!fadeBack) oldPart?.Dispose();
         if (front != null && back != null)
         {
             var reveal = new RevealGhost(back, front, place, new Point(wide.X - place.X, wide.Y - place.Y), vertical, far,
-                vertical ? oldPlace.Height : oldPlace.Width, vertical ? newPlace.Height : newPlace.Width);
+                vertical ? oldPlace.Height : oldPlace.Width, vertical ? newPlace.Height : newPlace.Width,
+                fadeBack ? host.BackColor : (Color?)null);
             if (reveal.TryShow(host.FindForm()))
             {
                 _lastRevealed = true;
+                _lastRevealFadedBack = fadeBack;
                 reveal.FormClosed += (_, _) => done();
                 reveal.Play(timing);
             }
@@ -476,6 +483,7 @@ public static class TwTransition
             if (!_tween.Running) Close();
         }
 
+
         protected override void OnPaintBackground(PaintEventArgs e) { }
 
         protected override void Dispose(bool disposing)
@@ -516,7 +524,11 @@ public static class TwTransition
         private readonly bool _vertical, _far;
         private readonly int _from, _to;
 
-        public RevealGhost(Bitmap back, Bitmap front, Rectangle bounds, Point at, bool vertical, bool far, int from, int to)
+        private readonly Color? _fadeOn;
+
+        // fadeOn: arka plan resmi (panelin yerinin eski içeriği) bu zemin rengi üstünde ilerledikçe solar; null = arka plan
+        // resmi olduğu gibi kalır.
+        public RevealGhost(Bitmap back, Bitmap front, Rectangle bounds, Point at, bool vertical, bool far, int from, int to, Color? fadeOn)
             : base(back, front, bounds)
         {
             _at = at;
@@ -524,13 +536,22 @@ public static class TwTransition
             _far = far;
             _from = from;
             _to = to;
+            _fadeOn = fadeOn;
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.DrawImageUnscaled(Back, 0, 0);
+            float p = Progress;
+            if (_fadeOn is Color color && p > 0f)
+            {
+                e.Graphics.Clear(Color.FromArgb(255, color));
+                using var attributes = new System.Drawing.Imaging.ImageAttributes();
+                attributes.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix { Matrix33 = Math.Max(0f, 1f - p) });
+                e.Graphics.DrawImage(Back, new Rectangle(Point.Empty, Back.Size), 0, 0, Back.Width, Back.Height, GraphicsUnit.Pixel, attributes);
+            }
+            else e.Graphics.DrawImageUnscaled(Back, 0, 0);
             int length = _vertical ? Front.Height : Front.Width;
-            int shown = Math.Max(0, Math.Min(length, (int)Math.Round(_from + (_to - _from) * Progress)));
+            int shown = Math.Max(0, Math.Min(length, (int)Math.Round(_from + (_to - _from) * p)));
             var clip = _vertical
                 ? new Rectangle(_at.X, _far ? _at.Y + length - shown : _at.Y, Front.Width, shown)
                 : new Rectangle(_far ? _at.X + length - shown : _at.X, _at.Y, shown, Front.Height);
@@ -550,6 +571,12 @@ public static class TwTransition
     private static bool _lastRevealed;
 
     internal static bool LastRevealed => _lastRevealed;
+
+    /// <summary>Whether the last growing reveal faded the old content of the panel's place out (for tests).</summary>
+    [ThreadStatic]
+    private static bool _lastRevealFadedBack;
+
+    internal static bool LastRevealFadedBack => _lastRevealFadedBack;
 
     // Form: pencerenin görünen tamamı (başlık çubuğu dahil, görünmez kenarlıklar hariç); alt kontrol: ebeveyn içindeki sınırları.
     private static Rectangle ScreenBounds(Control host) =>

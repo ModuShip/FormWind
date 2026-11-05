@@ -99,11 +99,34 @@ public class BlockingBugTests
         Assert.True(called);
         Assert.True(TwTransition.LastCovered);
         Assert.True(TwTransition.LastRevealed);
+        Assert.True(TwTransition.LastRevealFadedBack);   // açılmamış şerit bir anda zemin rengine dönmez, eski içerik solar
         Assert.True(sidebar.Visible);
         Assert.Equal(240, sidebar.Width);
         WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
         form.Close();
     }));
+
+    // Açılırken panelin henüz örtmediği şerit: kalan alan solarken eski içerik solarak kaybolur; FadeRest = false iken (yazılar
+    // iki kez görünmesin) zemin rengi kalır; kapanırken arka plan yeni yerleşimdir.
+    [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void Resize_fades_the_old_content_out_only_while_growing_with_the_rest_fading(bool grow, bool fadeRest, bool fadedBack) =>
+        Sta.Run(() => WithMotion(() =>
+        {
+            using var form = ShowForm(new Size(500, 300));
+            var (_, sidebar, _) = Layout(form);
+            sidebar.Width = grow ? 60 : 240;
+            Application.DoEvents();
+            int open = Application.OpenForms.Count;
+
+            TwTransition.Resize(sidebar, grow ? 240 : 60, new TwMotionOptions { DurationMs = 120, FadeRest = fadeRest });
+            Assert.True(TwTransition.LastRevealed);
+            Assert.Equal(fadedBack, TwTransition.LastRevealFadedBack);
+            WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
+            form.Close();
+        }));
 
     [Fact]
     public void Resize_to_width_zero_and_back_animates_with_the_panel_visible() => Sta.Run(() => WithMotion(() =>
