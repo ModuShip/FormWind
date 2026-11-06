@@ -203,8 +203,15 @@ public class BlockingBugTests
         var rows = new[] { Row(select), Row(toggle), Row(label) };
         form.Show();
         Application.DoEvents();
-        Assert.Equal(160, select.Width);                                           // varsayılan: 160 px
+        // 0.1.7: varsayılan 0, yani düzenleyicinin kendi genişliği (0.1.6'da 160 px'e çekiliyordu).
+        Assert.Equal(0, rows[0].EditorWidth);
+        Assert.Equal(180, select.Width);
+        Assert.Equal(104, toggle.Width);
+        Assert.Equal(280, label.Width);
 
+        foreach (var row in rows) row.EditorWidth = 160;
+        Application.DoEvents();
+        Assert.Equal(160, select.Width);
         foreach (var row in rows) row.EditorWidth = 0;
         Application.DoEvents();
         Assert.Equal(180, select.Width);

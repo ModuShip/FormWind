@@ -339,7 +339,7 @@ public class ComposedControlTests
         using var form = NewForm(560);
         using var tw = new TailwindProvider();
         var group = new TwPanel { Dock = DockStyle.Top, Height = 200 };
-        var first = new TwSettingRow { LabelText = "Mikro duruş sınırı", Description = "Daha kısa duruşlar hız kaybı sayılır", UnitText = "dk", Dock = DockStyle.Top };
+        var first = new TwSettingRow { LabelText = "Mikro duruş sınırı", Description = "Daha kısa duruşlar hız kaybı sayılır", UnitText = "dk", EditorWidth = 160, Dock = DockStyle.Top };
         var box = new TwNumberBox();
         first.Controls.Add(box);
         var second = new TwSettingRow { LabelText = "Vardiya başlangıcı", Dock = DockStyle.Top };

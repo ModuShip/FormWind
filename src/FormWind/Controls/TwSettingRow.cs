@@ -27,7 +27,7 @@ public class TwSettingRow : TwPanel
     private readonly Label _label;
     private readonly Label _description;
     private readonly Label _unit;
-    private int _editorWidth = 160;
+    private int _editorWidth;
     private Color _labelColor = Color.Empty;
     private Color _hintColor = Color.Empty;
     private Color _dividerColor = Color.Empty;
@@ -97,11 +97,11 @@ public class TwSettingRow : TwPanel
     }
 
     /// <summary>
-    /// Width of the editor (96 DPI pixels); 0 = the editor's own width (its preferred width when it is <c>AutoSize</c>, its
-    /// <c>Width</c> otherwise). An <c>AutoSize</c> editor (a tab strip, an auto-sized panel of a status text and a button) is
-    /// never made narrower than its preferred width, and the row lays out again when that width changes.
+    /// Width of the editor (96 DPI pixels); 0 (the default) = the editor's own width (its preferred width when it is
+    /// <c>AutoSize</c>, its <c>Width</c> otherwise). An <c>AutoSize</c> editor (a tab strip, an auto-sized panel of a status text
+    /// and a button) is never made narrower than its preferred width, and the row lays out again when that width changes.
     /// </summary>
-    [Category("Layout"), DefaultValue(160)]
+    [Category("Layout"), DefaultValue(0)]
     public int EditorWidth
     {
         get => _editorWidth;
