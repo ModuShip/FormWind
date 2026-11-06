@@ -2868,3 +2868,113 @@ FormWind.TwOffscreenOptions.IncludeOwned.set -> void
 FormWind.TwOffscreenOptions.TwOffscreenOptions() -> void
 static FormWind.TwOffscreen.Render(System.Windows.Forms.Form! form) -> System.Drawing.Bitmap!
 static FormWind.TwOffscreen.Render(System.Windows.Forms.Form! form, FormWind.TwOffscreenOptions? options) -> System.Drawing.Bitmap!
+FormWind.TwDpi
+static FormWind.TwDpi.DeviceDpi(System.Windows.Forms.Control! control) -> int
+static FormWind.TwDpi.FontScale(System.Windows.Forms.Control! control) -> float
+static FormWind.TwDpi.Simulate(int dpi) -> System.IDisposable!
+static FormWind.TwDpi.SimulatedDpi.get -> int?
+static FormWind.TwDpi.SystemDpi.get -> int
+FormWind.TwCard
+FormWind.TwCard.Description.get -> string!
+FormWind.TwCard.Description.set -> void
+FormWind.TwCard.Header.get -> FormWind.TwPageHeader!
+FormWind.TwCard.HeaderGap.get -> int
+FormWind.TwCard.HeaderGap.set -> void
+FormWind.TwCard.Title.get -> string!
+FormWind.TwCard.Title.set -> void
+FormWind.TwCard.TwCard() -> void
+FormWind.TwFormHost
+FormWind.TwFormHost.Form.get -> System.Windows.Forms.Form?
+FormWind.TwFormHost.Form.set -> void
+FormWind.TwFormHost.FormClosed -> System.Windows.Forms.FormClosedEventHandler?
+FormWind.TwFormHost.IsScaled.get -> bool
+FormWind.TwFormHost.ScaleDesignSize.get -> bool
+FormWind.TwFormHost.ScaleDesignSize.set -> void
+FormWind.TwFormHost.Title.get -> string!
+FormWind.TwFormHost.TitleChanged -> System.EventHandler?
+FormWind.TwFormHost.TitleTarget.get -> System.Windows.Forms.Control?
+FormWind.TwFormHost.TitleTarget.set -> void
+FormWind.TwFormHost.TwFormHost() -> void
+FormWind.TwHeading
+FormWind.TwHeading.EffectiveSubtitleColor.get -> System.Drawing.Color
+FormWind.TwHeading.EffectiveSubtitleFont.get -> System.Drawing.Font!
+FormWind.TwHeading.LineGap.get -> int
+FormWind.TwHeading.LineGap.set -> void
+FormWind.TwHeading.Subtitle.get -> string!
+FormWind.TwHeading.Subtitle.set -> void
+FormWind.TwHeading.SubtitleColor.get -> System.Drawing.Color
+FormWind.TwHeading.SubtitleColor.set -> void
+FormWind.TwHeading.SubtitleFont.get -> System.Drawing.Font?
+FormWind.TwHeading.SubtitleFont.set -> void
+FormWind.TwHeading.TwHeading() -> void
+FormWind.TwPageHeader
+FormWind.TwPageHeader.Gap.get -> int
+FormWind.TwPageHeader.Gap.set -> void
+FormWind.TwPageHeader.Heading.get -> FormWind.TwHeading!
+FormWind.TwPageHeader.IsStacked.get -> bool
+FormWind.TwPageHeader.Items.get -> System.Collections.Generic.IReadOnlyList<System.Windows.Forms.Control!>!
+FormWind.TwPageHeader.Subtitle.get -> string!
+FormWind.TwPageHeader.Subtitle.set -> void
+FormWind.TwPageHeader.Title.get -> string!
+FormWind.TwPageHeader.Title.set -> void
+FormWind.TwPageHeader.TwPageHeader() -> void
+FormWind.TwPanel.ScrollToFocused.get -> bool
+FormWind.TwPanel.ScrollToFocused.set -> void
+FormWind.TwPeriodDateStyle
+FormWind.TwPeriodDateStyle.Abbreviated = 1 -> FormWind.TwPeriodDateStyle
+FormWind.TwPeriodDateStyle.Short = 0 -> FormWind.TwPeriodDateStyle
+FormWind.TwPeriodPicker.DateFormat.get -> string?
+FormWind.TwPeriodPicker.DateFormat.set -> void
+FormWind.TwPeriodPicker.DateStyle.get -> FormWind.TwPeriodDateStyle
+FormWind.TwPeriodPicker.DateStyle.set -> void
+FormWind.TwPeriodPicker.FormatRange(System.DateTime start, System.DateTime end) -> string!
+FormWind.TwPopover.HoverCloseDelay.get -> int
+FormWind.TwPopover.HoverCloseDelay.set -> void
+FormWind.TwPopover.IsOpenFromHover.get -> bool
+FormWind.TwPopover.ShowOnHover(System.Windows.Forms.Control! anchor, int delay = 400) -> void
+FormWind.TwPopover.StopHover(System.Windows.Forms.Control! anchor) -> void
+override FormWind.TwCard.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwCard.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwCard.OnDpiChangedAfterParent(System.EventArgs! e) -> void
+override FormWind.TwCard.OnParentChanged(System.EventArgs! e) -> void
+override FormWind.TwCard.Text.get -> string!
+override FormWind.TwCard.Text.set -> void
+override FormWind.TwFormHost.Dispose(bool disposing) -> void
+override FormWind.TwFormHost.ProcessCmdKey(ref System.Windows.Forms.Message msg, System.Windows.Forms.Keys keyData) -> bool
+override FormWind.TwHeading.AutoSize.get -> bool
+override FormWind.TwHeading.AutoSize.set -> void
+override FormWind.TwHeading.CreateAccessibilityInstance() -> System.Windows.Forms.AccessibleObject!
+override FormWind.TwHeading.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwHeading.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwHeading.OnPaddingChanged(System.EventArgs! e) -> void
+override FormWind.TwHeading.OnPaint(System.Windows.Forms.PaintEventArgs! e) -> void
+override FormWind.TwHeading.OnTextChanged(System.EventArgs! e) -> void
+override FormWind.TwPageHeader.DefaultSize.get -> System.Drawing.Size
+override FormWind.TwPageHeader.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+override FormWind.TwPageHeader.LayoutEngine.get -> System.Windows.Forms.Layout.LayoutEngine!
+override FormWind.TwPageHeader.OnControlAdded(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwPageHeader.OnControlRemoved(System.Windows.Forms.ControlEventArgs! e) -> void
+override FormWind.TwPageHeader.OnFontChanged(System.EventArgs! e) -> void
+override FormWind.TwPageHeader.OnForeColorChanged(System.EventArgs! e) -> void
+override FormWind.TwPageHeader.OnHandleCreated(System.EventArgs! e) -> void
+override FormWind.TwPageHeader.Text.get -> string!
+override FormWind.TwPageHeader.Text.set -> void
+override FormWind.TwPanel.ScrollToControl(System.Windows.Forms.Control! activeControl) -> System.Drawing.Point
+FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Clip = 3 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Menu = 0 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Scroll = 1 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.ScrollAndMenu = 2 -> FormWind.TwTabOverflow
+FormWind.TwTabStrip.GetVisibleTabBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwTabStrip.IsScrollable.get -> bool
+FormWind.TwTabStrip.MaxScrollOffset.get -> int
+FormWind.TwTabStrip.MinimumScrollWidth.get -> int
+FormWind.TwTabStrip.Overflow.get -> FormWind.TwTabOverflow
+FormWind.TwTabStrip.Overflow.set -> void
+FormWind.TwTabStrip.ScrollBackButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabStrip.ScrollForwardButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabStrip.ScrollOffset.get -> int
+FormWind.TwTabStrip.ScrollOffset.set -> void
+FormWind.TwTabStrip.ScrollTabIntoView(int index) -> void
+override FormWind.TwTabStrip.OnMouseWheel(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTabStrip.WndProc(ref System.Windows.Forms.Message m) -> void
