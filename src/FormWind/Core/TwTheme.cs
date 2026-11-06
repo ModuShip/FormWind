@@ -173,7 +173,10 @@ public sealed class TwTheme
     internal bool TryGetSvgIcon(string? name, out TwSvgIcon? icon)
     {
         icon = null;
-        return !string.IsNullOrWhiteSpace(name) && _svgIcons.TryGetValue(name!, out icon);
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        if (_svgIcons.TryGetValue(name!, out icon)) return true;
+        // Temanın glifi yerleşik SVG'yi geçer.
+        return !_icons.ContainsKey(name!) && TwIcons.TryGetBuiltInSvg(name!, out icon);
     }
 
     /// <summary>Whether the name is an SVG or glyph icon.</summary>

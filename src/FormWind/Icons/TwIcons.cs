@@ -53,7 +53,41 @@ public static class TwIcons
     public static string DefaultFontFamily { get; } =
         TwFonts.IsInstalled("Segoe Fluent Icons") ? "Segoe Fluent Icons" : "Segoe MDL2 Assets";
 
-    public static IEnumerable<string> Names => Map.Keys.OrderBy(n => n, StringComparer.Ordinal);
+    public static IEnumerable<string> Names => Map.Keys.Concat(BuiltInSvg.Keys).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n => n, StringComparer.Ordinal);
+
+    // İkon fontunda karşılığı olmayan simgeler: 24×24 çizgi SVG'ler (FormWind'in kendi çizimleri), fontun 1,5 px'lik çizgisine yakın.
+    private const string SvgHead = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">";
+
+    private static readonly Dictionary<string, string> BuiltInSvgSource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["bookmark"] = SvgHead + "<path d=\"M5.5 2.5h13v19.5l-6.5-4.75-6.5 4.75z\"/></svg>",
+        ["bookmark-filled"] = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M5.5 2.5h13v19.5l-6.5-4.75-6.5 4.75z\"/></svg>",
+        ["factory"] = SvgHead + "<path d=\"M2 21.5V11l5.75 3.5V11l5.75 3.5V11l5.75 3.5V2.5H22v19z\"/><path d=\"M6 18.25h2M11 18.25h2M16 18.25h2\"/></svg>",
+    };
+
+    private static Dictionary<string, TwSvgIcon>? _builtInSvg;
+
+    private static Dictionary<string, TwSvgIcon> BuiltInSvg
+    {
+        get
+        {
+            if (_builtInSvg is null)
+            {
+                var parsed = new Dictionary<string, TwSvgIcon>(StringComparer.OrdinalIgnoreCase);
+                foreach (var pair in BuiltInSvgSource) parsed[pair.Key] = TwSvgIcon.Parse(pair.Value);
+                _builtInSvg = parsed;
+            }
+            return _builtInSvg;
+        }
+    }
+
+    // Yerleşik SVG simgesi; Register ile aynı adla verilen glif onu geçer.
+    internal static bool TryGetBuiltInSvg(string name, out TwSvgIcon? icon)
+    {
+        icon = null;
+        lock (Map) if (Map.ContainsKey(name)) return false;
+        return BuiltInSvg.TryGetValue(name, out icon);
+    }
 
     public static void Register(string name, char glyph)
     {

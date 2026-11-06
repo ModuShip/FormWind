@@ -238,7 +238,7 @@ public class ReportFixTests
         using var tw = new TailwindProvider();
         var errors = new System.Collections.Generic.List<TwStyleErrorEventArgs>();
         tw.StyleError += (_, e) => errors.Add(e);
-        var icon = new TwIcon { IconName = "factory" };
+        var icon = new TwIcon { IconName = "forklift" };
         var known = new TwIcon { IconName = "settings" };
         form.Controls.Add(icon);
         form.Controls.Add(known);
@@ -246,8 +246,8 @@ public class ReportFixTests
         tw.SetClasses(known, "text-xl");
         var error = Assert.Single(errors);
         Assert.Same(icon, error.Target);
-        Assert.Contains("factory", error.Exception.Message);
-        Assert.False(TwIcons.IsKnown("factory"));
+        Assert.Contains("forklift", error.Exception.Message);
+        Assert.False(TwIcons.IsKnown("forklift"));
         Assert.True(TwIcons.IsKnown("#E710"));
         Assert.True(TwIcons.IsKnown(""));
     });

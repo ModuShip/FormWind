@@ -206,7 +206,7 @@ public class AnalyzerTests
     public void Reports_unknown_icon_names_but_not_known_registered_or_code_points()
     {
         var diagnostics = AnalyzeIcons("""
-            new TwIcon().IconName = "factory";
+            new TwIcon().IconName = "forklift";
             new TwButton().IconName = "save";
             new TwButton { IconName = "#E710" };
             new TwChip { IconName = "Plus" };
@@ -215,7 +215,7 @@ public class AnalyzerTests
             new TwChip { IconName = "add" };
             """);
         Assert.Equal(new[] { "FW003", "FW003" }, diagnostics.Select(d => d.Id).ToArray());
-        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'factory'"));
+        Assert.Contains(diagnostics, d => d.GetMessage().Contains("'forklift'"));
         Assert.Contains(diagnostics, d => d.GetMessage().Contains("'add'"));
     }
 
