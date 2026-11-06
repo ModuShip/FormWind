@@ -48,6 +48,16 @@ Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
 </ul>
 <p>Sonuç olarak class'lar iç ya da dış boşluğu yönettiği sürece bunlara çalışma zamanında yapılan atamalar geri alınır (FW001 uyarır). Kendi değerlerinizi korumak için boşluk class'larını kaldırın.</p>
 
+<h2 id="own-factor">Kendi DPI çarpanınızı kaldırın</h2>
+<p>Class değerleri 96 DPI pikselidir ve FormWind onları ölçekler. Bunları kendi çarpanıyla çarpan bir uygulama (<code>$"text-[{Fs(13)}px]"</code>) iki kez ölçekler: %100'de görünmez, %125'te yaklaşık 1,56 kat büyük çıkar. Ölçeklenmemiş değeri verin (<code>text-[13px]</code>); <code>TwSettingRow.EditorWidth</code>, <code>TwDataList.ItemHeight</code> ve FormWind'in 96 DPI pikseli olarak belgelediği diğer değerler için de aynısı.</p>
+
+<h2 id="simulate">Başka ölçekleri test etme</h2>
+<p><code>TwDpi.Simulate(dpi)</code> FormWind'in o DPI'lı bir ekrandaki gibi çizmesini sağlar; %100'lük makinede %125 ve %150 denetlenebilir. Kapsamın içinde stillenen kontroller simüle edilen class boyutlarını ve <code>text-*</code> fontlarını alır; WinForms'un kendi ölçeklemesi değişmez. <code>TwOffscreen.Render</code> ile birlikte:</p>
+<pre><code>using (TwDpi.Simulate(120))            // %125
+using (var form = new AnaForm())
+using (var resim = TwOffscreen.Render(form))
+    resim.Save("ana-125.png");</code></pre>
+
 <div class="callout">
   <p>Uygulama DPI'ya duyarlı çalışıyor ama formların AutoScale'i yerleşimi büyütmüyorsa boşluklar büyür, kontroller büyümez. AutoScale'i düzeltin ya da <code>TailwindProvider.ScaleWithDpi = false</code> yapın.</p>
 </div>

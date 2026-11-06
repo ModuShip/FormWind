@@ -48,6 +48,16 @@ Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
 </ul>
 <p>As a result, while classes manage padding or margin, run-time assignments to them are undone (FW001 warns). Remove padding and margin from the classes to keep your own values.</p>
 
+<h2 id="own-factor">Remove your own DPI factor</h2>
+<p>Class values are 96 DPI pixels and FormWind scales them. An application that multiplies them by its own factor (<code>$"text-[{Fs(13)}px]"</code>) scales twice: invisible at 100%, about 1.56× too large at 125%. Give the unscaled value (<code>text-[13px]</code>), and do the same for <code>TwSettingRow.EditorWidth</code>, <code>TwDataList.ItemHeight</code> and other values FormWind documents in 96 DPI pixels.</p>
+
+<h2 id="simulate">Testing other scales</h2>
+<p><code>TwDpi.Simulate(dpi)</code> makes FormWind draw as on a display with that DPI, so a 100% machine can check 125% and 150%. Controls styled inside the scope get the simulated class sizes and <code>text-*</code> fonts; WinForms' own scaling does not change. Combine it with <code>TwOffscreen.Render</code>:</p>
+<pre><code>using (TwDpi.Simulate(120))            // 125 %
+using (var form = new MainForm())
+using (var picture = TwOffscreen.Render(form))
+    picture.Save("main-125.png");</code></pre>
+
 <div class="callout">
   <p>If the application is DPI-aware but its forms' AutoScale doesn't enlarge the layout, spacing grows while controls don't. Fix AutoScale, or set <code>TailwindProvider.ScaleWithDpi = false</code>.</p>
 </div>

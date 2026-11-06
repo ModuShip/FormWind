@@ -161,6 +161,8 @@ Bütün görünümler **aynı bileşen adlarını** tanımlar; görünüm deği�
 | `TwTabStrip` (ve `TwTabControl`'ün şeridi) | `tabs` |
 | `TwChip` | `chip` |
 | `TwSettingRow` | `setting` |
+| `TwPageHeader` | `page-header` |
+| `TwCard` | `card` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
 | `LinkLabel` | `link-label` |
 | `TabControl`, `TabPage` | `tab-control`, `tab-page` |
@@ -264,6 +266,12 @@ CSS'ten farklar:
 - `TwPanel`'in içeriği kenarlığın içinde başlar (CSS kutu modeli); `AutoScroll` panelde genişlik görünen alandan alınır ve dikey kaydırma çubuğunun yeri önceden ayrılır.
 - `AutoSize = true` olan flex `TwPanel` içeriğine göre boyutlanır (grid için henüz yok).
 - Responsive varyantlar (`sm:`, `md:` …): bkz. [Animasyonlar ve responsive varyantlar](#animasyonlar-ve-responsive-varyantlar).
+- **Duyarlı gösterge ızgarası** ayrı bir kontrol gerektirmez: bir `TwPanel`'de `grid grid-cols-2 lg:grid-cols-4 gap-4` dört `TwStat` kartını geniş pencerede yan yana, 1024 px'in altında (`lg:`) iki sütunda dizer; gerekirse `sm:grid-cols-1` gibi adımlar eklenir.
+
+```csharp
+tw.SetClasses(gostergeIzgarasi, "grid grid-cols-2 lg:grid-cols-4 gap-4");
+foreach (var gosterge in gostergeler) tw.SetClasses(gosterge, "stat");
+```
 
 ### Windows metin boyutu
 
@@ -302,7 +310,7 @@ this.tailwindProvider1.SetClasses(this.icoCustomer, "text-xl text-blue-600 dark:
 this.btnSave.IconName = "save";
 ```
 
-Yerleşik adlar: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
+Yerleşik adlar: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `bookmark`, `bookmark-filled`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `factory`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
 
 Fontun herhangi bir glyph'i kod noktasıyla da kullanılabilir (`IconName = "#E8A5"`). Ek adlar ve farklı bir ikon fontu tema dosyasından verilir:
 
@@ -311,7 +319,9 @@ Fontun herhangi bir glyph'i kod noktasıyla da kullanılabilir (`IconName = "#E8
 "icons": { "invoice": "E8A5" }
 ```
 
-Glyph'ler font metriklerine güvenilmeden, gerçek mürekkep sınırlarına göre ortalanarak çizilir (ikon fontlarının satır yüksekliği glyph boyutuyla uyuşmaz).
+`bookmark`, `bookmark-filled` ve `factory`'nin ikon fontlarında glifi yoktur; FormWind bunları aynı çizgi kalınlığında yerleşik SVG ikonlar olarak çizer (aynı adla kaydedilen glif öncelik alır).
+
+Glifler font metrikleri yerine, gerçek mürekkep sınırlarına göre ortalanarak çizilir (ikon fontlarının satır yüksekliği glyph boyutuyla uyuşmaz).
 
 ### SVG ikonlar
 
@@ -638,13 +648,13 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwCheckBox`, `TwRadioButton`, `TwSwitch` | Bkz. [CheckBox, Radio, Switch](#checkbox-radio-switch). |
 | Standart kontroller | Renk, yazı ve boşluk her kontrolde çalışır. Köşe `Region` ile kırpılır (antialias yok), kenarlık `Paint` olayında çizilir. `TextBox`'ta (`TextBoxBase`) native kenarlık kapatılır; `border-*` ve `rounded-*` ebeveynde, kontrolün 3 px dışına zemin rengiyle doldurulmuş bir çerçeve olarak çizilir (çerçeve kontrolün sınırlarından taşar, yerleşimde pay bırakın). `DropDownList` modundaki `ComboBox`'ın kapalı kutusu (zemin, kenarlık, köşe, metin, ok) kenarlık ya da köşe class'larında ve koyu bir zeminde FormWind tarafından çizilir (kenarlık class'ı yoksa 1 px'lik, zeminden yazıya doğru bir kenarlıkla); açılır liste native kalır. Düzenlenebilir `ComboBox`'ta ve diğer native kontrollerde (`ListBox` …) köşe ve kenarlık uygulanmaz; `TwSelect`, `TwListBox` kullanın. |
 | `TwButton` | Pürüzsüz köşeli buton. `Image` henüz çizilmez, `Paint` olayı tetiklenmez. |
-| `TwPanel` | Pürüzsüz köşeli, kenarlıklı panel (kart). Yarı saydam zemin (`bg-white/70`) ebeveynin çizimini (geçişini ya da resmini) gösterir; `backdrop-blur-*` onu önce bulanıklaştırır: pencere içinde buzlu cam kart ya da kenar çubuğu, `backdrop-acrylic`'in form içi karşılığı. |
+| `TwPanel` | Pürüzsüz köşeli, kenarlıklı panel (kart). `ScrollToFocused = false`, `AutoScroll` sayfanın tıklanan liste ya da tabloya atlamasını önler (Tab yine odaklanan kontrole kaydırır). Yarı saydam zemin (`bg-white/70`) ebeveynin çizimini (geçişini ya da resmini) gösterir; `backdrop-blur-*` onu önce bulanıklaştırır: pencere içinde buzlu cam kart ya da kenar çubuğu, `backdrop-acrylic`'in form içi karşılığı. |
 | `TwTextBox` | Kenarlıksız TextBox'ı yuvarlak bir panel içine alır; `input` stili için. |
 | `TwNumberBox` | Sayı kutusu (`TwTextBox` + sağda ▲▼). `Minimum`, `Maximum`, `Increment`, `DecimalPlaces`; ok tuşları, fare tekeri ve kültüre göre ayrıştırma. |
 | `TwDatePicker` | Tarih alanı + açılır `TwCalendar`. Tarih yazılabilir (`Culture`/`Format`'a göre çözülür), F4 / Alt+↓ takvimi açar. Takvim `menu:bg-* menu:border-*`, `selected:bg-* selected:text-*`, `item:hover:bg-*` ile stillenir. |
-| `TwPopover` | Bir kontrole bağlı açılan panel (bileşen): `Content` kontrolünü `Placement` tarafında (`BottomStart`, `TopEnd`, `Right` …) gösterir, ekrana sığmazsa karşı tarafa geçer. Dışarı tıklama ve Esc kapatır; `Toggle(anchor)` açıkken kapatır, `RestoreFocus` odağı çapaya geri verir. `TwDatePicker`'ın takvimi bununla açılır. |
+| `TwPopover` | Bir kontrole bağlı açılan panel (bileşen): `Content` kontrolünü `Placement` tarafında (`BottomStart`, `TopEnd`, `Right` …) gösterir, ekrana sığmazsa karşı tarafa geçer. Dışarı tıklama ve Esc kapatır; `Toggle(anchor)` açıkken kapatır, `RestoreFocus` odağı çapaya geri verir. `TwDatePicker`'ın takvimi bununla açılır. `ShowOnHover(anchor, delay)` imleç çapanın üzerinde durunca odak almadan açar (tanım kartı gösteren bilgi simgesi) ve imleç hem çapadan hem karttan çıktıktan `HoverCloseDelay` ms sonra kapatır, böylece imleç karta geçebilir; `StopHover(anchor)` bunu bitirir. |
 | `TwCalendar` | Tek başına ay takvimi: kültürün ilk günü ve gün adları, bugün halkası, `MinDate`/`MaxDate`, klavye (oklar, PageUp/PageDown, Home/End, Enter, Esc). |
-| `TwTabStrip` | Sekme şeridi: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented zemini), `gap-*`. Sığmayan sekmeler sondaki "daha fazla" (…) düğmesine taşınır (`OverflowMenu`, ↓ açar; menü `menu:` / `item:` alır); seçili sekme hep görünür kalır. `&` Label'daki gibi sekmenin Alt kısayolunu işaretler; `UseMnemonic = false` onu metin olarak çizer ("Parça & maliyet"). Yalnızca şerittir; sayfalı kullanım için `TwTabControl`. |
+| `TwTabStrip` | Sekme şeridi: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented zemini), `gap-*`. Sığmayan sekmeler sondaki "daha fazla" (…) düğmesine taşınır (↓ açar; menü `menu:` / `item:` alır); seçili sekme hep görünür kalır. `Overflow = TwTabOverflow.Scroll` taşmak yerine şeridi kaydırır: kenarlarda ‹ › düğmeleri, devamı olan kenarda solma, Shift+tekerlek ya da yatay tekerlek (düz tekerlek sayfayı kaydırmaya devam eder); sekmeler sırasını korur, seçilen sekme görünür alana kayar (`ScrollOffset`, `ScrollTabIntoView`). `ScrollAndMenu` sona tüm sekmeleri listeleyen bir menü ekler; `Clip` sığmayanı keser. `&` Label'daki gibi sekmenin Alt kısayolunu işaretler; `UseMnemonic = false` onu metin olarak çizer ("Parça & maliyet"). Yalnızca şerittir; sayfalı kullanım için `TwTabControl`. |
 | `TwTabControl` | Sayfalı sekme kontrolü (TabControl yerine): `AddPage("Genel")` ya da `TwTabPage` ekleyin, seçili sayfa gösterilir. Şerit `Strip` üzerinden stillenir (`provider.SetClasses(tabs.Strip, "...")`); Ctrl+Tab / Ctrl+PageDown sayfalar arasında gezer. |
 | `TwSlider` | Kaydırıcı (TrackBar yerine): `Minimum`, `Maximum`, `Value`, `SmallChange`, `LargeChange`. Ray `fill-*`, dolu kısım `accent-*`, tutamaç `item:bg-*`. Klavye, fare tekeri ve sürükleme. |
 | `TwProgress` | İlerleme çubuğu (ProgressBar yerine): ray `fill-*`, dolgu `accent-*`, köşe `rounded-*`. `Indeterminate = true` süresi bilinmeyen iş için kayan bir parça çizer. |
@@ -654,16 +664,50 @@ Dosya varsayılan palet ve bileşenlerin (ya da `preset` ile seçilen görünüm
 | `TwTreeView` | TreeView yerine sanal ağaç: `Nodes`, ikonlu düğümler, `SelectedNode`, `ExpandAll`; ←/→ ile aç/kapa, tembel yükleme için `HasLazyChildren` + `BeforeExpand`. Ekran okuyucuya Outline olarak görünür. |
 | `TwPager` | Sayfalama (bkz. [DataGridView](#datagridview)). |
 | `TwField` | Etiket + düzenleyici + ipucu/hata metni; doğrulama kuralları (bkz. [Formlar](#formlar-doğrulama-maske-ve-diyaloglar)). |
-| `TwToolTip` | Stillenebilir ipucu: `Classes`; `Provider` verilirse koyu temayı izler. |
+| `TwToolTip` | Stillenebilir ipucu: `Classes`; `Provider` verilirse koyu temayı izler. `AutoEllipsis`'in kestiği etiket (`truncate`, `TwSettingRow` başlığı) tam metnini, WinForms'un açık renkli ipucu yerine kendiliğinden bir `TwToolTip`'te gösterir; ipucu yalnızca metin gerçekten kesildiyse çıkar. |
 | `TwChip` | Metinli, isteğe bağlı simgeli ya da durum noktalı (`IconName`, `DotColor`) ve isteğe bağlı ✕'li hap (`Removable` → `RemoveClick`; Delete/Backspace de). `Clickable` onu düğme, `Checkable` açılıp kapanan bir süzgeç çipi yapar (`Checked`, `checked:` ile stillenir). Salt gösterim çipleri sekme durağı değildir. Bileşenler `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; ✕ ekran okuyucuya ayrı bir "Kaldır" düğmesidir. |
-| `TwToolbar` | Duyarlı araç çubuğu (bir `TwPanel`): çocuklar `gap-*` aralıkla tek satırda durur; sığmayanlar "daha fazla" (…) düğmesine geçer ve menüden çalışır (düğme tıklanır, onay kutusu değişir, `TwTabStrip` ya da `TwSelect` alt menü olur, diğerleri `OverflowItemClick`'i tetikler). Öğe başına: `SetAlignment` (`Start`/`End`), `SetPriority` (yüksek olan daha geç taşınır), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: başlık bir şey taşınmadan önce daralır, `MinimumSize.Width`'e kadar). Menü `menu:` / `item:` alır, düğme `OverflowButton`'dır. |
-| `TwSettingRow` | Ayar satırı (System Settings tarzı): `LabelText`, `Description` (soluk, satır kaydırır), sağda düzenleyici (çocuk kontrol) ve `UnitText` (`EditorWidth`, varsayılan 160; 0 = düzenleyicinin kendi genişliği; sekme şeridi gibi `AutoSize` düzenleyici tercih ettiği genişlikten dar verilmez). `card p-0` panelde üst üste duran satırlar aralarına ayırıcı çizer (`divide-*`); dar satırda düzenleyici metnin altına iner. Etiket ve açıklama satırın `label:` ve `hint:` parçalarıyla stillenir (`label:font-semibold hint:text-xs`); `CaptionLabel`'a doğrudan verilen class'lar da korunur. `setting` bileşeni. |
+| `TwToolbar` | Duyarlı araç çubuğu (bir `TwPanel`): çocuklar `gap-*` aralıkla tek satırda durur; sığmayanlar "daha fazla" (…) düğmesine geçer ve menüden çalışır (düğme tıklanır, onay kutusu değişir, `TwTabStrip` ya da `TwSelect` alt menü olur, diğerleri `OverflowItemClick`'i tetikler). Öğe başına: `SetAlignment` (`Start`/`End`), `SetPriority` (yüksek olan daha geç taşınır), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: başlık bir şey taşınmadan önce daralır, `MinimumSize.Width`'e kadar). `Overflow = Scroll` olan `AutoSize` sekme şeridi de menüye geçmeden önce `MinimumScrollWidth`'e kadar daralır ve kayar. Menü `menu:` / `item:` alır, düğme `OverflowButton`'dır. İki satırlı pencere başlığı ("Kayıt Arşivi" / "Tümü · 740 kayıt") için `Shrink` öğesi olarak `TwHeading` kullanın. |
+| `TwHeading` | İki satırlı başlık: `Text` ve altında soluk `Subtitle`; dar kalınca ikisi de "…" ile biter. Başlık kontrolün class'larını (`text-[15px] font-semibold`), alt başlık `hint:` parçasını (`hint:text-xs hint:text-surface-500`) alır. `TwToolbar`'da `TwToolbarOverflow.Shrink` öğesi olarak altında kayıt sayısı olan pencere başlığıdır. |
+| `TwPageHeader` | Sayfa başlığı: büyük `Title`, soluk `Subtitle` ve sağda eklenme sırasıyla eklenen kontroller (chip'ler, özet etiketi, düğmeler); pencere dar kalınca kontroller başlığın altına iner ve sarar (`IsStacked`). Yükseklik içeriği izler. Başlık `label:`, alt başlık `hint:`, aralık `gap-*`; `page-header` bileşeni. |
+| `TwCard` | Kart: `Title`, soluk `Description`, başlığın sağında kontroller (`kart.Header.Controls.Add(dugme)`) ve kartın diğer çocuklarından oluşan gövde (Dock / Anchor, başlığın altında). Başlık boşken kendini gizler; `HeaderGap` altındaki boşluktur. `card` bileşenini alır (kenarlık, köşe, dolgu, gölge); başlık `label:`, açıklama `hint:`. Yükseltilmiş ya da yarı saydam kart bir class uzaklıkta: `shadow-md`, `bg-white/70 backdrop-blur-md`. `flex` / `grid` gövde için karta bu class'ları alan bir `TwPanel` koyun (`Dock = Fill`). |
+| `TwFormHost` | Var olan bir `Form`'u pencere içinde sayfa olarak gösterir (`host.Form = new EskiForm()`): form, host'u dolduran kenarlıksız bir çocuk olur ve `Load`'u göründüğünde çalışır. `AutoScaleMode.None` ile tasarlanmış form bir kez DPI'ya ölçeklenir (`ScaleDesignSize`); başlığı `Title` / `TitleChanged` olarak sunulur ve `TitleTarget`'a (araç çubuğundaki `TwHeading`) kopyalanır; Enter / Esc `AcceptButton` / `CancelButton`'a basar (WinForms bunu yalnızca üst düzey pencerelerde yapar). Form `Close()` çağırınca host'tan çıkar ve `FormClosed` doğar. Diyalog olarak kalması gerekenler `TwSheet`'e. |
+| `TwSettingRow` | Ayar satırı (System Settings tarzı): `LabelText`, `Description` (soluk, satır kaydırır), sağda düzenleyici (çocuk kontrol) ve `UnitText` (`EditorWidth`: varsayılan 0, düzenleyicinin kendi genişliği; sabit genişlik için 160 gibi bir değer verin; sekme şeridi gibi `AutoSize` düzenleyici tercih ettiği genişlikten dar verilmez). `card p-0` panelde üst üste duran satırlar aralarına ayırıcı çizer (`divide-*`); dar satırda düzenleyici metnin altına iner. Etiket ve açıklama satırın `label:` ve `hint:` parçalarıyla stillenir (`label:font-semibold hint:text-xs`); `CaptionLabel`'a doğrudan verilen class'lar da korunur. `setting` bileşeni. |
 | `TwCardStrip` | Sayfalı yatay kart şeridi: çocuklar (`TwStat` …) `MinCardWidth` genişlikte sığdığı kadar yan yana, eşit genişlikte; sağ üstte ‹ › düğmeleri ve "1 / 3" göstergesi (`PageLabel`), ← → da sayfa çevirir. `PageIndex`, `PageCount`, `PageChanged`, `ShowCard(card)`; tek sayfada düğmeler gizlenir. |
 | `TwFilterBar` | Etkin süzgeçler `TwChip` olarak ("Hat: 3", ✕ ile kaldırılır; çipe tıklamak değeri değiştirir), sonda "+ Filtre ekle" menüsü. `TwFilter` türleri: `Select` (`Options`), `Text` (menüde metin kutusu), `Fixed` (her zaman uygulanır, ✕'siz), `Period` (çipin altındaki açılır pencerede `TwPeriodPicker` ile seçilen tarih aralığı: "Tarih: Son 90 gün"; `filter.Period` hazır dönemler ve vardiyalar için seçicidir, `GetPeriod(key)` günleri verir, `SetPeriod(key, start, end)` özel aralık atar, `SetValue` hazır dönemin metnini alır). `FiltersChanged`, `Values`, `SetValue`; `LoadValues` kayıtlı süzgeçleri olay tetiklemeden yükler. Dar çubukta çipler alt satıra geçer. |
-| `TwPeriodPicker` | Dönem seçici (`TwSelect` görünümünde): hazır dönemler (`Presets`: bugün, dün, son 7 / 30 / 90 gün, bu ay, geçen ay, bu yıl), "Özel aralık…" ve iki tıklamayla aralık seçilen takvim bir popover'da; `Shifts` verilirse üstte vardiya bölümü. `Start`, `End` (hazır dönem tarihle ilerler), `Shift`, `PeriodChanged`; kapalı kutuda ↑/↓ hazır dönemler arasında gezer. |
+| `TwPeriodPicker` | Dönem seçici (`TwSelect` görünümünde): hazır dönemler (`Presets`: bugün, dün, son 7 / 30 / 90 gün, bu ay, geçen ay, bu yıl), "Özel aralık…" ve iki tıklamayla aralık seçilen takvim bir popover'da; `Shifts` verilirse üstte vardiya bölümü. `Start`, `End` (hazır dönem tarihle ilerler), `Shift`, `PeriodChanged`; kapalı kutuda ↑/↓ hazır dönemler arasında gezer. Özel aralık kısa tarihle yazılır ("1.10.2026 – 31.10.2026"); `DateStyle = TwPeriodDateStyle.Abbreviated` ay adlarıyla ve yılı bir kez yazar ("1 – 31 Eki 2026", "28 Eki – 3 Kas 2026"), `DateFormat` iki uç için herhangi bir .NET biçimi alır; `TwFilterKind.Period` chip'i `FiltersChanged` doğurmadan güncellenir. |
 | `TwCommandPalette` | Ctrl+K komut paleti (bileşen): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) yazdıkça süzülür (aksan ve büyük/küçük harf gözetilmez, baştan eşleşen önce), grup başlıkları altında; ↑/↓, Enter, Esc. `AddSearch("kayıtlar", q => …)` yazılan için "… içinde ara" satırı ekler, `QueryCommands` sorguya göre satır üretir. `Attach(form)` kısayolu formun her yerinde dinler. |
 | `TwSheet` | Formu sahibinin içinde çerçevesiz bir sayfa olarak açar; arkadaki pencere karartılır (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)` ya da `FullScreen = true` ile sahibin içini dolduran sayfa. `TwSheet.Attach(this)` sonrası mevcut `ShowDialog(this)` çağrıları kod değişmeden sayfa olur (`Filter` ile seçilebilir); `DialogResult`, `AcceptButton`/`CancelButton` olduğu gibi çalışır, form kapanınca çerçevesini geri alır. |
 | `TwWindowChrome`, `TwCaptionButtons` | Başlık çubuğu olmayan pencere: `TwWindowChrome.Attach(this)` başlığı kaldırır, içerik üst kenara kadar uzar (kenar ya da araç çubuğu başlığın yerine geçer). Formun ve `AddDragSurface` ile verilen yüzeylerin boş yerinden (üstlerindeki etiket ve ikonlar dahil) pencere sürüklenir; çift tık büyütür, ekran kenarına sürükleme Aero Snap yapar, sağ tık sistem menüsünü açar; kenarlar (üst kenar `ResizeBorder` içinde) boyutlandırır. `TwCaptionButtons` küçült / büyüt / kapat düğmeleridir; `ButtonStyle = TwCaptionButtonStyle.Dots` onları yuvarlak kırmızı / sarı / yeşil noktalar olarak çizer (fare üstündeyken simgeler görünür; `CloseDotColor`, `MinimizeDotColor`, `MaximizeDotColor`). |
+
+### Bileşenleri class'larla kurmak
+
+Bileşenlerin renk, yazı ve boşlukları class'lardan gelir: `card`, `btn-primary`, `chip`, `setting` gibi her bileşen class'ı düz utility class'lara açılır (`TwTheme.DefaultComponents`; `tw.config.json` ezebilir). Şekil ve davranış ise çoğu bileşende kodun içindedir. Hazır bir bileşen yerine standart kontrollere class vererek ne kadar yaklaşılabileceği bileşene göre değişir:
+
+| Bileşen | Class'larla aynı görünüm |
+| --- | --- |
+| `TwDialog`, `TwToast`; `card`, `btn-*`, `alert-*`, `page`, `title`, `muted` yüzeyleri | Birebir. İki bileşen de `TwPanel`, `TwButton` ve `Label`'lardan class'larla kurulur (`flex flex-col gap-6 p-6`, `text-base font-semibold` …); aynı yapı uygulamada da kurulabilir. |
+| `TwSettingRow`, `TwField` | Büyük ölçüde (`TwPanel`, `Label`'lar ve `flex`). Satırlar arası ayırıcı, dar satırda düzenleyicinin alta inmesi ve `TwField`'ın doğrulama metni bileşenin kodundadır. |
+| `TwChip`, `TwDataList`, `TwStepper`, `TwSlider`, `TwSelect`, `TwTabStrip`, `TwCalendar`, onay kutuları, grafikler | Hayır. Kendileri çizerler; class'lar yalnızca renk ve fontu verir. Örneğin standart bir `Label`'a `chip` vermek hap biçimini, simgeyi ya da ✕'i çizmez. |
+
+- **Yuvarlak köşeler:** `rounded-*`'ı pürüzsüz yalnızca `TwButton`, `TwPanel`, `TwTextBox` ve `TwPictureBox` çizer; standart kontrollerde köşe `Region` ile kırpılır (antialias yok).
+- **Parça önekleri:** `label:`, `hint:`, `header:`, `row:`, `item:` gibi önekleri yalnızca o parçayı tanıyan kontrol uygular. Etiketlerden oluşan bir panele `setting` verilirse bu önekler yok sayılır; class'ları her `Label`'a ayrı verin.
+- **Hazır bileşenin parçaları:** bileşeni kullanıp tek bir parçasını değiştirmek için açık parçalara doğrudan class verin: `TwSettingRow.CaptionLabel`/`DescriptionLabel`/`UnitLabel`, `TwField.CaptionLabel`/`MessageLabel`, `TwDialog.TitleLabel`/`MessageLabel`, `TwToast.TitleLabel`/`MessageLabel`/`SubtitleLabel`, `TwTabControl.Strip`.
+
+Örnek: `TwToast` görünümünde, formun içinde duran bir bildirim kartı:
+
+```csharp
+var card  = new TwPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+var texts = new TwPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+var title = new Label { Text = "Kaydedildi", AutoSize = true };
+var body  = new Label { Text = "Değişiklikler sunucuya gönderildi.", AutoSize = true };
+texts.Controls.AddRange(new Control[] { title, body });
+card.Controls.Add(texts);
+
+tw.SetClasses(card,  "flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700");
+tw.SetClasses(texts, "flex flex-col gap-0.5");
+tw.SetClasses(title, "text-sm font-semibold text-gray-900 dark:text-white");
+tw.SetClasses(body,  "text-sm text-gray-600 dark:text-gray-300");
+```
 
 ### TwDataList
 
@@ -691,7 +735,7 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
 - **Çoklu seçim:** `SelectionMode = MultiExtended`; Ctrl+tık ekler/çıkarır, Shift+tık ve Shift+ok aralık seçer, Ctrl+A tümünü seçer (milyon satırda da dizin tutmadan). `SelectedIndices`, `IsSelected`, `SetSelected`, `SelectionChanged`.
 - **Gruplar:** `SetGroups(new[] { (0, "Bugün"), (12, "Dün") })`; kaydırırken üstteki grubun başlığı yapışık kalır. Başlık `header:bg-* header:text-*` ile ya da `DrawGroupHeader` olayıyla çizilir.
 - **Farklı yükseklikte satırlar:** `ItemHeights = i => orders[i].HasNote ? 72 : 52` (96 DPI pikseli); satır başlangıçları bir kez hesaplanır, yükseklikler değişince `InvalidateItemHeights()`. Verilmezse bütün satırlar `ItemHeight` boyundadır ve milyon satırda ek maliyet yoktur; verildiğinde her satırın yüksekliği bir kez sorulur.
-- **Sütunlar ve sıralanabilir başlık:** `list.Columns.Add(new TwDataListColumn("Tutar", 90) { Alignment = HorizontalAlignment.Right, Sortable = true })` (`Width` 96 DPI pikseli, ya da kalanı paylaşan `Weight`) satırın parçalarını hizalar: her parçayı `e.GetColumnBounds(column)` içine çizin (ya da `list.GetColumnBounds(column, index)`); `ColumnGap` aralarındaki boşluktur. `list.CreateHeader()` satırların üstündeki sütun adlarını gösteren bir `TwDataListHeader` döndürür (listeden sonra listenin üstüne eklenir; üste yaslanır). Sıralanabilir ada tıklamak ya da üstünde Enter / Boşluk (Tab başlığa gelir, ←/→ sıralanabilir sütunlar arasında gezer) `SortColumn` / `SortOrder` değerini değiştirir (▴ artan, ▾ azalan) ve `SortChanged` tetikler; liste kendisi sıralamaz, verinizi sıralayıp `Invalidate()` çağırın. Ekran okuyucular her ad için sıralama durumuyla bir sütun başlığı görür. `header:text-*` adları renklendirir. `TwListBox` hazır metinleri tutar, parça parça çizimi yoktur; sütunlar yalnız `TwDataList`'tedir.
+- **Sütunlar ve sıralanabilir başlık:** `list.Columns.Add(new TwDataListColumn("Tutar", 90) { Alignment = HorizontalAlignment.Right, Sortable = true })` (`Width` 96 DPI pikseli, ya da kalanı paylaşan `Weight`) satırın parçalarını hizalar: her parçayı `e.GetColumnBounds(column)` içine çizin (ya da `list.GetColumnBounds(column, index)`); `ColumnGap` aralarındaki boşluktur. `list.CreateHeader()` satırların üstündeki sütun adlarını gösteren bir `TwDataListHeader` döndürür (listeden sonra listenin üstüne eklenir; üste yaslanır). Sıralanabilir ada tıklamak ya da üstünde Enter / Boşluk (Tab başlığa gelir, ←/→ sıralanabilir sütunlar arasında gezer) `SortColumn` / `SortOrder` değerini değiştirir (▴ artan, ▾ azalan) ve **listenin** `SortChanged` olayını tetikler (`list.SortChanged`; başlığın bir olayı değildir); liste kendisi sıralamaz, verinizi sıralayıp `Invalidate()` çağırın. Ekran okuyucular her ad için sıralama durumuyla bir sütun başlığı görür. `header:text-*` adları renklendirir. `TwListBox` hazır metinleri tutar, parça parça çizimi yoktur; sütunlar yalnız `TwDataList`'tedir.
 - **Parça parça yükleme:** `IsItemLoaded` yüklenmemiş satırları iskelet olarak çizer (hafifçe nabız atar) ve `ItemsNeeded(first, last)` görünür aralıkla tetiklenir; veri gelince `Invalidate()`.
 
 ### Liste satırları (`TwListItem`)
@@ -1033,6 +1077,34 @@ App.config ise WinForms'un kendi per-monitor desteğini açar:
 - Uygulamayı %125 ve %150'de açıp kontrol edin: boşluklar ve yazılar ekran ölçeğinden belirgin biçimde fazla büyüdüyse bir değer hâlâ iki kez ölçekleniyordur.
 - **`text-[..px]` boyutları** her sınıf değeri gibi 96 DPI pikselidir: `text-[13px]` 9,75 pt eder ve Windows bunu sistem DPI'sında çizer (%125'te yaklaşık 16 px); sistemin DPI'sından farklı bir monitörde (PerMonitorV2) FormWind iki oranla da çarpar, Windows'un Metin boyutu ayarı da çarpar ([Windows metin boyutu](#windows-metin-boyutu)). Üstüne kendi ölçek çarpanını uygulayan bir uygulama (`text-[{13 * scale}px]`) yazıyı iki kez büyütür: %125'te yaklaşık 1,56 kat fazla. Ölçeklenmemiş değeri verin.
 
+
+### Geçiş: kendi DPI çarpanınızı kaldırın
+
+FormWind'den önce yazılmış uygulamalar yazı boylarını ve boşlukları çoğu zaman kendisi ölçekler (`Fs(13)`, `13 * dpi / 96f`). FormWind her class değerini zaten ölçeklediği için bu çarpan kalırsa değer iki kez ölçeklenir. %100'lük geliştirici makinesinde çarpan 1'dir ve hiçbir şey görünmez; %125'te yazılar yaklaşık 1,56 kat büyük çıkar.
+
+```csharp
+// önce: uygulama ölçekliyor, FormWind bir daha ölçekliyor
+tw.SetClasses(baslik, $"text-[{Fs(16.25f)}px]");
+// sonra: 96 DPI değeri
+tw.SetClasses(baslik, "text-[13px]");
+```
+
+Kodda çarpanı (`DeviceDpi`, `DpiX`, `/ 96`, kendi `Fs(` / `Scale(` yardımcılarınız) sonucu bir class metnine, `TwSettingRow.EditorWidth`'e, `TwDataList.ItemHeight`'a ya da 96 DPI pikseli olan başka bir FormWind değerine giden her yerde arayın ve sonucu aşağıdaki `TwDpi.Simulate` ile kontrol edin.
+
+### Başka ölçekleri test etme (`TwDpi.Simulate`)
+
+`TwDpi.Simulate(dpi)` ekranı değiştirmeden FormWind'in o DPI'lı bir ekrandaki gibi çizmesini sağlar; %100'lük makinede %125 ve %150 denetlenebilir: class boyutları ve `text-*` fontları orada alacakları piksel boylarını alır (120'de `text-[13px]` 16,25 px). Kapsamın içinde stillenen kontroller simüle edilen boyutları alır; WinForms'un kendi ölçeklemesi (`AutoScaleMode`, yerel kontrol ölçüleri) ve class'tan gelmeyen fontlar değişmez. Ayar süreç geneldir ve kapsam kapatılınca geri alınır. `TwDpi.DeviceDpi(control)`, `TwDpi.SystemDpi` ve `TwDpi.FontScale(control)` FormWind'in ölçeklediği değerleri döndürür.
+
+```csharp
+using (TwDpi.Simulate(120))                      // %125
+using (var form = new AnaForm())
+using (var resim = TwOffscreen.Render(form))
+{
+    resim.Save("ana-125.png");
+    Assert.Equal(16.25f * 0.75f, baslik.Font.SizeInPoints, 1);  // 13 px × 1,25; × 1,25² değil
+}
+```
+
 - .NET Framework'te PerMonitorV2'nin nasıl açılacağı için bkz. [.NET Framework'te kurulum](#net-frameworkte-kurulum).
 - .NET Framework'te WinForms DPI ayarını ilk `Control` oluşturulurken uygular; GDI+ ise ekran DPI'ını başladığı anda bir kez okur. Bundan önce bir `Font` oluşturulursa (örn. tema yüklenirken) GDI+ 96 DPI'da kalır ve native kontrollerin (TextBox) fontları küçük çizilir. FormWind GDI+'ya dokunmadan önce WinForms'un DPI başlatmasını tetikler; kendi kodunuzda `Program.Main` içinde form oluşturmadan önce `Font` üretiyorsanız önce `new Control().Dispose()` çağırın.
 - **Ekran değişimi (%150, %200):** form başka DPI'lı bir ekrana taşınınca FormWind class'ları WinForms ölçeklemeyi bitirdikten sonra bir kez yeniden uygular. `AutoScaleMode.Dpi` ile kurulan formlarda fontlar, boşluklar, owner-draw kontroller ve DataGridView (font ve kolon genişlikleri) doğru ölçeklenir; bu `ControlsForm` ve bir grid formu için %150 ve %200'de doğrulandı.
@@ -1297,6 +1369,8 @@ Bu testlerin bulduğu her hata için `ApplierTests` içinde ayrıca açık bir r
 ### Pencerenin tam resmi (`TwOffscreen`)
 
 `Control.DrawToBitmap` formun sahip olduğu pencereleri (`TwSheet`, `TwPopover`, diyaloglar) atlar, saydamlığı yok sayar. `TwOffscreen.Render(form)` görsel regresyon testleri için pencerenin tamamının 32 bit resmini verir: henüz gösterilmemiş form ekranın çok dışında açılır (hiç görünmez, görev çubuğuna girmez), hareket kapalıyken yerleşir ve boyanır; formun ve sahip olduğu her pencerenin içeriği Windows'tan (`PrintWindow`) alınır, `Opacity`, `TransparencyKey` ve `Region` uygulanarak z sırasıyla birleştirilir. `TwOffscreenOptions`: `IncludeOwned`, `ExpandToOwned` (form ve sheet'leri birlikte kapsayan resim), `Background`, `DisableMotion`, `CloseWhenDone`; zaten görünen form olduğu yerde resmedilir.
+
+Başka bir ekran ölçeğinin resmi için formu `TwDpi.Simulate(dpi)` kapsamında oluşturup çizin (bkz. [Başka ölçekleri test etme](#başka-ölçekleri-test-etme-twdpisimulate)).
 
 ```csharp
 using var resim = TwOffscreen.Render(form);

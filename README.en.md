@@ -161,6 +161,8 @@ All presets define **the same component names**, so switching presets restyles t
 | `TwTabStrip` (and the strip of `TwTabControl`) | `tabs` |
 | `TwChip` | `chip` |
 | `TwSettingRow` | `setting` |
+| `TwPageHeader` | `page-header` |
+| `TwCard` | `card` |
 | `MenuStrip`, `ToolStrip`, `StatusStrip` | `menu` |
 | `LinkLabel` | `link-label` |
 | `TabControl`, `TabPage` | `tab-control`, `tab-page` |
@@ -264,6 +266,12 @@ Differences from CSS:
 - A `TwPanel`'s content starts inside its border (CSS box model); in an `AutoScroll` panel the width is taken from the visible area and room for the vertical scrollbar is reserved up front.
 - A flex `TwPanel` with `AutoSize = true` sizes itself to its content (not yet for grid).
 - Responsive variants (`sm:`, `md:` …): see [Animations and responsive variants](#animations-and-responsive-variants).
+- **A responsive stat grid** needs no control of its own: `grid grid-cols-2 lg:grid-cols-4 gap-4` on a `TwPanel` puts four `TwStat` cards side by side on a wide window and in two columns below 1024 px (`lg:`); add `sm:grid-cols-1` style steps as needed.
+
+```csharp
+tw.SetClasses(statGrid, "grid grid-cols-2 lg:grid-cols-4 gap-4");
+foreach (var stat in stats) tw.SetClasses(stat, "stat");
+```
 
 ### Windows text size
 
@@ -302,7 +310,7 @@ this.tailwindProvider1.SetClasses(this.icoCustomer, "text-xl text-blue-600 dark:
 this.btnSave.IconName = "save";
 ```
 
-Built-in names: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
+Built-in names: `arrow-down`, `arrow-left`, `arrow-right`, `arrow-up`, `attach`, `bell`, `bookmark`, `bookmark-filled`, `calculator`, `calendar`, `camera`, `cart`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `copy`, `cut`, `download`, `edit`, `error`, `eye`, `eye-off`, `factory`, `file`, `filter`, `flag`, `folder`, `folder-open`, `fullscreen`, `gauge`, `globe`, `grid`, `heart`, `heart-filled`, `help`, `history`, `home`, `image`, `info`, `key`, `link`, `list`, `location`, `lock`, `log-out`, `mail`, `map-pin`, `menu`, `minus`, `more`, `panel-right`, `paperclip`, `paste`, `phone`, `pin`, `plus`, `power`, `print`, `redo`, `refresh`, `save`, `search`, `send`, `settings`, `share`, `shield`, `sidebar`, `sign-out`, `sort`, `star`, `star-filled`, `sync`, `tag`, `tool`, `trash`, `undo`, `unlock`, `upload`, `user`, `users`, `warning`, `wrench`, `x`, `zoom-in`, `zoom-out`.
 
 Any glyph of the font can also be used by code point (`IconName = "#E8A5"`). Extra names and a different icon font come from the theme file:
 
@@ -310,6 +318,8 @@ Any glyph of the font can also be used by code point (`IconName = "#E8A5"`). Ext
 "iconFont": "Segoe Fluent Icons",
 "icons": { "invoice": "E8A5" }
 ```
+
+`bookmark`, `bookmark-filled` and `factory` have no glyph in the icon fonts; FormWind draws them as built-in SVG icons in the same line weight (a glyph registered with the same name wins).
 
 Glyphs are centered on their actual ink bounds rather than the font metrics (the line height of icon fonts does not match the glyph size).
 
@@ -638,13 +648,13 @@ The file is added on top of the default palette and components (or the preset ch
 | `TwCheckBox`, `TwRadioButton`, `TwSwitch` | See [CheckBox, Radio, Switch](#checkbox-radio-switch). |
 | Standard controls | Color, text and spacing work on every control. Corners are clipped with `Region` (no anti-aliasing) and borders are drawn in the `Paint` event. On a `TextBox` (`TextBoxBase`) the native border is turned off; `border-*` and `rounded-*` are drawn on the parent as a frame 3 px outside the control, filled with the background color (the frame extends past the control's bounds; leave room in the layout). The closed box of a `ComboBox` in `DropDownList` mode (background, border, corners, text, arrow) is painted by FormWind with border or corner classes and on a dark background (without a border class, with a 1 px border between the background and the text color); the drop-down list stays native. Editable `ComboBox`es and other native controls (`ListBox` …) get no corners or borders; use `TwSelect`, `TwListBox`. |
 | `TwButton` | Button with smooth corners. `Image` is not drawn yet and the `Paint` event is not raised. |
-| `TwPanel` | Panel (card) with smooth corners and a border. A translucent background (`bg-white/70`) shows the parent's painting (its gradient or image) through; `backdrop-blur-*` blurs it first: a frosted card or sidebar inside the window, the in-window counterpart of `backdrop-acrylic`. |
+| `TwPanel` | Panel (card) with smooth corners and a border. `ScrollToFocused = false` keeps an `AutoScroll` page from jumping to a list or grid that is clicked (Tab still scrolls to the focused control). A translucent background (`bg-white/70`) shows the parent's painting (its gradient or image) through; `backdrop-blur-*` blurs it first: a frosted card or sidebar inside the window, the in-window counterpart of `backdrop-acrylic`. |
 | `TwTextBox` | Wraps a borderless TextBox in a rounded panel; for the `input` style. |
 | `TwNumberBox` | Number box (`TwTextBox` + ▲▼ on the right). `Minimum`, `Maximum`, `Increment`, `DecimalPlaces`; arrow keys, mouse wheel and culture-aware parsing. |
 | `TwDatePicker` | Date field + drop-down `TwCalendar`. The date can be typed (parsed with `Culture`/`Format`); F4 / Alt+↓ opens the calendar. The calendar is styled with `menu:bg-* menu:border-*`, `selected:bg-* selected:text-*`, `item:hover:bg-*`. |
-| `TwPopover` | A panel that opens next to a control (component): shows the `Content` control on the `Placement` side (`BottomStart`, `TopEnd`, `Right` …) and flips to the opposite side when it does not fit on the screen. A click outside or Esc closes it; `Toggle(anchor)` closes it when open, `RestoreFocus` returns the focus to the anchor. `TwDatePicker`'s calendar opens in one. |
+| `TwPopover` | A panel that opens next to a control (component): shows the `Content` control on the `Placement` side (`BottomStart`, `TopEnd`, `Right` …) and flips to the opposite side when it does not fit on the screen. A click outside or Esc closes it; `Toggle(anchor)` closes it when open, `RestoreFocus` returns the focus to the anchor. `TwDatePicker`'s calendar opens in one. `ShowOnHover(anchor, delay)` opens it when the pointer rests on the anchor (an info icon with a definition card) without taking the focus, and closes it `HoverCloseDelay` ms after the pointer has left both the anchor and the card, so the pointer can move into it; `StopHover(anchor)` ends it. |
 | `TwCalendar` | Standalone month calendar: the culture's first day of week and day names, a ring on today, `MinDate`/`MaxDate`, keyboard (arrows, PageUp/PageDown, Home/End, Enter, Esc). |
-| `TwTabStrip` | Tab strip: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented background), `gap-*`. Tabs that do not fit go to a "more" (…) button at the end (`OverflowMenu`, ↓ opens it; the menu takes `menu:` / `item:`); the selected tab always stays visible. `&` marks a tab's Alt shortcut as on a Label; `UseMnemonic = false` draws it as text ("Parts & cost"). Only the strip; for pages use `TwTabControl`. |
+| `TwTabStrip` | Tab strip: `Underline`, `Pills`, `Segmented`. `selected:text-* selected:border-*` / `selected:bg-*`, `item:hover:*`, `fill-*` (segmented background), `gap-*`. Tabs that do not fit go to a "more" (…) button at the end (↓ opens it; the menu takes `menu:` / `item:`); the selected tab always stays visible. `Overflow = TwTabOverflow.Scroll` scrolls the strip instead: ‹ › buttons at the edges, a fade where more tabs follow, Shift+wheel or a tilt wheel (a plain wheel still scrolls the page); tabs keep their order and the selected tab is scrolled into view (`ScrollOffset`, `ScrollTabIntoView`). `ScrollAndMenu` adds a menu listing every tab at the end; `Clip` cuts off what does not fit. `&` marks a tab's Alt shortcut as on a Label; `UseMnemonic = false` draws it as text ("Parts & cost"). Only the strip; for pages use `TwTabControl`. |
 | `TwTabControl` | Tab control with pages (instead of TabControl): `AddPage("General")` or add `TwTabPage`s; the selected page is shown. The strip is styled through `Strip` (`provider.SetClasses(tabs.Strip, "...")`); Ctrl+Tab / Ctrl+PageDown move between pages. |
 | `TwSlider` | Slider (instead of TrackBar): `Minimum`, `Maximum`, `Value`, `SmallChange`, `LargeChange`. Track `fill-*`, filled part `accent-*`, thumb `item:bg-*`. Keyboard, mouse wheel and dragging. |
 | `TwProgress` | Progress bar (instead of ProgressBar): track `fill-*`, fill `accent-*`, corners `rounded-*`. `Indeterminate = true` draws a moving segment for work of unknown length. |
@@ -654,16 +664,50 @@ The file is added on top of the default palette and components (or the preset ch
 | `TwTreeView` | Virtual tree instead of TreeView: `Nodes`, nodes with icons, `SelectedNode`, `ExpandAll`; ←/→ expand/collapse, `HasLazyChildren` + `BeforeExpand` for lazy loading. Exposed to screen readers as an Outline. |
 | `TwPager` | Paging (see [DataGridView](#datagridview)). |
 | `TwField` | Label + editor + hint/error text; validation rules (see [Forms](#forms-validation-masks-and-dialogs)). |
-| `TwToolTip` | Stylable tooltip: `Classes`; follows dark mode when `Provider` is set. |
+| `TwToolTip` | Stylable tooltip: `Classes`; follows dark mode when `Provider` is set. A label that `AutoEllipsis` cuts short (`truncate`, the caption of a `TwSettingRow`) shows its full text in a `TwToolTip` on its own, instead of WinForms' light tooltip, and only while the text is actually cut. |
 | `TwChip` | A pill with a text, an optional icon or status dot (`IconName`, `DotColor`) and an optional ✕ (`Removable` → `RemoveClick`, also Delete/Backspace). `Clickable` makes it a button, `Checkable` a filter chip that turns on and off (`Checked`, styled with `checked:`). Display chips are not tab stops. Components `chip`, `chip-primary`, `chip-success`, `chip-warning`, `chip-danger`; the ✕ is a separate "Remove" button for screen readers. |
-| `TwToolbar` | A responsive toolbar (a `TwPanel`): children sit in one row with `gap-*`; items that do not fit move to a "more" (…) button whose menu runs them (a button is clicked, a check box toggled, a `TwTabStrip` or `TwSelect` becomes a submenu, other items raise `OverflowItemClick`). Per item: `SetAlignment` (`Start`/`End`), `SetPriority` (higher moves later), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: a title gets narrower before anything moves, down to its `MinimumSize.Width`). The menu takes `menu:` / `item:`, the button is `OverflowButton`. |
-| `TwSettingRow` | A settings row (System Settings style): `LabelText`, `Description` (muted, wraps), the editor (the child control) and `UnitText` on the right (`EditorWidth`, 160 by default; 0 = the editor's own width; an `AutoSize` editor such as a tab strip is never made narrower than its preferred width). Rows stacked in a `card p-0` panel draw dividers between them (`divide-*`); narrow rows put the editor under the text. Style the label and description with the row's `label:` and `hint:` parts (`label:font-semibold hint:text-xs`); classes given to `CaptionLabel` directly are kept too. `setting` component. |
+| `TwToolbar` | A responsive toolbar (a `TwPanel`): children sit in one row with `gap-*`; items that do not fit move to a "more" (…) button whose menu runs them (a button is clicked, a check box toggled, a `TwTabStrip` or `TwSelect` becomes a submenu, other items raise `OverflowItemClick`). Per item: `SetAlignment` (`Start`/`End`), `SetPriority` (higher moves later), `SetOverflow` (`AsNeeded`, `Never`, `Always`, `Shrink`: a title gets narrower before anything moves, down to its `MinimumSize.Width`). An `AutoSize` tab strip with `Overflow = Scroll` also narrows, down to its `MinimumScrollWidth`, and scrolls before it moves to the menu. The menu takes `menu:` / `item:`, the button is `OverflowButton`. For a two-line window title ("Records" / "All · 740 records") use a `TwHeading` as the `Shrink` item. |
+| `TwHeading` | A two-line title: `Text` and a muted `Subtitle` under it, each ending with "…" when narrow. The title takes the control's classes (`text-[15px] font-semibold`), the subtitle `hint:` (`hint:text-xs hint:text-surface-500`). As a `TwToolbar` item with `TwToolbarOverflow.Shrink` it is the window title with a record count under it. |
+| `TwPageHeader` | The header of a page: a large `Title`, a muted `Subtitle` and the controls added to it on the right (chips, a summary label, buttons) in the order they were added; when the window is too narrow the controls move under the title and wrap (`IsStacked`). The height follows the content. Title `label:`, subtitle `hint:`, spacing `gap-*`; `page-header` component. |
+| `TwCard` | A card: `Title`, a muted `Description` and controls on the header's right (`card.Header.Controls.Add(button)`), and a body made of the card's other children (Dock / Anchor, under the header). The header hides itself while it is empty; `HeaderGap` is the space under it. Gets the `card` component (border, radius, padding, shadow); title `label:`, description `hint:`. A raised or translucent card is a class away: `shadow-md`, `bg-white/70 backdrop-blur-md`. For a `flex` / `grid` body put a `TwPanel` with those classes in the card (`Dock = Fill`). |
+| `TwFormHost` | Shows an existing `Form` as a page inside a window (`host.Form = new OldForm()`): the form becomes a borderless child that fills the host and its `Load` runs when it appears. A form designed with `AutoScaleMode.None` is scaled once to the DPI (`ScaleDesignSize`); its title is offered as `Title` / `TitleChanged` and copied to `TitleTarget` (the toolbar's `TwHeading`); Enter / Esc press its `AcceptButton` / `CancelButton`, which WinForms only does for top-level windows. When the form calls `Close()` it leaves the host and `FormClosed` is raised. Dialogs that should stay dialogs belong in `TwSheet`. |
+| `TwSettingRow` | A settings row (System Settings style): `LabelText`, `Description` (muted, wraps), the editor (the child control) and `UnitText` on the right (`EditorWidth`: 0 by default, the editor's own width; give a value such as 160 for a fixed width; an `AutoSize` editor such as a tab strip is never made narrower than its preferred width). Rows stacked in a `card p-0` panel draw dividers between them (`divide-*`); narrow rows put the editor under the text. Style the label and description with the row's `label:` and `hint:` parts (`label:font-semibold hint:text-xs`); classes given to `CaptionLabel` directly are kept too. `setting` component. |
 | `TwCardStrip` | Paged horizontal strip of cards: the children (`TwStat` …) share the width equally, as many as fit at `MinCardWidth`; ‹ › buttons and a "1 / 3" indicator (`PageLabel`) in the top right corner turn the pages, ← → too. `PageIndex`, `PageCount`, `PageChanged`, `ShowCard(card)`; with a single page the buttons are hidden. |
 | `TwFilterBar` | Applied filters as `TwChip`s ("Line: 3", removed with ✕; clicking a chip changes the value), followed by a "+ Add filter" menu. `TwFilter` kinds: `Select` (`Options`), `Text` (a text box in the menu), `Fixed` (always applied, no ✕), `Period` (a date range from a `TwPeriodPicker` in a popup under the chip: "Date: Last 90 days"; `filter.Period` is the picker for presets and shifts, `GetPeriod(key)` returns the days, `SetPeriod(key, start, end)` sets a custom range, and `SetValue` takes the text of a preset). `FiltersChanged`, `Values`, `SetValue`; `LoadValues` restores saved filters without raising events. Chips wrap onto more lines when the bar is narrow. |
-| `TwPeriodPicker` | Period picker (looks like a `TwSelect`): presets (`Presets`: today, yesterday, last 7 / 30 / 90 days, this month, last month, this year), "Custom range…" and a calendar where two clicks pick a range, in a popover; with `Shifts`, a shift segment on top. `Start`, `End` (a preset moves on with the date), `Shift`, `PeriodChanged`; ↑/↓ on the closed box step through the presets. |
+| `TwPeriodPicker` | Period picker (looks like a `TwSelect`): presets (`Presets`: today, yesterday, last 7 / 30 / 90 days, this month, last month, this year), "Custom range…" and a calendar where two clicks pick a range, in a popover; with `Shifts`, a shift segment on top. `Start`, `End` (a preset moves on with the date), `Shift`, `PeriodChanged`; ↑/↓ on the closed box step through the presets. A custom range is written with short dates ("1.10.2026 – 31.10.2026"); `DateStyle = TwPeriodDateStyle.Abbreviated` writes month names with the year once ("1 – 31 Oct 2026", "28 Oct – 3 Nov 2026"), `DateFormat` takes any .NET format for both ends; a `TwFilterKind.Period` chip follows without raising `FiltersChanged`. |
 | `TwCommandPalette` | Ctrl+K command palette (component): `Commands` (`Group`, `IconName`, `Shortcut`, `Keywords`) are filtered as you type (ignoring case and accents, prefix matches first) under group headings; ↑/↓, Enter, Esc. `AddSearch("records", q => …)` adds a "Search … in records" row for the query, `QueryCommands` adds rows of its own. `Attach(form)` listens for the shortcut anywhere in the form. |
 | `TwSheet` | Opens a form as a frameless sheet inside its owner, with the owner dimmed behind it (`DimColor`, `DimOpacity`). `TwSheet.ShowDialog(form, this)`, or with `FullScreen = true` a sheet that fills the owner. After `TwSheet.Attach(this)`, existing `ShowDialog(this)` calls open sheets without code changes (`Filter` picks which); `DialogResult` and `AcceptButton`/`CancelButton` work as before, and the form gets its frame back when it closes. |
 | `TwWindowChrome`, `TwCaptionButtons` | Window without a title bar: `TwWindowChrome.Attach(this)` removes the caption so the content reaches the top edge (a side bar or tool bar takes its place). Empty areas of the form and of the surfaces given to `AddDragSurface` (with their labels and icons) move the window; double-click maximizes, dragging to a screen edge snaps (Aero Snap), right-click opens the system menu, and the edges resize (the top edge within `ResizeBorder`). `TwCaptionButtons` are the minimize / maximize / close buttons; `ButtonStyle = TwCaptionButtonStyle.Dots` draws them as round red / yellow / green dots (glyphs appear while the mouse is over them; `CloseDotColor`, `MinimizeDotColor`, `MaximizeDotColor`). |
+
+### Building components with classes
+
+A component's colors, type and spacing come from classes: every component class such as `card`, `btn-primary`, `chip` or `setting` expands to plain utility classes (`TwTheme.DefaultComponents`; `tw.config.json` can override them). In most components the shape and behavior live in code. How close standard controls with classes get to a ready-made component depends on the component:
+
+| Component | Same look with classes |
+| --- | --- |
+| `TwDialog`, `TwToast`; the `card`, `btn-*`, `alert-*`, `page`, `title`, `muted` surfaces | Exactly. Both components are built from `TwPanel`, `TwButton` and `Label`s with classes (`flex flex-col gap-6 p-6`, `text-base font-semibold` …); an application can build the same structure. |
+| `TwSettingRow`, `TwField` | Mostly (`TwPanel`, `Label`s and `flex`). The divider between rows, moving the editor under the text in narrow rows, and `TwField`'s validation message are in the component's code. |
+| `TwChip`, `TwDataList`, `TwStepper`, `TwSlider`, `TwSelect`, `TwTabStrip`, `TwCalendar`, check boxes, charts | No. They draw themselves; classes only give them colors and fonts. Giving a standard `Label` the `chip` class, for example, does not draw the pill shape, the icon or the ✕. |
+
+- **Rounded corners:** only `TwButton`, `TwPanel`, `TwTextBox` and `TwPictureBox` draw `rounded-*` smoothly; on standard controls the corner is clipped with a `Region` (no antialiasing).
+- **Part prefixes:** prefixes such as `label:`, `hint:`, `header:`, `row:` and `item:` apply only on controls that know that part. Giving `setting` to a panel of labels ignores them; give each `Label` its own classes.
+- **Parts of a ready-made component:** to keep the component and change one part, give classes to its exposed parts: `TwSettingRow.CaptionLabel`/`DescriptionLabel`/`UnitLabel`, `TwField.CaptionLabel`/`MessageLabel`, `TwDialog.TitleLabel`/`MessageLabel`, `TwToast.TitleLabel`/`MessageLabel`/`SubtitleLabel`, `TwTabControl.Strip`.
+
+Example: a notification card that looks like `TwToast` and stays inside the form:
+
+```csharp
+var card  = new TwPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+var texts = new TwPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+var title = new Label { Text = "Saved", AutoSize = true };
+var body  = new Label { Text = "Your changes were sent to the server.", AutoSize = true };
+texts.Controls.AddRange(new Control[] { title, body });
+card.Controls.Add(texts);
+
+tw.SetClasses(card,  "flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700");
+tw.SetClasses(texts, "flex flex-col gap-0.5");
+tw.SetClasses(title, "text-sm font-semibold text-gray-900 dark:text-white");
+tw.SetClasses(body,  "text-sm text-gray-600 dark:text-gray-300");
+```
 
 ### TwDataList
 
@@ -691,7 +735,7 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
 - **Multi-selection:** `SelectionMode = MultiExtended`; Ctrl+click adds/removes, Shift+click and Shift+arrow select a range, Ctrl+A selects all (without storing indices, even with a million rows). `SelectedIndices`, `IsSelected`, `SetSelected`, `SelectionChanged`.
 - **Groups:** `SetGroups(new[] { (0, "Today"), (12, "Yesterday") })`; the header of the group at the top sticks while scrolling. Headers are drawn with `header:bg-* header:text-*` or the `DrawGroupHeader` event.
 - **Rows of different heights:** `ItemHeights = i => orders[i].HasNote ? 72 : 52` (96 DPI pixels); row offsets are computed once, call `InvalidateItemHeights()` when the heights change. Without it every row is `ItemHeight` tall and a million rows cost nothing extra; with it each row's height is asked for once.
-- **Columns and a sortable header:** `list.Columns.Add(new TwDataListColumn("Amount", 90) { Alignment = HorizontalAlignment.Right, Sortable = true })` (a `Width` in 96 DPI pixels, or a `Weight` to share the rest) lines the parts of a row up: draw each part in `e.GetColumnBounds(column)` (or ask `list.GetColumnBounds(column, index)`); `ColumnGap` is the space between them. `list.CreateHeader()` returns a `TwDataListHeader`, the column names above the rows (add it to the list's parent after the list; it docks to the top). A click on a sortable name, or Enter / Space on it (Tab reaches the header, ←/→ move between sortable columns), toggles `SortColumn` / `SortOrder` (▴ ascending, ▾ descending) and raises `SortChanged`; the list sorts nothing itself, order your data and call `Invalidate()`. Screen readers see one column header per name with its sort state. `header:text-*` colors the names. `TwListBox` holds ready-made strings and has no per-part drawing, so the columns live on `TwDataList` only.
+- **Columns and a sortable header:** `list.Columns.Add(new TwDataListColumn("Amount", 90) { Alignment = HorizontalAlignment.Right, Sortable = true })` (a `Width` in 96 DPI pixels, or a `Weight` to share the rest) lines the parts of a row up: draw each part in `e.GetColumnBounds(column)` (or ask `list.GetColumnBounds(column, index)`); `ColumnGap` is the space between them. `list.CreateHeader()` returns a `TwDataListHeader`, the column names above the rows (add it to the list's parent after the list; it docks to the top). A click on a sortable name, or Enter / Space on it (Tab reaches the header, ←/→ move between sortable columns), toggles `SortColumn` / `SortOrder` (▴ ascending, ▾ descending) and raises the **list's** `SortChanged` (`list.SortChanged`, not an event of the header); the list sorts nothing itself, order your data and call `Invalidate()`. Screen readers see one column header per name with its sort state. `header:text-*` colors the names. `TwListBox` holds ready-made strings and has no per-part drawing, so the columns live on `TwDataList` only.
 - **Incremental loading:** `IsItemLoaded` draws unloaded rows as skeletons (with a gentle pulse) and `ItemsNeeded(first, last)` is raised with the visible range; call `Invalidate()` when the data arrives.
 
 ### List rows (`TwListItem`)
@@ -1033,6 +1077,34 @@ App.config turns on WinForms' own per-monitor support:
 - Open the application at 125% and 150% and check: if spacing and text grew clearly more than the screen scale, a value is still scaled twice.
 - **`text-[..px]` sizes** are 96 DPI pixels like every class value: `text-[13px]` is 9.75 pt, which Windows draws at the system DPI (about 16 px at 125%); on a monitor whose DPI differs from the system's (PerMonitorV2) FormWind multiplies it by the ratio of the two, and Windows' Text size setting multiplies it as well (see [Windows text size](#windows-text-size)). An application that applies its own scale factor on top (`text-[{13 * scale}px]`) therefore scales the text twice: at 125% it is about 1.56 times too large. Give the unscaled value.
 
+
+### Migrating: remove your own DPI factor
+
+Applications written before FormWind often scale font sizes and spacing themselves (`Fs(13)`, `13 * dpi / 96f`). FormWind scales every class value already, so keeping that factor scales twice. On a developer machine at 100% the factor is 1 and nothing shows; at 125% text is about 1.56 times too large.
+
+```csharp
+// before: scaled by the application, then again by FormWind
+tw.SetClasses(title, $"text-[{Fs(16.25f)}px]");
+// after: the 96 DPI value
+tw.SetClasses(title, "text-[13px]");
+```
+
+Search the code for the factor (`DeviceDpi`, `DpiX`, `/ 96`, your `Fs(` / `Scale(` helpers) wherever the result goes into a class string, a `TwSettingRow.EditorWidth`, `TwDataList.ItemHeight` or another FormWind value in 96 DPI pixels, and check the result with `TwDpi.Simulate` below.
+
+### Testing other scales (`TwDpi.Simulate`)
+
+`TwDpi.Simulate(dpi)` makes FormWind draw as on a display with that DPI without changing the display, so a 100% machine can check 125% and 150%: class sizes and `text-*` fonts get the pixel sizes they would have there (`text-[13px]` is 16.25 px at 120). Controls styled inside the scope get the simulated sizes; WinForms' own scaling (`AutoScaleMode`, native control metrics) and fonts that do not come from a class do not change. The setting is process-wide and is undone when the scope is disposed. `TwDpi.DeviceDpi(control)`, `TwDpi.SystemDpi` and `TwDpi.FontScale(control)` return the values FormWind scales with.
+
+```csharp
+using (TwDpi.Simulate(120))                      // 125 %
+using (var form = new MainForm())
+using (var picture = TwOffscreen.Render(form))
+{
+    picture.Save("main-125.png");
+    Assert.Equal(16.25f * 0.75f, title.Font.SizeInPoints, 1);   // 13 px × 1.25, not × 1.25²
+}
+```
+
 - For how to turn on PerMonitorV2 on .NET Framework, see [Setup on .NET Framework](#setup-on-net-framework).
 - On .NET Framework, WinForms applies its DPI setting when the first `Control` is created, while GDI+ reads the screen DPI once when it starts. If a `Font` is created before that (e.g. while loading the theme), GDI+ stays at 96 DPI and native controls (TextBox) draw their fonts too small. FormWind triggers WinForms' DPI initialization before touching GDI+; if your own code creates a `Font` in `Program.Main` before creating a form, call `new Control().Dispose()` first.
 - **Moving between screens (150%, 200%):** when a form moves to a screen with a different DPI, FormWind reapplies the classes once after WinForms finishes scaling. On forms set up with `AutoScaleMode.Dpi`, fonts, spacing, owner-drawn controls and DataGridView (fonts and column widths) scale correctly; this was verified at 150% and 200% for `ControlsForm` and a grid form.
@@ -1296,7 +1368,7 @@ For every bug these tests found, `ApplierTests` also keeps an explicit regressio
 
 ### Pictures of whole windows (`TwOffscreen`)
 
-`Control.DrawToBitmap` leaves out the windows a form owns (`TwSheet`, `TwPopover`, dialogs) and ignores opacity and transparent areas. `TwOffscreen.Render(form)` returns a 32-bit bitmap of the whole window for visual regression tests: a form that is not shown yet is opened far off-screen (never visible, out of the taskbar), laid out and painted with motion switched off, its content and that of every window it owns are asked from Windows (`PrintWindow`) and composed in z-order with `Opacity`, `TransparencyKey` and `Region` applied. `TwOffscreenOptions` chooses `IncludeOwned`, `ExpandToOwned` (a picture as large as the form and its sheets together), `Background`, `DisableMotion` and `CloseWhenDone`; a form that was already visible is pictured where it is.
+`Control.DrawToBitmap` leaves out the windows a form owns (`TwSheet`, `TwPopover`, dialogs) and ignores opacity and transparent areas. `TwOffscreen.Render(form)` returns a 32-bit bitmap of the whole window for visual regression tests: a form that is not shown yet is opened far off-screen (never visible, out of the taskbar), laid out and painted with motion switched off, its content and that of every window it owns are asked from Windows (`PrintWindow`) and composed in z-order with `Opacity`, `TransparencyKey` and `Region` applied. `TwOffscreenOptions` chooses `IncludeOwned`, `ExpandToOwned` (a picture as large as the form and its sheets together), `Background`, `DisableMotion` and `CloseWhenDone`; a form that was already visible is pictured where it is. To picture another display scale, create and render the form inside `TwDpi.Simulate(dpi)` (see [Testing other scales](#testing-other-scales-twdpisimulate)).
 
 ```csharp
 using var picture = TwOffscreen.Render(form);

@@ -5,6 +5,64 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwDpi` is public: `TwDpi.Simulate(dpi)` makes FormWind draw as on a display with that DPI until the returned scope is
+  disposed (class sizes and `text-*` fonts get the pixel sizes they would have there), so a machine at 100 % can check 125 %
+  and 150 % together with `TwOffscreen.Render`. `TwDpi.DeviceDpi(control)`, `SystemDpi`, `FontScale(control)` and
+  `SimulatedDpi` return the values FormWind scales with. Before, the only way was reflection on internal members.
+- `TwHeading`: a two-line title (`Text`, muted `Subtitle` styled with `hint:`) whose lines end with an ellipsis; as a
+  `TwToolbar` item with `TwToolbarOverflow.Shrink` it is a window title with a record count under it.
+- `TwPageHeader`: a page title, a muted subtitle and the controls added to it on the right; when the window is too narrow the
+  controls move under the title and wrap (`IsStacked`). New `page-header` component (`label:` title, `hint:` subtitle, `gap-*`),
+  applied by `AutoStyle`.
+- `TwCard`: the control form of the `card` component, with a `Title`, a muted `Description`, header controls
+  (`Header.Controls`) and a body made of its other children; the header hides itself while empty. `AutoStyle` gives it `card`.
+- `TwFormHost`: shows an existing `Form` as a page (`TopLevel = false`, borderless, filling the host). A form designed with
+  `AutoScaleMode.None` is scaled to the DPI once (`ScaleDesignSize`), its title is offered as `Title` / `TitleChanged` and copied
+  to `TitleTarget`, Enter / Esc press its `AcceptButton` / `CancelButton`, and `FormClosed` is raised when it closes itself.
+- `TwPopover.ShowOnHover(anchor, delay)`, `StopHover`, `HoverCloseDelay` and `IsOpenFromHover`: a popover that opens when the
+  pointer rests on an anchor, does not take the focus, and stays open while the pointer is over the anchor or the popover.
+- `TwPanel.ScrollToFocused`: `false` keeps an `AutoScroll` page from jumping to a child focused with the mouse (a list or grid
+  that is clicked); focus moved with the keyboard still scrolls.
+- `TwPeriodPicker.DateStyle` (`TwPeriodDateStyle.Abbreviated`: "1 – 31 Eki 2026"), `DateFormat` and `FormatRange`; a
+  `TwFilterKind.Period` chip follows a format change without raising `FiltersChanged`.
+- Built-in icons `bookmark`, `bookmark-filled` and `factory`, drawn as SVG (the icon fonts have no glyph for them). A glyph
+  registered with the same name wins. The FW003 analyzer knows them.
+- `TwTabStrip.Overflow` (`TwTabOverflow`): `Scroll` makes a strip whose tabs do not fit scroll instead of moving tabs to the
+  "more" menu. It has ‹ › buttons at the edges (they scroll, they do not change the selection), edges that fade where more
+  tabs follow, and Shift+wheel or a tilt wheel (a plain wheel still scrolls the page). Tabs keep their order, and the selected
+  tab is scrolled into view, animated. `ScrollAndMenu` adds a "more" button that lists every tab, with the selected one
+  checked. `Menu` (the default) and `Clip` are the old behaviors. New members: `IsScrollable`, `ScrollOffset`,
+  `MaxScrollOffset`, `ScrollTabIntoView`, `ScrollBackButtonBounds` / `ScrollForwardButtonBounds`, `GetVisibleTabBounds` and
+  `MinimumScrollWidth`. Tabs scrolled out of view are offscreen for screen readers.
+- `TwToolbar` narrows an `AutoSize` tab strip that scrolls (after the `Shrink` items), down to its `MinimumScrollWidth`, before
+  it moves the strip to the "more" menu, and widens it again when there is room.
+- A label whose text `AutoEllipsis` cuts short (`truncate`, the caption of a `TwSettingRow`) shows its full text in a themed
+  `TwToolTip` that follows dark mode. It replaces WinForms' own light tooltip, and appears only while the text is actually cut.
+
+### Fixed
+
+- In dark mode a `Pills` or `Segmented` tab strip with the default `tabs` classes drew the active tab as white text on a white
+  pill / segment, and the segmented track stayed light gray. Without `selected:bg-*` / `fill-*` classes they now take dark
+  surface shades (`surface-700` for the active tab, `surface-800` for the track); classes given to the strip still win, and
+  light mode is unchanged.
+
+### Changed
+
+- `TwTabStrip.OverflowMenu` is hidden from the designer and maps onto `Overflow`: `false` turns `Menu` into `Clip` and
+  `ScrollAndMenu` into `Scroll`. Existing code keeps working.
+
+- **Breaking:** `TwSettingRow.EditorWidth` is 0 by default (the editor's own width), as the 0.1.6 notes described the
+  behavior. Before, an editor that was not `AutoSize` was forced to 160 px unless 0 was given; set `EditorWidth = 160` to keep
+  the old layout. Designer files that relied on the old default do not contain the property and change too.
+- Documentation: migrating away from an application's own DPI factor (with an example), testing other scales with
+  `TwDpi.Simulate`, a responsive stat grid (`grid grid-cols-2 lg:grid-cols-4`), card surfaces (`shadow-*`, `bg-white/70
+  backdrop-blur-*`), and that `SortChanged` is an event of `TwDataList`, not of its header.
+- A regression test covers registering fonts and loading the theme from static fields before `Main` calls
+  `SetCompatibleTextRenderingDefault` (.NET Framework); it passes, so the startup error reported for earlier versions does not
+  occur.
+
 ## [0.1.6-preview.1] - 2026-11-05
 
 ### Added
