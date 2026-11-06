@@ -8,6 +8,16 @@ using System.Windows.Forms;
 
 namespace FormWind;
 
+/// <summary>How <see cref="TwPeriodPicker"/> writes a custom range.</summary>
+public enum TwPeriodDateStyle
+{
+    /// <summary>Short numeric dates: "1.10.2026 – 31.10.2026".</summary>
+    Short,
+
+    /// <summary>Abbreviated month names, the year once: "1 – 31 Eki 2026", "28 Eki – 3 Kas 2026".</summary>
+    Abbreviated,
+}
+
 /// <summary>A ready-made period of <see cref="TwPeriodPicker"/> ("Last 90 days"): its text and the days it covers for a given today.</summary>
 public sealed class TwPeriodPreset
 {
@@ -170,14 +180,67 @@ public class TwPeriodPicker : TwSelect
     {
         get
         {
-            var text = Preset?.Text ?? RangeText(_customStart, _customEnd);
+            var text = Preset?.Text ?? FormatRange(_customStart, _customEnd);
             return _shift is null ? text : text + " · " + _shift;
         }
+    }
+
+    private TwPeriodDateStyle _dateStyle;
+    private string? _dateFormat;
+
+    /// <summary>
+    /// How a custom range is written in the box and in a <see cref="TwFilterKind.Period"/> chip: short numeric dates
+    /// ("1.10.2026 – 31.10.2026", the default) or abbreviated month names with the year once ("1 – 31 Eki 2026",
+    /// "28 Eki – 3 Kas 2026"). <see cref="DateFormat"/> wins when it is set.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(TwPeriodDateStyle.Short)]
+    public TwPeriodDateStyle DateStyle
+    {
+        get => _dateStyle;
+        set
+        {
+            if (_dateStyle == value) return;
+            _dateStyle = value;
+            FormatChanged();
+        }
+    }
+
+    /// <summary>A .NET date format for both ends of a custom range (<c>"dd MMM"</c>); <c>null</c> = <see cref="DateStyle"/>.</summary>
+    [Category("Appearance"), DefaultValue(null)]
+    public string? DateFormat
+    {
+        get => _dateFormat;
+        set
+        {
+            value = string.IsNullOrEmpty(value) ? null : value;
+            if (_dateFormat == value) return;
+            _dateFormat = value;
+            FormatChanged();
+        }
+    }
+
+    /// <summary>The text of a range with the current <see cref="DateStyle"/> and <see cref="DateFormat"/>.</summary>
+    public string FormatRange(DateTime start, DateTime end)
+    {
+        var culture = CultureInfo.CurrentCulture;
+        if (_dateFormat is string format)
+            return start.Date == end.Date ? start.ToString(format, culture) : start.ToString(format, culture) + " – " + end.ToString(format, culture);
+        return _dateStyle == TwPeriodDateStyle.Abbreviated ? AbbreviatedRangeText(start, end, culture) : RangeText(start, end);
     }
 
     internal static string RangeText(DateTime start, DateTime end) => start == end
         ? start.ToString("d", CultureInfo.CurrentCulture)
         : start.ToString("d", CultureInfo.CurrentCulture) + " – " + end.ToString("d", CultureInfo.CurrentCulture);
+
+    // Ay adları kısaltılmış, yıl bir kez: "1 – 31 Eki 2026", "28 Eki – 3 Kas 2026", "28 Ara 2025 – 3 Oca 2026".
+    internal static string AbbreviatedRangeText(DateTime start, DateTime end, CultureInfo culture)
+    {
+        string day = "%d", dayMonth = "d MMM", full = "d MMM yyyy";
+        if (start.Date == end.Date) return start.ToString(full, culture);
+        if (start.Year != end.Year) return start.ToString(full, culture) + " – " + end.ToString(full, culture);
+        if (start.Month != end.Month) return start.ToString(dayMonth, culture) + " – " + end.ToString(full, culture);
+        return start.ToString(day, culture) + " – " + end.ToString(full, culture);
+    }
 
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     internal TwCalendarColors CalendarColors { get; set; } = new TwCalendarColors();
@@ -214,6 +277,15 @@ public class TwPeriodPicker : TwSelect
         UpdateItems();
     }
 
+    // Biçim değişimi dönemi değiştirmez: PeriodChanged doğmaz, yalnızca metinler yenilenir.
+    internal event EventHandler? TextFormatChanged;
+
+    private void FormatChanged()
+    {
+        UpdateItems();
+        TextFormatChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private void Changed()
     {
         UpdateItems();
@@ -229,7 +301,7 @@ public class TwPeriodPicker : TwSelect
             string suffix = _shift is null ? "" : " · " + _shift;
             Items.Clear();
             foreach (var preset in Presets) Items.Add(preset.Text + suffix);
-            if (_presetIndex == -1) Items.Add(RangeText(_customStart, _customEnd) + suffix);
+            if (_presetIndex == -1) Items.Add(FormatRange(_customStart, _customEnd) + suffix);
             SelectedIndex = -1;
             SelectedIndex = _presetIndex == -1 ? Items.Count - 1 : _presetIndex;
             Invalidate();

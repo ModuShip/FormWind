@@ -103,6 +103,7 @@ public class TwFilterBar : TwPanel
                     {
                         var owner = filter;
                         picker.PeriodChanged += (_, _) => OnPeriodChanged(owner);
+                        picker.TextFormatChanged += (_, _) => OnPeriodFormatChanged(owner);
                     }
             Rebuild();
         };
@@ -183,6 +184,14 @@ public class TwFilterBar : TwPanel
     {
         if (_syncingPeriod || filter.Value is null || filter.Period is not TwPeriodPicker picker || !Filters.Contains(filter)) return;
         if (Assign(filter, picker.PeriodText)) Changed();
+    }
+
+    // Tarih biçimi değişince uygulanmış özel aralığın metni yenilenir; dönem değişmediği için FiltersChanged doğmaz.
+    private void OnPeriodFormatChanged(TwFilter filter)
+    {
+        if (filter.Value is null || filter.Period is not TwPeriodPicker picker || filter.Value == picker.PeriodText) return;
+        filter.Value = picker.PeriodText;
+        Rebuild();
     }
 
     // Dönem filtresinin değeri hazır dönemin metnidir (ya da SetPeriod ile özel aralık); tanımadığı metni yok sayar.
