@@ -239,7 +239,7 @@ internal sealed class TwTabStripAccessibleObject : TwListAccessibleObject
     protected override int IndexAt(Point client)
     {
         for (int i = 0; i < _tabs.Tabs.Count; i++)
-            if (_tabs.GetTabBounds(i).Contains(client)) return i;
+            if (_tabs.GetVisibleTabBounds(i).Contains(client)) return i;
         return -1;
     }
 
@@ -251,7 +251,7 @@ internal sealed class TwTabStripAccessibleObject : TwListAccessibleObject
 
         public Tab(TwTabStrip tabs, AccessibleObject parent, int index) : base(tabs, parent, index) => _tabs = tabs;
 
-        protected override Rectangle ClientBounds => _tabs.GetTabBounds(Index);
+        protected override Rectangle ClientBounds => _tabs.GetVisibleTabBounds(Index);
 
         public override string? Name
         {

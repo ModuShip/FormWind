@@ -1,1 +1,19 @@
 #nullable enable
+FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Clip = 3 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Menu = 0 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.Scroll = 1 -> FormWind.TwTabOverflow
+FormWind.TwTabOverflow.ScrollAndMenu = 2 -> FormWind.TwTabOverflow
+FormWind.TwTabStrip.GetVisibleTabBounds(int index) -> System.Drawing.Rectangle
+FormWind.TwTabStrip.IsScrollable.get -> bool
+FormWind.TwTabStrip.MaxScrollOffset.get -> int
+FormWind.TwTabStrip.MinimumScrollWidth.get -> int
+FormWind.TwTabStrip.Overflow.get -> FormWind.TwTabOverflow
+FormWind.TwTabStrip.Overflow.set -> void
+FormWind.TwTabStrip.ScrollBackButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabStrip.ScrollForwardButtonBounds.get -> System.Drawing.Rectangle
+FormWind.TwTabStrip.ScrollOffset.get -> int
+FormWind.TwTabStrip.ScrollOffset.set -> void
+FormWind.TwTabStrip.ScrollTabIntoView(int index) -> void
+override FormWind.TwTabStrip.OnMouseWheel(System.Windows.Forms.MouseEventArgs! e) -> void
+override FormWind.TwTabStrip.WndProc(ref System.Windows.Forms.Message m) -> void

@@ -112,7 +112,13 @@ public class WinFormsApplier : IStyleApplier
             progress.Invalidate();
         }
         if (control is ITwChartControl chart) chart.SetChartColors(ChartColors(style, context));
-        if (control is Label label && style.Truncate is bool truncate) label.AutoEllipsis = truncate;
+        if (control is Label label)
+        {
+            if (style.Truncate is bool truncate) label.AutoEllipsis = truncate;
+            // Kesilen metnin tamamı WinForms'un açık renkli ipucu yerine temaya uyan TwToolTip'te görünür.
+            if (label.AutoEllipsis && !context.DesignMode) TwTruncationTip.Attach(label, context.Theme, (context.State & TwState.Dark) != 0);
+            else TwTruncationTip.Detach(label);
+        }
         if (control is TwSelect select)
         {
             var colors = ToolStripApplier.BuildColors(style, context);
@@ -184,6 +190,27 @@ public class WinFormsApplier : IStyleApplier
         var labelFont = label.HasFont ? TwFonts.Create(label, row.Font, context.Theme, scale) : null;
         var hintFont = hint.HasFont ? TwFonts.Create(hint, row.Font, context.Theme, scale) : null;
         row.SetPartStyles(label.ForeColor, labelFont, hint.ForeColor, hintFont, style.DivideColor);
+        // Satırın kendi etiketi stil uygulamasından geçmez; kesilen başlığın ipucu burada kurulur.
+        if (!context.DesignMode) TwTruncationTip.Attach(row.CaptionLabel, context.Theme, (context.State & TwState.Dark) != 0);
+    }
+
+    // İki satırlı başlık: alt satır hint:.
+    private static void ApplyHeadingParts(TwHeading heading, TwApplyContext context)
+    {
+        var state = context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible);
+        var hint = context.Parsed.ResolvePart("hint", state);
+        heading.SetPartStyles(hint.ForeColor, hint.HasFont ? TwFonts.Create(hint, heading.Font, context.Theme, TwDpi.FontScale(heading)) : null);
+    }
+
+    // Sayfa başlığı ve kart: başlık label:, alt satır hint:.
+    private static void ApplyTitleParts(TwApplyContext context, Control control, Action<Color?, Font?, Color?, Font?> apply)
+    {
+        var state = context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible);
+        var label = context.Parsed.ResolvePart("label", state);
+        var hint = context.Parsed.ResolvePart("hint", state);
+        float scale = TwDpi.FontScale(control);
+        apply(label.ForeColor, label.HasFont ? TwFonts.Create(label, control.Font, context.Theme, scale) : null,
+            hint.ForeColor, hint.HasFont ? TwFonts.Create(hint, control.Font, context.Theme, scale) : null);
     }
 
     // Kaydırıcı: ray fill-*, dolu kısım accent-*, tutamaç item:bg-* (varsayılan beyaz).
@@ -238,6 +265,9 @@ public class WinFormsApplier : IStyleApplier
         if (item.Radius is int radius) list.ItemRadius = radius;
     }
 
+    private static Color SurfaceShade(TwTheme theme, string shade, string fallback) =>
+        theme.TryGetColor("surface", shade, out var color) || theme.TryGetColor("gray", shade, out color) ? color : ColorTranslator.FromHtml(fallback);
+
     private static void ApplyTabColors(TwTabStrip tabs, TwStyle style, TwApplyContext context)
     {
         var state = context.State & ~(TwState.Hover | TwState.Active);
@@ -258,6 +288,13 @@ public class WinFormsApplier : IStyleApplier
         colors.HoverFore = hover.ForeColor ?? colors.ActiveFore;
         if (hover.BackColor is Color hoverBack) colors.HoverBack = hoverBack;
         if (style.FillColor is Color track) colors.Track = track;
+        // Koyu temada etkin hap / bölme ve bölmeli ray class verilmemişse koyu tonlara iner; yoksa açık varsayılanlar kalır ve
+        // beyaz zemine beyaz yazı (dark:selected:text-white) düşer.
+        if ((context.State & TwState.Dark) != 0 && (context.State & TwState.HighContrast) == 0)
+        {
+            if (selected.BackColor is null) colors.ActiveBack = SurfaceShade(context.Theme, "700", "#374151");
+            if (style.FillColor is null) colors.Track = SurfaceShade(context.Theme, "800", "#1f2937");
+        }
         tabs.Colors = colors;
         // Taşma menüsü: menu: ve item: class'ları; yazı rengi verilmemişse etkin sekmeninki, koyu menüde hover ve kenarlık
         // menü zemininden türetilir.
