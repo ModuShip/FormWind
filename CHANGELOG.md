@@ -5,12 +5,7 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
-### Fixed
-
-- Charts no longer report their opening animation as finished (and draw value labels) a frame before the last bar,
-  ring or point reached its place.
-
-## [0.1.6-preview.2] - 2026-11-06
+## [0.1.6-preview.2] - 2026-11-07
 
 ### Added
 
@@ -54,6 +49,8 @@ All notable changes to FormWind are documented in this file. The format follows
   pill / segment, and the segmented track stayed light gray. Without `selected:bg-*` / `fill-*` classes they now take dark
   surface shades (`surface-700` for the active tab, `surface-800` for the track); classes given to the strip still win, and
   light mode is unchanged.
+- Charts no longer report their opening animation as finished (and draw value labels) a frame before the last bar,
+  ring or point reached its place.
 
 ### Changed
 
