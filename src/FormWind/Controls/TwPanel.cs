@@ -81,6 +81,21 @@ public partial class TwPanel : Panel, ITwChrome, ITwLayoutHost, ITwAnimated
         }
     }
 
+    /// <summary>
+    /// Whether an <see cref="ScrollableControl.AutoScroll"/> panel scrolls to a child that gets the focus (the WinForms
+    /// behavior, default <c>true</c>). Set <c>false</c> for a scrolling page whose list or grid would otherwise jump the page
+    /// to itself when it is clicked: a child focused with the mouse no longer scrolls the page. Focus that moves with the
+    /// keyboard (Tab) still scrolls to the control, so keyboard users always see where they are.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true), Description("Scroll to a child that gets the focus (AutoScroll).")]
+    public bool ScrollToFocused { get; set; } = true;
+
+    protected override Point ScrollToControl(Control activeControl) =>
+        ScrollToFocused || PressedMouseButtons() == MouseButtons.None ? base.ScrollToControl(activeControl) : DisplayRectangle.Location;
+
+    // Testler basılı fare düğmesini taklit eder.
+    internal static Func<MouseButtons> PressedMouseButtons = () => MouseButtons;
+
     // Arkası görünen yüzey: yarı saydam zemin ya da buzlu cam.
     private bool SeesThrough => Parent != null && (_backdropBlur > 0 || BackColor.A is > 0 and < 255);
 
