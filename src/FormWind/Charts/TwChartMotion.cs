@@ -49,7 +49,10 @@ internal sealed class TwChartMotion : IDisposable
     public float ChangeProgress => ChangeRunning ? Progress(0) : 1f;
 
     /// <summary>Share of the whole opening that has passed, eased (for parts drawn across all items, e.g. a joining line).</summary>
-    public float IntroOverall => IntroRunning ? TwMotion.Ease(TwEasing.Out, _tween!.Progress) : 1f;
+    public float IntroOverall => IntroRunning ? Math.Min(TwMotion.Ease(TwEasing.Out, _tween!.Progress), BelowOne) : 1f;
+
+    // Easing rounds to 1f just before the tween ends; 1 must mean "finished", when every item is at its target.
+    private const float BelowOne = 0.99999994f;
 
     private float Progress(int index)
     {

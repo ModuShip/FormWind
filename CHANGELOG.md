@@ -5,6 +5,11 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Charts no longer report their opening animation as finished (and draw value labels) a frame before the last bar,
+  ring or point reached its place.
+
 ## [0.1.6-preview.2] - 2026-11-06
 
 ### Added
