@@ -48,6 +48,11 @@ public class TwPopover : Component
     private bool _closedByAnchorClick;
     private Control? _anchorMouseUpOwner;
     private MouseEventHandler? _anchorMouseUp;
+    private readonly System.Collections.Generic.Dictionary<Control, int> _hoverAnchors = new System.Collections.Generic.Dictionary<Control, int>();
+    private Timer? _hoverTimer;
+    private Control? _hoverCandidate;
+    private DateTime _hoverSince, _outsideSince;
+    private bool _openedByHover;
 
     public TwPopover()
     {
@@ -146,9 +151,115 @@ public class TwPopover : Component
         dropDown.Show(anchor, anchor.PointToClient(bounds.Location), ToolStripDropDownDirection.BelowRight);
         TwPopupMotion.Open(dropDown, new Point(screenAnchor.Left + screenAnchor.Width / 2, screenAnchor.Top + screenAnchor.Height / 2));
 
-        if (FocusContent) FocusFirst(_content);
+        _openedByHover = _showingFromHover;
+        if (FocusContent && !_showingFromHover) FocusFirst(_content);
         Opened?.Invoke(this, EventArgs.Empty);
     }
+
+    private bool _showingFromHover;
+
+    /// <summary>Delay (milliseconds) before a popover opened by hover closes once the pointer has left the anchor and the popover; default 300.</summary>
+    [DefaultValue(300)]
+    public int HoverCloseDelay { get; set; } = 300;
+
+    /// <summary>Whether the popover is open because the pointer rests on an anchor given to <see cref="ShowOnHover"/>.</summary>
+    [Browsable(false)]
+    public bool IsOpenFromHover => IsOpen && _openedByHover;
+
+    /// <summary>
+    /// Opens the popover when the pointer rests on <paramref name="anchor"/> for <paramref name="delay"/> milliseconds (an info
+    /// icon that shows a definition card), and closes it <see cref="HoverCloseDelay"/> after the pointer has left both the
+    /// anchor and the popover, so the pointer can move into the card to select or click its content. A popover opened this way
+    /// does not take the focus. Clicking the anchor or calling <see cref="Show(Control)"/> opens it as usual. Several anchors
+    /// can share one popover; <see cref="Opening"/> tells which one through <see cref="Anchor"/> after it opened.
+    /// </summary>
+    public void ShowOnHover(Control anchor, int delay = 400)
+    {
+        if (anchor is null) throw new ArgumentNullException(nameof(anchor));
+        if (!_hoverAnchors.ContainsKey(anchor))
+        {
+            anchor.MouseEnter += OnHoverAnchorEnter;
+            anchor.Disposed += OnHoverAnchorDisposed;
+        }
+        _hoverAnchors[anchor] = Math.Max(0, delay);
+    }
+
+    /// <summary>Stops opening the popover when the pointer rests on <paramref name="anchor"/>.</summary>
+    public void StopHover(Control anchor)
+    {
+        if (anchor is null || !_hoverAnchors.Remove(anchor)) return;
+        anchor.MouseEnter -= OnHoverAnchorEnter;
+        anchor.Disposed -= OnHoverAnchorDisposed;
+        if (_hoverCandidate == anchor) _hoverCandidate = null;
+    }
+
+    private void OnHoverAnchorDisposed(object? sender, EventArgs e)
+    {
+        if (sender is Control anchor) StopHover(anchor);
+    }
+
+    private void OnHoverAnchorEnter(object? sender, EventArgs e)
+    {
+        if (sender is Control anchor) BeginHover(anchor, DateTime.UtcNow);
+    }
+
+    // Fare çapaya girdi: gecikme bu andan sayılır.
+    internal void BeginHover(Control anchor, DateTime now)
+    {
+        if (!_hoverAnchors.ContainsKey(anchor) || IsOpen && _anchor == anchor) return;
+        _hoverCandidate = anchor;
+        _hoverSince = now;
+        EnsureHoverTimer().Start();
+    }
+
+    private Timer EnsureHoverTimer()
+    {
+        if (_hoverTimer is null)
+        {
+            _hoverTimer = new Timer { Interval = 50 };
+            _hoverTimer.Tick += (_, _) => HoverTick(Control.MousePosition, DateTime.UtcNow);
+        }
+        return _hoverTimer;
+    }
+
+    // Fare konumu ve zamanla çağrılır (testler doğrudan çağırır): bekleyen çapa için açma, açık hover popover'ı için kapatma.
+    internal void HoverTick(Point mouse, DateTime now)
+    {
+        if (_hoverCandidate is { } candidate)
+        {
+            if (candidate.IsDisposed || !candidate.Visible || !candidate.IsHandleCreated || !OnScreen(candidate).Contains(mouse))
+                _hoverCandidate = null;
+            else if ((now - _hoverSince).TotalMilliseconds >= _hoverAnchors[candidate])
+            {
+                _hoverCandidate = null;
+                if (_content != null && !(IsOpen && _anchor == candidate))
+                {
+                    _showingFromHover = true;
+                    try
+                    {
+                        Show(candidate);
+                    }
+                    finally
+                    {
+                        _showingFromHover = false;
+                    }
+                    _outsideSince = DateTime.MinValue;
+                }
+            }
+        }
+
+        if (IsOpen && _openedByHover && _anchor is { } anchor)
+        {
+            bool inside = anchor.IsHandleCreated && OnScreen(anchor).Contains(mouse) || _dropDown!.Bounds.Contains(mouse);
+            if (inside) _outsideSince = DateTime.MinValue;
+            else if (_outsideSince == DateTime.MinValue) _outsideSince = now;
+            else if ((now - _outsideSince).TotalMilliseconds >= HoverCloseDelay) Close();
+        }
+
+        if (_hoverCandidate is null && !(IsOpen && _openedByHover)) _hoverTimer?.Stop();
+    }
+
+    private static Rectangle OnScreen(Control control) => control.RectangleToScreen(control.ClientRectangle);
 
     /// <summary>Opens the popover, or closes it when it is open. A click on the anchor that just closed it does not reopen it.</summary>
     public void Toggle(Control anchor) => Toggle(anchor, null);
@@ -217,6 +328,9 @@ public class TwPopover : Component
     {
         if (disposing)
         {
+            _hoverTimer?.Dispose();
+            _hoverTimer = null;
+            foreach (var anchor in new System.Collections.Generic.List<Control>(_hoverAnchors.Keys)) StopHover(anchor);
             _dropDown?.Dispose();
             _dropDown = null;
             _host = null;
