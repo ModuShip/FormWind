@@ -235,6 +235,9 @@ public sealed class TwTheme
         // Yüzeyler ve yazı
         ["page"] = "font-sans bg-surface-50 text-surface-900 dark:bg-surface-900 dark:text-surface-100",
         ["card"] = "bg-white border border-surface-200 rounded-lg p-4 shadow-sm dark:bg-surface-800 dark:border-surface-700",
+        // TwPageHeader: başlık label:, alt başlık hint:, öğe aralığı gap-*.
+        ["page-header"] = "py-2 gap-2 label:text-2xl label:font-semibold label:text-surface-900 hint:text-sm hint:text-surface-500 " +
+                          "dark:label:text-white dark:hint:text-surface-400",
         ["sidebar"] = "bg-white border-r border-surface-200 dark:bg-surface-800 dark:border-surface-700",
         ["nav-item"] = "px-3 py-2 rounded-md text-sm font-medium text-left cursor-pointer bg-white text-surface-700 hover:bg-surface-100 checked:bg-primary-50 checked:text-primary-700 " +
                        "dark:bg-surface-800 dark:text-surface-200 dark:hover:bg-surface-700 dark:checked:bg-primary-950 dark:checked:text-primary-200",
@@ -340,6 +343,8 @@ public sealed class TwTheme
         ["TwTabStrip"] = "tabs",
         ["TwChip"] = "chip",
         ["TwSettingRow"] = "setting",
+        ["TwPageHeader"] = "page-header",
+        ["TwCard"] = "card",
         ["ToolStrip"] = "menu",
         ["PropertyGrid"] = "properties",
         ["TabControl"] = "tab-control",

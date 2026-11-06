@@ -455,6 +455,8 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
     {
         var theme = Theme;
         if (TwClassMerge.Split(own).Any(token => theme.GetComponent(token) != null)) return null;
+        // Kartın başlığı kartın label:/hint: parçalarıyla stillenir; sayfa başlığının dolgusu ve fontu ona gelmez.
+        if (control is TwPageHeader { Parent: TwCard card } header && card.Header == header) return null;
         return theme.GetAutoStyle(control.GetType());
     }
 

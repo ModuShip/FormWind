@@ -94,6 +94,13 @@ public class WinFormsApplier : IStyleApplier
         if (control is TwSlider slider) ApplySliderColors(slider, style, context);
         if (control is TwField field) ApplyFieldParts(field, context);
         if (control is TwSettingRow settingRow) ApplySettingRowParts(settingRow, style, context);
+        if (control is TwHeading heading) ApplyHeadingParts(heading, context);
+        if (control is TwPageHeader pageHeader)
+        {
+            if (style.GapX is int headerGap) pageHeader.Gap = headerGap;
+            ApplyTitleParts(context, pageHeader, pageHeader.SetPartStyles);
+        }
+        if (control is TwCard card) ApplyTitleParts(context, card, card.SetPartStyles);
         if (control is TwPager pager)
         {
             // Geçerli sayfa selected:, hover item:hover:.
