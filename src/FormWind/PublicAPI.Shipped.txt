@@ -2978,3 +2978,15 @@ FormWind.TwTabStrip.ScrollOffset.set -> void
 FormWind.TwTabStrip.ScrollTabIntoView(int index) -> void
 override FormWind.TwTabStrip.OnMouseWheel(System.Windows.Forms.MouseEventArgs! e) -> void
 override FormWind.TwTabStrip.WndProc(ref System.Windows.Forms.Message m) -> void
+FormWind.TwHeatmap.CellText -> System.EventHandler<FormWind.TwHeatmapCellTextEventArgs!>?
+FormWind.TwHeatmap.ToolTipValueFormat.get -> string?
+FormWind.TwHeatmap.ToolTipValueFormat.set -> void
+FormWind.TwHeatmapCellTextEventArgs
+FormWind.TwHeatmapCellTextEventArgs.Column.get -> int
+FormWind.TwHeatmapCellTextEventArgs.Row.get -> int
+FormWind.TwHeatmapCellTextEventArgs.Title.get -> string?
+FormWind.TwHeatmapCellTextEventArgs.Title.set -> void
+FormWind.TwHeatmapCellTextEventArgs.TwHeatmapCellTextEventArgs(int row, int column, double value, string! valueText) -> void
+FormWind.TwHeatmapCellTextEventArgs.Value.get -> double
+FormWind.TwHeatmapCellTextEventArgs.ValueText.get -> string!
+FormWind.TwHeatmapCellTextEventArgs.ValueText.set -> void

@@ -5,6 +5,25 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.7-preview.1] - 2026-11-10
+
+### Added
+
+- `TwChip` part classes: `icon:` (`icon:text-*`, `icon:w-*`), `dot:` (`dot:bg-*`, `dot:w-*`; a `dot:bg-*` class shows the
+  dot without `DotColor`), `remove:` (`remove:text-*`, `remove:hover:text-*`, `remove:hover:bg-*`, `remove:w-*`) and
+  `gap-*` between the parts. A `disabled:text-*` class is not dimmed again, and a `focus-visible:ring-*` class replaces the
+  chip's own focus ring.
+- `TwNumberBox` takes `arrow:text-*` and `arrow:w-*` for its ▲▼ (otherwise the text color and 75% of the font).
+- `TwCardStrip` takes `gap-x-*` between cards and `gap-y-*` between the page buttons and the cards (8 px by default).
+- `TwHeatmap.CellText` sets the tooltip title and value text of a cell (also read by screen readers) when the row and
+  column labels alone do not say what the cell is; `TwHeatmap.ToolTipValueFormat` formats the value in the tooltip apart
+  from `ValueFormat` (cells that hide zeros can still say 0 in the tooltip).
+
+### Behavior changes
+
+- `TwProgress` without `fill-*` / `accent-*` and `TwField` without hint or error colors take the theme's `surface-200`,
+  `primary-600`, `surface-500` and `danger-600` instead of fixed Tailwind grays and blue, so they follow the preset.
+
 ## [0.1.6-preview.2] - 2026-11-07
 
 ### Added
@@ -595,7 +614,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.2...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.7-preview.1...HEAD
+[0.1.7-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.2...v0.1.7-preview.1
 [0.1.6-preview.2]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.1...v0.1.6-preview.2
 [0.1.6-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.5-preview.1...v0.1.6-preview.1
 [0.1.5-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.4-preview.1...v0.1.5-preview.1
