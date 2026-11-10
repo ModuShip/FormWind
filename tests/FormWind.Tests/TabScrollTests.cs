@@ -87,31 +87,42 @@ public class TabScrollTests
     [Fact]
     public void Arrows_scroll_without_changing_the_selection_and_clicks_hit_the_shifted_tab() => Sta.Run(() =>
     {
-        using var form = NewForm();
-        var tabs = ScrollingStrip();
-        form.Controls.Add(tabs);
-        form.Show();
-        Application.DoEvents();
+        // Animated scrolling moves the tabs between reading their bounds and clicking (slow CI machines), so the
+        // positions are checked with the scroll applied at once.
+        var motion = TwMotion.Enabled;
+        TwMotion.Enabled = false;
+        try
+        {
+            using var form = NewForm();
+            var tabs = ScrollingStrip();
+            form.Controls.Add(tabs);
+            form.Show();
+            Application.DoEvents();
 
-        var forward = tabs.ScrollForwardButtonBounds;
-        var center = new Point(forward.Left + forward.Width / 2, forward.Top + forward.Height / 2);
-        MouseDown(tabs, center);
-        Assert.Equal(0, tabs.SelectedIndex);
-        Assert.True(tabs.ScrollOffset > 0);
+            var forward = tabs.ScrollForwardButtonBounds;
+            var center = new Point(forward.Left + forward.Width / 2, forward.Top + forward.Height / 2);
+            MouseDown(tabs, center);
+            Assert.Equal(0, tabs.SelectedIndex);
+            Assert.True(tabs.ScrollOffset > 0);
 
-        // Görünür alandaki bir sekmeye tıklamak onu seçer (kaydırma hesaba katılır).
-        int index = Enumerable.Range(0, ManyTabs.Length).First(i => i > 0 && !tabs.GetVisibleTabBounds(i).IsEmpty);
-        var visible = tabs.GetVisibleTabBounds(index);
-        MouseDown(tabs, new Point(visible.Left + visible.Width / 2, visible.Top + visible.Height / 2));
-        Assert.Equal(index, tabs.SelectedIndex);
+            // Görünür alandaki bir sekmeye tıklamak onu seçer (kaydırma hesaba katılır).
+            int index = Enumerable.Range(0, ManyTabs.Length).First(i => i > 0 && !tabs.GetVisibleTabBounds(i).IsEmpty);
+            var visible = tabs.GetVisibleTabBounds(index);
+            MouseDown(tabs, new Point(visible.Left + visible.Width / 2, visible.Top + visible.Height / 2));
+            Assert.Equal(index, tabs.SelectedIndex);
 
-        // Okların altına kaymış sekmeye tıklanamaz: ok kazanır.
-        int offset = tabs.ScrollOffset;
-        var back = tabs.ScrollBackButtonBounds;
-        MouseDown(tabs, new Point(back.Left + back.Width / 2, back.Top + back.Height / 2));
-        Assert.Equal(index, tabs.SelectedIndex);
-        Assert.True(tabs.ScrollOffset < offset);
-        form.Close();
+            // Okların altına kaymış sekmeye tıklanamaz: ok kazanır.
+            int offset = tabs.ScrollOffset;
+            var back = tabs.ScrollBackButtonBounds;
+            MouseDown(tabs, new Point(back.Left + back.Width / 2, back.Top + back.Height / 2));
+            Assert.Equal(index, tabs.SelectedIndex);
+            Assert.True(tabs.ScrollOffset < offset);
+            form.Close();
+        }
+        finally
+        {
+            TwMotion.Enabled = motion;
+        }
     });
 
     private static void MouseDown(Control control, Point point)
