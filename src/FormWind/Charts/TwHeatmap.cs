@@ -25,6 +25,35 @@ public sealed class TwHeatmapCellEventArgs : EventArgs
     public double Value { get; }
 }
 
+/// <summary>
+/// Event data of <see cref="TwHeatmap.CellText"/>: the texts a cell shows in the tooltip and gives to screen readers.
+/// </summary>
+public sealed class TwHeatmapCellTextEventArgs : EventArgs
+{
+    public TwHeatmapCellTextEventArgs(int row, int column, double value, string valueText)
+    {
+        Row = row;
+        Column = column;
+        Value = value;
+        ValueText = valueText ?? "";
+    }
+
+    public int Row { get; }
+
+    public int Column { get; }
+
+    /// <summary>The cell's value (<see cref="double.NaN"/> = missing).</summary>
+    public double Value { get; }
+
+    /// <summary>
+    /// The cell's name, the tooltip's title ("17 Sep"); <c>null</c> = the row and column labels ("Thu · 14 Sep").
+    /// </summary>
+    public string? Title { get; set; }
+
+    /// <summary>The formatted value ("4 events"); starts as the value in <see cref="TwHeatmap.ToolTipValueFormat"/>.</summary>
+    public string ValueText { get; set; }
+}
+
 /// <summary>How a <see cref="TwHeatmap"/> draws cells without a value (<see cref="double.NaN"/>).</summary>
 public enum TwHeatmapEmptyCell
 {
@@ -70,6 +99,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private bool _showValues;
     private bool _showLegend = true;
     private string? _valueFormat;
+    private string? _toolTipValueFormat;
     private string _legendMinText = "";
     private string _legendMaxText = "";
     private TwHeatmapEmptyCell _emptyCells;
@@ -104,6 +134,13 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
 
     /// <summary>Raised when the highlighted cell changes (mouse or keyboard).</summary>
     public event EventHandler? HoverIndexChanged;
+
+    /// <summary>
+    /// Raised when a cell's tooltip or screen reader text is built; change <see cref="TwHeatmapCellTextEventArgs.Title"/> or
+    /// <see cref="TwHeatmapCellTextEventArgs.ValueText"/> when the labels alone don't say what the cell is (a week column
+    /// whose Thursday is 17 Sep).
+    /// </summary>
+    public event EventHandler<TwHeatmapCellTextEventArgs>? CellText;
 
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public IReadOnlyList<string> RowLabels
@@ -243,6 +280,21 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         set
         {
             _valueFormat = value;
+            Invalidate();
+        }
+    }
+
+    /// <summary>
+    /// Format of the value in the tooltip and for screen readers; <c>null</c> = <see cref="ValueFormat"/>. Useful when the
+    /// cells hide zeros (<c>#</c>) but the tooltip should still say 0.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(null)]
+    public string? ToolTipValueFormat
+    {
+        get => _toolTipValueFormat;
+        set
+        {
+            _toolTipValueFormat = value;
             Invalidate();
         }
     }
@@ -593,8 +645,20 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
 
     private bool EmptyInLegend => _emptyCellText.Length > 0 && _emptyCells is TwHeatmapEmptyCell.Solid or TwHeatmapEmptyCell.Hatched;
 
-    private string FormatValue(double value) =>
-        double.IsNaN(value) && _emptyCellText.Length > 0 ? _emptyCellText : TwCharts.Format(value, _valueFormat);
+    private string FormatToolTipValue(double value) =>
+        double.IsNaN(value) && _emptyCellText.Length > 0 ? _emptyCellText : TwCharts.Format(value, _toolTipValueFormat ?? _valueFormat);
+
+    // Tooltip and screen reader share one source so a CellText handler changes both.
+    private TwHeatmapCellTextEventArgs DescribeCell(int row, int column)
+    {
+        double value = GetValue(row, column);
+        var args = new TwHeatmapCellTextEventArgs(row, column, value, FormatToolTipValue(value));
+        CellText?.Invoke(this, args);
+        return args;
+    }
+
+    private string CellName(int row, int column, string separator) =>
+        string.Join(separator, new[] { RowLabel(row), ColumnLabel(column).Replace('\n', ' ') }.Where(x => x.Length > 0));
 
     // Değeri olmayan hücre EmptyCells'e göre: en düşük ton, düz gri, taralı gri ya da hiç.
     private void PaintEmptyCell(Graphics g, Rectangle box, float radius, float s, Color surface)
@@ -763,11 +827,12 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             int r = _hover / columns, c = _hover % columns;
             var cell = layout.Cell(r, c);
             var anchor = _mouse ?? new Point((int)(cell.Right), (int)(cell.Y + cell.Height / 2));
-            var title = string.Join(" · ", new[] { RowLabel(r), ColumnLabel(c).Replace('\n', ' ') }.Where(x => x.Length > 0));
-            double value = GetValue(r, c);
+            var text = DescribeCell(r, c);
+            var title = text.Title ?? CellName(r, c, " · ");
+            double value = text.Value;
             var key = double.IsNaN(value) && _emptyCells != TwHeatmapEmptyCell.Low ? (Color?)Empty : GetCellColor(value);
             TwCharts.DrawTooltip(g, this, anchor, title.Length > 0 ? title : (r + 1) + " · " + (c + 1),
-                new[] { (key, FormatValue(value)) }, s);
+                new[] { (key, text.ValueText) }, s);
         }
         if (Focused && ShowFocusCues)
             TwPainter.StrokeRounded(g, ClientRectangle, 6 * s, 2 * s, Color.FromArgb(160, _colors.Accent ?? TwCharts.SeriesColor(0, _colors.Dark, null)));
@@ -951,11 +1016,12 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         return columns == 0 ? Rectangle.Empty : GetCellBounds(index / columns, index % columns);
     }
 
-    /// <summary>Text of a cell for screen readers: row, column and value.</summary>
+    /// <summary>Text of a cell for screen readers: row, column and value, or what <see cref="CellText"/> gives.</summary>
     public string GetItemText(int row, int column)
     {
-        var name = string.Join(", ", new[] { RowLabel(row), ColumnLabel(column).Replace('\n', ' ') }.Where(x => x.Length > 0));
-        return (name.Length > 0 ? name + ": " : "") + FormatValue(GetValue(row, column));
+        var text = DescribeCell(row, column);
+        var name = text.Title ?? CellName(row, column, ", ");
+        return (name.Length > 0 ? name + ": " : "") + text.ValueText;
     }
 
     string ITwChartItems.ItemText(int index) => ColumnCount == 0 ? "" : GetItemText(index / ColumnCount, index % ColumnCount);
