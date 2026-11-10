@@ -25,6 +25,20 @@ public class TwCardStrip : TwPanel
 {
     private int _minCardWidth = 220;
     private int _gap = 12;
+    private int? _navSpacing;
+    private const int DefaultNavSpacing = 8;
+
+    /// <summary>Space between the page buttons and the cards from <c>gap-y-*</c> (96 DPI pixels); <c>null</c> = 8.</summary>
+    internal int? NavSpacing
+    {
+        get => _navSpacing;
+        set
+        {
+            if (_navSpacing == value) return;
+            _navSpacing = value;
+            PerformLayout();
+        }
+    }
     private int _page;
     private bool _arranging;
 
@@ -204,7 +218,7 @@ public class TwCardStrip : TwPanel
                 Place(PreviousButton, prev);
                 PreviousButton.Enabled = page > 0;
                 NextButton.Enabled = page < pages - 1;
-                navHeight += Scale(8);
+                navHeight += Scale(_navSpacing ?? DefaultNavSpacing);
             }
 
             int cardGap = Scale(_gap);

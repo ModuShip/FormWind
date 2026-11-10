@@ -17,8 +17,10 @@ internal interface ITwCheckable
 /// A chip: a small pill with a text, an optional icon and an optional ✕. It shows a status or a value ("Line 2", "High risk"),
 /// is a filter you click (<see cref="Clickable"/>) or turn on and off (<see cref="Checkable"/>, styled with <c>checked:</c>),
 /// and with <see cref="Removable"/> a ✕ raises <see cref="RemoveClick"/> (also Delete or Backspace while focused).
-/// Styled with base classes: <c>bg-* text-* border rounded-* px-* py-* text-xs font-*</c>, <c>hover:</c> when clickable;
-/// the theme's <c>chip</c> component and its tones (<c>chip-primary</c>, <c>chip-success</c>, <c>chip-warning</c>,
+/// Styled with base classes: <c>bg-* text-* border rounded-* px-* py-* gap-* text-xs font-*</c>, <c>hover:</c> when clickable;
+/// the parts with <c>icon:</c> (<c>icon:text-* icon:w-*</c>), <c>dot:</c> (<c>dot:bg-* dot:w-*</c>; a <c>dot:bg-*</c> class
+/// shows the dot without <see cref="DotColor"/>) and <c>remove:</c> (<c>remove:text-* remove:hover:text-* remove:hover:bg-*
+/// remove:w-*</c>); the theme's <c>chip</c> component and its tones (<c>chip-primary</c>, <c>chip-success</c>, <c>chip-warning</c>,
 /// <c>chip-danger</c>) give the default look.
 /// <code>
 /// var chip = new TwChip { Text = "Line 2", Removable = true };
@@ -43,6 +45,7 @@ public class TwChip : Control, ITwChrome, ITwCheckable
     private bool _hoverRemove;
     private bool _pressedRemove;
     private bool _focusVisible;
+    private TwChipParts _parts = TwChipParts.Default;
 
     public TwChip()
     {
@@ -182,19 +185,39 @@ public class TwChip : Control, ITwChrome, ITwCheckable
 
     private const TextFormatFlags TextFlags = TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
 
-    private int IconEm => TwIconRenderer.EmPixels(Font.SizeInPoints * 1.1f, TwDpi.DeviceDpi(this));
+    private int IconEm => _parts.IconSize ?? TwIconRenderer.EmPixels(Font.SizeInPoints * 1.1f, TwDpi.DeviceDpi(this));
+
+    private int Gap => _parts.Gap ?? ScalePixels(4);
+
+    // DotColor özelliği class'tan (dot:bg-*) önce gelir.
+    private Color LeadingDotColor => !_dotColor.IsEmpty ? _dotColor : _parts.DotColor ?? Color.Empty;
+
+    /// <summary>Styles of the parts from the chip's classes (device pixels); <see cref="TwChipParts.Default"/> = built-in look.</summary>
+    internal TwChipParts Parts
+    {
+        get => _parts;
+        set
+        {
+            if (_parts.Equals(value)) return;
+            _parts = value;
+            Relayout();
+        }
+    }
+
+    // Devre dışı soluklaştırma: devre dışı yazı rengi class'tan geliyorsa (disabled:text-*) ikinci kez soluklaştırılmaz.
+    private Color Dim(Color color) => Enabled || _parts.DisabledFromClasses ? color : Color.FromArgb(128 * color.A / 255, color);
 
     // Başta ne çizilir: simge, işaretliyken onay işareti ya da durum noktası.
     private string? LeadingIcon => _iconName ?? (_checkable && _checked ? "check" : null);
 
-    private int LeadingWidth => LeadingIcon != null ? IconEm : !_dotColor.IsEmpty ? ScalePixels(6) : 0;
+    private int LeadingWidth => LeadingIcon != null ? IconEm : !LeadingDotColor.IsEmpty ? _parts.DotSize ?? ScalePixels(6) : 0;
 
-    private int RemoveSize => Math.Max(ScalePixels(12), (int)(Font.Height * 0.9f));
+    private int RemoveSize => _parts.RemoveSize ?? Math.Max(ScalePixels(12), (int)(Font.Height * 0.9f));
 
     public override Size GetPreferredSize(Size proposedSize)
     {
         var text = TextRenderer.MeasureText(Text.Length > 0 ? Text : " ", Font, Size.Empty, TextFlags);
-        int gap = ScalePixels(4);
+        int gap = Gap;
         int width = Padding.Horizontal + (Text.Length > 0 ? text.Width : 0);
         int leading = LeadingWidth;
         if (leading > 0) width += leading + (Text.Length > 0 ? gap + (LeadingIcon is null ? ScalePixels(1) : 0) : 0);
@@ -362,9 +385,9 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         TwPainter.FillSurface(g, bounds, radius, BackColor, _chrome.Gradient);
         TwPainter.StrokeChrome(g, bounds, _chrome);
 
-        var fore = Enabled ? ForeColor : Color.FromArgb(128, ForeColor);
+        var fore = Dim(ForeColor);
         bool rtl = TwRtl.NeedsMirroring(this);
-        int gap = ScalePixels(4);
+        int gap = Gap;
         int left = Padding.Left, right = Width - Padding.Right;
         var remove = RemoveButtonBounds;
         if (!remove.IsEmpty)
@@ -377,11 +400,11 @@ public class TwChip : Control, ITwChrome, ITwCheckable
         if (leading > 0)
         {
             var area = new Rectangle(rtl ? right - leading : left, 0, leading, Height);
-            if (LeadingIcon is string icon) TwIconRenderer.DrawIcon(g, icon, IconEm, area, fore);
+            if (LeadingIcon is string icon) TwIconRenderer.DrawIcon(g, icon, IconEm, area, _parts.IconColor is Color iconColor ? Dim(iconColor) : fore);
             else
             {
                 var dot = new Rectangle(area.X, (Height - leading) / 2, leading, leading);
-                TwPainter.FillRounded(g, dot, leading / 2f, Enabled ? _dotColor : Color.FromArgb(128, _dotColor));
+                TwPainter.FillRounded(g, dot, leading / 2f, Dim(LeadingDotColor));
             }
             int shift = leading + gap + (LeadingIcon is null ? ScalePixels(1) : 0);
             if (rtl) right -= shift;
@@ -396,11 +419,15 @@ public class TwChip : Control, ITwChrome, ITwCheckable
 
         if (!remove.IsEmpty)
         {
-            if (_hoverRemove && Enabled) TwPainter.FillRounded(g, remove, remove.Width / 2f, Color.FromArgb(40, ForeColor));
-            TwIconRenderer.DrawIcon(g, "x", (int)(remove.Width * 0.75f), remove, _hoverRemove ? ForeColor : Color.FromArgb(Enabled ? 190 : 110, ForeColor));
+            if (_hoverRemove && Enabled) TwPainter.FillRounded(g, remove, remove.Width / 2f, _parts.RemoveHoverBack ?? Color.FromArgb(40, ForeColor));
+            Color glyph = _hoverRemove && Enabled ? _parts.RemoveHoverColor ?? _parts.RemoveColor ?? ForeColor
+                : _parts.RemoveColor is Color removeColor ? Dim(removeColor)
+                : Color.FromArgb(Enabled || _parts.DisabledFromClasses ? 190 : 110, ForeColor);
+            TwIconRenderer.DrawIcon(g, "x", (int)(remove.Width * 0.75f), remove, glyph);
         }
 
-        if (Focused && _focusVisible && ShowFocusCues)
+        // focus-visible:ring-* verilmişse halka çipin dışında (TwOutset) çizilir; iç halka çizilmez.
+        if (Focused && _focusVisible && ShowFocusCues && !_parts.FocusRingFromClasses)
             TwPainter.StrokeRounded(g, Rectangle.Inflate(bounds, -1, -1), Math.Max(0, radius - 1), Math.Max(1f, DpiScale), Color.FromArgb(160, ForeColor));
     }
 
@@ -471,4 +498,26 @@ public class TwChip : Control, ITwChrome, ITwCheckable
 
         public override void DoDefaultAction() => _chip.PerformRemove();
     }
+}
+
+/// <summary>
+/// Styles of a <see cref="TwChip"/>'s parts from its classes, in device pixels; <c>null</c> = the built-in look.
+/// <see cref="DisabledFromClasses"/>: the classes give a <c>disabled:text-*</c>, so the chip is not dimmed again.
+/// <see cref="FocusRingFromClasses"/>: the classes give a <c>focus-visible:ring-*</c>, drawn outside the chip instead of its own ring.
+/// </summary>
+internal sealed record TwChipParts
+{
+    public static readonly TwChipParts Default = new();
+
+    public Color? IconColor { get; init; }
+    public int? IconSize { get; init; }
+    public Color? DotColor { get; init; }
+    public int? DotSize { get; init; }
+    public Color? RemoveColor { get; init; }
+    public Color? RemoveHoverColor { get; init; }
+    public Color? RemoveHoverBack { get; init; }
+    public int? RemoveSize { get; init; }
+    public int? Gap { get; init; }
+    public bool DisabledFromClasses { get; init; }
+    public bool FocusRingFromClasses { get; init; }
 }

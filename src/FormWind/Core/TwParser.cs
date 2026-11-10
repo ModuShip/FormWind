@@ -167,6 +167,8 @@ internal static class TwParser
         "caption",                                                 // Form başlık çubuğu
         "placeholder",                                             // TwTextBox
         "label", "hint", "error",                                  // TwField
+        "icon", "dot", "remove",                                   // TwChip
+        "arrow",                                                   // TwNumberBox
     };
 
     internal static bool TryParseConditions(string name, out TwState conditions, out string? part)

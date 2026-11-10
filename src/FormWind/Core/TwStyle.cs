@@ -167,7 +167,13 @@ public sealed class TwStyle
             ForeColor = hasBack ? SystemColors.HighlightText : ForeColor.HasValue ? SystemColors.Highlight : null;
             BackColor = hasBack ? SystemColors.Highlight : null;
         }
-        else if (part == "label" || part == "hint" || part == "error" || part == "placeholder" || part == "item")
+        else if (part == "dot")
+        {
+            // Çipin durum noktası zeminle çizilir; yüksek karşıtlıkta yazı renginde kalır.
+            BackColor = SystemColors.WindowText;
+            ForeColor = null;
+        }
+        else if (part == "label" || part == "hint" || part == "error" || part == "placeholder" || part == "item" || part == "icon" || part == "remove" || part == "arrow")
         {
             BackColor = null;
             ForeColor = part == "placeholder" ? SystemColors.GrayText : SystemColors.WindowText;

@@ -206,7 +206,7 @@ internal static class VocabularyData
         "motion-safe", "motion-reduce",
         "sm", "md", "lg", "xl", "2xl",
         "header", "cell", "row", "row-header", "alt", "selected", "match", "group", "footer", "item", "menu", "caption", "placeholder",
-        "label", "hint", "error",
+        "label", "hint", "error", "icon", "dot", "remove", "arrow",
     };
 
     public static readonly IReadOnlyList<VocabularyCategory> Categories = new[]

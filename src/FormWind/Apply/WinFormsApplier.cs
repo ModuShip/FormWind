@@ -94,6 +94,20 @@ public class WinFormsApplier : IStyleApplier
         if (control is TwSlider slider) ApplySliderColors(slider, style, context);
         if (control is TwField field) ApplyFieldParts(field, context);
         if (control is TwSettingRow settingRow) ApplySettingRowParts(settingRow, style, context);
+        if (control is TwChip chipControl) chipControl.Parts = ChipParts(style, context);
+        if (control is TwNumberBox numberBox)
+        {
+            // ▲▼: arrow:text-* rengi, arrow:w-* boyu.
+            var arrow = context.Parsed.ResolvePart("arrow", context.State & ~(TwState.Hover | TwState.Active));
+            numberBox.ArrowColor = arrow.ForeColor;
+            numberBox.ArrowSize = PartSize(arrow, context.Scale);
+        }
+        if (control is TwCardStrip cardStrip)
+        {
+            // Kartlar arası gap-x-*, sayfa düğmeleriyle kartlar arası gap-y-* (96 DPI pikseli; şerit kendisi ölçekler).
+            if (style.GapX is int cardGap) cardStrip.Gap = cardGap;
+            cardStrip.NavSpacing = style.GapY;
+        }
         if (control is TwHeading heading) ApplyHeadingParts(heading, context);
         if (control is TwPageHeader pageHeader)
         {
@@ -114,8 +128,8 @@ public class WinFormsApplier : IStyleApplier
         }
         if (control is TwProgress progress)
         {
-            progress.TrackColor = style.FillColor ?? ColorTranslator.FromHtml("#e5e7eb");
-            progress.BarColor = style.AccentColor ?? ColorTranslator.FromHtml("#2563eb");
+            progress.TrackColor = style.FillColor ?? ThemeColor(context, "bg-surface-200");
+            progress.BarColor = style.AccentColor ?? ThemeColor(context, "bg-primary-600");
             progress.Invalidate();
         }
         if (control is ITwChartControl chart) chart.SetChartColors(ChartColors(style, context));
@@ -184,8 +198,49 @@ public class WinFormsApplier : IStyleApplier
         var captionFont = label.HasFont ? TwFonts.Create(label, field.Font, context.Theme, scale) : null;
         var messageStyle = error.HasFont ? error : hint;
         var messageFont = messageStyle.HasFont ? TwFonts.Create(messageStyle, field.Font, context.Theme, scale) : null;
-        field.SetPartStyles(label.ForeColor, captionFont, hint.ForeColor, error.ForeColor, messageFont);
+        // Class vermeyen alanların yedekleri temanın anlamsal renkleridir; hazır görünüm değişince onlar da değişir.
+        field.SetPartStyles(label.ForeColor, captionFont, hint.ForeColor ?? ThemeColor(context, "text-surface-500"),
+            error.ForeColor ?? ThemeColor(context, "text-danger-600"), messageFont);
     }
+
+    // Çip: simge icon:, durum noktası dot:, ✕ remove: (hover: yalnızca ✕'in üstündeyken), öğe aralığı gap-*.
+    private static TwChipParts ChipParts(TwStyle style, TwApplyContext context)
+    {
+        var parsed = context.Parsed;
+        var state = context.State;
+        // Çipin üstünde olmak ✕'in üstünde olmak değildir: ✕'in hover'ı ayrıca çözülür.
+        var removeState = state & ~(TwState.Hover | TwState.Active);
+        var icon = parsed.ResolvePart("icon", state);
+        var dot = parsed.ResolvePart("dot", state);
+        var remove = parsed.ResolvePart("remove", removeState);
+        var removeHover = parsed.ResolvePart("remove", removeState | TwState.Hover);
+        var plain = state & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible | TwState.Disabled);
+        return new TwChipParts
+        {
+            IconColor = icon.ForeColor,
+            IconSize = PartSize(icon, context.Scale),
+            DotColor = dot.BackColor,
+            DotSize = PartSize(dot, context.Scale),
+            RemoveColor = remove.ForeColor,
+            RemoveHoverColor = removeHover.ForeColor != remove.ForeColor ? removeHover.ForeColor : null,
+            RemoveHoverBack = removeHover.BackColor,
+            RemoveSize = PartSize(remove, context.Scale),
+            Gap = style.GapX is int gap ? TwSides.Scale(gap, context.Scale) : null,
+            DisabledFromClasses = parsed.Resolve(plain | TwState.Disabled).ForeColor != parsed.Resolve(plain).ForeColor,
+            FocusRingFromClasses = (parsed.Resolve(plain | TwState.Focus | TwState.FocusVisible).RingWidth ?? 0) > 0,
+        };
+    }
+
+    // Temanın bir rengi (ör. "text-surface-500"): yazı rengi, yoksa zemin rengi.
+    private static Color ThemeColor(TwApplyContext context, string classes)
+    {
+        var style = context.Theme.Parse(classes).Resolve(TwState.None);
+        return style.ForeColor ?? style.BackColor ?? Color.Empty;
+    }
+
+    // Parçanın w-* (yoksa h-*) piksel değeri, cihaz pikseline ölçeklenmiş.
+    private static int? PartSize(TwStyle part, float scale) =>
+        (part.Width ?? part.Height) is { IsPixels: true } length ? (int)Math.Round(length.Value * scale) : null;
 
     // Ayar satırı: etiket label:, açıklama ve birim hint:, satırlar arası ayırıcı divide-*.
     private static void ApplySettingRowParts(TwSettingRow row, TwStyle style, TwApplyContext context)

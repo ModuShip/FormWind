@@ -128,6 +128,33 @@ public class TwNumberBox : TwTextBox
         Value = _value + direction * _increment;
     }
 
+    private Color? _arrowColor;
+    private int? _arrowSize;
+
+    /// <summary>Color of ▲▼ from <c>arrow:text-*</c>; <c>null</c> = the text color.</summary>
+    internal Color? ArrowColor
+    {
+        get => _arrowColor;
+        set
+        {
+            if (_arrowColor == value) return;
+            _arrowColor = value;
+            Invalidate();
+        }
+    }
+
+    /// <summary>Size of ▲▼ from <c>arrow:w-*</c> (device pixels); <c>null</c> = from the font.</summary>
+    internal int? ArrowSize
+    {
+        get => _arrowSize;
+        set
+        {
+            if (_arrowSize == value) return;
+            _arrowSize = value;
+            Invalidate();
+        }
+    }
+
     protected override void OnSizeChanged(EventArgs e)
     {
         base.OnSizeChanged(e);
@@ -140,10 +167,11 @@ public class TwNumberBox : TwTextBox
         var stepper = StepperBounds();
         var color = Enabled ? ForeColor : Color.FromArgb(128, ForeColor);
         var line = BorderColor.IsEmpty ? Color.FromArgb(60, color) : BorderColor;
+        if (ArrowColor is Color arrowColor) color = Enabled ? arrowColor : Color.FromArgb(128 * arrowColor.A / 255, arrowColor);
         using (var pen = new Pen(line))
             e.Graphics.DrawLine(pen, stepper.Left, stepper.Top + 4, stepper.Left, stepper.Bottom - 4);
 
-        int em = TwIconRenderer.EmPixels(Math.Max(6f, Font.SizeInPoints * 0.75f), TwDpi.DeviceDpi(this));
+        int em = ArrowSize ?? TwIconRenderer.EmPixels(Math.Max(6f, Font.SizeInPoints * 0.75f), TwDpi.DeviceDpi(this));
         var half = stepper.Height / 2;
         TwIconRenderer.DrawIcon(e.Graphics, "chevron-up", em, new Rectangle(stepper.X, stepper.Y, stepper.Width, half), color);
         TwIconRenderer.DrawIcon(e.Graphics, "chevron-down", em, new Rectangle(stepper.X, stepper.Y + half, stepper.Width, stepper.Height - half), color);

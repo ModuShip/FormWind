@@ -15,7 +15,7 @@ internal static class TwSuggestions
         "dark", "forced-colors", "rtl", "ltr", "checked", "focus", "focus-visible", "hover", "group-hover", "active", "disabled",
         "invalid", "sm", "md", "lg", "xl", "2xl", "motion-safe", "motion-reduce",
         "header", "cell", "alt", "selected", "row", "row-header", "match", "group", "footer", "item", "menu", "caption",
-        "placeholder", "label", "hint", "error",
+        "placeholder", "label", "hint", "error", "icon", "dot", "remove", "arrow",
     };
 
     // TwParser.ApplyKeyword'deki sabit class'lar; VocabularyTests her birinin tanındığını denetler.

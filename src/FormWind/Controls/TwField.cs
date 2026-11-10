@@ -157,8 +157,8 @@ public class TwField : TwPanel
     internal void SetPartStyles(Color? caption, Font? captionFont, Color? hint, Color? error, Font? messageFont)
     {
         _captionColor = caption ?? ForeColor;
-        _hintColor = hint ?? ColorTranslator.FromHtml("#6b7280");
-        _errorColor = error ?? ColorTranslator.FromHtml("#dc2626");
+        _hintColor = hint ?? _hintColor;
+        _errorColor = error ?? _errorColor;
         _captionFont = captionFont;
         _messageFont = messageFont;
         UpdateCaption();

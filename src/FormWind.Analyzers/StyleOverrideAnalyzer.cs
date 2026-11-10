@@ -138,7 +138,7 @@ public sealed class StyleOverrideAnalyzer : DiagnosticAnalyzer
     {
         foreach (var segment in prefix.Split(':'))
             if (segment is "header" or "cell" or "alt" or "selected" or "row" or "row-header" or "item" or "menu" or "caption"
-                or "placeholder" or "label" or "hint" or "error") return true;
+                or "placeholder" or "label" or "hint" or "error" or "icon" or "dot" or "remove" or "arrow") return true;
         return false;
     }
 
