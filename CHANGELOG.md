@@ -5,6 +5,40 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.8-preview.1] - 2026-11-12
+
+### Added
+
+- `TwDiagnostics` (experimental, `FW9001`): `ActiveFrameTimers` lists the frame timers running on the UI thread and the
+  control each one animates, `IsAnimating` tells whether anything moves, `ShadowCache` gives the size, hits and misses of
+  the shadow cache, and `TransitionCompleted` reports the steps of each `TwTransition.CrossFade` (capture source and time,
+  cover, change, paint). Before, these could only be measured with reflection on internal members.
+- `TwMotion.ReduceInRemoteSession` (default `true`): while `TwMotion.Enabled` follows Windows, animations are off in a
+  remote desktop session, where every frame of a fade is sent over the network as a picture.
+
+### Fixed
+
+- A loading grid (`TwGrid.SetLoading`) or `TwDataList` whose loading ended while it was out of view (another page, scrolled
+  away) kept its skeleton pulse running about 30 times a second forever, so the application never went idle. The pulse
+  now stops when loading ends, and never-ending animations (skeleton pulse, `TwProgress` indeterminate, `animate-spin` /
+  `animate-pulse`) leave the frame clock while their control is hidden and come back when it is shown.
+- A cross-fade started while the previous one on the same host was still fading ends the previous one at once instead of
+  fading two pictures over each other.
+
+### Performance
+
+- Shadows are drawn nine-slice: one small blurred picture per radius, blur and color is cut into corners, edges and middle
+  instead of one blurred picture per control size. Resizing a window full of cards no longer adds a bitmap per step; the
+  cache is limited to 8 MB and disposes the least recently used pictures. The result is pixel for pixel the same.
+- Applying classes allocates about 30 % less per label (8.6 → 5.9 KB) and 15 % less per button: the read-only checks for
+  disabled colors share one result among controls with the same classes.
+- `TwChip` measures its text again only when the text or font changes (layout asks for its size many times).
+
+### Behavior changes
+
+- In a remote desktop session animations are off by default (`TwMotion.ReduceInRemoteSession`); `TwMotion.Enabled` or
+  `TwMotion.Preference` set in code still wins.
+
 ## [0.1.7-preview.1] - 2026-11-10
 
 ### Added
@@ -614,7 +648,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.7-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.8-preview.1...HEAD
+[0.1.8-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.7-preview.1...v0.1.8-preview.1
 [0.1.7-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.2...v0.1.7-preview.1
 [0.1.6-preview.2]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.1...v0.1.6-preview.2
 [0.1.6-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.5-preview.1...v0.1.6-preview.1

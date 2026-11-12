@@ -111,7 +111,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.7-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`; the `net472` project comes with a manifest and App.config for PerMonitorV2 (see [Setup on .NET Framework](#setup-on-net-framework)). CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
+`--Framework`: `net8.0-windows` (default), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (default), `fluent`, `antd`, `material` (see [Presets](#presets-and-autostyle)); `--Palette`: `v3` (default), `v4`; `--Krypton true`: adds the `FormWind.Krypton` package, registers `KryptonApplier` and binds the Krypton palette to the main form's theme (see [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: package version (default: the same version as the template package). For a preview, give the version explicitly when installing: `dotnet new install FormWind.Templates::0.1.8-preview.1`. Forms are built in code without the Designer and use `AutoScaleMode.Dpi`; the `net472` project comes with a manifest and App.config for PerMonitorV2 (see [Setup on .NET Framework](#setup-on-net-framework)). CI generates and builds the template in three variants on every run (default; `net472` with `v4`; `--Krypton true` with `material`).
 
 ## Presets and AutoStyle
 
@@ -1196,6 +1196,8 @@ TwMotion.Timings.AttentionPulse = 1200;  // pulse
 
 - `TwMotion.Timings.Scale` multiplies the duration and delay of every animation (transitions, window motion, `TwTween`, charts, popups, `duration-*` and `delay-*` classes) that starts afterwards, like Android's animator duration scale: `TwMotion.Timings.Scale = 5;` shows a 250 ms slide in 1.25 s so a transition can be debugged by eye, `0` makes every animation immediate. It is 1 by default, must be 0 or more, and `Reset()` sets it back.
 - To store the animation setting with the application's own settings, use `TwMotion.Preference` (`TwMotionPreference.System` follows Windows, `On` / `Off` set `Enabled`): `TwMotion.Preference = Settings.Default.Motion;` at startup and `Settings.Default.Motion = TwMotion.Preference;` when the user changes it.
+- In a remote desktop session (`SystemInformation.TerminalServerSession`) animations are off while following Windows: every frame of a fade goes over the network as a picture. Set `TwMotion.ReduceInRemoteSession = false` to animate there too; `Enabled` / `Preference` set in code always win.
+- To see what runs behind the scenes (experimental, `FW9001`), use `TwDiagnostics`: `ActiveFrameTimers` lists the frame timers on the UI thread and the control each animates, `ShadowCache` the shadow cache, and `TransitionCompleted` the steps of each `CrossFade` (capture source and time, painting). Never-ending animations of a hidden control (skeleton pulse, indeterminate progress, `animate-spin`) leave the frame clock by themselves.
 - `await TwMotion.AfterPaintAsync(control)` completes on the next frame of the animation clock, once the control and its children have painted what was pending; for example to show a page first and bind its data after it is on screen. Unlike `Application.Idle` it also comes while a control keeps repainting.
 
 ```csharp
@@ -1516,6 +1518,8 @@ FormWind is in preview (0.x): minor versions may contain breaking changes; they 
   <NoWarn>$(NoWarn);FW9001</NoWarn>
 </PropertyGroup>
 ```
+
+The diagnostics (`TwDiagnostics`, `TwFrameTimerInfo`, `TwShadowCacheStats`, `TwTransitionEventArgs`) are experimental too: what they report may grow as more of FormWind is measured.
 
 ## Packaging
 

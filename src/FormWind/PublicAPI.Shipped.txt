@@ -2990,3 +2990,33 @@ FormWind.TwHeatmapCellTextEventArgs.TwHeatmapCellTextEventArgs(int row, int colu
 FormWind.TwHeatmapCellTextEventArgs.Value.get -> double
 FormWind.TwHeatmapCellTextEventArgs.ValueText.get -> string!
 FormWind.TwHeatmapCellTextEventArgs.ValueText.set -> void
+FormWind.TwDiagnostics
+FormWind.TwFrameTimerInfo
+FormWind.TwFrameTimerInfo.Control.get -> System.Windows.Forms.Control?
+FormWind.TwFrameTimerInfo.IntervalMs.get -> int
+FormWind.TwFrameTimerInfo.PausesWhenHidden.get -> bool
+FormWind.TwFrameTimerInfo.Source.get -> string!
+FormWind.TwShadowCacheStats
+FormWind.TwShadowCacheStats.Bytes.get -> long
+FormWind.TwShadowCacheStats.Count.get -> int
+FormWind.TwShadowCacheStats.Hits.get -> long
+FormWind.TwShadowCacheStats.Misses.get -> long
+FormWind.TwShadowCacheStats.TwShadowCacheStats() -> void
+FormWind.TwTransitionEventArgs
+FormWind.TwTransitionEventArgs.CaptureMs.get -> double
+FormWind.TwTransitionEventArgs.CaptureSource.get -> string!
+FormWind.TwTransitionEventArgs.ChangeMs.get -> double
+FormWind.TwTransitionEventArgs.CoverMs.get -> double
+FormWind.TwTransitionEventArgs.DurationMs.get -> int
+FormWind.TwTransitionEventArgs.Host.get -> System.Windows.Forms.Control!
+FormWind.TwTransitionEventArgs.Kind.get -> string!
+FormWind.TwTransitionEventArgs.PaintMs.get -> double
+FormWind.TwTransitionEventArgs.TotalMs.get -> double
+override FormWind.TwFrameTimerInfo.ToString() -> string!
+override FormWind.TwShadowCacheStats.ToString() -> string!
+static FormWind.TwDiagnostics.ActiveFrameTimers.get -> System.Collections.Generic.IReadOnlyList<FormWind.TwFrameTimerInfo!>!
+static FormWind.TwDiagnostics.IsAnimating.get -> bool
+static FormWind.TwDiagnostics.ShadowCache.get -> FormWind.TwShadowCacheStats
+static FormWind.TwDiagnostics.TransitionCompleted -> System.EventHandler<FormWind.TwTransitionEventArgs!>?
+static FormWind.TwMotion.ReduceInRemoteSession.get -> bool
+static FormWind.TwMotion.ReduceInRemoteSession.set -> void

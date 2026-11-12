@@ -111,7 +111,7 @@ dotnet new install FormWind.Templates
 dotnet new formwind-app -n MyApp --Framework net8.0-windows --Preset fluent --Krypton true
 ```
 
-`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.7-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır; `net472` projesi PerMonitorV2 için manifest ve App.config ile gelir (bkz. [.NET Framework'te kurulum](#net-frameworkte-kurulum)). CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
+`--Framework`: `net8.0-windows` (varsayılan), `net9.0-windows`, `net10.0-windows`, `net472`; `--Preset`: `tailwind` (varsayılan), `fluent`, `antd`, `material` (bkz. [Hazır görünümler](#hazır-görünümler-ve-autostyle)); `--Palette`: `v3` (varsayılan), `v4`; `--Krypton true`: `FormWind.Krypton` paketini ekler, `KryptonApplier`'ı kaydeder ve Krypton paletini ana formun temasına bağlar (bkz. [Krypton Toolkit](#krypton-toolkit)); `--FormWindVersion`: paket sürümü (varsayılan: şablon paketiyle aynı sürüm). Önizleme sürümü için kurulumda sürümü açıkça verin: `dotnet new install FormWind.Templates::0.1.8-preview.1`. Formlar Designer'sız, kodla kurulur ve `AutoScaleMode.Dpi` kullanır; `net472` projesi PerMonitorV2 için manifest ve App.config ile gelir (bkz. [.NET Framework'te kurulum](#net-frameworkte-kurulum)). CI şablonu her çalışmada üç biçimde (varsayılan; `net472` ve `v4`; `--Krypton true` ve `material`) üretip derler.
 
 ## Hazır görünümler ve AutoStyle
 
@@ -1196,6 +1196,8 @@ TwMotion.Timings.AttentionPulse = 1200;  // nabız
 
 - `TwMotion.Timings.Scale` sonradan başlayan her animasyonun (geçişler, pencere hareketi, `TwTween`, grafikler, açılır pencereler, `duration-*` ve `delay-*` class'ları) süresini ve gecikmesini çarpar; Android'in animatör süre ölçeği gibi: `TwMotion.Timings.Scale = 5;` 250 ms'lik kaymayı 1,25 sn'de gösterir, geçişi gözle hata ayıklamak için; `0` her animasyonu anında yapar. Varsayılan 1'dir, 0 ya da büyük olmalıdır, `Reset()` geri alır.
 - Animasyon ayarını uygulamanın kendi ayarlarında saklamak için `TwMotion.Preference` (`TwMotionPreference.System` Windows'u izler, `On` / `Off` `Enabled`'ı ayarlar): açılışta `TwMotion.Preference = Settings.Default.Motion;`, kullanıcı değiştirince `Settings.Default.Motion = TwMotion.Preference;`.
+- Uzak masaüstü oturumunda (`SystemInformation.TerminalServerSession`) Windows'u izlerken animasyonlar kapalıdır; solmanın her karesi ağdan resim olarak gider. Uzak oturumda da animasyon için `TwMotion.ReduceInRemoteSession = false`; kodla verilen `Enabled` / `Preference` her zaman geçerlidir.
+- Arka planda neyin çalıştığını görmek için (deneysel, `FW9001`) `TwDiagnostics`: `ActiveFrameTimers` arayüz iş parçacığında çalışan kare zamanlayıcılarını ve canlandırdıkları kontrolü, `ShadowCache` gölge önbelleğini, `TransitionCompleted` her `CrossFade`'in adımlarını (yakalama kaynağı ve süresi, boyama) verir. Görünmeyen kontrolün süresiz animasyonları (iskelet nabzı, belirsiz progress, `animate-spin`) kare saatinden kendiliğinden çıkar.
 - `await TwMotion.AfterPaintAsync(control)` kontrol ve çocukları bekleyen boyamalarını bitirince, animasyon saatinin bir sonraki karesinde tamamlanır; örneğin sayfayı önce gösterip verisini ekrana çıktıktan sonra bağlamak için. `Application.Idle`'ın aksine kendini sürekli boyayan bir kontrol varken de gelir.
 
 ```csharp
@@ -1518,6 +1520,8 @@ FormWind ön sürümdedir (0.x): minor sürümler kırıcı değişiklik içereb
   <NoWarn>$(NoWarn);FW9001</NoWarn>
 </PropertyGroup>
 ```
+
+Tanılama türleri (`TwDiagnostics`, `TwFrameTimerInfo`, `TwShadowCacheStats`, `TwTransitionEventArgs`) de deneyseldir: FormWind'in daha fazla kısmı ölçüldükçe bildirdikleri genişleyebilir.
 
 ## Paketleme
 
