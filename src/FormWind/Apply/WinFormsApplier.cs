@@ -49,10 +49,10 @@ public class WinFormsApplier : IStyleApplier
             var disabledState = (context.State & ~(TwState.Hover | TwState.Active | TwState.Focus | TwState.FocusVisible)) | TwState.Disabled;
             // Yüksek Karşıtlık: ResolveExact sistem renklerine çevirmez; disabled:text-* class rengi kullanılmaz.
             bool forced = (context.State & TwState.HighContrast) != 0;
-            bool explicitColor = !forced && context.Parsed.ResolveExact(TwState.Disabled, disabledState).ForeColor.HasValue;
+            bool explicitColor = !forced && context.Parsed.ResolveExactShared(TwState.Disabled, disabledState).ForeColor.HasValue;
             // Onay kutusu, etiket ve grup başlığında yazı rengi class'lardan geliyorsa Windows'un zeminden türettiği devre dışı
             // renk yerine çizilir.
-            bool repaint = control is Button ? applied.FlatButton : context.Parsed.Resolve(disabledState).ForeColor.HasValue;
+            bool repaint = control is Button ? applied.FlatButton : context.Parsed.ResolveShared(disabledState).ForeColor.HasValue;
             TwDisabledText.Update(control, explicitColor, repaint, forced);
         }
         // Windows'un devre dışıyken sistem renkleriyle çizdiği ListView ve düzenlenebilir ComboBox (bkz. TwDisabledNative).

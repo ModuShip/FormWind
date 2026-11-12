@@ -112,7 +112,7 @@ internal sealed class TwBinding
         if (TwIcons.UnknownIconOf(_control, theme) is string icon)
             _owner.ReportError(_control, Classes, new ArgumentException($"Unknown icon name '{icon}'. Use a name from TwIcons.Names, a code point (#E710) or TwIcons.Register.", "IconName"));
 
-        IsGroup = _parsed.Resolve(TwState.None).IsGroup == true;
+        IsGroup = _parsed.ResolveShared(TwState.None).IsGroup == true;
         // İmleç bir konteynere doğrudan çocuğunun üzerinden girerse konteynerin MouseEnter'ı tetiklenmez;
         // hover'a tepki veren konteynerler bu yüzden çocuklarının MouseEnter'ını da dinler.
         if (IsGroup || _parsed.HasCondition(TwState.Hover | TwState.Active)) HookDescendants(_control);

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace FormWind;
@@ -51,6 +52,21 @@ public sealed class TwParsed
 
     /// <summary>For the control itself: merges, in order, the variants whose conditions are within <paramref name="state"/>.</summary>
     public TwStyle Resolve(TwState state) => ResolvePart(null, state);
+
+    // Results of the read-only checks every applied control makes; one TwParsed serves all controls with the same classes.
+    private readonly ConcurrentDictionary<(TwState Required, TwState Allowed, bool Exact), TwStyle> _shared =
+        new ConcurrentDictionary<(TwState, TwState, bool), TwStyle>();
+
+    /// <summary>
+    /// <see cref="Resolve(TwState)"/> from a cache shared by all controls with these classes. The caller must not change
+    /// the returned style; it is for reading a property, such as whether a color is set.
+    /// </summary>
+    internal TwStyle ResolveShared(TwState state) =>
+        _shared.GetOrAdd((state, TwState.None, false), key => ResolvePart(null, key.Required));
+
+    /// <summary><see cref="ResolveExact(TwState, TwState)"/> from the shared cache (see <see cref="ResolveShared"/>).</summary>
+    internal TwStyle ResolveExactShared(TwState required, TwState allowed) =>
+        _shared.GetOrAdd((required, allowed, true), key => ResolveExact(key.Required, key.Allowed));
 
     /// <summary>For a part (<c>null</c> = the control itself): merges the variants whose conditions are within <paramref name="state"/>.</summary>
     /// <remarks>
