@@ -1,1 +1,3 @@
 #nullable enable
+static FormWind.TwMotion.ReduceInRemoteSession.get -> bool
+static FormWind.TwMotion.ReduceInRemoteSession.set -> void

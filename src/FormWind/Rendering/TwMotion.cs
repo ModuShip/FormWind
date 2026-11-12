@@ -28,7 +28,7 @@ public static class TwMotion
     /// </summary>
     public static bool Enabled
     {
-        get => _override ?? (_system ??= SystemAnimationsEnabled());
+        get => _override ?? ((_system ??= SystemAnimationsEnabled()) && !RemoteSessionReduces);
         set
         {
             bool old = Enabled;
@@ -36,6 +36,32 @@ public static class TwMotion
             if (old != value) OnChanged();
         }
     }
+
+    /// <summary>
+    /// Whether animations are off in a remote desktop session while <see cref="Enabled"/> follows Windows (default
+    /// <c>true</c>): every frame of a fade or pulse is sent over the network as a picture, which makes transitions slow
+    /// and choppy there. Set it to <c>false</c> to animate in remote sessions too; <see cref="Enabled"/> set in code always wins.
+    /// </summary>
+    public static bool ReduceInRemoteSession
+    {
+        get => _reduceInRemoteSession;
+        set
+        {
+            if (_reduceInRemoteSession == value) return;
+            bool old = Enabled;
+            _reduceInRemoteSession = value;
+            if (Enabled != old) OnChanged();
+        }
+    }
+
+    private static bool _reduceInRemoteSession = true;
+
+    /// <summary>Replaces the remote session check (tests).</summary>
+    internal static Func<bool>? RemoteSessionForTests;
+
+    // Read each time (a cheap system metric): a session can move between the console and a remote desktop.
+    private static bool RemoteSessionReduces =>
+        _reduceInRemoteSession && (RemoteSessionForTests?.Invoke() ?? SystemInformation.TerminalServerSession);
 
     /// <summary>Follows Windows' "Show animations" setting again after <see cref="Enabled"/> was set.</summary>
     public static void FollowSystem()
@@ -73,6 +99,14 @@ public static class TwMotion
             _system = null;
             if (_override is null && Enabled != old) OnChanged();
         };
+        // Moving between the console and a remote desktop can turn animations on or off (ReduceInRemoteSession).
+        SystemEvents.SessionSwitch += (_, e) =>
+        {
+            if (_override is null && _reduceInRemoteSession
+                && e.Reason is SessionSwitchReason.RemoteConnect or SessionSwitchReason.RemoteDisconnect
+                    or SessionSwitchReason.ConsoleConnect or SessionSwitchReason.ConsoleDisconnect)
+                OnChanged();
+        };
     }
 
     private static bool SystemAnimationsEnabled()
@@ -108,7 +142,7 @@ public static class TwMotion
         if (control.IsDisposed || !control.IsHandleCreated || !control.Visible) return Task.CompletedTask;
 
         var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var frame = new TwFrameTimer { Interval = 0 };
+        var frame = new TwFrameTimer { Interval = 0, Source = "after-paint", Subject = control };
         frame.Tick += (_, _) =>
         {
             frame.Dispose();
@@ -384,6 +418,8 @@ public sealed class TwTween : IDisposable
     public TwTween(Control owner)
     {
         _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+        _timer.Source = "tween";
+        _timer.Subject = owner;
         _timer.Tick += (_, _) =>
         {
             bool done = Elapsed >= _timing.TotalMs;

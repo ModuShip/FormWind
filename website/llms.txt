@@ -36,7 +36,7 @@ Not supported (do not use): rem values, `opacity-*`, `z-*`, `absolute`/`relative
 
 ## Variants
 
-States: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `checked:`, `invalid:`, `group-hover:`, `dark:`, `forced-colors:`, `rtl:`, `ltr:`, `motion-safe:`, `motion-reduce:` (see `TwMotion.Enabled`); breakpoints (the form's client width, not the screen's): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`. They combine: `dark:hover:bg-gray-800`.
+States: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `checked:`, `invalid:`, `group-hover:`, `dark:`, `forced-colors:`, `rtl:`, `ltr:`, `motion-safe:`, `motion-reduce:` (see `TwMotion.Enabled`; off in a remote desktop session unless `TwMotion.ReduceInRemoteSession = false`); breakpoints (the form's client width, not the screen's): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`. They combine: `dark:hover:bg-gray-800`.
 
 Parts: `header:`, `cell:`, `row:`, `row-header:`, `alt:`, `selected:`, `match:`, `group:`, `footer:` (DataGridView); `item:`, `menu:` (ToolStrip, MenuStrip, TwSelect); `caption:` (form title bar); `placeholder:` (TwTextBox); `label:`, `hint:`, `error:` (TwField; `label:`, `hint:` also TwSettingRow). At most one part per class: `dark:header:bg-gray-800`.
 
