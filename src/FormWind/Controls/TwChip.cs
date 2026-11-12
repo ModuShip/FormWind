@@ -214,9 +214,23 @@ public class TwChip : Control, ITwChrome, ITwCheckable
 
     private int RemoveSize => _parts.RemoveSize ?? Math.Max(ScalePixels(12), (int)(Font.Height * 0.9f));
 
+    // Layout asks for the preferred size many times per pass; the text is measured again only when it or the font changes.
+    private (string Text, Font Font, Size Size)? _measured;
+
+    private Size MeasureLabel()
+    {
+        var label = Text.Length > 0 ? Text : " ";
+        var font = Font;
+        if (_measured is { } last && ReferenceEquals(last.Font, font) && string.Equals(last.Text, label, StringComparison.Ordinal))
+            return last.Size;
+        var size = TextRenderer.MeasureText(label, font, Size.Empty, TextFlags);
+        _measured = (label, font, size);
+        return size;
+    }
+
     public override Size GetPreferredSize(Size proposedSize)
     {
-        var text = TextRenderer.MeasureText(Text.Length > 0 ? Text : " ", Font, Size.Empty, TextFlags);
+        var text = MeasureLabel();
         int gap = Gap;
         int width = Padding.Horizontal + (Text.Length > 0 ? text.Width : 0);
         int leading = LeadingWidth;
