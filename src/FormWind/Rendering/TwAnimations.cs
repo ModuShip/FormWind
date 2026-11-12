@@ -32,27 +32,55 @@ internal static class TwAnimations
     {
         if (animation == TwAnimation.None)
         {
-            _controls?.Remove(control);
+            if (_controls?.Remove(control) == true)
+            {
+                control.VisibleChanged -= OnShown;
+                control.HandleCreated -= OnShown;
+                control.Disposed -= OnDisposed;
+            }
             if (_controls is { Count: 0 }) _timer?.Stop();
             return;
         }
         _controls ??= new HashSet<Control>();
         if (!_controls.Add(control)) return;
-        control.Disposed += (_, _) => Track(control, TwAnimation.None);
+        control.Disposed += OnDisposed;
+        // The clock stops while none of the controls is shown (see Tick); showing one starts it again.
+        control.VisibleChanged += OnShown;
+        control.HandleCreated += OnShown;
         if (_timer is null)
         {
-            _timer = new TwFrameTimer();
+            _timer = new TwFrameTimer { Source = "animate" };
             _timer.Tick += (_, _) => Tick();
         }
         _timer.Start();
     }
 
+    private static void OnDisposed(object? sender, EventArgs e) => Track((Control)sender!, TwAnimation.None);
+
+    private static void OnShown(object? sender, EventArgs e)
+    {
+        if (sender is Control control && IsShowing(control)) _timer?.Start();
+    }
+
+    // Only visibility stops the clock: animations turned off in the settings keep it, so turning them on resumes at once.
+    private static bool IsShowing(Control control) => control is { IsDisposed: false, IsHandleCreated: true, Visible: true };
+
     private static void Tick()
     {
         if (_controls is null) return;
+        bool any = false;
         foreach (var control in _controls)
+        {
+            if (!IsShowing(control)) continue;
+            any = true;
             if (TwMotion.CanAnimate(control)) control.Invalidate();
+        }
+        // No control on screen (all on hidden pages): leave the clock so the application can go idle.
+        if (!any) _timer?.Stop();
     }
+
+    /// <summary>Whether the shared clock of the repeating animations is running (for tests).</summary>
+    internal static bool Running => _timer?.Enabled == true;
 
     /// <summary>Rotation of <c>animate-spin</c> in degrees (one turn per second); 0 when <paramref name="control"/> cannot animate.</summary>
     public static float SpinAngle(Control control) =>

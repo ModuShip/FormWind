@@ -82,6 +82,28 @@ description: How long FormWind takes to open, repaint and restyle a form, and ho
   </tbody>
 </table></div>
 
+<h2 id="animations">Animations, shadows and transitions</h2>
+<p>Measurements in a real application with ten screens (0.1.7, .NET Framework 4.8.1) found these costs in FormWind's own code. They are fixed:</p>
+<ul>
+  <li><strong>Animations of hidden controls.</strong> A grid whose loading ended while it was on another page kept its skeleton pulse running about 30 times a second, so the application never went idle. Ending the loading now stops the pulse at once, and never-ending animations (skeleton pulse, indeterminate <code>TwProgress</code>, <code>animate-spin</code> and <code>animate-pulse</code>) leave the frame clock while their control is hidden and come back when it is shown. An idle application uses no CPU.</li>
+  <li><strong>Shadows.</strong> A shadow was blurred once per control size: resizing a window with 12 cards in 40 steps added a bitmap at every step (13.9 MB in all), and each step took 43% longer than without shadows. Shadows are now drawn nine-slice from one small blurred picture per radius, blur and color, pixel for pixel the same as before; the cache holds at most 8 MB.</li>
+  <li><strong>Memory per control.</strong> Applying classes allocated 8.6 KB per label. The read-only checks for disabled colors now share one result among controls with the same classes: 5.9 KB per label (&minus;31%) and 15% less per button.</li>
+  <li><strong>Page transitions.</strong> Most of a page switch with <code>TwTransition.CrossFade</code> is the fade itself, which lasts its duration on purpose. A new cross-fade on a host whose previous one is still fading ends the previous one instead of stacking two pictures. In a remote desktop session, where every frame of a fade goes over the network as a picture, animations are off while <code>TwMotion</code> follows Windows (<code>TwMotion.ReduceInRemoteSession</code>).</li>
+</ul>
+
+<h3 id="diagnostics">Measure it in your application</h3>
+<p><code>TwDiagnostics</code> shows what FormWind does behind the scenes, without reflection on internal members. It is experimental (<a href="stability.html#experimental-extension-points">FW9001</a>).</p>
+<pre><code class="language-csharp">// Frame timers on the UI thread now: an idle application has none.
+foreach (var timer in TwDiagnostics.ActiveFrameTimers)
+    Debug.WriteLine(timer);                      // "grid-pulse (DataGridView gridOrders)"
+
+Debug.WriteLine(TwDiagnostics.ShadowCache);       // "3 pictures, 41 KB, 1520 hits, 3 misses"
+
+// The steps of every cross-fade: where the picture came from and what held up the UI thread.
+TwDiagnostics.TransitionCompleted += (_, e) =&gt;
+    Debug.WriteLine($"{e.Kind}: {e.CaptureSource} capture {e.CaptureMs:0} ms, paint {e.PaintMs:0} ms, total {e.TotalMs:0} ms");</code></pre>
+<p>A <code>CaptureSource</code> other than <code>Screen</code> means the part was covered or off screen and the picture had to be rendered by the window manager, which is several times slower.</p>
+
 <h2 id="large-forms">Large forms</h2>
 <p>Tabs, controls nested in panels and a grid or list every 100 controls (<code>LargeFormTests</code>, net9):</p>
 <div class="table-wrap"><table>

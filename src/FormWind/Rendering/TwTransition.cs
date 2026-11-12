@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace FormWind;
@@ -50,18 +52,26 @@ public static class TwTransition
             return;
         }
 
+        long start = Stopwatch.GetTimestamp();
         var bounds = ScreenBounds(host);
         var visible = VisibleScreenBounds(host, bounds);
+        // A fade still running over the host is in the picture taken from the screen (it shows what is seen now).
         var picture = visible.IsEmpty ? null : TwCapture.Take(host, visible);
+        var source = TwCapture.LastSource;
+        long captured = Stopwatch.GetTimestamp();
 
         // Eski görüntü önce ekrana çıkar; değişiklik onun altında uygulanıp boyanır, solma ancak ondan sonra başlar.
         var cover = picture is null ? null : TwFadeOut.Cover(picture, visible, host.FindForm(), roundCorners: host is Form);
         _lastCovered = cover != null;
+        // Quick navigation: the earlier fade ends now instead of fading on above the new one.
+        if (cover != null) ReplaceCover(host, cover);
+        long covered = Stopwatch.GetTimestamp(), changed = covered;
         bool applied = false;
         try
         {
             change();
             applied = true;
+            changed = Stopwatch.GetTimestamp();
         }
         finally
         {
@@ -73,7 +83,36 @@ public static class TwTransition
             }
         }
         if (cover is null) TwMotionOptions.Complete(options);
+        if (applied && TwDiagnostics.HasTransitionListeners)
+        {
+            long painted = Stopwatch.GetTimestamp();
+            TwDiagnostics.OnTransition(new TwTransitionEventArgs(host, "CrossFade", source.ToString(),
+                Ms(captured - start), Ms(covered - captured), Ms(changed - covered), cover is null ? 0 : Ms(painted - changed),
+                Ms(painted - start), cover is null ? 0 : timing.TotalMs));
+        }
     }
+
+    private static double Ms(long ticks) => ticks * 1000.0 / Stopwatch.Frequency;
+
+    // The cover fading over each host now; a new cross-fade on the same host closes the old one.
+    private static readonly ConditionalWeakTable<Control, TwFadeOut.Ghost> Covers = new ConditionalWeakTable<Control, TwFadeOut.Ghost>();
+
+    private static void ReplaceCover(Control host, TwFadeOut.Ghost cover)
+    {
+        if (Covers.TryGetValue(host, out var old))
+        {
+            Covers.Remove(host);
+            if (!old.IsDisposed) old.Close();
+        }
+        Covers.Add(host, cover);
+        cover.FormClosed += (_, _) =>
+        {
+            if (Covers.TryGetValue(host, out var current) && ReferenceEquals(current, cover)) Covers.Remove(host);
+        };
+    }
+
+    /// <summary>Whether a cross-fade picture is still over <paramref name="host"/> (for tests).</summary>
+    internal static bool IsFading(Control host) => Covers.TryGetValue(host, out var cover) && !cover.IsDisposed;
 
     /// <summary>
     /// Shows <paramref name="panel"/> (a side panel, an inspector) sliding in from <paramref name="edge"/>

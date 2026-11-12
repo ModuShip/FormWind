@@ -37,6 +37,7 @@ description: What FormWind keeps stable during the preview: the public API, the 
   <li><code>IStyleApplier</code>, <code>TwApplyContext</code>, <code>TwAppliers</code>, <code>WinFormsApplier</code></li>
   <li><code>TwStyle</code>, <code>TwParsed</code>, <code>TwOriginal</code>, <code>TwTheme.Parse</code></li>
   <li>Helpers that take a <code>TwStyle</code>: <code>TwFonts.Create</code>, <code>TwChrome.FromStyle</code>, <code>TwGradient.FromStyle</code>, <code>TwLayout.Apply</code>, <code>TwToolTip.ResolveStyle</code></li>
+  <li>Diagnostics: <code>TwDiagnostics</code>, <code>TwFrameTimerInfo</code>, <code>TwShadowCacheStats</code>, <code>TwTransitionEventArgs</code> (what they report may grow as more of FormWind is measured)</li>
 </ul>
 <p>They are marked <code>[Experimental]</code>: using them is a compile error (FW9001) until you suppress it, which records that you accept they may change.</p>
 <pre><code class="language-xml">&lt;PropertyGroup&gt;

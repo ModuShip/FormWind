@@ -473,7 +473,19 @@ internal sealed partial class TwGridDecorator
 
     public string? EmptyIcon { get; set; } = "search";
 
-    public bool Loading { get; set; }
+    public bool Loading
+    {
+        get => _loading;
+        set
+        {
+            if (_loading == value) return;
+            _loading = value;
+            // The pulse used to stop only on the next paint, which never comes to a grid scrolled or paged out of view.
+            if (!value) UpdatePulse(false);
+        }
+    }
+
+    private bool _loading;
 
     public TwLoadingStyle LoadingStyle { get; set; }
 
@@ -696,7 +708,7 @@ internal sealed partial class TwGridDecorator
         {
             if (_pulse is null)
             {
-                _pulse = new TwFrameTimer { Interval = 33 };
+                _pulse = new TwFrameTimer { Interval = 33, Owner = _grid, Source = "grid-pulse" };
                 _pulse.Tick += (_, _) => _grid.Invalidate(BodyBounds);
                 _grid.Disposed += (_, _) => _pulse.Dispose();
             }

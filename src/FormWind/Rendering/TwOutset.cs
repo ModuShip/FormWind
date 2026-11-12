@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -192,6 +193,8 @@ internal sealed class TwOutset
     private TwOutset(Control control)
     {
         _control = control;
+        _timer.Source = "outset";
+        _timer.Subject = control;
         _control.ParentChanged += (_, _) => Reattach();
         _control.LocationChanged += (_, _) => InvalidateParent();
         _control.SizeChanged += (_, _) => InvalidateParent();
@@ -461,12 +464,45 @@ internal sealed class TwOutset
     }
 }
 
-/// <summary>Produces and caches blurred shadow bitmaps (3-pass box blur ≈ Gaussian).</summary>
+/// <summary>
+/// Produces and caches blurred shadow bitmaps (3-pass box blur ≈ Gaussian). A shadow wider (or taller) than its corners is
+/// drawn nine-slice: the blurred picture of the smallest such shape is cut into corners, edges and middle, and the edges and
+/// middle are stretched. Along a straight side the blur is the same at every point, so the result is the same as blurring
+/// the full size, while the cache holds one small picture per radius, blur and color instead of one per control size.
+/// </summary>
 internal static class TwShadowRenderer
 {
-    private const int CacheLimit = 128;
-    private static readonly Dictionary<(int W, int H, int Radius, int Blur, int Color), Bitmap> Cache =
-        new Dictionary<(int W, int H, int Radius, int Blur, int Color), Bitmap>();
+    /// <summary>Memory the cached pictures may take (bytes); the least recently used ones are disposed beyond it.</summary>
+    internal const long CacheBudgetBytes = 8L * 1024 * 1024;
+
+    private static readonly Dictionary<(int W, int H, int Radius, int Blur, int Color), LinkedListNode<Entry>> Cache =
+        new Dictionary<(int W, int H, int Radius, int Blur, int Color), LinkedListNode<Entry>>();
+    private static readonly LinkedList<Entry> Recent = new LinkedList<Entry>();
+    private static long _bytes, _hits, _misses;
+
+    internal static TwShadowCacheStats Stats
+    {
+        get
+        {
+            lock (Cache) return new TwShadowCacheStats(Cache.Count, _bytes, _hits, _misses);
+        }
+    }
+
+    /// <summary>Empties the cache (tests).</summary>
+    internal static void Clear()
+    {
+        lock (Cache)
+        {
+            foreach (var entry in Recent) entry.Dispose();
+            Recent.Clear();
+            Cache.Clear();
+            _bytes = 0;
+        }
+    }
+
+    /// <summary>false = draw the whole blurred picture without slicing (tests compare the sliced drawing with it).</summary>
+    [ThreadStatic]
+    internal static bool NoSliceForTests;
 
     public static void Draw(Graphics graphics, Rectangle bounds, float radius, TwShadowLayer layer, float opacity = 1f)
     {
@@ -478,33 +514,132 @@ internal static class TwShadowRenderer
 
         int blur = (int)Math.Ceiling(layer.Blur);
         int margin = blur + 2;
-        var effectiveRadius = Math.Max(0, TwPainter.EffectiveRadius(radius, bounds.Size) + spread);
-        var bitmap = Get((int)Math.Ceiling(rect.Width), (int)Math.Ceiling(rect.Height), (int)Math.Round(effectiveRadius), blur, layer.Color);
-        int x = (int)Math.Round(rect.X) - margin, y = (int)Math.Round(rect.Y) - margin;
-        if (opacity >= 1f)
-        {
-            graphics.DrawImageUnscaled(bitmap, x, y);
-            return;
-        }
-        using var attributes = new ImageAttributes();
-        attributes.SetColorMatrix(new ColorMatrix { Matrix33 = opacity });
-        graphics.DrawImage(bitmap, new Rectangle(x, y, bitmap.Width, bitmap.Height), 0, 0, bitmap.Width, bitmap.Height, GraphicsUnit.Pixel, attributes);
-    }
+        int effectiveRadius = (int)Math.Round(Math.Max(0, TwPainter.EffectiveRadius(radius, bounds.Size) + spread));
+        int width = (int)Math.Ceiling(rect.Width), height = (int)Math.Ceiling(rect.Height);
+        var target = new Rectangle((int)Math.Round(rect.X) - margin, (int)Math.Round(rect.Y) - margin, width + margin * 2, height + margin * 2);
+        // A shadow outside the area being painted is neither drawn nor put in the cache.
+        if (!graphics.IsVisible(target)) return;
 
-    private static Bitmap Get(int width, int height, int radius, int blur, Color color)
-    {
-        var key = (width, height, radius, blur, color.ToArgb());
+        int corner = CornerSize(effectiveRadius, blur);
+        int tile = corner * 2 + 1;
+        bool sliceX = !NoSliceForTests && target.Width > tile, sliceY = !NoSliceForTests && target.Height > tile;
+        int pictureWidth = sliceX ? tile - margin * 2 : width, pictureHeight = sliceY ? tile - margin * 2 : height;
+        // Picture and drawing stay under the lock: an entry evicted by another UI thread is disposed at once.
         lock (Cache)
         {
-            if (Cache.TryGetValue(key, out var cached)) return cached;
-            if (Cache.Count >= CacheLimit)
+            var entry = Get(pictureWidth, pictureHeight, effectiveRadius, blur, layer.Color);
+            entry.Draw(graphics, target, sliceX ? corner : -1, sliceY ? corner : -1, opacity);
+        }
+    }
+
+    /// <summary>
+    /// Distance from the picture's edge within which the blurred corner differs from the straight side: the margin, the
+    /// radius, the antialiased edge pixel (half covered) and the reach of the three box passes (3 × box radius).
+    /// </summary>
+    internal static int CornerSize(int radius, int blur) => blur + 2 + radius + 1 + 3 * BoxRadius(blur);
+
+    private static int BoxRadius(int blur) => blur > 0 ? Math.Max(1, (int)Math.Round(blur / 2.0)) : 0;
+
+    private static Entry Get(int width, int height, int radius, int blur, Color color)
+    {
+        var key = (width, height, radius, blur, color.ToArgb());
+        if (Cache.TryGetValue(key, out var node))
+        {
+            _hits++;
+            Recent.Remove(node);
+            Recent.AddFirst(node);
+            return node.Value;
+        }
+        _misses++;
+        var entry = new Entry(key, Create(width, height, radius, blur, color));
+        Cache[key] = Recent.AddFirst(entry);
+        _bytes += entry.Bytes;
+        // The newest one stays even when it alone is over the budget: it is the one about to be drawn.
+        while (_bytes > CacheBudgetBytes && Recent.Last is { } oldest && oldest.Value != entry)
+        {
+            Recent.RemoveLast();
+            Cache.Remove(oldest.Value.Key);
+            _bytes -= oldest.Value.Bytes;
+            oldest.Value.Dispose();
+        }
+        return entry;
+    }
+
+    /// <summary>A cached blurred picture.</summary>
+    private sealed class Entry : IDisposable
+    {
+        private readonly Bitmap _picture;
+
+        public Entry((int, int, int, int, int) key, Bitmap picture)
+        {
+            Key = key;
+            _picture = picture;
+        }
+
+        public (int W, int H, int Radius, int Blur, int Color) Key { get; }
+
+        public long Bytes => (long)_picture.Width * _picture.Height * 4;
+
+        /// <summary>Draws the picture over <paramref name="target"/>; a corner size of -1 = that axis is not sliced.</summary>
+        public void Draw(Graphics graphics, Rectangle target, int cornerX, int cornerY, float opacity)
+        {
+            using var attributes = opacity >= 1f ? null : new ImageAttributes();
+            attributes?.SetColorMatrix(new ColorMatrix { Matrix33 = opacity });
+            if (cornerX < 0 && cornerY < 0)
             {
-                foreach (var bitmap in Cache.Values) bitmap.Dispose();
-                Cache.Clear();
+                DrawPart(graphics, new Rectangle(Point.Empty, _picture.Size), target, attributes);
+                return;
             }
-            var created = Create(width, height, radius, blur, color);
-            Cache[key] = created;
-            return created;
+            var columns = Spans(_picture.Width, target.X, target.Width, cornerX);
+            var rows = Spans(_picture.Height, target.Y, target.Height, cornerY);
+            // Picture pixels map one to one onto device pixels: filtering would blend in the pixels beside each part.
+            var interpolation = graphics.InterpolationMode;
+            var offset = graphics.PixelOffsetMode;
+            graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+            graphics.PixelOffsetMode = PixelOffsetMode.Half;
+            try
+            {
+                foreach (var (srcY, dstY, dstH, srcH) in rows)
+                foreach (var (srcX, dstX, dstW, srcW) in columns)
+                {
+                    var dest = new Rectangle(dstX, dstY, dstW, dstH);
+                    if (dest.Width <= 0 || dest.Height <= 0 || !graphics.IsVisible(dest)) continue;
+                    var source = new Rectangle(srcX, srcY, srcW, srcH);
+                    if (source.Size == dest.Size) DrawPart(graphics, source, dest, attributes);
+                    else Stretch(graphics, source, dest, attributes);
+                }
+            }
+            finally
+            {
+                graphics.InterpolationMode = interpolation;
+                graphics.PixelOffsetMode = offset;
+            }
+        }
+
+        // (source position, target position, target length, source length): corner, stretched 1 px middle, far corner.
+        private static (int Src, int Dst, int DstLength, int SrcLength)[] Spans(int pictureLength, int start, int length, int corner) =>
+            corner < 0
+                ? new[] { (0, start, length, pictureLength) }
+                : new[] { (0, start, corner, corner), (corner, start + corner, length - corner * 2, 1), (corner + 1, start + length - corner, corner, corner) };
+
+        private void DrawPart(Graphics graphics, Rectangle source, Rectangle dest, ImageAttributes? attributes)
+        {
+            if (attributes is null && source.Location == Point.Empty && source.Size == _picture.Size)
+                graphics.DrawImageUnscaled(_picture, dest.X, dest.Y);
+            else if (attributes is null)
+                graphics.DrawImage(_picture, dest, source, GraphicsUnit.Pixel);
+            else
+                graphics.DrawImage(_picture, dest, source.X, source.Y, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+        }
+
+        // A stretched part is a one-pixel row or column scaled with nearest-neighbor sampling (set by Draw): every
+        // target pixel takes that row or column exactly, blended the same way as the corners.
+        private void Stretch(Graphics graphics, Rectangle source, Rectangle dest, ImageAttributes? attributes) =>
+            DrawPart(graphics, source, dest, attributes);
+
+        public void Dispose()
+        {
+            _picture.Dispose();
         }
     }
 
@@ -534,7 +669,7 @@ internal static class TwShadowRenderer
                     alpha[y * w + x] = pixels[y * data.Stride + x * 4 + 3];
 
             // CSS blur yarıçapı B ≈ Gauss σ = B/2; üç kutu geçişi için kutu yarıçapı ≈ B/2.
-            int boxRadius = blur > 0 ? Math.Max(1, (int)Math.Round(blur / 2.0)) : 0;
+            int boxRadius = BoxRadius(blur);
             for (int pass = 0; pass < 3 && boxRadius > 0; pass++)
             {
                 BoxBlurHorizontal(alpha, w, h, boxRadius);
@@ -558,7 +693,9 @@ internal static class TwShadowRenderer
         {
             bitmap.UnlockBits(data);
         }
-        return bitmap;
+        // GDI+ blends premultiplied pixels: converted once here, not on every draw (where whole and partial draws would
+        // round the conversion differently).
+        using (bitmap) return bitmap.Clone(new Rectangle(0, 0, w, h), PixelFormat.Format32bppPArgb);
     }
 
     private static void BoxBlurHorizontal(byte[] values, int w, int h, int r)

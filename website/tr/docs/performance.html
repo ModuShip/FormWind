@@ -82,6 +82,28 @@ description: FormWind'in bir formu açma, yeniden çizme ve tema değiştirme s�
   </tbody>
 </table></div>
 
+<h2 id="animations">Animasyonlar, gölgeler ve geçişler</h2>
+<p>On ekranlı gerçek bir uygulamada yapılan ölçümler (0.1.7, .NET Framework 4.8.1) FormWind'in kendi kodunda şu maliyetleri buldu. Hepsi düzeltildi:</p>
+<ul>
+  <li><strong>Görünmeyen kontrollerin animasyonları.</strong> Yüklemesi başka bir sayfadayken biten bir ızgaranın iskelet nabzı saniyede ~30 kez sürüyor, uygulama hiç boşta beklemeye geçemiyordu. Yükleme bitince nabız artık hemen durur; süresiz animasyonlar (iskelet nabzı, belirsiz <code>TwProgress</code>, <code>animate-spin</code> ve <code>animate-pulse</code>) kontrolleri gizliyken kare saatinden çıkar, gösterilince devam eder. Boştaki uygulama işlemci kullanmaz.</li>
+  <li><strong>Gölgeler.</strong> Gölge her kontrol boyutu için ayrı bulanıklaştırılıyordu: 12 kartlı bir pencereyi 40 adımda boyutlandırmak her adımda yeni bir bitmap ekliyor (toplam 13,9 MB), her adım gölgesiz kartlara göre %43 uzun sürüyordu. Gölgeler artık yarıçap, bulanıklık ve renk başına tek küçük bir resimden dokuz parçalı çizilir; sonuç eskisiyle piksel piksel aynıdır, önbellek en fazla 8 MB tutar.</li>
+  <li><strong>Kontrol başına bellek.</strong> Class'ları uygulamak etiket başına 8,6 KB ayırıyordu. Devre dışı renkler için yapılan salt okunur kontroller artık aynı class'lara sahip kontroller arasında paylaşılır: etiket başına 5,9 KB (&minus;%31), düğme başına %15 daha az.</li>
+  <li><strong>Sayfa geçişleri.</strong> <code>TwTransition.CrossFade</code> ile yapılan sayfa değişiminin büyük kısmı solmanın kendisidir; bilerek süresi kadar sürer. Önceki solması süren bir alanda yeni bir geçiş başlarsa önceki hemen biter, iki resim üst üste binmez. Solmanın her karesinin ağdan resim olarak gittiği uzak masaüstü oturumunda, <code>TwMotion</code> Windows'u izlerken animasyonlar kapalıdır (<code>TwMotion.ReduceInRemoteSession</code>).</li>
+</ul>
+
+<h3 id="diagnostics">Kendi uygulamanızda ölçün</h3>
+<p><code>TwDiagnostics</code>, FormWind'in arka planda ne yaptığını iç üyelere yansımayla erişmeden gösterir. Deneyseldir (<a href="stability.html#experimental-extension-points">FW9001</a>).</p>
+<pre><code class="language-csharp">// Arayüz iş parçacığında şu an çalışan kare zamanlayıcıları: boştaki uygulamada hiç yoktur.
+foreach (var timer in TwDiagnostics.ActiveFrameTimers)
+    Debug.WriteLine(timer);                      // "grid-pulse (DataGridView gridOrders)"
+
+Debug.WriteLine(TwDiagnostics.ShadowCache);       // "3 pictures, 41 KB, 1520 hits, 3 misses"
+
+// Her çapraz geçişin adımları: resim nereden geldi, arayüz iş parçacığını ne bekletti.
+TwDiagnostics.TransitionCompleted += (_, e) =&gt;
+    Debug.WriteLine($"{e.Kind}: {e.CaptureSource} yakalama {e.CaptureMs:0} ms, boyama {e.PaintMs:0} ms, toplam {e.TotalMs:0} ms");</code></pre>
+<p><code>CaptureSource</code> <code>Screen</code> değilse alan örtülüydü ya da ekran dışındaydı ve resmi pencere yöneticisi çizdi; bu birkaç kat yavaştır.</p>
+
 <h2 id="large-forms">Büyük formlar</h2>
 <p>Sekmeler, paneller içinde iç içe kontroller ve her 100 kontrolde bir grid ya da liste (<code>LargeFormTests</code>, net9):</p>
 <div class="table-wrap"><table>

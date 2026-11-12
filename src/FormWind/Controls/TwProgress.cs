@@ -36,6 +36,8 @@ public class TwProgress : Control, ITwChrome, ITwTimed
         SetStyle(ControlStyles.Selectable, false);
         TabStop = false;
         BackColor = Color.Transparent;
+        _timer.Owner = this;
+        _timer.Source = "progress";
         _timer.Tick += (_, _) =>
         {
             if (!TwMotion.Enabled) _timer.Stop();

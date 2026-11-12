@@ -22,6 +22,9 @@ internal static class TwFrameClock
     /// <summary>Number of running frame timers on this thread (for tests).</summary>
     internal static int ActiveCount => _pump?.Count ?? 0;
 
+    /// <summary>The frame timers on the clock of this thread now (parked ones are not on it).</summary>
+    internal static TwFrameTimer[] ActiveTimers => _pump?.Snapshot() ?? Array.Empty<TwFrameTimer>();
+
     /// <summary>Milliseconds on a monotonic clock (not affected by changes of the system time).</summary>
     internal static double NowMs => Stopwatch.GetTimestamp() * 1000.0 / Stopwatch.Frequency;
 
@@ -54,6 +57,8 @@ internal static class TwFrameClock
         }
 
         public int Count => _timers.Count;
+
+        public TwFrameTimer[] Snapshot() => _timers.ToArray();
 
         public void Add(TwFrameTimer timer)
         {
@@ -125,6 +130,7 @@ internal static class TwFrameClock
             // Tick geri çağrısı zamanlayıcı ekleyip çıkarabilir; kopya üzerinde dönülür.
             foreach (var timer in _timers.ToArray())
                 if (timer.Enabled) timer.OnFrame(now);
+            if (_timers.Count == 0) Halt();
         }
 
         private static double ToMs(long ticks) => ticks * 1000.0 / Stopwatch.Frequency;
@@ -146,31 +152,69 @@ internal sealed class TwFrameTimer : IDisposable
 
     private double _last;
     private bool _disposed;
+    private Control? _owner;
+    private bool _watchingOwner;
 
     /// <summary>Wanted time between ticks (ms); 16 or less = every frame.</summary>
     public int Interval { get; set; } = 16;
 
+    /// <summary>What runs on this timer (<see cref="TwDiagnostics.ActiveFrameTimers"/>), such as <c>"grid-pulse"</c>.</summary>
+    public string Source { get; set; } = "timer";
+
+    /// <summary>The control the timer animates, for diagnostics, when it has no <see cref="Owner"/> (a finite animation).</summary>
+    public Control? Subject { get; set; }
+
+    /// <summary>
+    /// The control a never-ending animation (pulse, spin, shimmer) draws on. While it is not shown (hidden itself or on a
+    /// hidden page, no window handle, disposed) the timer leaves the clock and the application can go idle; it comes back
+    /// when the control is shown again. <c>null</c> = always run (finite animations, which must reach their end).
+    /// </summary>
+    public Control? Owner
+    {
+        get => _owner;
+        set
+        {
+            if (ReferenceEquals(_owner, value)) return;
+            UnwatchOwner();
+            _owner = value;
+            if (Enabled && !Parked && !IsShowing(value)) Park();
+            else if (Parked && IsShowing(value)) Resume();
+            else if (Parked) WatchOwner();
+        }
+    }
+
     public event EventHandler? Tick;
 
     public bool Enabled { get; private set; }
+
+    /// <summary>Whether the timer is enabled but off the clock because its <see cref="Owner"/> is not shown.</summary>
+    internal bool Parked { get; private set; }
 
     public void Start()
     {
         if (_disposed || Enabled) return;
         Enabled = true;
         _last = TwFrameClock.NowMs;
-        TwFrameClock.Add(this);
+        if (IsShowing(_owner)) TwFrameClock.Add(this);
+        else Park();
     }
 
     public void Stop()
     {
         if (!Enabled) return;
         Enabled = false;
-        TwFrameClock.Remove(this);
+        UnwatchOwner();
+        if (Parked) Parked = false;
+        else TwFrameClock.Remove(this);
     }
 
     internal void OnFrame(double now)
     {
+        if (!IsShowing(_owner))
+        {
+            Park();
+            return;
+        }
         if (now - _last < Interval - SlackMs) return;
         _last = now;
         Tick?.Invoke(this, EventArgs.Empty);
@@ -181,4 +225,47 @@ internal sealed class TwFrameTimer : IDisposable
         Stop();
         _disposed = true;
     }
+
+    // Visible is false also when a parent (a page) is hidden; WinForms raises VisibleChanged on the children then.
+    private static bool IsShowing(Control? owner) =>
+        owner is null || owner is { IsDisposed: false, IsHandleCreated: true, Visible: true };
+
+    private void Park()
+    {
+        if (Parked) return;
+        Parked = true;
+        TwFrameClock.Remove(this);
+        WatchOwner();
+    }
+
+    private void Resume()
+    {
+        if (!Parked || !Enabled || !IsShowing(_owner)) return;
+        Parked = false;
+        UnwatchOwner();
+        _last = TwFrameClock.NowMs;
+        TwFrameClock.Add(this);
+    }
+
+    private void WatchOwner()
+    {
+        if (_watchingOwner || _owner is null) return;
+        _watchingOwner = true;
+        _owner.VisibleChanged += OnOwnerChanged;
+        _owner.HandleCreated += OnOwnerChanged;
+        _owner.Disposed += OnOwnerDisposed;
+    }
+
+    private void UnwatchOwner()
+    {
+        if (!_watchingOwner || _owner is null) return;
+        _watchingOwner = false;
+        _owner.VisibleChanged -= OnOwnerChanged;
+        _owner.HandleCreated -= OnOwnerChanged;
+        _owner.Disposed -= OnOwnerDisposed;
+    }
+
+    private void OnOwnerChanged(object? sender, EventArgs e) => Resume();
+
+    private void OnOwnerDisposed(object? sender, EventArgs e) => Stop();
 }

@@ -117,14 +117,16 @@ WinForms has no anti-aliased corners, shadows or focus rings, so FormWind draws 
 | --- | --- | --- |
 | `ITwChrome` | `Tw*` controls (`TwButton`, `TwPanel`, `TwTextBox` …) | The applier passes a `TwChrome` (radius, per-side borders, gradient); the control paints itself, anti-aliased (`TwPainter`). |
 | `TwDecorator` | Standard controls | A `Region` for the corners, plus painting for borders and gradients (on panels). Corners are not anti-aliased. |
-| `TwOutset` | Shadows, focus rings, frames of native text boxes | Drawn on the parent, outside the control's bounds. |
+| `TwOutset` | Shadows, focus rings, frames of native text boxes | Drawn on the parent, outside the control's bounds. Shadows are blurred once per radius, blur and color and drawn nine-slice (`TwShadowRenderer`, an LRU cache limited by bytes). |
 
 Other files in this folder are thin wrappers around a single Windows feature: DWM title bars and backdrops
 (`TwTitleBar`), dark native scrollbars and tooltips (`TwNativeTheme`, `TwNativeToolTips`), High Contrast
 (`TwHighContrast`), keyboard and mouse focus tracking (`TwFocusVisible`), RTL mirroring (`TwRtl`), DPI (`TwDpi`),
 color and number transitions (`TwAnimator`, timing and curves in `TwTiming`, `TwCubicBezier`), in-control animations (`TwMotion`, `TwTween`) and repeating
 `animate-*` animations (`TwAnimations`), all driven by one frame clock per UI thread (`TwFrameClock`: a thread-pool timer
-posts a frame message, which Windows delivers before pending paints, unlike `WM_TIMER`). Transitions and fades take
+posts a frame message, which Windows delivers before pending paints, unlike `WM_TIMER`). A never-ending animation gives
+its timer an `Owner` control: the timer leaves the clock while the control is hidden, so an idle application posts no
+frames. `TwDiagnostics` reports the running timers, the shadow cache and the steps of each transition. Transitions and fades take
 pictures of what is on screen through `TwCapture` (screen, then `PrintWindow`, then `DrawToBitmap`) and show them in
 click-through windows (`TwFadeOut`, `TwTransition`, `TwWindowMotion`). Undocumented Windows APIs (for example, `DarkMode_Explorer`) fail silently on
 systems that do not support them.
@@ -197,7 +199,8 @@ Styling must never crash the host application. `TwBinding.Refresh` and the paint
 
 Everything runs on the UI thread. Process-wide or thread-wide state is kept to a minimum and is explicit:
 
-- Font cache: `TwFonts`.
+- Font cache: `TwFonts`. Shadow picture cache: `TwShadowRenderer` (shared by all threads, under a lock).
+- Resolved styles: `TwParsed` keeps the read-only results shared by all controls with the same classes.
 - Animation clock and input tracking: `TwFrameClock` (one hidden message window per UI thread), `TwAnimator`, `TwAnimations`, `TwFocusVisible`.
 - Native tooltip hook: `TwNativeToolTips`.
 - Theme: `TwTheme.Current`.

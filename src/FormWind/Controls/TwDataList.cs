@@ -456,6 +456,8 @@ public class TwDataList : Control, ITwTimed
             if (_loading == value) return;
             _loading = value;
             _hoverIndex = -1;
+            // A list out of view gets no paint that would stop the pulse; the next paint starts it again when needed.
+            if (!value) UpdatePulse(false);
             Invalidate();
             AccessibilityNotifyClients(AccessibleEvents.StateChange, -1);
         }
@@ -1248,7 +1250,7 @@ public class TwDataList : Control, ITwTimed
         {
             if (_pulse is null)
             {
-                _pulse = new TwFrameTimer { Interval = 50 };
+                _pulse = new TwFrameTimer { Interval = 50, Owner = this, Source = "list-pulse" };
                 _pulse.Tick += (_, _) => Invalidate();
             }
             _pulse.Start();

@@ -167,7 +167,7 @@ public static class TwAnimator
 
         if (_timer is null)
         {
-            _timer = new TwFrameTimer();
+            _timer = new TwFrameTimer { Source = "animator" };
             _timer.Tick += (_, _) => Step(DateTime.UtcNow);
         }
         _timer.Start();
