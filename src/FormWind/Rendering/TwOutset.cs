@@ -352,13 +352,13 @@ internal sealed class TwOutset
         bool fading = progress < 1f;
         if (fading)
             for (int i = _fromShadows.Count - 1; i >= 0; i--)
-                TwShadowRenderer.Draw(graphics, bounds, shadowRadius, _fromShadows[i], 1f - progress);
+                TwShadowRenderer.Draw(graphics, bounds, shadowRadius, _fromShadows[i], 1f - progress, underBox: true);
         if (fading && _fromRing != null) DrawRing(graphics, bounds, _fromRing, 1f - progress);
         if (pinging) DrawPing(graphics, _control.Bounds);
         if (spec is null) return;
         float shadowOpacity = fading && _shadowsFade ? progress : 1f;
         for (int i = spec.Shadows.Count - 1; i >= 0; i--)
-            TwShadowRenderer.Draw(graphics, bounds, spec.Radius, spec.Shadows[i], shadowOpacity);
+            TwShadowRenderer.Draw(graphics, bounds, spec.Radius, spec.Shadows[i], shadowOpacity, underBox: true);
 
         if (spec.Frame is TwChrome frame)
         {
@@ -429,9 +429,28 @@ internal sealed class TwOutset
         _paintedBounds = area;
     }
 
+    // Paint'in çizeceği alan (kontrol + gölge/halka/darbe taşması); çizecek bir şey yoksa boş.
+    private Rectangle PaintArea()
+    {
+        var spec = Spec;
+        float progress = Progress;
+        bool pinging = Pinging;
+        if (!_control.Visible || spec is null && !pinging && (progress >= 1f || _fromShadows.Count == 0 && _fromRing is null)) return Rectangle.Empty;
+        int extent = Math.Max(Math.Max((spec?.Extent ?? 0) + RingInSpread, progress < 1f ? _fromExtent : 0), PingExtent);
+        return Rectangle.Inflate(_control.Bounds, extent, extent);
+    }
+
+    /// <summary>
+    /// Paints the shadows, rings and frames of a parent's children in its Paint event. They are drawn into an offscreen
+    /// premultiplied picture first and blended onto the parent once: GDI+ reads the destination back for every
+    /// semi-transparent image it draws on a window's device context, which made each shadow part cost as much as a
+    /// whole page of drawing on a parent that is not double-buffered.
+    /// </summary>
     private sealed class ParentPainter
     {
         private readonly List<WeakReference<TwOutset>> _children = new List<WeakReference<TwOutset>>();
+        private readonly List<TwOutset> _painting = new List<TwOutset>();
+        private readonly List<Rectangle> _parts = new List<Rectangle>();
 
         public ParentPainter(Control parent) => parent.Paint += OnPaint;
 
@@ -442,6 +461,11 @@ internal sealed class TwOutset
 
         private void OnPaint(object? sender, PaintEventArgs e)
         {
+            var clip = e.ClipRectangle;
+            var area = Rectangle.Empty;
+            long partsArea = 0;
+            _painting.Clear();
+            _parts.Clear();
             // Controls sırasının tersi: alttaki (sonra eklenen) kontrolün gölgesi önce çizilir.
             for (int i = _children.Count - 1; i >= 0; i--)
             {
@@ -450,15 +474,57 @@ internal sealed class TwOutset
                     _children.RemoveAt(i);
                     continue;
                 }
-                // Çizim hatası ebeveynin Paint'ini (ve uygulamayı) düşürmemeli.
-                try
-                {
-                    outset.Paint(e.Graphics, e.ClipRectangle);
-                }
-                catch (Exception ex) when (!TwErrors.IsCritical(ex))
-                {
-                    TwErrors.Trace("shadow/ring painting", ex);
-                }
+                var part = Rectangle.Intersect(outset.PaintArea(), clip);
+                if (part.Width <= 0 || part.Height <= 0) continue;
+                _painting.Add(outset);
+                _parts.Add(part);
+                partsArea += (long)part.Width * part.Height;
+                area = area.IsEmpty ? part : Rectangle.Union(area, part);
+            }
+            if (_painting.Count == 0) return;
+            try
+            {
+                // Birbirinden uzak kartlarda ortak alan çoğunlukla boştur: her biri kendi alanında harmanlanır.
+                if ((long)area.Width * area.Height > partsArea * 2)
+                    for (int i = 0; i < _painting.Count; i++) Blend(e.Graphics, _parts[i], _painting[i]);
+                else Blend(e.Graphics, area, _painting.ToArray());
+            }
+            catch (Exception ex) when (ex is ArgumentException or ExternalException or OutOfMemoryException)
+            {
+                // Resim ayrılamadıysa (çok büyük alan, GDI+ belleği) doğrudan çizilir.
+                TwErrors.Trace("shadow/ring buffer", ex);
+                foreach (var outset in _painting) PaintOne(outset, e.Graphics, clip);
+            }
+            finally
+            {
+                _painting.Clear();
+                _parts.Clear();
+            }
+        }
+
+        // Saydam bir resme çizip hedefe tek seferde harmanlar (sırayla üst üste bindirme birleşmelidir: sonuç aynıdır).
+        private static void Blend(Graphics target, Rectangle area, params TwOutset[] outsets)
+        {
+            using var picture = new Bitmap(area.Width, area.Height, PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(picture))
+            {
+                g.TranslateTransform(-area.X, -area.Y);
+                g.SetClip(area);
+                foreach (var outset in outsets) PaintOne(outset, g, area);
+            }
+            target.DrawImage(picture, area, new Rectangle(Point.Empty, area.Size), GraphicsUnit.Pixel);
+        }
+
+        private static void PaintOne(TwOutset outset, Graphics graphics, Rectangle clip)
+        {
+            // Çizim hatası ebeveynin Paint'ini (ve uygulamayı) düşürmemeli.
+            try
+            {
+                outset.Paint(graphics, clip);
+            }
+            catch (Exception ex) when (!TwErrors.IsCritical(ex))
+            {
+                TwErrors.Trace("shadow/ring painting", ex);
             }
         }
     }
@@ -472,8 +538,28 @@ internal sealed class TwOutset
 /// </summary>
 internal static class TwShadowRenderer
 {
+    /// <summary>Default of <see cref="CacheBudgetBytes"/>.</summary>
+    internal const long DefaultCacheBudgetBytes = 8L * 1024 * 1024;
+
+    private static long _budget = DefaultCacheBudgetBytes;
+
     /// <summary>Memory the cached pictures may take (bytes); the least recently used ones are disposed beyond it.</summary>
-    internal const long CacheBudgetBytes = 8L * 1024 * 1024;
+    internal static long CacheBudgetBytes
+    {
+        get
+        {
+            lock (Cache) return _budget;
+        }
+        set
+        {
+            if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value), value, "The shadow cache budget must be positive.");
+            lock (Cache)
+            {
+                _budget = value;
+                Trim(null);
+            }
+        }
+    }
 
     private static readonly Dictionary<(int W, int H, int Radius, int Blur, int Color), LinkedListNode<Entry>> Cache =
         new Dictionary<(int W, int H, int Radius, int Blur, int Color), LinkedListNode<Entry>>();
@@ -488,7 +574,7 @@ internal static class TwShadowRenderer
         }
     }
 
-    /// <summary>Empties the cache (tests).</summary>
+    /// <summary>Empties the cache (the pictures are made again when next drawn).</summary>
     internal static void Clear()
     {
         lock (Cache)
@@ -504,7 +590,17 @@ internal static class TwShadowRenderer
     [ThreadStatic]
     internal static bool NoSliceForTests;
 
-    public static void Draw(Graphics graphics, Rectangle bounds, float radius, TwShadowLayer layer, float opacity = 1f)
+    /// <param name="graphics">Where to draw (the parent's surface).</param>
+    /// <param name="bounds">The box casting the shadow.</param>
+    /// <param name="radius">Corner radius of the box.</param>
+    /// <param name="layer">The shadow layer.</param>
+    /// <param name="opacity">Opacity of the whole layer (transitions).</param>
+    /// <param name="underBox">
+    /// The box itself is drawn over the shadow (a control on its parent): the parts of the sliced picture lying inside the
+    /// box, away from its rounded corners, are not drawn. As in CSS, an outer shadow is not seen under its box; the middle
+    /// part, stretched over the whole box, is most of the pixels to blend.
+    /// </param>
+    public static void Draw(Graphics graphics, Rectangle bounds, float radius, TwShadowLayer layer, float opacity = 1f, bool underBox = false)
     {
         if (layer.Color.A == 0 || opacity <= 0f) return;
         var spread = layer.Spread;
@@ -524,12 +620,21 @@ internal static class TwShadowRenderer
         int tile = corner * 2 + 1;
         bool sliceX = !NoSliceForTests && target.Width > tile, sliceY = !NoSliceForTests && target.Height > tile;
         int pictureWidth = sliceX ? tile - margin * 2 : width, pictureHeight = sliceY ? tile - margin * 2 : height;
+        var hidden = underBox ? HiddenUnder(bounds, radius) : Rectangle.Empty;
         // Picture and drawing stay under the lock: an entry evicted by another UI thread is disposed at once.
         lock (Cache)
         {
             var entry = Get(pictureWidth, pictureHeight, effectiveRadius, blur, layer.Color);
-            entry.Draw(graphics, target, sliceX ? corner : -1, sliceY ? corner : -1, opacity);
+            entry.Draw(graphics, target, sliceX ? corner : -1, sliceY ? corner : -1, opacity, hidden);
         }
+    }
+
+    // The box's area away from its rounded corners: whatever is drawn there is painted over by the box.
+    private static Rectangle HiddenUnder(Rectangle bounds, float radius)
+    {
+        int inset = (int)Math.Ceiling(TwPainter.EffectiveRadius(radius, bounds.Size));
+        var hidden = Rectangle.Inflate(bounds, -inset, -inset);
+        return hidden.Width > 0 && hidden.Height > 0 ? hidden : Rectangle.Empty;
     }
 
     /// <summary>
@@ -554,15 +659,21 @@ internal static class TwShadowRenderer
         var entry = new Entry(key, Create(width, height, radius, blur, color));
         Cache[key] = Recent.AddFirst(entry);
         _bytes += entry.Bytes;
-        // The newest one stays even when it alone is over the budget: it is the one about to be drawn.
-        while (_bytes > CacheBudgetBytes && Recent.Last is { } oldest && oldest.Value != entry)
+        Trim(entry);
+        return entry;
+    }
+
+    // Disposes the least recently used pictures beyond the budget. The newest one (keep) stays even when it alone is over
+    // the budget: it is the one about to be drawn. Called under the lock.
+    private static void Trim(Entry? keep)
+    {
+        while (_bytes > _budget && Recent.Last is { } oldest && oldest.Value != keep)
         {
             Recent.RemoveLast();
             Cache.Remove(oldest.Value.Key);
             _bytes -= oldest.Value.Bytes;
             oldest.Value.Dispose();
         }
-        return entry;
     }
 
     /// <summary>A cached blurred picture.</summary>
@@ -581,7 +692,7 @@ internal static class TwShadowRenderer
         public long Bytes => (long)_picture.Width * _picture.Height * 4;
 
         /// <summary>Draws the picture over <paramref name="target"/>; a corner size of -1 = that axis is not sliced.</summary>
-        public void Draw(Graphics graphics, Rectangle target, int cornerX, int cornerY, float opacity)
+        public void Draw(Graphics graphics, Rectangle target, int cornerX, int cornerY, float opacity, Rectangle hidden)
         {
             using var attributes = opacity >= 1f ? null : new ImageAttributes();
             attributes?.SetColorMatrix(new ColorMatrix { Matrix33 = opacity });
@@ -603,7 +714,7 @@ internal static class TwShadowRenderer
                 foreach (var (srcX, dstX, dstW, srcW) in columns)
                 {
                     var dest = new Rectangle(dstX, dstY, dstW, dstH);
-                    if (dest.Width <= 0 || dest.Height <= 0 || !graphics.IsVisible(dest)) continue;
+                    if (dest.Width <= 0 || dest.Height <= 0 || hidden.Contains(dest) || !graphics.IsVisible(dest)) continue;
                     var source = new Rectangle(srcX, srcY, srcW, srcH);
                     if (source.Size == dest.Size) DrawPart(graphics, source, dest, attributes);
                     else Stretch(graphics, source, dest, attributes);

@@ -1,1 +1,5 @@
 #nullable enable
+static FormWind.TwDiagnostics.ClearShadowCache() -> void
+static FormWind.TwDiagnostics.IsFrameMessage(in System.Windows.Forms.Message message) -> bool
+static FormWind.TwDiagnostics.ShadowCacheBudgetBytes.get -> long
+static FormWind.TwDiagnostics.ShadowCacheBudgetBytes.set -> void

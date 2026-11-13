@@ -86,51 +86,101 @@ public class TwToolTip : ToolTip
 /// <summary>
 /// The full text of a label that <c>AutoEllipsis</c> cuts short ("…"), in a themed <see cref="TwToolTip"/>. It replaces
 /// WinForms' own light tooltip (a label with a ToolTip of its own does not show that one) and shows only while the text is
-/// actually cut.
+/// actually cut. One tooltip per UI thread, theme and light/dark mode serves all labels: each ToolTip is a window of its
+/// own, which a tooltip per label would add to every truncated label.
 /// </summary>
 internal static class TwTruncationTip
 {
+    // Etiketin şu an bağlı olduğu ortak ipucu.
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Label, TwToolTip> Tips =
         new System.Runtime.CompilerServices.ConditionalWeakTable<Label, TwToolTip>();
+
+    // İpucu penceresi onu oluşturan iş parçacığına aittir: her UI iş parçacığının kendi ortak ipuçları vardır.
+    [ThreadStatic]
+    private static System.Collections.Generic.Dictionary<(TwTheme Theme, bool Dark), TwToolTip>? _shared;
+
+    // Ortak ipucunu kullanan etiket sayısı: son etiket ayrılınca ipucu (penceresi ve tuttuğu tema) bırakılır.
+    [ThreadStatic]
+    private static System.Collections.Generic.Dictionary<TwToolTip, int>? _users;
 
     /// <summary>The tooltip attached to the label (<c>null</c> if none).</summary>
     public static TwToolTip? Get(Label label) => Tips.TryGetValue(label, out var tip) ? tip : null;
 
     public static void Attach(Label label, TwTheme theme, bool dark)
     {
-        if (!Tips.TryGetValue(label, out var tip))
+        var tip = Shared(theme, dark);
+        if (!Tips.TryGetValue(label, out var current))
         {
-            tip = new TwToolTip { ShowAlways = true };
             Tips.Add(label, tip);
-            tip.Popup += (_, e) =>
-            {
-                if (e.AssociatedControl is Label shown && !IsTruncated(shown)) e.Cancel = true;
-            };
+            Use(tip, +1);
             label.TextChanged += OnTextChanged;
-            label.Disposed += (_, _) =>
-            {
-                label.TextChanged -= OnTextChanged;
-                if (Tips.TryGetValue(label, out var owned)) owned.Dispose();
-                Tips.Remove(label);
-            };
+            label.Disposed += OnDisposed;
         }
-        tip.Theme = theme;
-        tip.DarkMode = dark;
-        tip.SetToolTip(label, DisplayText(label));
+        else if (!ReferenceEquals(current, tip))
+        {
+            // Tema ya da koyu mod değişti: etiket o duruma ait ortak ipucuna geçer.
+            current.SetToolTip(label, null);
+            Tips.Remove(label);
+            Tips.Add(label, tip);
+            Use(tip, +1);
+            Use(current, -1);
+        }
+        SetText(tip, label);
     }
 
     public static void Detach(Label label)
     {
         if (!Tips.TryGetValue(label, out var tip)) return;
         label.TextChanged -= OnTextChanged;
+        label.Disposed -= OnDisposed;
         tip.SetToolTip(label, null);
-        tip.Dispose();
         Tips.Remove(label);
+        Use(tip, -1);
+    }
+
+    private static void Use(TwToolTip tip, int change)
+    {
+        _users ??= new System.Collections.Generic.Dictionary<TwToolTip, int>();
+        _users.TryGetValue(tip, out int count);
+        count += change;
+        if (count > 0)
+        {
+            _users[tip] = count;
+            return;
+        }
+        _users.Remove(tip);
+        if (_shared != null && tip.Theme != null) _shared.Remove((tip.Theme, tip.DarkMode));
+        tip.Dispose();
+    }
+
+    private static TwToolTip Shared(TwTheme theme, bool dark)
+    {
+        _shared ??= new System.Collections.Generic.Dictionary<(TwTheme, bool), TwToolTip>();
+        if (_shared.TryGetValue((theme, dark), out var tip)) return tip;
+        tip = new TwToolTip { ShowAlways = true, Theme = theme, DarkMode = dark };
+        tip.Popup += (_, e) =>
+        {
+            if (e.AssociatedControl is Label shown && !IsTruncated(shown)) e.Cancel = true;
+        };
+        _shared.Add((theme, dark), tip);
+        return tip;
+    }
+
+    // Her stil uygulamasında çağrılır: metin aynıysa ipucu yeniden kurulmaz.
+    private static void SetText(TwToolTip tip, Label label)
+    {
+        var text = DisplayText(label);
+        if (tip.GetToolTip(label) != text) tip.SetToolTip(label, text);
     }
 
     private static void OnTextChanged(object? sender, EventArgs e)
     {
-        if (sender is Label label && Tips.TryGetValue(label, out var tip)) tip.SetToolTip(label, DisplayText(label));
+        if (sender is Label label && Tips.TryGetValue(label, out var tip)) SetText(tip, label);
+    }
+
+    private static void OnDisposed(object? sender, EventArgs e)
+    {
+        if (sender is Label label) Detach(label);
     }
 
     /// <summary>Whether the label's text does not fit its client area (what AutoEllipsis cuts).</summary>

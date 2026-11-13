@@ -329,7 +329,7 @@ public class TwSelectCell : DataGridViewTextBoxCell
         float s = TwCellPainting.Scale(grid);
         var box = TwInputCell.BoxBounds(cellBounds, s);
         var current = column.ItemOf(grid.Rows[rowIndex].Cells[ColumnIndex].Value);
-        var menu = new ContextMenuStrip { Renderer = new TwToolStripRenderer(TwInputCell.MenuColors(grid)), ShowImageMargin = false, ShowCheckMargin = true, Font = grid.Font };
+        var menu = new ContextMenuStrip { Renderer = new TwToolStripRenderer(TwInputCell.MenuColors(grid, column.Classes)), ShowImageMargin = false, ShowCheckMargin = true, Font = grid.Font };
         foreach (var item in column.Items)
         {
             var choice = item;
@@ -533,6 +533,22 @@ internal static class TwInputCell
         {
             g.Restore(state);
         }
+    }
+
+    /// <summary>
+    /// Colors of a select cell's menu: from the theme's <c>input</c> look with the column's classes (<c>menu:</c>, <c>item:</c>),
+    /// as <see cref="TwSelect"/> builds its menu, so the menu matches the box in both themes.
+    /// </summary>
+    public static TwMenuColors MenuColors(DataGridView grid, string classes)
+    {
+        var theme = TwTheme.Current;
+        var parsed = theme.Parse("input " + classes);
+        var state = TwGridState.State(grid);
+        var style = parsed.Resolve(state);
+        if (style.BackColor is null) return MenuColors(grid);
+        var colors = ToolStripApplier.BuildColors(style, parsed, state, theme, TwCellPainting.Scale(grid));
+        colors.BottomBorder = null; // kutunun kenarlığı menüye taşınmaz
+        return colors;
     }
 
     public static TwMenuColors MenuColors(DataGridView grid) => TwGridState.IsDark(grid)

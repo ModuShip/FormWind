@@ -47,6 +47,23 @@ public class CrossFadeTests
     });
 
     [Fact]
+    public void Pictures_are_taken_premultiplied_and_opaque() => Sta.Run(() =>
+    {
+        using var form = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(100, 100), Size = new Size(300, 200) };
+        var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(200, 40, 40) };
+        form.Controls.Add(page);
+        form.Show();
+        Application.DoEvents();
+
+        using var picture = TwCapture.Take(page);
+        Assert.NotNull(picture);
+        // Kayan resimler her karede yeniden çizilir: GDI+ ön çarpımlı resmi dönüştürmeden çizer.
+        Assert.Equal(System.Drawing.Imaging.PixelFormat.Format32bppPArgb, picture!.PixelFormat);
+        Assert.Equal(Color.FromArgb(255, 200, 40, 40).ToArgb(), picture.GetPixel(picture.Width / 2, picture.Height / 2).ToArgb());
+        form.Close();
+    });
+
+    [Fact]
     public void Without_motion_or_when_hidden_the_change_is_simply_applied() => Sta.Run(() =>
     {
         using var hidden = new Panel { Size = new Size(100, 100) };

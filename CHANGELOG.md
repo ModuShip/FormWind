@@ -5,6 +5,44 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `item:h-*` and `item:py-*` / `item:px-*` set the height and padding of drop-down menu items: `TwSelect`, the "more"
+  menus of `TwToolbar` and `TwTabStrip`, `TwFilterBar`, grid menus and the drop-down menus of styled strips. Before, a
+  `TwSelect` item stayed 22 px whatever the classes.
+- `arrow:bg-*` colors the arrow square of `TwSelect` separately from `accent-*`; `arrow:bg-transparent` leaves a plain
+  chevron while the menu keeps the accent color.
+- `TwDiagnostics.ShadowCacheBudgetBytes` and `TwDiagnostics.ClearShadowCache()` (the budget was a constant, clearing was
+  internal) and `TwDiagnostics.IsFrameMessage(in Message)` for message filters and test drivers that wait for the
+  application to go idle.
+
+### Fixed
+
+- The menu of a grid select cell (`TwSelectColumn`) ignored the column's `Classes` and opened in gray-800 in the dark
+  theme; it is now built from the theme's `input` look with the column's classes, as a `TwSelect` menu is.
+- A never-ending animation (skeleton pulse, indeterminate `TwProgress`, `animate-spin`) of a control scrolled out of its
+  parents' visible area kept the frame clock running; it now leaves the clock (checked every 200 ms while it runs) and
+  comes back when the control or one of its parents moves or is resized.
+
+### Performance
+
+- Shadows, rings and frames drawn on a parent are composed off screen and blended onto the parent once. GDI+ read the
+  window back for every semi-transparent part it drew on a parent that is not double-buffered, which made a page of
+  cards spend most of its painting time on shadows: switching a 60-control page with 15 shadowed cards takes about
+  70 ms instead of 145 ms (painting 25 ms instead of 105 ms), and resizing it about 40 ms per step instead of 130 ms.
+- The part of a shadow under its own control is not drawn (as in CSS, an outer shadow is not seen under its box).
+- Pictures taken for transitions (`TwCapture.Take`) are premultiplied (`Format32bppPArgb`): the sliding pictures of
+  `TwTransition.SlideIn` and `Resize` are drawn about three times faster on every frame.
+- Truncated labels share one themed tooltip per UI thread and light/dark mode instead of opening a tooltip window each,
+  and the tooltip text is set again only when it changes.
+
+### Behavior changes
+
+- `TwCapture.Take` returns `Format32bppPArgb` bitmaps (before: `Format32bppArgb`). Pixels read with `GetPixel` are the
+  same; code that locks the bits expecting straight alpha should convert the bitmap first.
+- The shadow of a control is no longer drawn under the control itself. It was hidden by the control's own background;
+  a control with a transparent background now shows the parent through it, as in CSS.
+
 ## [0.1.8-preview.1] - 2026-11-12
 
 ### Added

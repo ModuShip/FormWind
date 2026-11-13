@@ -126,6 +126,47 @@ public class PerfReportTests
         }
     });
 
+    // 0.1.8 raporu: tablo kaydırılan alanın altına itilince yükleme nabzı kare saatinde kalıyordu.
+    [Fact]
+    public void Frame_timer_parks_while_its_owner_is_scrolled_out_of_view() => Sta.Run(() =>
+    {
+        using var form = HostForm(out var page);
+        page.AutoScroll = true;
+        var owner = new Panel { Location = new Point(0, 2000), Size = new Size(100, 40) };   // görünür alanın altında
+        page.Controls.Add(owner);
+        form.Show();
+        try
+        {
+            int before = TwFrameClock.ActiveCount;
+            using var timer = new TwFrameTimer { Owner = owner };
+            timer.Start();
+            WaitUntil(() => timer.Parked, (int)TwFrameTimer.ViewCheckMs * 10);
+            Assert.True(timer.Parked);
+            Assert.True(timer.Enabled);
+            Assert.Equal(before, TwFrameClock.ActiveCount);
+
+            page.ScrollControlIntoView(owner);                // kullanıcı aşağı kaydırdı
+            Assert.False(timer.Parked);
+            Assert.Equal(before + 1, TwFrameClock.ActiveCount);
+
+            owner.Top += 4000;                                // yine görünmüyor: bir sonraki denetimde park eder
+            WaitUntil(() => timer.Parked, (int)TwFrameTimer.ViewCheckMs * 10);
+            Assert.True(timer.Parked);
+
+            // Park edilmişken dışarıda kalan yeni bir sahip atanırsa o izlenir ve görününce saate döner.
+            var other = new Panel { Location = new Point(0, 9000), Size = new Size(100, 40) };
+            page.Controls.Add(other);
+            timer.Owner = other;
+            Assert.True(timer.Parked);
+            page.ScrollControlIntoView(other);
+            Assert.False(timer.Parked);
+        }
+        finally
+        {
+            form.Close();
+        }
+    });
+
     [Fact]
     public void Frame_timer_stops_when_its_owner_is_disposed() => Sta.Run(() =>
     {
@@ -254,6 +295,51 @@ public class PerfReportTests
             TwShadowRenderer.Draw(g, new Rectangle(0, 0, 3000, height), 0, layer);
         Assert.True(TwShadowRenderer.Stats.Bytes <= TwShadowRenderer.CacheBudgetBytes, TwShadowRenderer.Stats.ToString());
     }
+
+    // 0.1.8 raporu: bütçe sabitti, temizleme internal'dı; testler ve bellek ölçümleri yansıma kullanıyordu.
+    [Fact]
+    public void Shadow_cache_budget_and_clear_are_available_to_applications()
+    {
+        var previous = TwDiagnostics.ShadowCacheBudgetBytes;
+        TwShadowRenderer.NoSliceForTests = true;   // her yükseklik ayrı bir resim olsun
+        try
+        {
+            Assert.Equal(TwShadowRenderer.DefaultCacheBudgetBytes, previous);
+            using var bitmap = new Bitmap(10, 10);
+            using var g = Graphics.FromImage(bitmap);
+            g.SetClip(new Rectangle(-10000, -10000, 30000, 30000));
+            var layer = new TwShadowLayer(0, 20, 0, Color.FromArgb(40, 0, 0, 0));
+            TwDiagnostics.ClearShadowCache();
+            for (int height = 200; height < 600; height += 7)
+                TwShadowRenderer.Draw(g, new Rectangle(0, 0, 40, height), 0, layer);
+            Assert.True(TwDiagnostics.ShadowCache.Count > 1, TwDiagnostics.ShadowCache.ToString());
+
+            // Bütçe düşünce fazlası hemen bırakılır.
+            var full = TwDiagnostics.ShadowCache;
+            TwDiagnostics.ShadowCacheBudgetBytes = full.Bytes / 2;
+            Assert.True(TwDiagnostics.ShadowCache.Bytes <= full.Bytes / 2, TwDiagnostics.ShadowCache.ToString());
+            Assert.True(TwDiagnostics.ShadowCache.Count < full.Count);
+
+            TwDiagnostics.ClearShadowCache();
+            Assert.Equal(0, TwDiagnostics.ShadowCache.Count);
+            Assert.Equal(0, TwDiagnostics.ShadowCache.Bytes);
+            Assert.Throws<ArgumentOutOfRangeException>(() => TwDiagnostics.ShadowCacheBudgetBytes = 0);
+        }
+        finally
+        {
+            TwShadowRenderer.NoSliceForTests = false;
+            TwDiagnostics.ShadowCacheBudgetBytes = previous;
+        }
+    }
+
+    [Fact]
+    public void Frame_messages_are_recognized_without_reflection() => Sta.Run(() =>
+    {
+        var frame = Message.Create(IntPtr.Zero, TwFrameClock.FrameMessage, IntPtr.Zero, IntPtr.Zero);
+        var paint = Message.Create(IntPtr.Zero, 0x000F, IntPtr.Zero, IntPtr.Zero);   // WM_PAINT
+        Assert.True(TwDiagnostics.IsFrameMessage(frame));
+        Assert.False(TwDiagnostics.IsFrameMessage(paint));
+    });
 
     // ---- F3 and F5: cross-fade and diagnostics ----
 

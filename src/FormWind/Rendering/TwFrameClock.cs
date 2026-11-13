@@ -35,9 +35,12 @@ internal static class TwFrameClock
     /// <summary>Runs one frame now (tests; normally the posted message does).</summary>
     internal static void Frame() => _pump?.Frame();
 
+    /// <summary>The message the clock posts to its hidden window for every frame (WM_APP + …).</summary>
+    internal const int FrameMessage = 0x8000 + 0x2F1;
+
     private sealed class Pump : NativeWindow
     {
-        private const int WmFrame = 0x8000 + 0x2F1;   // WM_APP + …
+        private const int WmFrame = FrameMessage;
         private const int PeriodMs = 8;
         // Sistem zamanlayıcısı 15,6 ms adımla çalışır: 8 ms'lik dönem her adımda, yüksek çözünürlükte de ~60 kare/sn verir.
         private const double MinFrameGapMs = 14;
@@ -150,10 +153,15 @@ internal sealed class TwFrameTimer : IDisposable
     // Kareler ~16 ms arayla gelir; aralığı birkaç ms kaçıran bir kare beklenmez.
     private const double SlackMs = 4;
 
-    private double _last;
+    // Kaydırılıp görünür alanın dışında kalma her karede değil bu aralıkla denetlenir (ata zinciri boyunca ekran dönüşümü).
+    internal const double ViewCheckMs = 200;
+
+    private double _last, _lastViewCheck;
     private bool _disposed;
     private Control? _owner;
     private bool _watchingOwner;
+    // Park edilmişken konumu ya da boyu değişince yeniden denetlenen kontroller: sahibi ve ataları (kaydırma onları taşır).
+    private readonly List<Control> _watchedChain = new List<Control>();
 
     /// <summary>Wanted time between ticks (ms); 16 or less = every frame.</summary>
     public int Interval { get; set; } = 16;
@@ -166,8 +174,9 @@ internal sealed class TwFrameTimer : IDisposable
 
     /// <summary>
     /// The control a never-ending animation (pulse, spin, shimmer) draws on. While it is not shown (hidden itself or on a
-    /// hidden page, no window handle, disposed) the timer leaves the clock and the application can go idle; it comes back
-    /// when the control is shown again. <c>null</c> = always run (finite animations, which must reach their end).
+    /// hidden page, no window handle, disposed, or scrolled out of its parents' visible area) the timer leaves the clock and
+    /// the application can go idle; it comes back when the control is shown again. <c>null</c> = always run (finite
+    /// animations, which must reach their end).
     /// </summary>
     public Control? Owner
     {
@@ -178,8 +187,12 @@ internal sealed class TwFrameTimer : IDisposable
             UnwatchOwner();
             _owner = value;
             if (Enabled && !Parked && !IsShowing(value)) Park();
-            else if (Parked && IsShowing(value)) Resume();
-            else if (Parked) WatchOwner();
+            else if (Parked)
+            {
+                // Yeni sahip görünmüyor ya da kaydırılıp dışarıda kaldıysa park sürer ve onu izler.
+                Resume();
+                if (Parked) WatchOwner();
+            }
         }
     }
 
@@ -210,7 +223,7 @@ internal sealed class TwFrameTimer : IDisposable
 
     internal void OnFrame(double now)
     {
-        if (!IsShowing(_owner))
+        if (!IsShowing(_owner) || IsScrolledAway(now))
         {
             Park();
             return;
@@ -230,6 +243,17 @@ internal sealed class TwFrameTimer : IDisposable
     private static bool IsShowing(Control? owner) =>
         owner is null || owner is { IsDisposed: false, IsHandleCreated: true, Visible: true };
 
+    private bool IsScrolledAway(double now)
+    {
+        if (_owner is null || now - _lastViewCheck < ViewCheckMs) return false;
+        _lastViewCheck = now;
+        return !IsInView(_owner);
+    }
+
+    // Ebeveynlerinin görünür alanıyla kesişiyor mu (formun kendisi ekran dışında olsa da sayılır).
+    internal static bool IsInView(Control owner) =>
+        owner.Parent is null || !TwTransition.VisibleScreenBounds(owner, owner.RectangleToScreen(owner.ClientRectangle)).IsEmpty;
+
     private void Park()
     {
         if (Parked) return;
@@ -240,10 +264,10 @@ internal sealed class TwFrameTimer : IDisposable
 
     private void Resume()
     {
-        if (!Parked || !Enabled || !IsShowing(_owner)) return;
+        if (!Parked || !Enabled || !IsShowing(_owner) || _owner != null && !IsInView(_owner)) return;
         Parked = false;
         UnwatchOwner();
-        _last = TwFrameClock.NowMs;
+        _last = _lastViewCheck = TwFrameClock.NowMs;
         TwFrameClock.Add(this);
     }
 
@@ -254,6 +278,7 @@ internal sealed class TwFrameTimer : IDisposable
         _owner.VisibleChanged += OnOwnerChanged;
         _owner.HandleCreated += OnOwnerChanged;
         _owner.Disposed += OnOwnerDisposed;
+        WatchChain();
     }
 
     private void UnwatchOwner()
@@ -263,6 +288,37 @@ internal sealed class TwFrameTimer : IDisposable
         _owner.VisibleChanged -= OnOwnerChanged;
         _owner.HandleCreated -= OnOwnerChanged;
         _owner.Disposed -= OnOwnerDisposed;
+        UnwatchChain();
+    }
+
+    private void WatchChain()
+    {
+        for (var control = _owner; control != null; control = control.Parent)
+        {
+            control.LocationChanged += OnOwnerChanged;
+            control.SizeChanged += OnOwnerChanged;
+            // Zincirin herhangi bir halkası başka bir ebeveyne taşınırsa zincir yeniden kurulur.
+            control.ParentChanged += OnOwnerParentChanged;
+            _watchedChain.Add(control);
+        }
+    }
+
+    private void UnwatchChain()
+    {
+        foreach (var control in _watchedChain)
+        {
+            control.LocationChanged -= OnOwnerChanged;
+            control.SizeChanged -= OnOwnerChanged;
+            control.ParentChanged -= OnOwnerParentChanged;
+        }
+        _watchedChain.Clear();
+    }
+
+    private void OnOwnerParentChanged(object? sender, EventArgs e)
+    {
+        UnwatchChain();
+        WatchChain();
+        Resume();
     }
 
     private void OnOwnerChanged(object? sender, EventArgs e) => Resume();

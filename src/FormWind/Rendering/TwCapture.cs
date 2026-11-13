@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -251,7 +252,7 @@ public static class TwCapture
         if (physical is null || physical.Size == bounds.Size) return physical;
         using (physical)
         {
-            var scaled = new Bitmap(bounds.Width, bounds.Height);
+            var scaled = new Bitmap(bounds.Width, bounds.Height, PictureFormat);
             using var graphics = Graphics.FromImage(scaled);
             graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
             graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
@@ -268,12 +269,15 @@ public static class TwCapture
         catch (EntryPointNotFoundException) { return false; }
     }
 
+    // GDI+ draws premultiplied pixels: a picture in any other format is converted on every draw (each frame of a fade).
+    internal const PixelFormat PictureFormat = PixelFormat.Format32bppPArgb;
+
     private static Bitmap? FromScreen(Rectangle bounds)
     {
         Bitmap? picture = null;
         try
         {
-            picture = new Bitmap(bounds.Width, bounds.Height);
+            picture = new Bitmap(bounds.Width, bounds.Height, PictureFormat);
             using var graphics = Graphics.FromImage(picture);
             graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
             return picture;
@@ -304,7 +308,7 @@ public static class TwCapture
             }
             var crop = new Rectangle(bounds.X - window.X, bounds.Y - window.Y, bounds.Width, bounds.Height);
             // Yeni gösterilen pencerede pencere yöneticisi henüz içerik vermeyebilir: tamamen siyah resim başarısız sayılır.
-            return IsBlank(whole, crop) ? null : whole.Clone(crop, whole.PixelFormat);
+            return IsBlank(whole, crop) ? null : whole.Clone(crop, PictureFormat);
         }
         catch (Exception ex) when (ex is ArgumentException or ExternalException or EntryPointNotFoundException or OutOfMemoryException)
         {
@@ -333,7 +337,7 @@ public static class TwCapture
             control.DrawToBitmap(whole, new Rectangle(Point.Empty, control.Size));
             var part = Rectangle.Intersect(new Rectangle(bounds.X - origin.X, bounds.Y - origin.Y, bounds.Width, bounds.Height),
                 new Rectangle(Point.Empty, control.Size));
-            return part.Width > 0 && part.Height > 0 ? whole.Clone(part, whole.PixelFormat) : null;
+            return part.Width > 0 && part.Height > 0 ? whole.Clone(part, PictureFormat) : null;
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or ExternalException)
         {

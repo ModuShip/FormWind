@@ -21,6 +21,10 @@ internal sealed class TwMenuColors
     public Color InputBack { get; set; } = Color.White;
     public Color? BottomBorder { get; set; }
     public float ItemRadius { get; set; } = 4;
+    /// <summary>Height of the items of drop-down menus (device pixels, <c>item:h-*</c>); <c>null</c> = the menu's own.</summary>
+    public int? ItemHeight { get; set; }
+    /// <summary>Padding of the items of drop-down menus (device pixels, <c>item:p*-*</c>); unset sides keep the menu's own.</summary>
+    public TwSides? ItemPadding { get; set; }
 }
 
 /// <summary>ToolStrip renderer that paints with theme colors: flat surfaces, rounded hover, thin borders.</summary>
@@ -34,7 +38,9 @@ internal class TwToolStripRenderer : ToolStripRenderer
     protected override void Initialize(ToolStrip toolStrip)
     {
         base.Initialize(toolStrip);
-        if (toolStrip is ToolStripDropDown dropDown) TwPopupMotion.Attach(dropDown);
+        if (toolStrip is not ToolStripDropDown dropDown) return;
+        TwPopupMotion.Attach(dropDown);
+        TwMenuItemSizing.Attach(dropDown);
     }
 
     protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
@@ -254,13 +260,25 @@ internal class ToolStripApplier : WinFormsApplier
         && a.Accent.ToArgb() == b.Accent.ToArgb()
         && a.InputBack.ToArgb() == b.InputBack.ToArgb()
         && a.BottomBorder?.ToArgb() == b.BottomBorder?.ToArgb()
-        && a.ItemRadius == b.ItemRadius;
+        && a.ItemRadius == b.ItemRadius
+        && a.ItemHeight == b.ItemHeight
+        && SameSides(a.ItemPadding, b.ItemPadding);
+
+    private static bool SameSides(TwSides? a, TwSides? b) =>
+        a is null || b is null ? a is null && b is null
+        : a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
 
     /// <summary>Builds the strip/menu colors from the base classes and the <c>menu:</c> and <c>item:</c> parts.</summary>
-    public static TwMenuColors BuildColors(TwStyle style, TwApplyContext context)
+    public static TwMenuColors BuildColors(TwStyle style, TwApplyContext context) =>
+        BuildColors(style, context.Parsed, context.State, context.Theme, context.Scale);
+
+    /// <summary>
+    /// Builds the menu colors and item size from <paramref name="parsed"/> (resolved to <paramref name="style"/>) outside of
+    /// an applier, e.g. for the menu of a grid cell.
+    /// </summary>
+    public static TwMenuColors BuildColors(TwStyle style, TwParsed parsed, TwState state, TwTheme theme, float scale)
     {
-        var state = context.State & ~(TwState.Hover | TwState.Active);
-        var parsed = context.Parsed;
+        state &= ~(TwState.Hover | TwState.Active);
         var menu = parsed.ResolvePart("menu", state);
         var item = parsed.ResolvePart("item", state);
         var itemHover = parsed.ResolvePart("item", state | TwState.Hover);
@@ -286,10 +304,89 @@ internal class ToolStripApplier : WinFormsApplier
         if (darkStrip && menu.BorderColor is Color darkMenuBorder) colors.MenuBorder = darkMenuBorder;
         if (style.DivideColor is Color divide) colors.Separator = divide;
         if (style.AccentColor is Color accent) colors.Accent = accent;
-        if (item.Radius is int radius) colors.ItemRadius = radius * context.Scale;
+        if (item.Radius is int radius) colors.ItemRadius = radius * scale;
+        if (item.Height is { IsPixels: true } itemHeight) colors.ItemHeight = Scaled(itemHeight.Value, scale);
+        if (!item.Padding.IsEmpty)
+        {
+            colors.ItemPadding = new TwSides
+            {
+                Left = item.Padding.Left is int left ? Scaled(left, scale) : null,
+                Top = item.Padding.Top is int top ? Scaled(top, scale) : null,
+                Right = item.Padding.Right is int right ? Scaled(right, scale) : null,
+                Bottom = item.Padding.Bottom is int bottom ? Scaled(bottom, scale) : null,
+            };
+        }
         if ((style.BorderSides.Bottom ?? style.BorderWidth ?? 0) > 0)
-            colors.BottomBorder = style.BorderColor ?? context.Theme.DefaultBorderColor;
+            colors.BottomBorder = style.BorderColor ?? theme.DefaultBorderColor;
         return colors;
+    }
+
+    private static int Scaled(float pixels, float scale) => (int)Math.Round(pixels * scale);
+}
+
+/// <summary>
+/// Size of the items of FormWind's drop-down menus from <c>item:h-*</c> and <c>item:p*-*</c> (<see cref="TwMenuColors.ItemHeight"/>,
+/// <see cref="TwMenuColors.ItemPadding"/>). Applied to the items there and to those added later; items get back their own
+/// size when the classes no longer give one.
+/// </summary>
+internal static class TwMenuItemSizing
+{
+    private sealed class Original
+    {
+        public Original(ToolStripItem item) => Padding = item.Padding;
+
+        public Padding Padding { get; }
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ToolStripDropDown, object> Watched =
+        new System.Runtime.CompilerServices.ConditionalWeakTable<ToolStripDropDown, object>();
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ToolStripItem, Original> Originals =
+        new System.Runtime.CompilerServices.ConditionalWeakTable<ToolStripItem, Original>();
+
+    public static void Attach(ToolStripDropDown dropDown)
+    {
+        if (!Watched.TryGetValue(dropDown, out _))
+        {
+            Watched.Add(dropDown, new object());
+            dropDown.ItemAdded += (_, e) =>
+            {
+                if (e.Item != null) Apply(dropDown, e.Item);
+            };
+            // Yükseklik yazının boyuna göre dolguyla tamamlanır: yazı tipi değişince yeniden hesaplanır.
+            dropDown.FontChanged += (_, _) => ApplyAll(dropDown);
+            // Class'lar kalkınca renderer özgününe döner: öğeler kendi dolgusunu geri alır.
+            dropDown.RendererChanged += (_, _) => ApplyAll(dropDown);
+        }
+        ApplyAll(dropDown);
+    }
+
+    private static void ApplyAll(ToolStripDropDown dropDown)
+    {
+        foreach (ToolStripItem item in dropDown.Items) Apply(dropDown, item);
+    }
+
+    private static void Apply(ToolStripDropDown dropDown, ToolStripItem item)
+    {
+        if (item is not ToolStripMenuItem) return;
+        var colors = dropDown.Renderer is TwToolStripRenderer renderer ? renderer.Colors : null;
+        bool sized = colors is { ItemHeight: not null } || colors is { ItemPadding: not null };
+        if (!sized || colors is null)
+        {
+            if (Originals.TryGetValue(item, out var own)) item.Padding = own.Padding;
+            return;
+        }
+        var original = Originals.GetValue(item, i => new Original(i));
+
+        var padding = original.Padding;
+        if (colors.ItemPadding is TwSides sides)
+            padding = new Padding(sides.Left ?? padding.Left, sides.Top ?? padding.Top, sides.Right ?? padding.Right, sides.Bottom ?? padding.Bottom);
+        item.Padding = padding;
+        // Yükseklik dikey dolguyla verilir: AutoSize kapalı bir öğe açılır menüde en uzun metne göre genişlemez.
+        if (colors.ItemHeight is not int height || !item.AutoSize) return;
+        int extra = height - item.GetPreferredSize(Size.Empty).Height;
+        if (extra == 0) return;
+        item.Padding = new Padding(padding.Left, Math.Max(0, padding.Top + extra / 2), padding.Right, Math.Max(0, padding.Bottom + extra - extra / 2));
     }
 }
 

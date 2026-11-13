@@ -296,6 +296,40 @@ public class TabScrollTests
         form.Close();
     });
 
+    // 0.1.8 raporu: her kesilen etiket kendi ToolTip penceresini açıyordu.
+    [Fact]
+    public void Truncated_labels_share_one_tooltip_per_theme_mode() => Sta.Run(() =>
+    {
+        using var form = NewForm(400);
+        using var tw = new TailwindProvider();
+        var first = new Label { Text = "Çok uzun bir başlık metni burada kesilir", AutoSize = false, Size = new Size(80, 20) };
+        var second = new Label { Text = "Bir başka uzun başlık metni de kesilir", AutoSize = false, Size = new Size(80, 20), Top = 30 };
+        form.Controls.Add(first);
+        form.Controls.Add(second);
+        tw.SetClasses(first, "truncate");
+        tw.SetClasses(second, "truncate");
+        form.Show();
+        Application.DoEvents();
+
+        var light = TwTruncationTip.Get(first);
+        Assert.NotNull(light);
+        Assert.Same(light, TwTruncationTip.Get(second));
+        Assert.Equal(second.Text, light!.GetToolTip(second));
+
+        tw.DarkMode = true;
+        Application.DoEvents();
+        var dark = TwTruncationTip.Get(first);
+        Assert.NotSame(light, dark);
+        Assert.True(dark!.DarkMode);
+        Assert.Same(dark, TwTruncationTip.Get(second));
+        Assert.Equal("", light.GetToolTip(first));            // eski ipucundan ayrıldı
+        Assert.Equal(first.Text, dark.GetToolTip(first));
+
+        second.Dispose();
+        Assert.Null(TwTruncationTip.Get(second));
+        form.Close();
+    });
+
     [Fact]
     public void Setting_row_caption_shows_its_full_text_in_a_tooltip() => Sta.Run(() =>
     {

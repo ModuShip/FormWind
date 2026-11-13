@@ -147,7 +147,11 @@ public class WinFormsApplier : IStyleApplier
                               ?? style.BackColor ?? colors.MenuBack;
             colors.BottomBorder = null; // kutunun kenarlığı menüye taşınmaz
             select.MenuColors = colors;
-            select.ArrowBackColor = style.AccentColor ?? Color.Empty;
+            // Ok karesi arrow:bg-* ile accent-*'tan ayrılır; arrow:bg-transparent kareyi kaldırır (accent yalnızca menüde kalır).
+            var arrow = context.Parsed.ResolvePart("arrow", context.State & ~(TwState.Hover | TwState.Active));
+            select.ArrowBackColor = arrow.BackColor is Color arrowBack
+                ? arrowBack.A == 0 ? Color.Empty : arrowBack
+                : style.AccentColor ?? Color.Empty;
         }
         TwLayout.Apply(control, style, context.Scale);
     }

@@ -39,6 +39,28 @@ public static class TwDiagnostics
     public static TwShadowCacheStats ShadowCache => TwShadowRenderer.Stats;
 
     /// <summary>
+    /// Memory (bytes) the cache of blurred shadow pictures may take; the least recently used pictures are disposed beyond it.
+    /// 8 MB by default, which holds the shadows of a typical application many times over (one small picture per radius,
+    /// blur and color, not per control size). Lowering it disposes pictures at once.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The value is zero or negative.</exception>
+    public static long ShadowCacheBudgetBytes
+    {
+        get => TwShadowRenderer.CacheBudgetBytes;
+        set => TwShadowRenderer.CacheBudgetBytes = value;
+    }
+
+    /// <summary>Disposes all cached shadow pictures (for memory measurements and tests); they are made again when next drawn.</summary>
+    public static void ClearShadowCache() => TwShadowRenderer.Clear();
+
+    /// <summary>
+    /// Whether <paramref name="message"/> is a frame of FormWind's animation clock, posted to a hidden window of the UI
+    /// thread about 60 times a second while something animates. For message filters and test drivers that wait for the
+    /// application to go idle and have to tell these messages from the application's own.
+    /// </summary>
+    public static bool IsFrameMessage(in Message message) => message.Msg == TwFrameClock.FrameMessage;
+
+    /// <summary>
     /// Raised on the UI thread when a transition (<see cref="TwTransition.CrossFade(Control, Action)"/>) has applied its change and its
     /// fade starts, with the time each step took. The fade itself runs afterwards for the transition's duration.
     /// </summary>
