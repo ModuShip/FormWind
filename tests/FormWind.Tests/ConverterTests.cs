@@ -479,7 +479,10 @@ public class ConverterTests
     [Fact]
     public void Tool_reports_unconverted_controls_and_a_second_run_changes_nothing()
     {
-        var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        // Araç kardeş projeler için hedefin üst klasörünü tarar: hedef doğrudan %TEMP% altında olsaydı tüm %TEMP% taranırdı
+        // (CI'da ve geliştirici makinesinde dakikalarca süren, testi kilitlenmiş gösteren bir tarama).
+        var workspace = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        var folder = System.IO.Path.Combine(workspace, "App");
         System.IO.Directory.CreateDirectory(folder);
         var output = System.Console.Out;
         try
@@ -506,14 +509,17 @@ public class ConverterTests
         finally
         {
             System.Console.SetOut(output);
-            try { System.IO.Directory.Delete(folder, true); } catch (System.IO.IOException) { }
+            try { System.IO.Directory.Delete(workspace, true); } catch (System.IO.IOException) { }
         }
     }
 
     [Fact]
     public void Report_marks_controls_that_only_have_notes()
     {
-        var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        // Araç kardeş projeler için hedefin üst klasörünü tarar: hedef doğrudan %TEMP% altında olsaydı tüm %TEMP% taranırdı
+        // (CI'da ve geliştirici makinesinde dakikalarca süren, testi kilitlenmiş gösteren bir tarama).
+        var workspace = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "formwind-convert-" + System.Guid.NewGuid().ToString("N"));
+        var folder = System.IO.Path.Combine(workspace, "App");
         System.IO.Directory.CreateDirectory(folder);
         var output = System.Console.Out;
         try
@@ -547,7 +553,7 @@ public class ConverterTests
         finally
         {
             System.Console.SetOut(output);
-            try { System.IO.Directory.Delete(folder, true); } catch (System.IO.IOException) { }
+            try { System.IO.Directory.Delete(workspace, true); } catch (System.IO.IOException) { }
         }
     }
 }
