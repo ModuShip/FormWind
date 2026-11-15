@@ -5,6 +5,8 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.9-preview.1] - 2026-11-15
+
 ### Added
 
 - `item:h-*` and `item:py-*` / `item:px-*` set the height and padding of drop-down menu items: `TwSelect`, the "more"
@@ -686,7 +688,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.8-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.9-preview.1...HEAD
+[0.1.9-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.8-preview.1...v0.1.9-preview.1
 [0.1.8-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.7-preview.1...v0.1.8-preview.1
 [0.1.7-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.2...v0.1.7-preview.1
 [0.1.6-preview.2]: https://github.com/ModuShip/FormWind/compare/v0.1.6-preview.1...v0.1.6-preview.2

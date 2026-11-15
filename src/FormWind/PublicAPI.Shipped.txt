@@ -3020,3 +3020,7 @@ static FormWind.TwDiagnostics.ShadowCache.get -> FormWind.TwShadowCacheStats
 static FormWind.TwDiagnostics.TransitionCompleted -> System.EventHandler<FormWind.TwTransitionEventArgs!>?
 static FormWind.TwMotion.ReduceInRemoteSession.get -> bool
 static FormWind.TwMotion.ReduceInRemoteSession.set -> void
+static FormWind.TwDiagnostics.ClearShadowCache() -> void
+static FormWind.TwDiagnostics.IsFrameMessage(in System.Windows.Forms.Message message) -> bool
+static FormWind.TwDiagnostics.ShadowCacheBudgetBytes.get -> long
+static FormWind.TwDiagnostics.ShadowCacheBudgetBytes.set -> void
