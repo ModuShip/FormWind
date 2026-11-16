@@ -53,13 +53,25 @@ public class CrossFadeTests
         var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(200, 40, 40) };
         form.Controls.Add(page);
         form.Show();
-        Application.DoEvents();
+        form.Refresh();
 
-        using var picture = TwCapture.Take(page);
-        Assert.NotNull(picture);
-        // Kayan resimler her karede yeniden çizilir: GDI+ ön çarpımlı resmi dönüştürmeden çizer.
-        Assert.Equal(System.Drawing.Imaging.PixelFormat.Format32bppPArgb, picture!.PixelFormat);
-        Assert.Equal(Color.FromArgb(255, 200, 40, 40).ToArgb(), picture.GetPixel(picture.Width / 2, picture.Height / 2).ToArgb());
+        // Yeni gösterilen pencerenin içeriği pencere yöneticisine bir süre sonra ulaşır (yük altında, CI'da kod
+        // kapsamıyla resim siyah geliyordu): içerik görünene kadar yeniden alınır.
+        int expected = Color.FromArgb(255, 200, 40, 40).ToArgb();
+        Bitmap? picture = null;
+        WaitUntil(() =>
+        {
+            picture?.Dispose();
+            picture = TwCapture.Take(page);
+            return picture != null && picture.GetPixel(picture.Width / 2, picture.Height / 2).ToArgb() == expected;
+        });
+        using (picture)
+        {
+            Assert.NotNull(picture);
+            // Kayan resimler her karede yeniden çizilir: GDI+ ön çarpımlı resmi dönüştürmeden çizer.
+            Assert.Equal(System.Drawing.Imaging.PixelFormat.Format32bppPArgb, picture!.PixelFormat);
+            Assert.Equal(expected, picture.GetPixel(picture.Width / 2, picture.Height / 2).ToArgb());
+        }
         form.Close();
     });
 

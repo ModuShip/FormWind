@@ -118,16 +118,33 @@ public class PackageTargetsTests
         foreach (var arg in args) start.ArgumentList.Add(arg);
         start.ArgumentList.Add("-nologo");
         if (!expectWarnings) start.ArgumentList.Add("-p:TreatWarningsAsErrors=true");
+        // Yeniden kullanılmak üzere açık kalan MSBuild düğümleri ve derleme sunucusu (VBCSCompiler) çıktı borusunu devralır:
+        // dotnet bittiği halde boru kapanmaz, çıktıyı sonuna kadar okumak dakikalarca bekler (CI'da 10 dakikalık askı).
+        start.ArgumentList.Add("-nodeReuse:false");
+        start.ArgumentList.Add("-p:UseSharedCompilation=false");
         start.Environment["MSBUILDNOINPROCNODE"] = "1";
+        start.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+        start.Environment["DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER"] = "1";
         using var process = Process.Start(start)!;
         var error = process.StandardError.ReadToEndAsync();
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        Assert.True(process.ExitCode == 0, output + error.Result);
+        var output = process.StandardOutput.ReadToEndAsync();
+        if (!process.WaitForExit(BuildTimeoutMs))
+        {
+            process.Kill(entireProcessTree: true);
+            Assert.Fail($"dotnet {string.Join(" ", args)} did not finish in {BuildTimeoutMs / 1000} s.");
+        }
+        Assert.True(System.Threading.Tasks.Task.WaitAll(new System.Threading.Tasks.Task[] { output, error }, OutputTimeoutMs),
+            $"dotnet {string.Join(" ", args)} exited but a child process kept its output open.");
+        var text = output.Result + error.Result;
+        Assert.True(process.ExitCode == 0, text);
         // MSBuild uyarı satırları ": warning XX123:" biçimindedir; İngilizce özetteki "0 Warning(s)" uyarı değildir.
-        if (!expectWarnings) Assert.DoesNotContain(": warning ", output + error.Result, StringComparison.OrdinalIgnoreCase);
-        return output + error.Result;
+        if (!expectWarnings) Assert.DoesNotContain(": warning ", text, StringComparison.OrdinalIgnoreCase);
+        return text;
     }
+
+    // Bir derleme yerelde birkaç saniye sürer; sınırlar yalnızca askıyı açık bir hataya çevirir.
+    private const int BuildTimeoutMs = 5 * 60 * 1000;
+    private const int OutputTimeoutMs = 30 * 1000;
 
     private static string FindTargets()
     {
