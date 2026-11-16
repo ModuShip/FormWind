@@ -122,6 +122,10 @@ public static class TwAnimator
     internal static bool IsAnimating(Control control, TwColorChannel channel) =>
         _active != null && _active.ContainsKey((control, channel));
 
+    /// <summary>When the color animation of <paramref name="channel"/> started (tests step the clock from it).</summary>
+    internal static DateTime? StartOf(Control control, TwColorChannel channel) =>
+        _active != null && _active.TryGetValue((control, channel), out var animation) ? animation.Start : null;
+
     /// <summary>Animates the control's BackColor or ForeColor with an ease-out curve.</summary>
     internal static void Animate(Control control, TwColorChannel channel, Color target, int durationMs, Action? completed = null) =>
         Animate(control, channel, target, new TwTiming(durationMs), completed);

@@ -107,10 +107,12 @@ public class AnimationClassTests
         try
         {
             provider.SetClasses(button, "bg-white hover:bg-black transition duration-100 delay-100 ease-linear");
-            var start = DateTime.UtcNow;
             Enter(button);
 
             Assert.True(TwAnimator.IsAnimating(button, TwColorChannel.Back));
+            // Saat animasyonun kendi başlangıcından ilerletilir: Enter'dan önce alınan zaman CI'da (kod kapsamıyla) ~15 ms
+            // erken kalıyor, yarı yol ölçümü aralığın dışına düşüyordu.
+            var start = TwAnimator.StartOf(button, TwColorChannel.Back)!.Value;
             TwAnimator.Step(start.AddMilliseconds(60));
             Assert.Equal(Color.White.ToArgb(), button.BackColor.ToArgb());     // gecikme sürüyor
             TwAnimator.Step(start.AddMilliseconds(150));
