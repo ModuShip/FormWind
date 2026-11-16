@@ -33,14 +33,33 @@ jobs:
       - name: Test (net472)
         run: dotnet test tests/FormWind.Tests -c Release --no-build -f net472 --logger "trx" --settings tests/coverage.runsettings --collect "Code Coverage" --results-directory TestResults/net472
 
+      # --blame-hang: 10 dakikada bitmeyen bir test çalıştırmayı durdurur; adı ve süreç dökümü TestResults altına
+      # (test-results yapıtına) yazılır. Adımlar yerelde 2 dakikanın altında sürer.
       - name: Test (net8.0-windows)
-        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net8.0-windows --logger "trx" --settings tests/coverage.runsettings --collect "Code Coverage" --results-directory TestResults/net8.0-windows
+        timeout-minutes: 30
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net8.0-windows --logger "trx" --settings tests/coverage.runsettings --collect "Code Coverage" --results-directory TestResults/net8.0-windows --blame-hang --blame-hang-timeout 10m
 
       - name: Test (net9.0-windows)
-        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net9.0-windows --logger "trx" --results-directory TestResults/net9.0-windows
+        timeout-minutes: 30
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net9.0-windows --logger "trx" --results-directory TestResults/net9.0-windows --blame-hang --blame-hang-timeout 10m
 
       - name: Test (net10.0-windows)
-        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net10.0-windows --logger "trx" --results-directory TestResults/net10.0-windows
+        timeout-minutes: 30
+        run: dotnet test tests/FormWind.Tests -c Release --no-build -f net10.0-windows --logger "trx" --results-directory TestResults/net10.0-windows --blame-hang --blame-hang-timeout 10m
+
+      # Süreler: her hedefin en yavaş 15 testi (yavaşlayan bir test log'da görünsün).
+      - name: Slowest tests
+        if: always()
+        shell: pwsh
+        run: |
+          Get-ChildItem TestResults -Recurse -Filter *.trx | ForEach-Object {
+            [xml]$trx = Get-Content $_.FullName
+            Write-Output "== $($_.Directory.Name)"
+            $trx.TestRun.Results.UnitTestResult |
+              Sort-Object { [TimeSpan]::Parse($_.duration) } -Descending |
+              Select-Object -First 15 |
+              ForEach-Object { Write-Output ("{0}  {1}  {2}" -f $_.duration, $_.outcome, $_.testName) }
+          }
 
       # Application.SetColorMode süreç geneline etki eder ve ilk pencereden önce çağrılmalı; ayrı süreçte çalışır.
       - name: Test (Application.SetColorMode)
