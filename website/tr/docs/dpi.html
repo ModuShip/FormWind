@@ -50,9 +50,10 @@ Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);</code></pre>
 
 <h2 id="own-factor">Kendi DPI çarpanınızı kaldırın</h2>
 <p>Class değerleri 96 DPI pikselidir ve FormWind onları ölçekler. Bunları kendi çarpanıyla çarpan bir uygulama (<code>$"text-[{Fs(13)}px]"</code>) iki kez ölçekler: %100'de görünmez, %125'te yaklaşık 1,56 kat büyük çıkar. Ölçeklenmemiş değeri verin (<code>text-[13px]</code>); <code>TwSettingRow.EditorWidth</code>, <code>TwDataList.ItemHeight</code> ve FormWind'in 96 DPI pikseli olarak belgelediği diğer değerler için de aynısı.</p>
+<p>Kodunuzun kontrollere verdiği boyutlar için <code>TwDpi.Scale(control, 8)</code> 96 DPI pikselini kontrolün ekranına çevirir (%150'de 12).</p>
 
 <h2 id="simulate">Başka ölçekleri test etme</h2>
-<p><code>TwDpi.Simulate(dpi)</code> FormWind'in o DPI'lı bir ekrandaki gibi çizmesini sağlar; %100'lük makinede %125 ve %150 denetlenebilir. Kapsamın içinde stillenen kontroller simüle edilen class boyutlarını ve <code>text-*</code> fontlarını alır; WinForms'un kendi ölçeklemesi değişmez. <code>TwOffscreen.Render</code> ile birlikte:</p>
+<p><code>TwDpi.Simulate(dpi)</code> FormWind'in o DPI'lı bir ekrandaki gibi çizmesini sağlar; %100'lük makinede %125 ve %150 denetlenebilir. Kapsamın içinde stillenen kontroller simüle edilen class boyutlarını ve <code>text-*</code> fontlarını alır; WinForms'un kendi ölçeklemesi değişmez. WinForms'un kendisinin ölçeklediği boyutlar, örneğin bir kontrolün varsayılan <code>Size</code>'ı, olduğu gibi kalır: bunları gerçek bir ekranda kontrol edin. <code>TwOffscreen.Render</code> ile birlikte:</p>
 <pre><code>using (TwDpi.Simulate(120))            // %125
 using (var form = new AnaForm())
 using (var resim = TwOffscreen.Render(form))

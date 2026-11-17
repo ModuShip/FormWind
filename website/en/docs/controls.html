@@ -84,6 +84,8 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
   <li>On a dark strip, the hover, separator and menu-border defaults are derived from the strip's own colors, so text never disappears in the hover box.</li>
   <li>Drop-downs assigned by hand (<code>menuItem.DropDown = contextMenuStrip1</code>) get the strip's renderer too, nested ones included.</li>
   <li>Removing the classes restores the strip's original renderer.</li>
+  <li>Single items take classes over their menu's colors with <code>tw.SetClasses(item, …)</code>: <code>text-red-600 dark:text-red-400</code> for a destructive item, a component such as <code>menu-header</code> (<code>text-xs font-semibold text-gray-500</code>) for a header label. The color is resolved when the item is drawn, in its menu's dark and hover state, so theme changes need no code.</li>
+  <li><code>item:h-*</code> and <code>item:p*-*</code> size the items of drop-down and context menus, items added later included; header labels and separators keep their size. <code>TwMenuStyle.Of(menu)</code> returns the colors and item height a menu is drawn with, for tests.</li>
 </ul>
 
 <h2>Title bar and backdrop</h2>

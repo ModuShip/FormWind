@@ -78,6 +78,8 @@ public class WinFormsApplier : IStyleApplier
         }
         if (control is TwTextBox textBox)
             textBox.PlaceholderColor = context.Parsed.ResolvePart("placeholder", context.State & ~(TwState.Hover | TwState.Active)).ForeColor;
+        else if (control is TextBox nativeBox)
+            TwPlaceholder.SetColor(nativeBox, context.Parsed.ResolvePart("placeholder", context.State & ~(TwState.Hover | TwState.Active)).ForeColor);
         if (control is TwPictureBox picture && style.ObjectFit is TwImageFit fit) picture.Fit = fit;
         if (control is TwTabStrip tabs) ApplyTabColors(tabs, style, context);
         if (control is TwPanel panel) panel.BackdropBlur = style.BackdropBlur ?? 0;

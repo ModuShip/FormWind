@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -108,6 +109,9 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     private int _hover = -1;
     private int _selected = -1;
     private IReadOnlyList<int> _highlightColumns = Array.Empty<int>();
+    private IReadOnlyList<int> _highlightRows = Array.Empty<int>();
+    // SetCalendar: the date of the first cell (row 0, column 0); null = ordinary rows and columns.
+    private DateTime? _calendarStart;
     private Color _highlightTextColor = Color.Empty;
     private Color _selectionColor = Color.Empty;
     private Size _cellSize = Size.Empty;
@@ -424,6 +428,20 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     }
 
     /// <summary>
+    /// Rows drawn on a faint band with their label in the text color (the line that stopped, the selected shift); empty = none.
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IReadOnlyList<int> HighlightRows
+    {
+        get => _highlightRows;
+        set
+        {
+            _highlightRows = (value ?? Array.Empty<int>()).ToArray();
+            Invalidate();
+        }
+    }
+
+    /// <summary>
     /// Text color of the labels of <see cref="HighlightColumns"/> (a Sunday header in red without the application covering it);
     /// empty (the default) = the control's text color.
     /// </summary>
@@ -503,10 +521,84 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
     /// <summary>Replaces the labels and values in one step.</summary>
     public void SetData(IEnumerable<string> rows, IEnumerable<string> columns, double[,] values)
     {
+        _calendarStart = null;
         _rows = (rows ?? Enumerable.Empty<string>()).ToList();
         _columns = (columns ?? Enumerable.Empty<string>()).ToList();
         _values = values ?? new double[0, 0];
         OnDataChanged();
+    }
+
+    /// <summary>
+    /// Shows one value per day as a calendar: a row per weekday (starting at the culture's first day of the week, labeled with
+    /// its short name) and a column per week, labeled with the month's short name where a month starts. <paramref name="values"/>[0]
+    /// is <paramref name="start"/>; days before it in its first week and after the last value are empty cells. Use
+    /// <see cref="GetDate(int, int)"/> and <see cref="GetCell(DateTime)"/> to go between cells and days (a click, today's cell).
+    /// <code>
+    /// heatmap.SetCalendar(new DateTime(2026, 1, 1), downtimePerDay);
+    /// heatmap.SelectedIndex = heatmap.GetCell(DateTime.Today);
+    /// </code>
+    /// </summary>
+    /// <param name="start">The first day (its time is ignored).</param>
+    /// <param name="values">A value per day from <paramref name="start"/>; <see cref="double.NaN"/> for a day without one.</param>
+    /// <param name="culture">Names of days and months and the first day of the week; <c>null</c> = the current culture.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="values"/> is <c>null</c>.</exception>
+    public void SetCalendar(DateTime start, IReadOnlyList<double> values, CultureInfo? culture = null)
+    {
+        if (values is null) throw new ArgumentNullException(nameof(values));
+        var format = (culture ?? CultureInfo.CurrentCulture).DateTimeFormat;
+        start = start.Date;
+        int lead = ((int)start.DayOfWeek - (int)format.FirstDayOfWeek + 7) % 7;
+        var first = start.AddDays(-lead);
+        int weeks = Math.Max(1, (lead + values.Count + 6) / 7);
+
+        var rows = new string[7];
+        for (int r = 0; r < 7; r++) rows[r] = format.GetAbbreviatedDayName((DayOfWeek)(((int)format.FirstDayOfWeek + r) % 7));
+        var columns = new string[weeks];
+        var grid = new double[7, weeks];
+        for (int c = 0; c < weeks; c++)
+        {
+            for (int r = 0; r < 7; r++)
+            {
+                int day = c * 7 + r - lead;
+                grid[r, c] = day >= 0 && day < values.Count ? values[day] : double.NaN;
+            }
+            columns[c] = c == 0 ? format.GetAbbreviatedMonthName(start.Month) : MonthStarting(first.AddDays(c * 7), format);
+        }
+        _rows = rows;
+        _columns = columns;
+        _values = grid;
+        _calendarStart = first;
+        OnDataChanged();
+    }
+
+    // The short name of the month whose first day falls in the week from weekStart; "" when none does.
+    private static string MonthStarting(DateTime weekStart, DateTimeFormatInfo format)
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            var day = weekStart.AddDays(i);
+            if (day.Day == 1) return format.GetAbbreviatedMonthName(day.Month);
+        }
+        return "";
+    }
+
+    /// <summary>The day of a cell after <see cref="SetCalendar"/>; <c>null</c> without a calendar or outside the grid.</summary>
+    public DateTime? GetDate(int row, int column) =>
+        _calendarStart is DateTime first && row >= 0 && row < 7 && column >= 0 && column < ColumnCount
+            ? first.AddDays(column * 7 + row)
+            : null;
+
+    /// <summary>
+    /// The cell of <paramref name="date"/> after <see cref="SetCalendar"/> as <c>row × ColumnCount + column</c> (the form of
+    /// <see cref="SelectedIndex"/>); -1 without a calendar or outside the grid.
+    /// </summary>
+    public int GetCell(DateTime date)
+    {
+        if (_calendarStart is not DateTime first) return -1;
+        int day = (int)Math.Floor((date.Date - first).TotalDays);
+        if (day < 0) return -1;
+        int row = day % 7, column = day / 7;
+        return column < ColumnCount ? row * ColumnCount + column : -1;
     }
 
     public int RowCount => Math.Max(_rows.Count, _values.GetLength(0));
@@ -735,11 +827,33 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
         if (_cellSize.Height > 0) layout.Grid.Height = Math.Max(1, (int)Math.Ceiling(layout.CellHeight * rows));
         // Sığmayan sütun etiketleri atlanır (gün numaraları gibi).
         int widest = _columns.SelectMany(x => x.Split('\n')).Select(x => TextRenderer.MeasureText(x, Font, Size.Empty, Flags).Width).DefaultIfEmpty(0).Max();
-        layout.ColumnLabelStep = Math.Max(1, (int)Math.Ceiling((widest + 6 * s) / Math.Max(1f, layout.CellWidth)));
+        // Takvimde ay adları seyrek (en az dört hafta arayla): atlanmaz.
+        layout.ColumnLabelStep = _calendarStart != null ? 1 : Math.Max(1, (int)Math.Ceiling((widest + 6 * s) / Math.Max(1f, layout.CellWidth)));
         return layout;
     }
 
     // ---- Çizim ----
+
+    private const TextFormatFlags ValueFlags = Flags | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter;
+
+    // Boyamada toplanan hücre değerleri; her boyamada yeniden ayrılmasın diye alan.
+    private readonly List<(double Value, Rectangle Box, Color Color)> _paintedValues = new List<(double, Rectangle, Color)>();
+
+    private Color HighlightText => _highlightTextColor.IsEmpty ? ForeColor : _highlightTextColor;
+
+    private void DrawValue(Graphics g, double value, Rectangle box, Color color)
+    {
+        var text = TwCharts.Format(value, _valueFormat);
+        var size = TextRenderer.MeasureText(text, Font, Size.Empty, Flags);
+        if (size.Width <= box.Width - 2 && size.Height <= box.Height) TextRenderer.DrawText(g, text, Font, box, TwCharts.ReadableOn(color), ValueFlags);
+    }
+
+    private void DrawValue(TwTextBatch batch, double value, Rectangle box, Color color)
+    {
+        var text = TwCharts.Format(value, _valueFormat);
+        var size = batch.MeasureText(text, Font, Size.Empty, Flags);
+        if (size.Width <= box.Width - 2 && size.Height <= box.Height) batch.DrawText(text, Font, box, TwCharts.ReadableOn(color), ValueFlags);
+    }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -761,7 +875,17 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             var cell = layout.Cell(r, 0);
             var text = RowLabel(r);
             if (text.Length > 0)
-                TextRenderer.DrawText(g, text, Font, new Rectangle(Padding.Left, (int)cell.Y, layout.RowLabelWidth, (int)Math.Ceiling(cell.Height)), muted, Flags | TextFormatFlags.VerticalCenter);
+                TextRenderer.DrawText(g, text, Font, new Rectangle(Padding.Left, (int)cell.Y, layout.RowLabelWidth, (int)Math.Ceiling(cell.Height)),
+                    _highlightRows.Contains(r) ? HighlightText : muted, Flags | TextFormatFlags.VerticalCenter);
+        }
+        // Vurgulu satırlar: sütunlarınki gibi hücrelerin arkasında soluk bir şerit.
+        foreach (int r in _highlightRows)
+        {
+            if (r < 0 || r >= rows || columns == 0) continue;
+            var band = RectangleF.Union(layout.Cell(r, 0), layout.Cell(r, columns - 1));
+            band.Inflate(gap, 0);
+            TwPainter.FillRounded(g, Rectangle.Round(band), Math.Min(6 * s, band.Height / 4),
+                TwCharts.Blend(surface, ForeColor, _colors.Dark ? 0.14f : 0.08f));
         }
         // Vurgulu sütunlar: hücrelerin arkasında soluk bir şerit, etiketi metin renginde.
         foreach (int c in _highlightColumns)
@@ -785,7 +909,7 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
             foreach (var part in parts)
             {
                 var size = TextRenderer.MeasureText(part, Font, Size.Empty, Flags);
-                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), highlighted ? (_highlightTextColor.IsEmpty ? ForeColor : _highlightTextColor) : muted, Flags);
+                TextRenderer.DrawText(g, part, Font, new Point((int)(cell.X + cell.Width / 2 - size.Width / 2f), y), highlighted ? HighlightText : muted, Flags);
                 y += line;
             }
         }
@@ -807,18 +931,25 @@ public class TwHeatmap : Control, ITwChartControl, ITwChartItems
                     TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, _selectionColor.IsEmpty ? ForeColor : _selectionColor);
                 else if (r * columns + c == _hover)
                     TwPainter.StrokeRounded(g, Rectangle.Inflate(box, (int)s, (int)s), radius + s, 2 * s, ForeColor);
-                if (_showValues && !double.IsNaN(value))
-                {
-                    var text = TwCharts.Format(value, _valueFormat);
-                    var size = TextRenderer.MeasureText(text, Font, Size.Empty, Flags);
-                    if (size.Width <= box.Width - 2 && size.Height <= box.Height)
-                        TextRenderer.DrawText(g, text, Font, box, TwCharts.ReadableOn(color), Flags | TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-                }
                 // Açılışta hücre yüzey renginde bir örtünün altından belirir.
                 float opened = Motion.IntroProgress(r + c);
+                if (_showValues && !double.IsNaN(value))
+                {
+                    // Açılan hücrenin değeri örtüsünün altında kalır; diğerleri hücrelerden sonra tek bağlamda çizilir.
+                    if (opened < 1f) DrawValue(g, value, box, color);
+                    else _paintedValues.Add((value, box, color));
+                }
                 if (opened < 1f)
                     TwPainter.FillRounded(g, Rectangle.Inflate(box, (int)Math.Ceiling(s), (int)Math.Ceiling(s)), radius + s, Color.FromArgb((int)(255 * (1 - Math.Max(0f, opened))), surface));
             }
+        }
+
+        // Hücre başına GDI bağlamı kurmak yerine değerler tek bağlamda çizilir (TwTextBatch).
+        if (_paintedValues.Count > 0)
+        {
+            using (var batch = new TwTextBatch(g))
+                foreach (var (value, box, color) in _paintedValues) DrawValue(batch, value, box, color);
+            _paintedValues.Clear();
         }
 
         if (!layout.Legend.IsEmpty) PaintLegend(g, layout.Legend, muted, s);

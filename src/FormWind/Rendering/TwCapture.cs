@@ -24,14 +24,17 @@ public static class TwCapture
     private const uint QsPaint = 0x0020;
     private const int HorzRes = 8, VertRes = 10, DesktopVertRes = 117, DesktopHorzRes = 118;
     private const int DwmwaExtendedFrameBounds = 9, DwmwaCloaked = 14;
+    private const int GwlExStyle = -20, WsExLayered = 0x00080000, SrcCopy = 0x00CC0020;
 
     /// <summary>How the last <see cref="Take(Control, Rectangle)"/> got its picture (for tests).</summary>
     internal enum Source
     {
         None,
+        Window,
         Screen,
         PrintWindow,
         DrawToBitmap,
+        Background,
     }
 
     [ThreadStatic]
@@ -74,6 +77,13 @@ public static class TwCapture
         bool painting = IsPaintPending();
         PaintNow(top);
 
+        // Süren bir solma ekranda görünür ama pencere yüzeyinde yoktur: hızlı gezinmede yarım kalan görüntü atlamasın
+        // diye o sırada ekrandan okunur.
+        if (TwFadeOut.ActiveCount == 0 && FromWindowSurface(top, screenBounds) is { } surface)
+        {
+            _lastSource = Source.Window;
+            return surface;
+        }
         if (IsShownUncovered(top, screenBounds) && (!painting || Flush()) && FromScreen(top, screenBounds) is { } shown)
         {
             _lastSource = Source.Screen;
@@ -92,6 +102,27 @@ public static class TwCapture
         return null;
     }
 
+    /// <summary>Picture of <paramref name="screenBounds"/> redrawn with <see cref="Control.DrawToBitmap"/> (<see cref="TwTransitionCapture.Drawing"/>).</summary>
+    internal static Bitmap? TakeByDrawing(Control control, Rectangle screenBounds)
+    {
+        _lastSource = Source.None;
+        if (control is null || !control.IsHandleCreated || screenBounds.Width <= 0 || screenBounds.Height <= 0) return null;
+        var picture = FromDrawing(control, screenBounds);
+        if (picture != null) _lastSource = Source.DrawToBitmap;
+        return picture;
+    }
+
+    /// <summary>A picture of the control's effective background color (<see cref="TwTransitionCapture.None"/>).</summary>
+    internal static Bitmap? Background(Control control, Rectangle screenBounds)
+    {
+        _lastSource = Source.None;
+        if (control is null || screenBounds.Width <= 0 || screenBounds.Height <= 0) return null;
+        var picture = new Bitmap(screenBounds.Width, screenBounds.Height, PictureFormat);
+        using (var g = Graphics.FromImage(picture)) g.Clear(Color.FromArgb(255, TwColorsOf.EffectiveBack(control)));
+        _lastSource = Source.Background;
+        return picture;
+    }
+
     /// <summary>
     /// Picture of the window's own content in <paramref name="screenBounds"/> under <paramref name="cover"/> (a picture
     /// FormWind laid over it for a transition); <c>null</c> when none can be taken. The cover is left out of screen capture
@@ -104,6 +135,11 @@ public static class TwCapture
         if (control is null || !control.IsHandleCreated || screenBounds.Width <= 0 || screenBounds.Height <= 0) return null;
         var top = control.TopLevelControl ?? control;
         PaintNow(top);
+        if (FromWindowSurface(top, screenBounds) is { } surface)
+        {
+            _lastSource = Source.Window;
+            return surface;
+        }
         if (cover is { IsHandleCreated: true } && IsShownUncovered(top, screenBounds) && ExcludeFromCapture(cover, true))
         {
             try
@@ -289,6 +325,80 @@ public static class TwCapture
         }
     }
 
+    /// <summary>
+    /// The part as the window last painted it, read from the window's own surface: under the desktop window manager GDI
+    /// paints into a surface of each top-level window, so the content is there as soon as it is painted, whether the window
+    /// is covered or not, without waiting for the screen to be composed or checking the windows above it. <c>null</c> where
+    /// the surface does not hold the part: outside the client area (Windows 11 draws the title bar itself), on a layered
+    /// window, over child windows drawn with DirectX (WebView2, WPF) and when the copy comes out black.
+    /// </summary>
+    private static Bitmap? FromWindowSurface(Control top, Rectangle bounds)
+    {
+        if (!top.Visible || top is Form { WindowState: FormWindowState.Minimized }) return null;
+        if (!top.RectangleToScreen(top.ClientRectangle).Contains(bounds)) return null;
+        if ((GetWindowLong(top.Handle, GwlExStyle) & WsExLayered) != 0 || HasForeignChild(top.Handle, bounds)) return null;
+        var origin = top.PointToClient(bounds.Location);
+        var source = GetDC(top.Handle);
+        if (source == IntPtr.Zero) return null;
+        Bitmap? picture = null;
+        try
+        {
+            picture = new Bitmap(bounds.Width, bounds.Height, PictureFormat);
+            bool copied;
+            using (var graphics = Graphics.FromImage(picture))
+            {
+                var hdc = graphics.GetHdc();
+                try { copied = BitBlt(hdc, 0, 0, bounds.Width, bounds.Height, source, origin.X, origin.Y, SrcCopy); }
+                finally { graphics.ReleaseHdc(hdc); }
+            }
+            if (copied && !IsBlank(picture, new Rectangle(Point.Empty, bounds.Size))) return picture;
+            picture.Dispose();
+            return null;
+        }
+        catch (Exception ex) when (ex is ArgumentException or ExternalException or OutOfMemoryException)
+        {
+            picture?.Dispose();
+            return null;
+        }
+        finally
+        {
+            ReleaseDC(top.Handle, source);
+        }
+    }
+
+    // Alandaki WinForms dışı alt pencereler (WebView2, WPF, DirectX) pencere yüzeyine çizilmez.
+    private static bool HasForeignChild(IntPtr top, Rectangle bounds)
+    {
+        bool foreign = false;
+        var name = new System.Text.StringBuilder(64);
+        EnumChildWindows(top, (child, _) =>
+        {
+            if (!IsWindowVisible(child) || !GetWindowRect(child, out var rect)) return true;
+            if (!Rectangle.FromLTRB(rect.Left, rect.Top, rect.Right, rect.Bottom).IntersectsWith(bounds)) return true;
+            name.Length = 0;
+            GetClassName(child, name, name.Capacity);
+            if (IsGdiWindowClass(name.ToString())) return true;
+            foreign = true;
+            return false;
+        }, IntPtr.Zero);
+        return foreign;
+    }
+
+    // WinForms kontrolleri ve GDI ile çizen standart Windows pencereleri (ComboBox'ın Edit'i, liste ve başlık denetimleri).
+    private static readonly string[] GdiWindowClasses =
+    {
+        "WindowsForms10.", "Edit", "ComboLBox", "ListBox", "Static", "Button", "ScrollBar", "msctls_", "SysListView32",
+        "SysHeader32", "SysTreeView32", "SysTabControl32", "SysDateTimePick32", "SysMonthCal32", "RichEdit", "RICHEDIT",
+        "ToolbarWindow32", "ReBarWindow32",
+    };
+
+    internal static bool IsGdiWindowClass(string name)
+    {
+        foreach (var prefix in GdiWindowClasses)
+            if (name.StartsWith(prefix, StringComparison.Ordinal)) return true;
+        return false;
+    }
+
     private static Bitmap? FromWindowManager(Control top, Rectangle bounds)
     {
         if (!top.Visible || !GetWindowRect(top.Handle, out var rect)) return null;
@@ -344,6 +454,20 @@ public static class TwCapture
             return null;
         }
     }
+
+    private delegate bool EnumChildProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumChildWindows(IntPtr parent, EnumChildProc callback, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder name, int capacity);
+
+    [DllImport("user32.dll")]
+    private static extern int GetWindowLong(IntPtr hWnd, int index);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool BitBlt(IntPtr target, int x, int y, int width, int height, IntPtr source, int sourceX, int sourceY, int rop);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect

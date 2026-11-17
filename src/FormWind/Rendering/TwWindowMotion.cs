@@ -203,7 +203,7 @@ public static class TwWindowMotion
             TwMotionOptions.Complete(options);
             return;
         }
-        ghost.FormClosed += (_, _) => TwMotionOptions.Complete(options);
+        ghost.Finished += (_, _) => TwMotionOptions.Complete(options);
         ghost.Fade(timing, edge is TwEdge to ? Offset(to, Scaled(window, options)) : Point.Empty);
     }
 

@@ -50,6 +50,19 @@ public static class TwDiagnostics
         set => TwShadowRenderer.CacheBudgetBytes = value;
     }
 
+    /// <summary>
+    /// Number of times shadows, rings and frames were blended onto a parent since the start: each parent paint blends
+    /// the parts it repaints in one picture, or one picture per control when they lie far apart.
+    /// </summary>
+    public static long ShadowParentBlends => TwOutset.ParentBlends;
+
+    /// <summary>
+    /// The blends of <see cref="ShadowParentBlends"/> made onto a parent that is not double-buffered. On such a parent
+    /// GDI+ reads the window back for each blend, which is what composing the shadows off screen saves: when this stays
+    /// 0 while <see cref="ShadowParentBlends"/> grows, the parents are double-buffered and their shadows were already cheap.
+    /// </summary>
+    public static long ShadowParentReadbacks => TwOutset.ParentReadbacks;
+
     /// <summary>Disposes all cached shadow pictures (for memory measurements and tests); they are made again when next drawn.</summary>
     public static void ClearShadowCache() => TwShadowRenderer.Clear();
 
@@ -59,6 +72,12 @@ public static class TwDiagnostics
     /// application to go idle and have to tell these messages from the application's own.
     /// </summary>
     public static bool IsFrameMessage(in Message message) => message.Msg == TwFrameClock.FrameMessage;
+
+    /// <summary>
+    /// Number of the frame message (<see cref="IsFrameMessage(in Message)"/>), for drivers that filter by range, such as
+    /// <c>PeekMessage(min, max)</c> loops that wait for the application to go idle.
+    /// </summary>
+    public static int FrameMessageId => TwFrameClock.FrameMessage;
 
     /// <summary>
     /// Raised on the UI thread when a transition (<see cref="TwTransition.CrossFade(Control, Action)"/>) has applied its change and its
@@ -159,7 +178,7 @@ public sealed class TwTransitionEventArgs : EventArgs
     /// <summary>The transition: <c>CrossFade</c>.</summary>
     public string Kind { get; }
 
-    /// <summary>Where the picture of the old look came from: <c>Screen</c> (fast), <c>PrintWindow</c>, <c>DrawToBitmap</c> or <c>None</c>.</summary>
+    /// <summary>Where the picture of the old look came from: <c>Window</c> (the window's own surface, fastest), <c>Screen</c>, <c>PrintWindow</c>, <c>DrawToBitmap</c>, <c>Background</c> or <c>None</c>.</summary>
     public string CaptureSource { get; }
 
     /// <summary>Time to take the picture of the old look (ms).</summary>

@@ -276,6 +276,7 @@ internal sealed partial class TwGridDecorator
             Back = ColorTranslator.FromHtml("#1f2937"), MenuBack = ColorTranslator.FromHtml("#1f2937"), Fore = ColorTranslator.FromHtml("#e5e7eb"),
             MenuBorder = ColorTranslator.FromHtml("#374151"), ItemHoverBack = ColorTranslator.FromHtml("#374151"), ItemHoverFore = Color.White,
             Separator = ColorTranslator.FromHtml("#374151"), Accent = ColorTranslator.FromHtml("#60a5fa"), InputBack = ColorTranslator.FromHtml("#111827"),
+            State = TwState.Dark,
         }
         : new TwMenuColors { Accent = Accent };
 

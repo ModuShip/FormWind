@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -79,6 +80,8 @@ public class TwPeriodPicker : TwSelect
     private int _presetIndex;
     private DateTime _customStart = DateTime.Today, _customEnd = DateTime.Today;
     private string? _shift;
+    private readonly Dictionary<string, (TimeSpan Start, TimeSpan End)> _shiftHours = new Dictionary<string, (TimeSpan, TimeSpan)>();
+    private static readonly TimeSpan OneDay = TimeSpan.FromDays(1);
     private bool _updating;
     private TwPopover? _popover;
     private TwPeriodPanel? _panel;
@@ -173,6 +176,68 @@ public class TwPeriodPicker : TwSelect
         _presetIndex = -1;
         Changed();
     }
+
+    /// <summary>
+    /// Gives a shift of <see cref="Shifts"/> its hours, for <see cref="GetShiftWindows"/> and <see cref="SelectCurrentShift(DateTime)"/>.
+    /// A shift whose end is not after its start runs past midnight (22:00–06:00) and belongs to the day it starts on. Setting
+    /// the hours again replaces them.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="shift"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">A time is negative or a day or longer.</exception>
+    public void SetShiftHours(string shift, TimeSpan start, TimeSpan end)
+    {
+        if (shift is null) throw new ArgumentNullException(nameof(shift));
+        if (start < TimeSpan.Zero || start >= OneDay) throw new ArgumentOutOfRangeException(nameof(start), start, "The start must be a time of day.");
+        if (end < TimeSpan.Zero || end >= OneDay) throw new ArgumentOutOfRangeException(nameof(end), end, "The end must be a time of day.");
+        _shiftHours[shift] = (start, end);
+    }
+
+    /// <summary>The hours of a shift (<see cref="SetShiftHours"/>); <c>null</c> when it has none.</summary>
+    public (TimeSpan Start, TimeSpan End)? GetShiftHours(string shift) =>
+        shift != null && _shiftHours.TryGetValue(shift, out var hours) ? hours : null;
+
+    /// <summary>
+    /// The times the period covers, for a query: with a <see cref="Shift"/> that has hours, one window per day of the period
+    /// (the shift on that day, past midnight for a night shift); otherwise one window from the first day's midnight to the
+    /// midnight after the last day. Each window's end is exclusive.
+    /// <code>
+    /// foreach (var (from, to) in period.GetShiftWindows()) total += Downtime(from, to);
+    /// </code>
+    /// </summary>
+    public IReadOnlyList<(DateTime Start, DateTime End)> GetShiftWindows()
+    {
+        var first = Start;
+        var last = End;
+        if (_shift is null || GetShiftHours(_shift) is not { } hours) return new[] { (first, last.AddDays(1)) };
+        var windows = new List<(DateTime Start, DateTime End)>();
+        var length = hours.End > hours.Start ? hours.End - hours.Start : OneDay - hours.Start + hours.End;
+        for (var day = first; day <= last; day = day.AddDays(1))
+            windows.Add((day + hours.Start, day + hours.Start + length));
+        return windows;
+    }
+
+    /// <summary>
+    /// Selects the shift whose hours contain <paramref name="now"/> (a night shift that started the day before included) and
+    /// returns its name; <see cref="Shift"/> stays as it was and <c>null</c> is returned when no shift with hours contains it.
+    /// </summary>
+    public string? SelectCurrentShift(DateTime now)
+    {
+        var time = now.TimeOfDay;
+        foreach (var shift in Shifts)
+        {
+            if (GetShiftHours(shift) is not { } hours) continue;
+            bool inside = hours.End > hours.Start
+                ? time >= hours.Start && time < hours.End
+                : time >= hours.Start || time < hours.End;
+            if (!inside) continue;
+            Shift = shift;
+            return shift;
+        }
+        return null;
+    }
+
+    /// <summary>Selects the shift running now; see <see cref="SelectCurrentShift(DateTime)"/>.</summary>
+    public string? SelectCurrentShift() => SelectCurrentShift(DateTime.Now);
 
     /// <summary>The text shown in the box.</summary>
     [Browsable(false)]

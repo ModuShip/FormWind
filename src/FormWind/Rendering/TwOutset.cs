@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace FormWind;
@@ -429,6 +431,12 @@ internal sealed class TwOutset
         _paintedBounds = area;
     }
 
+    /// <summary>Pictures of shadows, rings and frames blended onto parents since the start.</summary>
+    internal static long ParentBlends => ParentPainter.Blends;
+
+    /// <summary>The blends of <see cref="ParentBlends"/> made onto a parent that is not double-buffered.</summary>
+    internal static long ParentReadbacks => ParentPainter.Readbacks;
+
     // Paint'in çizeceği alan (kontrol + gölge/halka/darbe taşması); çizecek bir şey yoksa boş.
     private Rectangle PaintArea()
     {
@@ -485,9 +493,11 @@ internal sealed class TwOutset
             try
             {
                 // Birbirinden uzak kartlarda ortak alan çoğunlukla boştur: her biri kendi alanında harmanlanır.
-                if ((long)area.Width * area.Height > partsArea * 2)
+                bool separate = (long)area.Width * area.Height > partsArea * 2;
+                if (separate)
                     for (int i = 0; i < _painting.Count; i++) Blend(e.Graphics, _parts[i], _painting[i]);
                 else Blend(e.Graphics, area, _painting.ToArray());
+                CountBlends(sender as Control, separate ? _painting.Count : 1);
             }
             catch (Exception ex) when (ex is ArgumentException or ExternalException or OutOfMemoryException)
             {
@@ -500,6 +510,27 @@ internal sealed class TwOutset
                 _painting.Clear();
                 _parts.Clear();
             }
+        }
+
+        private static readonly Func<Control, bool>? IsDoubleBuffered = CreateDoubleBufferedGetter();
+        private static long _blends, _readbacks;
+
+        internal static long Blends => Interlocked.Read(ref _blends);
+
+        internal static long Readbacks => Interlocked.Read(ref _readbacks);
+
+        // Control.DoubleBuffered is protected; an open delegate reads it without the cost of reflection on every paint.
+        private static Func<Control, bool>? CreateDoubleBufferedGetter()
+        {
+            var getter = typeof(Control).GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic)?.GetGetMethod(nonPublic: true);
+            return getter is null ? null : (Func<Control, bool>)Delegate.CreateDelegate(typeof(Func<Control, bool>), getter);
+        }
+
+        // A blend onto a parent that is not double-buffered makes GDI+ read the window back once.
+        private static void CountBlends(Control? parent, int count)
+        {
+            Interlocked.Add(ref _blends, count);
+            if (parent != null && IsDoubleBuffered?.Invoke(parent) == false) Interlocked.Add(ref _readbacks, count);
         }
 
         // Saydam bir resme çizip hedefe tek seferde harmanlar (sırayla üst üste bindirme birleşmelidir: sonuç aynıdır).

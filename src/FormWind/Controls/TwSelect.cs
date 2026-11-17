@@ -22,6 +22,9 @@ public class TwSelect : Control, ITwChrome
 {
     private readonly List<string> _items = new List<string>();
     private TwChrome _chrome = TwChrome.None;
+    private TwMenuColors? _menuColors;
+    // FormWind sınıf vermediyse kutu ve menü kontrolün kendi renklerinden çizilir (koyu formda koyu menü).
+    private bool _styled;
     private int _selectedIndex = -1;
     private ContextMenuStrip? _menu;
     private ToolStripTextBox? _search;
@@ -90,7 +93,42 @@ public class TwSelect : Control, ITwChrome
 
     /// <summary>Menu colors; FormWind fills them from the <c>menu:</c> / <c>item:</c> classes.</summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    internal TwMenuColors MenuColors { get; set; } = new TwMenuColors();
+    internal TwMenuColors MenuColors
+    {
+        get => _menuColors ?? ColorsFromControl();
+        set
+        {
+            _menuColors = value;
+            _styled = true;
+        }
+    }
+
+    // Unstyled: the menu takes the box's own colors, so a select on a dark form does not open a white menu.
+    private TwMenuColors ColorsFromControl()
+    {
+        var back = TwColorsOf.EffectiveBack(this);
+        var fore = ForeColor;
+        bool dark = back.GetBrightness() < 0.5f;
+        return new TwMenuColors
+        {
+            Back = back,
+            MenuBack = back,
+            InputBack = back,
+            Fore = fore,
+            ItemHoverFore = fore,
+            ItemHoverBack = TwMotion.Blend(back, fore, 0.1f),
+            MenuBorder = UnstyledBorder(back, fore),
+            Separator = UnstyledBorder(back, fore),
+            Accent = dark ? ColorTranslator.FromHtml("#60a5fa") : ColorTranslator.FromHtml("#2563eb"),
+            State = dark ? TwState.Dark : TwState.None,
+        };
+    }
+
+    private static Color UnstyledBorder(Color back, Color fore) => TwMotion.Blend(back, fore, 0.25f);
+
+    /// <summary>The colors and item height the list opens with, as resolved from the <c>menu:</c> / <c>item:</c> classes.</summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public TwMenuStyle MenuStyle => TwMenuStyle.From(MenuColors);
 
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always), DefaultValue(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
@@ -106,6 +144,7 @@ public class TwSelect : Control, ITwChrome
 
     void ITwChrome.SetChrome(TwChrome chrome)
     {
+        _styled = true;
         if (_chrome.Equals(chrome)) return;
         _chrome = chrome;
         Invalidate();
@@ -136,7 +175,8 @@ public class TwSelect : Control, ITwChrome
     {
         if (_items.Count == 0) return;
         _menu?.Dispose();
-        _menu = new ContextMenuStrip { Renderer = new TwToolStripRenderer(MenuColors), ShowImageMargin = false, ShowCheckMargin = true };
+        var colors = MenuColors;
+        _menu = new ContextMenuStrip { Renderer = new TwToolStripRenderer(colors), ShowImageMargin = false, ShowCheckMargin = true };
         _menu.Font = Font;
         for (int i = 0; i < _items.Count; i++)
         {
@@ -152,8 +192,8 @@ public class TwSelect : Control, ITwChrome
             {
                 AutoSize = false,
                 BorderStyle = BorderStyle.FixedSingle,
-                BackColor = MenuColors.MenuBack,
-                ForeColor = MenuColors.Fore,
+                BackColor = colors.MenuBack,
+                ForeColor = colors.Fore,
                 Margin = new Padding(4, 4, 4, 2),
             };
             _search.Size = new Size(Math.Max(Width, 120) - 8, Font.Height + 8);
@@ -302,6 +342,16 @@ public class TwSelect : Control, ITwChrome
         }
     }
 
+    /// <summary>The pop-up look's arrow square: a rounded square of <paramref name="back"/> with an up and a down arrow.</summary>
+    internal static void PaintArrowSquare(Graphics g, Rectangle square, float scale, Color back)
+    {
+        TwPainter.FillRounded(g, square, 4 * scale, back);
+        int small = Math.Max(6, (int)(square.Width * 0.62f));
+        var arrow = TwCharts.ReadableOn(back);
+        TwIconRenderer.DrawIcon(g, "chevron-up", small, new Rectangle(square.X, square.Y + (int)(1 * scale) - small / 4, square.Width, square.Height / 2 + small / 4), arrow);
+        TwIconRenderer.DrawIcon(g, "chevron-down", small, new Rectangle(square.X, square.Y + square.Height / 2 - (int)(1 * scale), square.Width, square.Height / 2 + small / 4), arrow);
+    }
+
     private bool ShouldSerializeArrowBackColor() => !_arrowBackColor.IsEmpty;
 
     private void ResetArrowBackColor() => ArrowBackColor = Color.Empty;
@@ -313,6 +363,8 @@ public class TwSelect : Control, ITwChrome
         TwPainter.PaintParentBackground(this, g);
         TwPainter.FillSurface(g, bounds, _chrome.Radius, BackColor, _chrome.Gradient);
         TwPainter.StrokeChrome(g, bounds, _chrome);
+        // Sınıfsız kutu kenarlıksız kalıp zeminde kayboluyordu.
+        if (!_styled) TwPainter.StrokeRounded(g, bounds, 4f * TwDpi.DeviceDpi(this) / 96f, 1f, UnstyledBorder(TwColorsOf.EffectiveBack(this), ForeColor));
 
         int chevron = ChevronArea;
         var fore = Enabled ? ForeColor : Color.FromArgb(128, ForeColor);
@@ -331,11 +383,7 @@ public class TwSelect : Control, ITwChrome
             float scale = TwDpi.DeviceDpi(this) / 96f;
             int size = Math.Max(8, Math.Min(chevron - (int)(6 * scale), Height - (int)(8 * scale)));
             var square = new Rectangle((rtl ? 0 : Width) + (rtl ? (int)(4 * scale) : -size - (int)(4 * scale)), (Height - size) / 2, size, size);
-            TwPainter.FillRounded(g, square, 4 * scale, Enabled ? _arrowBackColor : Color.FromArgb(128, _arrowBackColor));
-            int small = Math.Max(6, (int)(size * 0.62f));
-            var arrow = TwCharts.ReadableOn(_arrowBackColor);
-            TwIconRenderer.DrawIcon(g, "chevron-up", small, new Rectangle(square.X, square.Y + (int)(1 * scale) - small / 4, square.Width, square.Height / 2 + small / 4), arrow);
-            TwIconRenderer.DrawIcon(g, "chevron-down", small, new Rectangle(square.X, square.Y + square.Height / 2 - (int)(1 * scale), square.Width, square.Height / 2 + small / 4), arrow);
+            PaintArrowSquare(g, square, scale, Enabled ? _arrowBackColor : Color.FromArgb(128, _arrowBackColor));
             return;
         }
 

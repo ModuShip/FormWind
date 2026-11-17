@@ -25,6 +25,8 @@ internal sealed class TwMenuColors
     public int? ItemHeight { get; set; }
     /// <summary>Padding of the items of drop-down menus (device pixels, <c>item:p*-*</c>); unset sides keep the menu's own.</summary>
     public TwSides? ItemPadding { get; set; }
+    /// <summary>State the colors were resolved in (dark, high contrast); item classes (<see cref="TwItemClasses"/>) resolve in it too.</summary>
+    public TwState State { get; set; }
 }
 
 /// <summary>ToolStrip renderer that paints with theme colors: flat surfaces, rounded hover, thin borders.</summary>
@@ -81,9 +83,12 @@ internal class TwToolStripRenderer : ToolStripRenderer
 
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
     {
-        e.TextColor = !e.Item.Enabled ? Color.FromArgb(128, Colors.Fore)
-            : IsHighlighted(e.Item) ? Colors.ItemHoverFore
-            : Colors.Fore;
+        bool highlighted = IsHighlighted(e.Item);
+        // Öğenin kendi sınıfları (ör. tehlikeli öğe için text-red-600) menünün rengini ezer; boyarken çözüldüğü için tema
+        // değişince ayrıca bir şey yapmak gerekmez.
+        var own = TwItemClasses.Resolve(e.Item, Colors.State | (highlighted ? TwState.Hover : TwState.None))?.ForeColor;
+        e.TextColor = !e.Item.Enabled ? Color.FromArgb(128, own ?? Colors.Fore)
+            : own ?? (highlighted ? Colors.ItemHoverFore : Colors.Fore);
         base.OnRenderItemText(e);
     }
 
@@ -283,7 +288,7 @@ internal class ToolStripApplier : WinFormsApplier
         var item = parsed.ResolvePart("item", state);
         var itemHover = parsed.ResolvePart("item", state | TwState.Hover);
 
-        var colors = new TwMenuColors();
+        var colors = new TwMenuColors { State = state };
         if (style.BackColor is Color back) colors.Back = back;
         if (style.ForeColor is Color fore) colors.Fore = fore;
         colors.MenuBack = menu.BackColor ?? style.BackColor ?? colors.MenuBack;

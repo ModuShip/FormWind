@@ -84,6 +84,8 @@ tw.SetClasses(list, "p-1 bg-white text-gray-900 item:hover:bg-gray-100 selected:
   <li>Koyu bir şeritte hover, ayırıcı ve menü kenarlığı varsayılanları şeridin kendi renklerinden türetilir; hover kutusunda yazı kaybolmaz.</li>
   <li>Elle atanmış açılır menüler (<code>menuItem.DropDown = contextMenuStrip1</code>) de, iç içe olanlar dahil, şeridin renderer'ını alır.</li>
   <li>Class'lar kaldırılınca şeridin özgün renderer'ı geri yüklenir.</li>
+  <li>Tek öğeler <code>tw.SetClasses(item, …)</code> ile menünün renklerinin üstüne class alır: geri alınamaz işlem için <code>text-red-600 dark:text-red-400</code>, başlık etiketi için <code>menu-header</code> (<code>text-xs font-semibold text-gray-500</code>) gibi bir bileşen. Renk öğe çizilirken menünün koyu ve hover durumunda çözülür; tema değişince kod gerekmez.</li>
+  <li><code>item:h-*</code> ve <code>item:p*-*</code> açılır ve sağ tık menülerinin öğelerini, sonradan eklenenler dahil, boyutlandırır; başlık etiketleri ve ayırıcılar boyunu korur. <code>TwMenuStyle.Of(menu)</code> bir menünün çizildiği renkleri ve öğe yüksekliğini verir (testler için).</li>
 </ul>
 
 <h2 id="title-bar-and-backdrop">Başlık çubuğu ve sistem zemini</h2>

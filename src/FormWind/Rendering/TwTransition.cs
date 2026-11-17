@@ -56,7 +56,12 @@ public static class TwTransition
         var bounds = ScreenBounds(host);
         var visible = VisibleScreenBounds(host, bounds);
         // A fade still running over the host is in the picture taken from the screen (it shows what is seen now).
-        var picture = visible.IsEmpty ? null : TwCapture.Take(host, visible);
+        var picture = visible.IsEmpty ? null : (options?.Capture ?? TwTransitionCapture.Auto) switch
+        {
+            TwTransitionCapture.Drawing => TwCapture.TakeByDrawing(host, visible),
+            TwTransitionCapture.None => TwCapture.Background(host, visible),
+            _ => TwCapture.Take(host, visible),
+        };
         var source = TwCapture.LastSource;
         long captured = Stopwatch.GetTimestamp();
 
@@ -78,7 +83,7 @@ public static class TwTransition
             if (cover != null)
             {
                 TwCapture.PaintNow(host);
-                if (applied) cover.FormClosed += (_, _) => TwMotionOptions.Complete(options);
+                if (applied) cover.Finished += (_, _) => TwMotionOptions.Complete(options);
                 cover.Fade(timing, Point.Empty);
             }
         }
@@ -102,17 +107,17 @@ public static class TwTransition
         if (Covers.TryGetValue(host, out var old))
         {
             Covers.Remove(host);
-            if (!old.IsDisposed) old.Close();
+            old.Finish();
         }
         Covers.Add(host, cover);
-        cover.FormClosed += (_, _) =>
+        cover.Finished += (_, _) =>
         {
             if (Covers.TryGetValue(host, out var current) && ReferenceEquals(current, cover)) Covers.Remove(host);
         };
     }
 
     /// <summary>Whether a cross-fade picture is still over <paramref name="host"/> (for tests).</summary>
-    internal static bool IsFading(Control host) => Covers.TryGetValue(host, out var cover) && !cover.IsDisposed;
+    internal static bool IsFading(Control host) => Covers.TryGetValue(host, out var cover) && cover.InUse;
 
     /// <summary>
     /// Shows <paramref name="panel"/> (a side panel, an inspector) sliding in from <paramref name="edge"/>
@@ -210,7 +215,7 @@ public static class TwTransition
         }
         _lastCovered = true;
         var done = TwMotionOptions.Latch(options, 2);   // örtü + kayan resim
-        cover.FormClosed += (_, _) => done();
+        cover.Finished += (_, _) => done();
 
         if (show)
         {
@@ -358,7 +363,7 @@ public static class TwTransition
         else if (wasShown && !isShown) newPlace = Flat(oldPlace, vertical, far);
 
         var done = TwMotionOptions.Latch(options, 2);   // örtü + açılan resim
-        cover.FormClosed += (_, _) => done();
+        cover.Finished += (_, _) => done();
         // Yeri değişmeyen (ya da hep gizli kalan) bir değişiklik yalnızca çapraz solar.
         if (!animated || newPlace == oldPlace)
         {

@@ -5,6 +5,71 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwSelectColumn.ItemsFor` gives each row its own choices (dependent lists: the subcategories of the row's category);
+  the list, typing to select and the shown text use them. `ItemsAt(row)` and `ItemOf(value, row)` return them.
+- `TwSelectColumn.CommitOnSelect` commits a choice at once: the edit ends and the bound row ends its edit, so a
+  `DataRow` is `Modified` without leaving the row.
+- A grid select cell draws the pop-up look's arrow square from the column's `accent-*` / `arrow:bg-*` classes, as
+  `TwSelect` does; `arrow:bg-transparent` keeps the plain chevron.
+- `TailwindProvider.SetClasses(ToolStripItem, string)` gives single menu items classes over their menu's colors
+  (`text-red-600 dark:text-red-400` for a destructive item, a `menu-header` component for a header label). The text
+  color is resolved when the item is drawn, in its menu's dark and hover state, so it follows theme changes.
+- `TwTheme.SetColor(name, light, dark)` defines a color with one value per mode: `bg-menu` means
+  `bg-[light] dark:bg-[dark]`, with variants (`hover:bg-menu`) and opacity (`bg-menu/50`).
+- `TwMotionOptions.Capture` (`TwTransitionCapture.Auto`, `Drawing`, `None`) chooses how `TwTransition.CrossFade` takes
+  the picture of the old look: `Drawing` redraws it with `DrawToBitmap` without waiting for the screen, `None` fades the
+  new look in from the background color. `TwTransitionEventArgs.CaptureSource` reports the choice.
+- Public members tests had to reach by reflection: `TwSelect.MenuStyle` and `TwMenuStyle.Of(ToolStrip)` (the colors and
+  item height a menu is drawn with), `TwSelectCell.OpenMenu`, `TwDiagnostics.FrameMessageId` (for `PeekMessage` range
+  filters) and `TwDpi.Scale(Control, int)` for sizes set in code.
+- `TwDiagnostics.ShadowParentBlends` and `ShadowParentReadbacks` count the shadow pictures blended onto parents and
+  those blended onto a parent that is not double-buffered (where GDI+ reads the window back), so an application can see
+  whether the off-screen shadow composition helps it.
+- Built-in `menu-header` (small, semibold, muted) and `menu-danger` (danger text color in both modes) components for
+  `SetClasses(ToolStripItem, ...)`; a theme can redefine them with `SetComponent`.
+- `TwTextBatch` draws many texts with `TextRenderer` on one device context. Each `TextRenderer.DrawText(Graphics, ...)`
+  call sets up a GDI context again, and on a bitmap's `Graphics` copies the bitmap in and out: about 120 µs a text
+  instead of about 30 µs. `TwHeatmap` draws its cell values in a batch.
+- `TwHeatmap.HighlightRows` (a band behind rows, as `HighlightColumns`) and `TwHeatmap.SetCalendar(start, values)`: one
+  value per day as weekday rows and week columns with month labels, `GetDate(row, column)` and `GetCell(date)`.
+- `TwPeriodPicker.SetShiftHours(shift, start, end)`: `GetShiftWindows()` returns the time windows of the period for the
+  selected shift (one per day, night shifts past midnight) and `SelectCurrentShift()` selects the shift running now.
+- `TwChipStrip`: a row of chips that scrolls sideways without a scroll bar (wheel, ← →, ‹ › at the hidden ends,
+  `EnsureVisible`).
+- `TwInfoTip`: an info icon that opens a definition card (`Title`, `Description`) on hover, click, Enter or Space, in
+  the colors around it.
+- `TwPlaceholder.Set(TextBox, text)`: a plain `TextBox` draws its hint in the `placeholder:text-*` color, as
+  `TwTextBox` does. A `TextBox` styled with `input` is one window where a `TwTextBox` is two, so forms with many fields
+  can use it without losing the colored hint.
+
+### Performance
+
+- Transitions take the picture of the old look from the window's own surface when the part is in the client area and
+  holds only WinForms windows: no wait for the screen to be composed and no check of the windows above. On an
+  1100 × 700 page a picture takes about 6 ms instead of about 30 ms, and a covered window is pictured from its content.
+  `TwTransitionEventArgs.CaptureSource` reports `Window`.
+- The picture window of transitions is kept, hidden, for its form's next transition instead of creating a layered
+  window (handle, DWM attributes) for every page change.
+
+### Behavior changes
+
+- A `TwSelect` without classes draws a thin border and opens its menu in its own colors (a dark menu on a dark form);
+  before, it had no border and its menu was white.
+- A form that had a transition keeps one hidden picture window until it closes; it is listed in
+  `Application.OpenForms`. Code that counts open forms should skip hidden windows.
+
+### Documentation
+
+- `TwDpi.Simulate` does not scale sizes set in code or in the designer (`Height = 30`), which `AutoScaleMode` scales on
+  a real display; such sizes should be given as classes or with `TwDpi.Scale` to be checked under the simulation.
+
+- `item:h-*` and `item:p*-*` also apply to `ContextMenuStrip` menus styled with FormWind, items added later included
+  (0.1.9-preview.1 did not list them).
+- The 0.1.9-preview.1 shadow speed-up applies to parents that are not double-buffered: on a double-buffered parent GDI+
+  reads its memory buffer, which was already cheap, so pages of cards on double-buffered panels see no change.
+
 ## [0.1.9-preview.1] - 2026-11-15
 
 ### Added

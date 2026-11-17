@@ -71,6 +71,20 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");</code></pre>
 </table></div>
 <p>Hücre tipleri koyu temayı tablonun sağlayıcısından öğrenir; <code>dark:</code> varyantları ek ayar gerektirmez.</p>
 
+<h2 id="editable-columns">Düzenlenebilir kolonlar</h2>
+<p><code>TwTextColumn</code> ve <code>TwSelectColumn</code> hücrelerini giriş kutusu olarak çizer (<code>Placeholder</code>, temanın <code>input</code> görünümüne eklenen <code>Classes</code>) ve <code>Validate</code> hatalarını <code>invalid:</code> görünümüyle gösterir. Seçim hücresi tıklama, F4, Alt+&darr; ya da Boşluk ile temalı bir liste açar; yazmak ilk harflere göre seçer.</p>
+<pre><code class="language-csharp">var line = new TwSelectColumn { DataPropertyName = "Line", Placeholder = "Seçin",
+    Classes = "accent-blue-600",                       // açılır düğme görünümü: ok karesi (arrow:bg-* ayrı renklendirir)
+    Validate = v => v is null ? "Hat seçilmedi" : null,
+    CommitOnSelect = true };                           // DataRow satırdan çıkmadan hemen Modified olur
+line.Items.AddRange(allLines);
+line.ItemsFor = row => LinesOf(grid.Rows[row].Cells["Category"].Value);   // null = Items</code></pre>
+<ul>
+  <li><code>ItemsFor</code> her satıra kendi seçeneklerini verir (bağımlı listeler). Liste, yazarak seçme ve görünen metin bunları kullanır; satırın listesinde olmayan bir değer yine <code>Items</code>'tan gösterilir.</li>
+  <li><code>CommitOnSelect</code> olmadan değer bağlı satıra hemen yazılır, ama <code>DataRow</code> her tablo hücresinde olduğu gibi satırdan çıkılana ya da düzenleme bitene kadar <code>Unchanged</code> kalır.</li>
+  <li>Salt okunur satır: <code>cell.ReadOnly</code>. <code>TwSelectCell.OpenMenu</code> açık listedir (testler için).</li>
+</ul>
+
 <h2 id="row-rules">Satır kuralları</h2>
 <pre><code class="language-csharp">tw.SetRowClasses(gridOrders, row =>
     row.Cells["colStatus"].Value as string == "İptal" ? "text-gray-400 dark:text-gray-500" : null);</code></pre>

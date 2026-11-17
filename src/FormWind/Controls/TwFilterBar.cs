@@ -461,6 +461,7 @@ public class TwFilterBar : TwPanel
                 Separator = ColorTranslator.FromHtml("#374151"),
                 Accent = ColorTranslator.FromHtml("#60a5fa"),
                 InputBack = ColorTranslator.FromHtml("#111827"),
+                State = TwState.Dark,
             }
             : new TwMenuColors();
     }

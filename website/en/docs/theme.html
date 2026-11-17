@@ -47,6 +47,12 @@ description: tw.config.json — colors, components, fonts, the Tailwind v4 palet
 <pre><code class="language-json">{ "colors": { "brand": "oklch(62.3% 0.214 259.8)" } }</code></pre>
 <p>The default components pass the contrast audit with both palettes. The <a href="{{root}}reference/#palette">class reference</a> shows every swatch.</p>
 
+<h3 id="light-dark-colors">Light and dark pairs</h3>
+<p>A color with one value per mode keeps components short: <code>bg-menu</code> instead of <code>bg-[#F8F8FA] dark:bg-[#2C2C2F]</code> in every component. Variants (<code>hover:bg-menu</code>) and opacity (<code>bg-menu/50</code>) work; a later <code>dark:</code> class for the same property still wins.</p>
+<pre><code class="language-csharp">theme.SetColor("menu", light: "#F8F8FA", dark: "#2C2C2F");
+theme.SetColor("menuline", light: "#E2E2E4", dark: "#3F3F42");
+theme.SetComponent("menu", "bg-menu border-menuline item:hover:bg-surface-100 dark:item:hover:bg-surface-700");</code></pre>
+
 <h2>Fonts</h2>
 <p><code>fontFamily</code> can be a stack: <code>"Inter, Segoe UI"</code>. Fonts shipped with the application are registered without installation; paths are relative to the theme file and missing files are skipped:</p>
 <pre><code class="language-json">{

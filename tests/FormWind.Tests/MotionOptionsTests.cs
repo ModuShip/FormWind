@@ -178,20 +178,20 @@ public class MotionOptionsTests
         form.Controls.Add(inspector);
         Application.DoEvents();
         int before = TwFadeOut.ActiveCount;
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
 
         TwTransition.SlideIn(inspector, TwEdge.Right, new TwMotionOptions { FadeRest = false, IncludeMargin = true, Easing = TwEasing.Spring });
         Assert.True(inspector.Visible);
         Assert.True(TwTransition.LastCovered);
         Assert.Equal(before, TwFadeOut.ActiveCount);                               // kalan alan hemen açıldı, yalnız panel kayıyor
-        WaitUntil(() => Application.OpenForms.Count == open);
-        Assert.Equal(open, Application.OpenForms.Count);
+        WaitUntil(() => OpenWindows.Count == open);
+        Assert.Equal(open, OpenWindows.Count);
 
         TwTransition.SlideOut(inspector, TwEdge.Right, new TwMotionOptions { FadeRest = false, DurationMs = 120 });
         Assert.False(inspector.Visible);
         Assert.Equal(before, TwFadeOut.ActiveCount);
-        WaitUntil(() => Application.OpenForms.Count == open);
-        Assert.Equal(open, Application.OpenForms.Count);
+        WaitUntil(() => OpenWindows.Count == open);
+        Assert.Equal(open, OpenWindows.Count);
         form.Close();
     }));
 
@@ -210,19 +210,19 @@ public class MotionOptionsTests
         int layouts = 0;
         content.Resize += (_, _) => layouts++;
         int before = TwFadeOut.ActiveCount;
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
         bool vertical = dock == DockStyle.Top;
 
         TwTransition.Resize(sidebar, 56, new TwMotionOptions { DurationMs = 120 });
         Assert.True(TwTransition.LastCovered);
         Assert.Equal(56, vertical ? sidebar.Height : sidebar.Width);
-        WaitUntil(() => TwFadeOut.ActiveCount == before && Application.OpenForms.Count == open);
+        WaitUntil(() => TwFadeOut.ActiveCount == before && OpenWindows.Count == open);
         Assert.Equal(1, layouts);                                                  // içerik bir kez yerleşti
-        Assert.Equal(open, Application.OpenForms.Count);
+        Assert.Equal(open, OpenWindows.Count);
 
         TwTransition.Resize(sidebar, 240, new TwMotionOptions { DurationMs = 120 });
         Assert.Equal(240, vertical ? sidebar.Height : sidebar.Width);
-        WaitUntil(() => TwFadeOut.ActiveCount == before && Application.OpenForms.Count == open);
+        WaitUntil(() => TwFadeOut.ActiveCount == before && OpenWindows.Count == open);
         Assert.Equal(2, layouts);
 
         var previous = TwMotion.Enabled;
@@ -247,7 +247,7 @@ public class MotionOptionsTests
         form.Controls.Add(sidebar);
         Application.DoEvents();
         int before = TwFadeOut.ActiveCount;
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
 
         TwTransition.Resize(sidebar, () =>
         {
@@ -258,7 +258,7 @@ public class MotionOptionsTests
         Assert.False(label.Visible);
         Assert.Equal(56, sidebar.Width);
         Assert.Equal(before, TwFadeOut.ActiveCount);                               // kalan alan hemen açıldı
-        WaitUntil(() => Application.OpenForms.Count == open);
+        WaitUntil(() => OpenWindows.Count == open);
 
         TwTransition.Resize(sidebar, () =>
         {
@@ -266,8 +266,8 @@ public class MotionOptionsTests
             sidebar.Width = 200;
         }, new TwMotionOptions { DurationMs = 120, FadeRest = false });
         Assert.Equal(200, sidebar.Width);
-        WaitUntil(() => Application.OpenForms.Count == open);
-        Assert.Equal(open, Application.OpenForms.Count);
+        WaitUntil(() => OpenWindows.Count == open);
+        Assert.Equal(open, OpenWindows.Count);
         form.Close();
     }));
 

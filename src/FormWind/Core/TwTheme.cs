@@ -29,6 +29,9 @@ public sealed class TwTheme
 
     private readonly Dictionary<string, Dictionary<string, Color>> _colors =
         new Dictionary<string, Dictionary<string, Color>>(StringComparer.Ordinal);
+    // Açık/koyu renk çiftlerinin koyu yarısı (SetColor(name, light, dark)); açık yarısı _colors'tadır.
+    private readonly Dictionary<string, Dictionary<string, Color>> _darkColors =
+        new Dictionary<string, Dictionary<string, Color>>(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _components = new Dictionary<string, string>(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, TwParsed> _cache =
         new ConcurrentDictionary<string, TwParsed>(StringComparer.Ordinal);
@@ -286,6 +289,9 @@ public sealed class TwTheme
                    "menu:bg-white menu:border-surface-200 " +
                    "dark:text-surface-400 dark:border-surface-700 dark:selected:text-white dark:selected:border-primary-400 dark:menu:bg-surface-800 dark:menu:border-surface-700",
         ["menu"] = "bg-white text-surface-700 item:hover:bg-surface-100 dark:bg-surface-800 dark:text-surface-100 dark:item:hover:bg-surface-700",
+        // Tek menü öğeleri için (SetClasses(ToolStripItem, ...)): başlık satırı ve geri alınamaz işlem.
+        ["menu-header"] = "text-xs font-semibold text-surface-500 dark:text-surface-400",
+        ["menu-danger"] = "text-danger-600 dark:text-danger-400",
         // PropertyGrid: header: kategori satırları, selected: seçili özellik, divide-* iç çizgiler.
         ["properties"] = "bg-white text-surface-900 divide-surface-200 header:bg-surface-100 header:text-surface-700 selected:bg-primary-600 selected:text-white " +
                          "dark:bg-surface-800 dark:text-surface-100 dark:divide-surface-700 dark:header:bg-surface-900 dark:header:text-surface-300",
@@ -484,7 +490,43 @@ public sealed class TwTheme
         // Uygulamanın tanımladığı anlamsal renk artık paletle değişmez (tanımlamadığı tonlar paletten kopyalandığı gibi kalır).
         if (SemanticColors.ContainsKey(name)) _ownSemanticColors.Add(name);
         SetColorCore(name, shade ?? "", color);
+        if (_darkColors.TryGetValue(name, out var pairs)) pairs.Remove(shade ?? "");
         _cache.Clear();
+    }
+
+    /// <summary>
+    /// Adds a color that has one value in the light and another in the dark mode: <c>bg-menu</c> then means
+    /// <c>bg-[light] dark:bg-[dark]</c>, with every variant (<c>hover:bg-menu</c>) and opacity (<c>bg-menu/50</c>). A later
+    /// <c>dark:</c> class for the same property still wins, as with any other color. The dark value's alpha is not used.
+    /// <code>
+    /// theme.SetColor("menu", light: ColorTranslator.FromHtml("#F8F8FA"), dark: ColorTranslator.FromHtml("#2C2C2F"));
+    /// theme.SetComponent("menu", "bg-menu border-menu-line item:hover:bg-accent");
+    /// </code>
+    /// </summary>
+    public void SetColor(string name, Color light, Color dark)
+    {
+        SetColor(name, "", light);
+        if (!_darkColors.TryGetValue(name, out var pairs))
+        {
+            pairs = new Dictionary<string, Color>(StringComparer.Ordinal);
+            _darkColors.Add(name, pairs);
+        }
+        pairs[""] = dark;
+        _cache.Clear();
+    }
+
+    /// <summary>
+    /// <see cref="SetColor(string, Color, Color)"/> with colors as text (<c>#F8F8FA</c>, <c>oklch(…)</c>).
+    /// </summary>
+    /// <exception cref="FormatException">A color is not valid.</exception>
+    public void SetColor(string name, string light, string dark) =>
+        SetColor(name, ParseColor(light, name), ParseColor(dark, name + " (dark)"));
+
+    /// <summary>The dark value of a light/dark pair (<see cref="SetColor(string, Color, Color)"/>); <c>false</c> for other colors.</summary>
+    public bool TryGetDarkColor(string name, string shade, out Color color)
+    {
+        color = Color.Empty;
+        return _darkColors.TryGetValue(name, out var pairs) && pairs.TryGetValue(shade ?? "", out color);
     }
 
     public bool TryGetColor(string name, string shade, out Color color)

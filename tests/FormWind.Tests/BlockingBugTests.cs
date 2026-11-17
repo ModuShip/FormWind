@@ -61,7 +61,7 @@ public class BlockingBugTests
     {
         using var form = ShowForm(new Size(500, 300));
         var (_, sidebar, row) = Layout(form);
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
 
         TwTransition.Resize(sidebar, () =>
         {
@@ -74,8 +74,8 @@ public class BlockingBugTests
         Assert.True(TwTransition.LastRevealed);                                    // yalnızca çapraz solma değil
         Assert.False(sidebar.Visible);
         Assert.Same(form, row.Parent);
-        WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
-        Assert.Equal(open, Application.OpenForms.Count);
+        WaitUntil(() => OpenWindows.Count == open && TwFadeOut.ActiveCount == 0);
+        Assert.Equal(open, OpenWindows.Count);
         form.Close();
     }));
 
@@ -87,7 +87,7 @@ public class BlockingBugTests
         sidebar.Visible = false;
         sidebar.Width = 0;
         Application.DoEvents();
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
         bool called = false;
 
         TwTransition.Resize(sidebar, () =>
@@ -102,7 +102,7 @@ public class BlockingBugTests
         Assert.True(TwTransition.LastRevealFadedBack);   // açılmamış şerit bir anda zemin rengine dönmez, eski içerik solar
         Assert.True(sidebar.Visible);
         Assert.Equal(240, sidebar.Width);
-        WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
+        WaitUntil(() => OpenWindows.Count == open && TwFadeOut.ActiveCount == 0);
         form.Close();
     }));
 
@@ -119,12 +119,12 @@ public class BlockingBugTests
             var (_, sidebar, _) = Layout(form);
             sidebar.Width = grow ? 60 : 240;
             Application.DoEvents();
-            int open = Application.OpenForms.Count;
+            int open = OpenWindows.Count;
 
             TwTransition.Resize(sidebar, grow ? 240 : 60, new TwMotionOptions { DurationMs = 120, FadeRest = fadeRest });
             Assert.True(TwTransition.LastRevealed);
             Assert.Equal(fadedBack, TwTransition.LastRevealFadedBack);
-            WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
+            WaitUntil(() => OpenWindows.Count == open && TwFadeOut.ActiveCount == 0);
             form.Close();
         }));
 
@@ -133,17 +133,17 @@ public class BlockingBugTests
     {
         using var form = ShowForm(new Size(500, 300));
         var (_, sidebar, _) = Layout(form);
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
 
         TwTransition.Resize(sidebar, 0, new TwMotionOptions { DurationMs = 120 });
         Assert.True(TwTransition.LastRevealed);
         Assert.Equal(0, sidebar.Width);
-        WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
+        WaitUntil(() => OpenWindows.Count == open && TwFadeOut.ActiveCount == 0);
 
         TwTransition.Resize(sidebar, 240, new TwMotionOptions { DurationMs = 120 });
         Assert.True(TwTransition.LastRevealed);
         Assert.Equal(240, sidebar.Width);
-        WaitUntil(() => Application.OpenForms.Count == open && TwFadeOut.ActiveCount == 0);
+        WaitUntil(() => OpenWindows.Count == open && TwFadeOut.ActiveCount == 0);
         form.Close();
     }));
 

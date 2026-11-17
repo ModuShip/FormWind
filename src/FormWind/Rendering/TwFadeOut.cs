@@ -55,38 +55,62 @@ public static class TwFadeOut
     /// </summary>
     internal static Ghost? Cover(Bitmap picture, Rectangle bounds, Form? owner, bool roundCorners)
     {
-        var ghost = new Ghost(picture, bounds, roundCorners);
+        bool owned = owner is { IsDisposed: false, Visible: true };
+        // Page transitions cover the same form again and again: its idle picture window is shown again instead of
+        // creating a new layered window (handle, DWM attributes) for every transition.
+        var ghost = owned ? Ghost.TakeIdle(owner!) : null;
         try
         {
-            if (owner is { IsDisposed: false, Visible: true }) ghost.Show(owner);
-            else ghost.Show();
+            if (ghost != null)
+            {
+                ghost.Reuse(picture, bounds, roundCorners);
+                ghost.Visible = true;
+            }
+            else
+            {
+                ghost = new Ghost(picture, bounds, roundCorners, owned ? owner : null);
+                if (owned) ghost.Show(owner);
+                else ghost.Show();
+            }
         }
         catch (Exception ex) when (!TwErrors.IsCritical(ex))
         {
-            ghost.Dispose();
+            TwErrors.Trace("transition cover", ex);
+            if (ghost is null) picture.Dispose();
+            else ghost.Dispose();
             return null;
         }
         // Görüntü hemen ekrana çıkar; altındaki değişiklik ancak ondan sonra çizilir.
         ghost.Update();
         // Pencere yöneticisi birleştirmesini bekle: aksi halde alttaki değişiklik örtüden önce ekrana ulaşabilir.
         TwCapture.Flush();
-        _active++;
-        ghost.FormClosed += (_, _) => _active--;
         return ghost;
     }
 
-    /// <summary>A click-through window showing a picture until it fades out.</summary>
+    /// <summary>
+    /// A click-through window showing a picture until it fades out. A window owned by a form is hidden at the end and
+    /// kept for the form's next cover; <see cref="Finished"/> tells that one use is over.
+    /// </summary>
     internal sealed class Ghost : Form
     {
         private const int WsExNoActivate = 0x08000000, WsExToolWindow = 0x00000080, WsExTransparent = 0x00000020;
-        private readonly Bitmap _picture;
-        private readonly bool _roundCorners;
-        private TwTween? _tween;
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Form, Ghost> Idle =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<Form, Ghost>();
 
-        public Ghost(Bitmap picture, Rectangle bounds, bool roundCorners)
+        private readonly Form? _poolOwner;
+        private Bitmap? _picture;
+        private bool _roundCorners;
+        private TwTween? _tween;
+        private bool _inUse = true;
+
+        public Ghost(Bitmap picture, Rectangle bounds, bool roundCorners, Form? poolOwner)
         {
             _picture = picture;
             _roundCorners = roundCorners;
+            _poolOwner = poolOwner;
+            // Kullanım başladığı yerde sayılır: Show başarısız olup pencere atılınca EndUse sayacı dengeler.
+            _active++;
+            if (poolOwner != null) poolOwner.FormClosed += OnPoolOwnerClosed;
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
@@ -108,13 +132,90 @@ public static class TwFadeOut
             }
         }
 
+        /// <summary>Raised once when this use of the picture is over: the fade ended, or <see cref="Finish"/> or <c>Close</c> ended it.</summary>
+        public event EventHandler? Finished;
+
+        /// <summary>Whether the picture is on screen for a cover (between <see cref="Cover"/> and <see cref="Finished"/>).</summary>
+        public bool InUse => _inUse && !IsDisposed;
+
+        /// <summary>The idle picture window of <paramref name="owner"/>, taken out of the pool; <c>null</c> when it has none.</summary>
+        internal static Ghost? TakeIdle(Form owner)
+        {
+            if (!Idle.TryGetValue(owner, out var ghost)) return null;
+            Idle.Remove(owner);
+            return ghost.IsDisposed || !ghost.IsHandleCreated ? null : ghost;
+        }
+
+        /// <summary>Whether <paramref name="owner"/> keeps an idle picture window for its next cover (for tests).</summary>
+        internal static bool HasIdle(Form owner) => Idle.TryGetValue(owner, out var ghost) && !ghost.IsDisposed;
+
+        // Hazırda bekleyen pencere yeni resim ve yerle yeniden kullanılır; katmanlı pencere görünmeden önce kurulur.
+        internal void Reuse(Bitmap picture, Rectangle bounds, bool roundCorners)
+        {
+            _picture?.Dispose();
+            _picture = picture;
+            if (!_inUse) _active++;
+            _inUse = true;
+            Opacity = 0.99;
+            Bounds = bounds;
+            if (roundCorners != _roundCorners)
+            {
+                _roundCorners = roundCorners;
+                ApplyCorners();
+            }
+        }
+
+        /// <summary>Ends this use now (a new transition replaces it): the window is hidden for the next cover or closed.</summary>
+        public void Finish()
+        {
+            if (!_inUse || IsDisposed) return;
+            _tween?.Dispose();
+            _tween = null;
+            if (_poolOwner is { IsDisposed: false, Visible: true } owner && !Idle.TryGetValue(owner, out _))
+            {
+                Visible = false;
+                _picture?.Dispose();
+                _picture = null;
+                EndUse();
+                Idle.Add(owner, this);
+            }
+            else Close();
+        }
+
+        private void EndUse()
+        {
+            if (!_inUse) return;
+            _inUse = false;
+            _active--;
+            Finished?.Invoke(this, EventArgs.Empty);
+            // Each use has its own listeners: a reused window must not call the previous transition's handlers.
+            Finished = null;
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+            EndUse();
+        }
+
+        private void OnPoolOwnerClosed(object? sender, FormClosedEventArgs e)
+        {
+            if (sender is Form owner) Idle.Remove(owner);
+            if (!IsDisposed && !_inUse) Dispose();
+        }
+
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
             DisableTransitions(Handle);
-            if (!_roundCorners) return;
-            int round = 2;
-            try { DwmSetWindowAttribute(Handle, 33, ref round, sizeof(int)); }
+            if (_roundCorners) ApplyCorners();
+        }
+
+        private void ApplyCorners()
+        {
+            if (!IsHandleCreated) return;
+            int corners = _roundCorners ? 2 : 1;   // DWMWCP_ROUND : DWMWCP_DONOTROUND
+            try { DwmSetWindowAttribute(Handle, 33, ref corners, sizeof(int)); }
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
         }
@@ -131,7 +232,10 @@ public static class TwFadeOut
             catch (EntryPointNotFoundException) { }
         }
 
-        protected override void OnPaint(PaintEventArgs e) => e.Graphics.DrawImageUnscaled(_picture, 0, 0);
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            if (_picture != null) e.Graphics.DrawImageUnscaled(_picture, 0, 0);
+        }
 
         protected override void OnPaintBackground(PaintEventArgs e) { }
 
@@ -144,26 +248,37 @@ public static class TwFadeOut
         /// <summary>Fades the picture out with <paramref name="timing"/> while moving it by <paramref name="offset"/>, and closes the window at the end.</summary>
         public void Fade(TwTiming timing, Point offset)
         {
-            if (IsDisposed) return;
+            if (IsDisposed || !_inUse) return;
             var start = Location;
-            _tween = new TwTween(this);
-            _tween.Tick += (_, _) =>
+            _tween?.Dispose();
+            var tween = new TwTween(this);
+            _tween = tween;
+            tween.Tick += (_, _) =>
             {
-                float p = _tween.Progress;
+                float p = tween.Progress;
                 Opacity = Math.Max(0, 0.99 * (1 - p));
                 if (!offset.IsEmpty) Location = new Point(start.X + (int)Math.Round(offset.X * p), start.Y + (int)Math.Round(offset.Y * p));
             };
-            _tween.Completed += (_, _) => Close();
-            _tween.Start(timing);
-            if (!_tween.Running) Close();
+            tween.Completed += (_, _) =>
+            {
+                if (ReferenceEquals(tween, _tween)) Finish();
+            };
+            tween.Start(timing);
+            if (!tween.Running) Finish();
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
+                if (_poolOwner != null)
+                {
+                    _poolOwner.FormClosed -= OnPoolOwnerClosed;
+                    if (Idle.TryGetValue(_poolOwner, out var idle) && ReferenceEquals(idle, this)) Idle.Remove(_poolOwner);
+                }
                 _tween?.Dispose();
-                _picture.Dispose();
+                _picture?.Dispose();
+                EndUse();
             }
             base.Dispose(disposing);
         }

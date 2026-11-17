@@ -47,6 +47,12 @@ description: tw.config.json — renkler, bileşenler, fontlar, Tailwind v4 palet
 <pre><code class="language-json">{ "colors": { "brand": "oklch(62.3% 0.214 259.8)" } }</code></pre>
 <p>Varsayılan bileşenler iki paletle de kontrast denetiminden geçer. <a href="{{root}}reference/#palette">Class referansı</a> her rengi gösterir.</p>
 
+<h3 id="light-dark-colors">Açık ve koyu çiftler</h3>
+<p>Her modda ayrı değeri olan bir renk bileşenleri kısa tutar: her bileşende <code>bg-[#F8F8FA] dark:bg-[#2C2C2F]</code> yerine <code>bg-menu</code>. Varyantlar (<code>hover:bg-menu</code>) ve saydamlık (<code>bg-menu/50</code>) çalışır; aynı özellik için sonra gelen bir <code>dark:</code> class'ı yine kazanır.</p>
+<pre><code class="language-csharp">theme.SetColor("menu", light: "#F8F8FA", dark: "#2C2C2F");
+theme.SetColor("menuline", light: "#E2E2E4", dark: "#3F3F42");
+theme.SetComponent("menu", "bg-menu border-menuline item:hover:bg-surface-100 dark:item:hover:bg-surface-700");</code></pre>
+
 <h2 id="fonts">Fontlar</h2>
 <p><code>fontFamily</code> bir liste olabilir: <code>"Inter, Segoe UI"</code>. Uygulamayla dağıtılan fontlar kurulmadan kaydedilir; yollar tema dosyasına göredir, eksik dosyalar atlanır:</p>
 <pre><code class="language-json">{

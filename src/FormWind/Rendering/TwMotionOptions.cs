@@ -57,6 +57,14 @@ public sealed class TwMotionOptions
     public bool FadeRest { get; set; } = true;
 
     /// <summary>
+    /// With <see cref="TwTransition.CrossFade(System.Windows.Forms.Control, System.Action, TwMotionOptions)"/>: how the picture
+    /// of the old look is taken (<see cref="TwTransitionCapture.Auto"/> by default). <see cref="TwTransitionCapture.Drawing"/>
+    /// or <see cref="TwTransitionCapture.None"/> make page switches cheaper when the screen copy dominates their time
+    /// (<see cref="TwTransitionEventArgs.CaptureMs"/>).
+    /// </summary>
+    public TwTransitionCapture Capture { get; set; }
+
+    /// <summary>
     /// Called once, on the UI thread, when the motion has fully finished: the last picture is gone, or the window has reached
     /// its place. Use it to continue after a transition (move a button to the toolbar after the sidebar collapsed). When
     /// nothing is animated (animations off, zero duration, nothing on screen to take a picture of) it is called

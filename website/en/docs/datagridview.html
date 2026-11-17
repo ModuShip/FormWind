@@ -71,6 +71,20 @@ tw.SetColumnClasses(colName, "flex-1 min-w-40");</code></pre>
 </table></div>
 <p>Cell types learn dark mode from the grid's provider; <code>dark:</code> variants need no extra setup.</p>
 
+<h2 id="editable-columns">Editable columns</h2>
+<p><code>TwTextColumn</code> and <code>TwSelectColumn</code> draw their cells as input boxes (<code>Placeholder</code>, <code>Classes</code> added to the theme's <code>input</code> look) and show <code>Validate</code> errors with the <code>invalid:</code> look. A select cell opens a themed list on a click, F4, Alt+&darr; or Space; typing selects by the first letters.</p>
+<pre><code class="language-csharp">var line = new TwSelectColumn { DataPropertyName = "Line", Placeholder = "Select",
+    Classes = "accent-blue-600",                       // pop-up look: arrow square (arrow:bg-* colors it separately)
+    Validate = v => v is null ? "No line selected" : null,
+    CommitOnSelect = true };                           // DataRow is Modified at once, without leaving the row
+line.Items.AddRange(allLines);
+line.ItemsFor = row => LinesOf(grid.Rows[row].Cells["Category"].Value);   // null = Items</code></pre>
+<ul>
+  <li><code>ItemsFor</code> gives each row its own choices (dependent lists). The list, typing to select and the shown text use them; a value missing from the row's list is still shown from <code>Items</code>.</li>
+  <li>Without <code>CommitOnSelect</code> the value goes to the bound row at once, but a <code>DataRow</code> stays <code>Unchanged</code> until the row is left or its edit is ended, as with any grid cell.</li>
+  <li>A read-only row: set <code>cell.ReadOnly</code>. <code>TwSelectCell.OpenMenu</code> is the open list, for tests.</li>
+</ul>
+
 <h2>Row rules</h2>
 <pre><code class="language-csharp">tw.SetRowClasses(gridOrders, row =>
     row.Cells["colStatus"].Value as string == "Cancelled" ? "text-gray-400 dark:text-gray-500" : null);</code></pre>

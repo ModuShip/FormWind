@@ -141,7 +141,7 @@ internal static class TwParser
     {
         if (expanded.TryGetValue(token, out var known)) return known;
         var component = active.Count < MaxComponentDepth && !active.Contains(token) ? theme.GetComponent(token) : null;
-        if (component is null) return new List<string>(1) { token };
+        if (component is null) return ExpandColorPair(token, theme);
 
         active.Add(token);
         var tokens = new List<string>();
@@ -156,6 +156,26 @@ internal static class TwParser
         distinct.Reverse();
         expanded[token] = distinct;
         return distinct;
+    }
+
+    // Açık/koyu çift renk (TwTheme.SetColor(name, light, dark)): "hover:bg-menu" açık değeriyle kalır, yanına koyu değer
+    // "dark:hover:bg-[#hex]" olarak eklenir. Zaten dark: altındaysa doğrudan koyu değere döner.
+    private static List<string> ExpandColorPair(string token, TwTheme theme)
+    {
+        int separator = token.LastIndexOf(':');
+        var variant = separator > 0 ? token.Substring(0, separator + 1) : "";
+        var utility = token.Substring(variant.Length);
+        var match = ColorRx.Match(utility);
+        if (!match.Success || !theme.TryGetDarkColor(match.Groups[2].Value, match.Groups[3].Value, out var dark))
+            return new List<string>(1) { token };
+
+        var hex = "#" + dark.R.ToString("X2", CultureInfo.InvariantCulture) + dark.G.ToString("X2", CultureInfo.InvariantCulture)
+                  + dark.B.ToString("X2", CultureInfo.InvariantCulture);
+        var darkUtility = match.Groups[1].Value + "-[" + hex + "]" + (match.Groups[4].Success ? "/" + match.Groups[4].Value : "");
+        bool inDark = variant.Split(':').Contains("dark");
+        return inDark
+            ? new List<string>(1) { variant + darkUtility }
+            : new List<string>(2) { token, "dark:" + variant + darkUtility };
     }
 
     // Kontrol parçaları. Bir varyantta en fazla bir parça olabilir; parçayı tanımayan kontrol onu yok sayar.

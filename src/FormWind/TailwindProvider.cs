@@ -433,6 +433,22 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         Update(control, binding, own, IsAutoStyled(control) ? AutomaticFor(control, own) : null);
     }
 
+    /// <summary>The classes given to a menu item with <see cref="SetClasses(ToolStripItem, string?)"/>.</summary>
+    public string GetClasses(ToolStripItem item) => item is null ? "" : TwItemClasses.Get(item);
+
+    /// <summary>
+    /// Classes of a single menu item, over the colors of its menu: <c>text-red-600 dark:text-red-400</c> for a destructive
+    /// item, or the built-in components <c>menu-danger</c> (danger text color) and <c>menu-header</c> (small, semibold, muted
+    /// header label), which a theme can redefine with <see cref="TwTheme.SetComponent(string, string)"/>. The text color follows
+    /// the menu's state (<c>dark:</c>, <c>hover:</c>) when the item is drawn, so it needs no update on theme changes; font
+    /// classes set the item's font. Empty or <c>null</c> removes them.
+    /// </summary>
+    public void SetClasses(ToolStripItem item, string? value)
+    {
+        if (item is null) throw new ArgumentNullException(nameof(item));
+        TwItemClasses.Set(this, item, TwParser.Normalize(value));
+    }
+
     // Uygulanan class'lar: otomatik bileşen (varsa) ve üzerine kontrolün kendi class'ları.
     private void Update(Control control, TwBinding? binding, string own, string? automatic)
     {

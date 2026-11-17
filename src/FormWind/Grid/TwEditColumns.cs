@@ -173,6 +173,23 @@ public class TwSelectColumn : DataGridViewColumn
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<object?, string?>? Validate { get; set; }
 
+    /// <summary>
+    /// The choices of a row (dependent lists: the subcategories of the row's category); <c>null</c> from the function, or no
+    /// function, means <see cref="Items"/>. Called when the list opens, when typing selects and when a cell shows its value.
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Func<int, IList<object>?>? ItemsFor { get; set; }
+
+    /// <summary>
+    /// Whether a choice is committed at once: the edit ends and a bound row (<c>DataRowView</c>, <c>IEditableObject</c>) ends
+    /// its edit, so a <c>DataRow</c> is <c>Modified</c> without leaving the row. <c>false</c> = the grid's own timing.
+    /// </summary>
+    [Category("FormWind"), DefaultValue(false)]
+    public bool CommitOnSelect { get; set; }
+
+    /// <summary>The choices of the row at <paramref name="rowIndex"/> (<see cref="ItemsFor"/>, else <see cref="Items"/>).</summary>
+    public IList<object> ItemsAt(int rowIndex) => (rowIndex >= 0 ? ItemsFor?.Invoke(rowIndex) : null) ?? Items;
+
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override DataGridViewCell CellTemplate
     {
@@ -196,10 +213,19 @@ public class TwSelectColumn : DataGridViewColumn
     }
 
     /// <summary>The item that stores <paramref name="value"/>; <c>null</c> when none does.</summary>
-    public object? ItemOf(object? value)
+    public object? ItemOf(object? value) => Find(Items, value);
+
+    /// <summary>The item of the row at <paramref name="rowIndex"/> that stores <paramref name="value"/>, then of <see cref="Items"/>.</summary>
+    public object? ItemOf(object? value, int rowIndex)
+    {
+        var items = ItemsAt(rowIndex);
+        return Find(items, value) ?? (ReferenceEquals(items, Items) ? null : Find(Items, value));
+    }
+
+    private object? Find(IList<object> items, object? value)
     {
         if (value is null || value is DBNull) return null;
-        foreach (var item in Items)
+        foreach (var item in items)
             if (Equals(ValueOf(item), value)) return item;
         return null;
     }
@@ -215,6 +241,8 @@ public class TwSelectColumn : DataGridViewColumn
         clone.Placeholder = Placeholder;
         clone.Classes = Classes;
         clone.Validate = Validate;
+        clone.ItemsFor = ItemsFor;
+        clone.CommitOnSelect = CommitOnSelect;
         return clone;
     }
 }
@@ -236,8 +264,8 @@ public class TwSelectCell : DataGridViewTextBoxCell
 
     public override bool KeyEntersEditMode(KeyEventArgs e) => false;
 
-    /// <summary>The menu open on this column's cell, while it is open.</summary>
-    internal static ContextMenuStrip? OpenMenu { get; private set; }
+    /// <summary>The list open on a select cell (opened by <see cref="ShowDropDown(int)"/>), while it is open.</summary>
+    public static ContextMenuStrip? OpenMenu { get; private set; }
 
     public string? GetError(int rowIndex) => TwInputCell.Error(this, rowIndex, base.GetErrorText(rowIndex), ValueAt(rowIndex), Column?.Validate);
 
@@ -248,7 +276,7 @@ public class TwSelectCell : DataGridViewTextBoxCell
     {
         var column = Column;
         string text = column is null ? Convert.ToString(value, CultureInfo.CurrentCulture) ?? ""
-            : column.ItemOf(value) is object item ? column.TextOf(item)
+            : column.ItemOf(value, rowIndex) is object item ? column.TextOf(item)
             : value is null || value is DBNull ? "" : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";
         return base.GetFormattedValue(text, rowIndex, ref cellStyle, null, null, context);
     }
@@ -300,14 +328,16 @@ public class TwSelectCell : DataGridViewTextBoxCell
         _typeAheadTime = now;
         bool repeat = _typeAhead.Length == 1 && char.ToUpper(_typeAhead[0], CultureInfo.CurrentCulture) == char.ToUpper(e.KeyChar, CultureInfo.CurrentCulture);
         if (!repeat) _typeAhead += e.KeyChar;
-        int current = column.Items.IndexOf(column.ItemOf(DataGridView.Rows[rowIndex].Cells[ColumnIndex].Value)!);
+        var items = column.ItemsAt(rowIndex);
+        var currentItem = column.ItemOf(DataGridView.Rows[rowIndex].Cells[ColumnIndex].Value, rowIndex);
+        int current = currentItem is null ? -1 : items.IndexOf(currentItem);
         int start = repeat ? current + 1 : Math.Max(0, current);
-        for (int n = 0; n < column.Items.Count; n++)
+        for (int n = 0; n < items.Count; n++)
         {
-            int i = (start + n) % column.Items.Count;
-            if (CultureInfo.CurrentCulture.CompareInfo.IsPrefix(column.TextOf(column.Items[i]), _typeAhead, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
+            int i = (start + n) % items.Count;
+            if (CultureInfo.CurrentCulture.CompareInfo.IsPrefix(column.TextOf(items[i]), _typeAhead, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
             {
-                Choose(rowIndex, column.Items[i]);
+                Choose(rowIndex, items[i]);
                 break;
             }
         }
@@ -322,15 +352,17 @@ public class TwSelectCell : DataGridViewTextBoxCell
     {
         var grid = DataGridView;
         var column = Column;
-        if (grid is null || column is null || rowIndex < 0 || ReadOnlyAt(rowIndex) || column.Items.Count == 0) return;
+        if (grid is null || column is null || rowIndex < 0 || ReadOnlyAt(rowIndex)) return;
+        var items = column.ItemsAt(rowIndex);
+        if (items.Count == 0) return;
         OpenMenu?.Close();
         var cellBounds = grid.GetCellDisplayRectangle(ColumnIndex, rowIndex, false);
         if (cellBounds.IsEmpty) return;
         float s = TwCellPainting.Scale(grid);
         var box = TwInputCell.BoxBounds(cellBounds, s);
-        var current = column.ItemOf(grid.Rows[rowIndex].Cells[ColumnIndex].Value);
+        var current = column.ItemOf(grid.Rows[rowIndex].Cells[ColumnIndex].Value, rowIndex);
         var menu = new ContextMenuStrip { Renderer = new TwToolStripRenderer(TwInputCell.MenuColors(grid, column.Classes)), ShowImageMargin = false, ShowCheckMargin = true, Font = grid.Font };
-        foreach (var item in column.Items)
+        foreach (var item in items)
         {
             var choice = item;
             var menuItem = new ToolStripMenuItem(column.TextOf(item)) { Checked = Equals(item, current) };
@@ -357,6 +389,14 @@ public class TwSelectCell : DataGridViewTextBoxCell
         if (Equals(cell.Value, value)) return;
         cell.Value = value;
         grid.InvalidateCell(cell);
+        if (column.CommitOnSelect) Commit(grid, rowIndex);
+    }
+
+    // Değer bağlı satıra yazıldı ama satır düzenlemede: DataRow RowState'i satırdan çıkılana kadar Unchanged kalır.
+    private static void Commit(DataGridView grid, int rowIndex)
+    {
+        if (grid.IsCurrentCellInEditMode) grid.EndEdit();
+        if (grid.Rows[rowIndex].DataBoundItem is IEditableObject editable) editable.EndEdit();
     }
 }
 
@@ -412,8 +452,9 @@ internal static class TwInputCell
 
     internal readonly struct InputColors
     {
-        public InputColors(Color back, Color fore, Color border, Color placeholder, Color? ring, int ringWidth, int radius)
+        public InputColors(Color back, Color fore, Color border, Color placeholder, Color? ring, int ringWidth, int radius, Color arrowBack)
         {
+            ArrowBack = arrowBack;
             Back = back;
             Fore = fore;
             Border = border;
@@ -430,6 +471,9 @@ internal static class TwInputCell
         public Color? Ring { get; }
         public int RingWidth { get; }
         public int Radius { get; }
+
+        /// <summary>Fill of a select cell's arrow square (<c>arrow:bg-*</c>, else <c>accent-*</c>); empty = a plain chevron.</summary>
+        public Color ArrowBack { get; }
     }
 
     public static InputColors Colors(DataGridView? grid, string classes, bool focused, bool invalid)
@@ -443,7 +487,12 @@ internal static class TwInputCell
         var fore = style.ForeColor ?? (dark ? ColorTranslator.FromHtml("#f3f4f6") : ColorTranslator.FromHtml("#111827"));
         var border = style.BorderColor ?? (dark ? ColorTranslator.FromHtml("#4b5563") : ColorTranslator.FromHtml("#d1d5db"));
         var hint = placeholder.ForeColor ?? Color.FromArgb(150, fore);
-        return new InputColors(back, fore, border, hint, style.RingColor, style.RingWidth ?? 0, style.Radius ?? 6);
+        // TwSelect gibi: ok karesi arrow:bg-* ile accent-*'tan ayrılır; arrow:bg-transparent kareyi kaldırır.
+        var arrow = parsed.ResolvePart("arrow", state & ~(TwState.Hover | TwState.Active));
+        var arrowBack = arrow.BackColor is Color arrowColor
+            ? arrowColor.A == 0 ? Color.Empty : arrowColor
+            : style.AccentColor ?? Color.Empty;
+        return new InputColors(back, fore, border, hint, style.RingColor, style.RingWidth ?? 0, style.Radius ?? 6, arrowBack);
     }
 
     public static string? Error(DataGridViewCell cell, int rowIndex, string? own, object? value, Func<object?, string?>? validate)
@@ -522,7 +571,14 @@ internal static class TwInputCell
             if (!empty) TextRenderer.DrawText(g, text, font, textBounds, colors.Fore, flags);
             else if (!hideTextWhenEmpty && placeholder.Length > 0) TextRenderer.DrawText(g, placeholder, font, textBounds, colors.Placeholder, flags);
 
-            if (chevron)
+            if (chevron && !colors.ArrowBack.IsEmpty)
+            {
+                int inset = (int)Math.Round(4 * s);
+                int size = Math.Max(8, Math.Min(arrow - inset, box.Height - 2 * inset));
+                var square = new Rectangle(rtl ? box.Left + inset : box.Right - size - inset, box.Top + (box.Height - size) / 2, size, size);
+                TwSelect.PaintArrowSquare(g, square, s, colors.ArrowBack);
+            }
+            else if (chevron)
             {
                 int em = Math.Max(8, (int)Math.Round(font.Height * 0.9f));
                 var area = rtl ? new Rectangle(box.Left + pad / 2, box.Top, arrow, box.Height) : new Rectangle(box.Right - pad / 2 - arrow, box.Top, arrow, box.Height);
@@ -563,6 +619,7 @@ internal static class TwInputCell
             Separator = ColorTranslator.FromHtml("#374151"),
             Accent = ColorTranslator.FromHtml("#60a5fa"),
             InputBack = ColorTranslator.FromHtml("#111827"),
+            State = TwState.Dark,
         }
         : new TwMenuColors();
 }

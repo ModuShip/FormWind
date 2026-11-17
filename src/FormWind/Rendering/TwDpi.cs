@@ -62,6 +62,16 @@ public static class TwDpi
     /// </summary>
     public static int DeviceDpi(Control control) => DeviceDpiOverride ?? control.FindForm()?.DeviceDpi ?? control.DeviceDpi;
 
+    /// <summary>
+    /// <paramref name="pixels"/> at 96 DPI (the unit of class values) in device pixels of the control's screen, for sizes set
+    /// in code: <c>TwDpi.Scale(this, 8)</c> is 12 at 150 %.
+    /// </summary>
+    public static int Scale(Control control, int pixels)
+    {
+        if (control is null) throw new ArgumentNullException(nameof(control));
+        return (int)Math.Round(pixels * DeviceDpi(control) / 96f, MidpointRounding.AwayFromZero);
+    }
+
     // Testler: sınıf değerlerinin ölçeklendiği ekran DPI'si (ör. %150 için 144). Uygulamalar Simulate kullanır.
     internal static int? DeviceDpiOverride { get; set; }
 
@@ -75,7 +85,10 @@ public static class TwDpi
     /// real <see cref="SystemDpi"/>, which does not change. Controls styled inside the scope get the simulated sizes; controls
     /// styled before it keep theirs until they are styled again (<see cref="TailwindProvider.RefreshAll"/>). Fonts that do not
     /// come from a <c>text-*</c> class and WinForms' own scaling (<c>AutoScaleMode</c>, native control metrics) do not change.
-    /// The setting is process-wide: use it from one UI thread, and dispose nested scopes in reverse order (each restores the
+    /// Sizes set in code or in the designer (<c>Height = 30</c>) therefore stay as they are, while on a real display
+    /// <c>AutoScaleMode</c> would enlarge them: a box whose padding and font grow but whose height was set in code clips its
+    /// text only under the simulation. Give such sizes as classes (<c>h-[30px]</c>) or with <see cref="Scale(Control, int)"/>
+    /// to check them at another scale. The setting is process-wide: use it from one UI thread, and dispose nested scopes in reverse order (each restores the
     /// value it replaced).
     /// </summary>
     public static IDisposable Simulate(int dpi)

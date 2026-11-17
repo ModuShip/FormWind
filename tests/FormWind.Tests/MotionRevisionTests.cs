@@ -237,20 +237,20 @@ public class MotionRevisionTests
         grid.Resize += (_, _) => layouts++;
         int before = TwFadeOut.ActiveCount;
         // OpenForms süreç geneli: başka testlerin iş parçacıklarında kalmış pencereler de sayılır.
-        int open = Application.OpenForms.Count;
+        int open = OpenWindows.Count;
 
         TwTransition.SlideIn(inspector, TwEdge.Right, 120);
         Assert.True(inspector.Visible);
         Assert.True(TwTransition.LastCovered);
         Assert.Equal(280, grid.Width);
-        WaitUntil(() => TwFadeOut.ActiveCount == before && Application.OpenForms.Count == open);
+        WaitUntil(() => TwFadeOut.ActiveCount == before && OpenWindows.Count == open);
         Assert.Equal(1, layouts);                                                  // tablo bir kez yerleşti
 
         TwTransition.SlideOut(inspector, TwEdge.Right, 120);
         Assert.False(inspector.Visible);
-        WaitUntil(() => TwFadeOut.ActiveCount == before && Application.OpenForms.Count == open);
+        WaitUntil(() => TwFadeOut.ActiveCount == before && OpenWindows.Count == open);
         Assert.Equal(2, layouts);
-        Assert.Equal(open, Application.OpenForms.Count);                           // kayan resim de kapandı
+        Assert.Equal(open, OpenWindows.Count);                           // kayan resim de kapandı
 
         var previous = TwMotion.Enabled;
         TwMotion.Enabled = false;
