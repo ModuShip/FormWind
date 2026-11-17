@@ -1,0 +1,68 @@
+name: Benchmarks
+
+# BenchmarkDotNet ölçümleri (tests/FormWind.PerfBenchmarks) yalnızca elle başlatılır: paylaşılan CI makinelerinde süreler
+# koşudan koşuya değişir, bu yüzden sonuçlar bir eşikle karşılaştırılmaz, yapıt olarak yüklenir. Önceki sürümle
+# karşılaştırma için "baseline" bir paket sürümü alır ve aynı koşuda o paketi de ölçer (bkz. CONTRIBUTING.md, Benchmarks).
+on:
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: BenchmarkDotNet filter
+        default: "*"
+      job:
+        description: BenchmarkDotNet job (short, medium, default)
+        default: short
+      baseline:
+        description: Released FormWind package version to measure as well (empty = none)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Girdiler betiğe ortam değişkeni olarak verilir; ${{ }} ile komut satırına yazılsalar kabuk kodu olarak yorumlanabilirlerdi.
+      BENCH_FILTER: ${{ inputs.filter }}
+      BENCH_JOB: ${{ inputs.job }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Benchmarks (source)
+        shell: pwsh
+        run: dotnet run -c Release -f net8.0-windows --project tests/FormWind.PerfBenchmarks -- --filter $env:BENCH_FILTER --job $env:BENCH_JOB --artifacts artifacts/bench-current
+
+      # MSBuild ortam değişkenlerini özellik olarak okur; BenchmarkDotNet'in kendi derlemesi de paketi kullanır.
+      - name: Benchmarks (baseline package)
+        if: inputs.baseline != ''
+        shell: pwsh
+        env:
+          FormWindBaseline: ${{ inputs.baseline }}
+        run: dotnet run -c Release -f net8.0-windows --project tests/FormWind.PerfBenchmarks -- --filter $env:BENCH_FILTER --job $env:BENCH_JOB --artifacts artifacts/bench-baseline
+
+      - name: Summary
+        if: always()
+        shell: pwsh
+        run: |
+          foreach ($folder in "bench-current", "bench-baseline") {
+            $reports = Get-ChildItem "artifacts/$folder/results" -Filter *-report-github.md -ErrorAction SilentlyContinue
+            if (-not $reports) { continue }
+            "## $folder" >> $env:GITHUB_STEP_SUMMARY
+            foreach ($report in $reports) { Get-Content $report.FullName >> $env:GITHUB_STEP_SUMMARY }
+          }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmarks
+          path: artifacts/bench-*
