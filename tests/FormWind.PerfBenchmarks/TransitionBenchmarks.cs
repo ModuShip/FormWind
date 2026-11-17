@@ -12,7 +12,7 @@ namespace FormWind.PerfBenchmarks;
 [MemoryDiagnoser]
 public class TransitionBenchmarks
 {
-    private OffscreenHost _host = null!;
+    private BenchmarkHost _host = null!;
     private Panel _frame = null!;
     private Panel[] _pages = null!;
     private int _shown;
@@ -27,7 +27,7 @@ public class TransitionBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _host = new OffscreenHost(new Size(900, 620));
+        _host = new BenchmarkHost(new Size(900, 620));
         _frame = new Panel { Dock = DockStyle.Fill };
         _host.Form.Controls.Add(_frame);
         _pages = new[] { TestPage.Create(_host.Provider, "A"), TestPage.Create(_host.Provider, "B") };
@@ -54,6 +54,6 @@ public class TransitionBenchmarks
             _frame.Controls.Clear();
             _frame.Controls.Add(next);
         }, Animated ? null : new TwMotionOptions { DurationMs = 0 });
-        OffscreenHost.Pump();
+        BenchmarkHost.Pump();
     }
 }

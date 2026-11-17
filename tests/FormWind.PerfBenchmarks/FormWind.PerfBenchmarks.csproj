@@ -11,6 +11,8 @@
     <TargetFrameworks>net8.0-windows;net472</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>FormWind.PerfBenchmarks</RootNamespace>
+    <!-- FW9001: TwDiagnostics (shadow cache counters) checks that a benchmark really paints what it claims to measure. -->
+    <NoWarn>$(NoWarn);FW9001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

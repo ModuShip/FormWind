@@ -50,7 +50,10 @@ Some test categories are skipped by default because they change process-wide sta
 60 controls per type (`TwButton`, `TwPanel`, `TwTextBox`, `TwSelect`, `Label`, with and without classes, so the
 difference is the cost per styled control), painting and resizing a page of shadowed cards on a double-buffered and a
 non-double-buffered parent, a styled and a plain DataGridView, and `TwCapture.Take` / `TwTransition.CrossFade` with
-animations off (duration 0) and on. The forms are shown off screen, so captures take the `PrintWindow` path. The
+animations off (duration 0) and on. Benchmarks that measure paint messages (resizing, grid scrolling) use a transparent,
+click-through window on the primary screen, because Windows does not paint a window outside the desktop; they check in
+their setup that the cards or the grid are really painted. The other forms are off screen, so captures take the
+`PrintWindow` path. Do not drag windows over the primary screen's top-left corner while they run. The
 benchmarks are not part of `build.ps1` or the CI test step; the *Benchmarks* workflow runs them on demand. Close other
 applications and keep the machine plugged in while they run.
 

@@ -13,13 +13,13 @@ namespace FormWind.PerfBenchmarks;
 [MemoryDiagnoser]
 public class CaptureBenchmarks
 {
-    private OffscreenHost _host = null!;
+    private BenchmarkHost _host = null!;
     private Panel _page = null!;
 
     [GlobalSetup]
     public void Setup()
     {
-        _host = new OffscreenHost(new Size(900, 620));
+        _host = new BenchmarkHost(new Size(900, 620));
         _page = TestPage.Create(_host.Provider, "A");
         _host.Form.Controls.Add(_page);
         _host.Show();

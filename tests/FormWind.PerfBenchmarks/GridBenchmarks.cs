@@ -18,7 +18,7 @@ public class GridBenchmarks
 
     private static readonly Size GridSize = new Size(900, 620);
 
-    private OffscreenHost _host = null!;
+    private BenchmarkHost _host = null!;
     private DataGridView _grid = null!;
     private Bitmap _surface = null!;
 
@@ -28,7 +28,8 @@ public class GridBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _host = new OffscreenHost(GridSize);
+        // ScrollAndPaint measures the paint messages Windows sends, which a form outside the desktop never gets.
+        _host = new BenchmarkHost(GridSize, HostPlacement.InvisibleOnScreen);
         _grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false };
         for (int column = 0; column < ColumnCount; column++) _grid.Columns.Add("c" + column, "Column " + column);
         for (int row = 0; row < RowCount; row++)
@@ -41,6 +42,24 @@ public class GridBenchmarks
         if (Styled) _host.Provider.SetClasses(_grid, "table table-striped");
         _host.Show();
         _surface = new Bitmap(GridSize.Width, GridSize.Height, PixelFormat.Format32bppPArgb);
+        EnsurePainted();
+    }
+
+    // A grid that is not painted measures only the scrolling and looks fast.
+    private void EnsurePainted()
+    {
+        int paints = 0;
+        PaintEventHandler count = (_, _) => paints++;
+        _grid.Paint += count;
+        try
+        {
+            ScrollAndPaint();
+        }
+        finally
+        {
+            _grid.Paint -= count;
+        }
+        if (paints < 2) throw new InvalidOperationException("ScrollAndPaint does not paint the grid; the measurement would leave the paint out.");
     }
 
     [GlobalCleanup]

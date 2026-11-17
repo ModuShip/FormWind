@@ -18,7 +18,7 @@ public class CardPageBenchmarks
 
     private static readonly Size PageSize = new Size(900, 620);
 
-    private OffscreenHost _host = null!;
+    private BenchmarkHost _host = null!;
     private CardPage _page = null!;
     private Bitmap _surface = null!;
 
@@ -28,7 +28,8 @@ public class CardPageBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _host = new OffscreenHost(PageSize);
+        // Resize measures the paint messages Windows sends, which a form outside the desktop never gets.
+        _host = new BenchmarkHost(PageSize, HostPlacement.InvisibleOnScreen);
         _page = new CardPage(DoubleBufferedParent) { Dock = DockStyle.Fill, Padding = new Padding(16) };
         _host.Form.Controls.Add(_page);
         _host.Provider.SetClasses(_page, "bg-surface-50");
@@ -40,6 +41,18 @@ public class CardPageBenchmarks
         }
         _host.Show();
         _surface = new Bitmap(PageSize.Width, PageSize.Height, PixelFormat.Format32bppPArgb);
+        EnsureShadowsDrawn("Paint", Paint);
+        EnsureShadowsDrawn("Resize", _host.Form.Refresh);
+    }
+
+    // A page that is not painted measures only the layout and looks fast; the first version of Resize did exactly that.
+    private static void EnsureShadowsDrawn(string benchmark, Action paint)
+    {
+        var before = TwDiagnostics.ShadowCache;
+        paint();
+        var after = TwDiagnostics.ShadowCache;
+        if (after.Hits + after.Misses - before.Hits - before.Misses < CardCount)
+            throw new InvalidOperationException($"{benchmark} does not paint the card shadows; the measurement would leave them out.");
     }
 
     [GlobalCleanup]

@@ -24,7 +24,7 @@ public class StylingBenchmarks
         Label,
     }
 
-    private OffscreenHost _host = null!;
+    private BenchmarkHost _host = null!;
 
     [Params(Kind.TwButton, Kind.TwPanel, Kind.TwTextBox, Kind.TwSelect, Kind.Label)]
     public Kind Type { get; set; }
@@ -35,7 +35,7 @@ public class StylingBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _host = new OffscreenHost(new Size(1200, 900));
+        _host = new BenchmarkHost(new Size(1200, 900));
         _host.Provider.SetClasses(_host.Form, "bg-surface-50");
         _host.Show();
     }
