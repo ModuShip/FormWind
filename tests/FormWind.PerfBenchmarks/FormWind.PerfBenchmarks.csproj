@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Time and memory benchmarks of styling, painting, grids and transitions (BenchmarkDotNet). Not part of build.ps1 or the
+    CI test step: run them by hand (see CONTRIBUTING.md, "Benchmarks") or with the manual "Benchmarks" workflow.
+    tools/FormWind.Benchmarks is a different tool: it compares FormWind with other libraries. BenchmarkDotNet needs
+    project names that are unique in the repository, hence "PerfBenchmarks".
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0-windows;net472</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>FormWind.PerfBenchmarks</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
+
+  <!-- -p:FormWindBaseline=0.1.8 measures a released package instead of the source, to compare with the previous release. -->
+  <ItemGroup Condition="'$(FormWindBaseline)' == ''">
+    <ProjectReference Include="..\..\src\FormWind\FormWind.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(FormWindBaseline)' != ''">
+    <PackageReference Include="FormWind" Version="$(FormWindBaseline)" />
+  </ItemGroup>
+
+</Project>

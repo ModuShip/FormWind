@@ -44,6 +44,43 @@ Some test categories are skipped by default because they change process-wide sta
 | `ColorMode` | `FORMWIND_COLORMODE=1` | .NET 9+ only (`Application.SetColorMode`) |
 | `Visual` | always on when baselines exist for the environment | update with `FORMWIND_UPDATE_BASELINES=1` and review the PNGs |
 
+### Benchmarks
+
+`tests/FormWind.PerfBenchmarks` measures time and memory with [BenchmarkDotNet](https://benchmarkdotnet.org): styling
+60 controls per type (`TwButton`, `TwPanel`, `TwTextBox`, `TwSelect`, `Label`, with and without classes, so the
+difference is the cost per styled control), painting and resizing a page of shadowed cards on a double-buffered and a
+non-double-buffered parent, a styled and a plain DataGridView, and `TwCapture.Take` / `TwTransition.CrossFade` with
+animations off (duration 0) and on. The forms are shown off screen, so captures take the `PrintWindow` path. The
+benchmarks are not part of `build.ps1` or the CI test step; the *Benchmarks* workflow runs them on demand. Close other
+applications and keep the machine plugged in while they run.
+
+```bash
+dotnet run -c Release -f net8.0-windows --project tests/FormWind.PerfBenchmarks -- --filter *
+```
+
+- `--job short` gives a quick, less precise run (a few minutes); `--filter *Styling*` runs one class.
+- `--runtimes net8.0-windows net472` measures both runtimes in one run.
+- `--join` puts all classes in one summary table.
+
+Results go to `BenchmarkDotNet.Artifacts/results/` (Markdown, CSV and HTML tables; add `--exporters json` for the full
+data). To compare with the previous release, measure the published package with the same command: the
+`FormWindBaseline` property replaces the reference to the source with that package version. Set it as an environment
+variable, because BenchmarkDotNet builds the project again in its own process and an MSBuild property given to
+`dotnet run` does not reach that build:
+
+```powershell
+$env:FormWindBaseline = "0.1.9-preview.1"
+dotnet run -c Release -f net8.0-windows --project tests/FormWind.PerfBenchmarks -- --filter * --artifacts artifacts/bench-baseline
+Remove-Item Env:FormWindBaseline
+dotnet run -c Release -f net8.0-windows --project tests/FormWind.PerfBenchmarks -- --filter * --artifacts artifacts/bench-current
+```
+
+Compare the `*-report-github.md` tables of the two folders, on the same machine and in the same session. Differences
+under about 10 % are usually noise for painting benchmarks; check them with a full (not `--job short`) run before
+reporting a regression. If a benchmark uses API added after the baseline release, the project does not build against
+the package; compare with a checkout of the release tag in a second worktree instead. `tools/FormWind.Benchmarks` is a different tool: it compares FormWind with other
+libraries (`docs/benchmarks.md`).
+
 Code coverage: see the README (*Code coverage*). CI fails when `FormWind` line coverage drops below the threshold in
 `.github/workflows/ci.yml`.
 
