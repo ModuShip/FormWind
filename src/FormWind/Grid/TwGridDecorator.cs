@@ -561,7 +561,7 @@ internal sealed partial class TwGridDecorator
 
     private void OnRowErrorToolTip(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)
     {
-        if (RowErrorColor is null || _grid.RowHeadersVisible || !_grid.ShowRowErrors || e.RowIndex < 0 || !string.IsNullOrEmpty(e.ToolTipText)) return;
+        if (RowErrorColor is null || _grid.RowHeadersVisible || !_grid.ShowRowErrors || !TwInputCell.HasRow(_grid, e.RowIndex) || !string.IsNullOrEmpty(e.ToolTipText)) return;
         var error = _grid.Rows.SharedRow(e.RowIndex).GetErrorText(e.RowIndex);
         if (!string.IsNullOrEmpty(error)) e.ToolTipText = error;
     }

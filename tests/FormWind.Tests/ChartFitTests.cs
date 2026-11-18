@@ -185,6 +185,32 @@ public class ChartFitTests
     });
 
     [Fact]
+    public void Ring_chart_paints_tiny_fractions_without_a_gdi_error() => Sta.Run(() =>
+    {
+        // GDI+ DrawArc throws OutOfMemoryException for some sweeps around 0.0007°–0.0025° (round caps, anti-aliasing).
+        using var ring = new PaintableRingChart { Size = new Size(124, 124), Thickness = 0.13f, AnimateOnShow = false, AnimateChanges = false };
+        ring.SetData(("Risk", 0));
+        using var bitmap = new Bitmap(124, 124);
+        using var ringGraphics = Graphics.FromImage(bitmap);
+        using var canvas = new Bitmap(40, 40);
+        using var scoreGraphics = Graphics.FromImage(canvas);
+        const int steps = 1000;
+        for (int i = 0; i <= steps; i++)
+        {
+            double fraction = Math.Pow(10, -9 + 5.0 * i / steps);
+            ring.Rings[0].Value = fraction * 100;
+            ring.PaintTo(ringGraphics);
+            TwRingChart.DrawScore(scoreGraphics, new Rectangle(4, 4, 32, 32), fraction, Color.Red, Color.LightGray, null, SystemFonts.DefaultFont, Color.Black, 1f);
+        }
+    });
+
+    // Calls OnPaint directly: DrawToBitmap goes through WM_PRINT, where WinForms turns a paint exception into a modal dialog.
+    private sealed class PaintableRingChart : TwRingChart
+    {
+        public void PaintTo(Graphics graphics) => OnPaint(new PaintEventArgs(graphics, ClientRectangle));
+    }
+
+    [Fact]
     public void Translucent_and_blurred_panels_show_the_parent_painting_through() => Sta.Run(() =>
     {
         using var form = NewForm(400, 200);

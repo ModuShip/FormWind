@@ -11,7 +11,8 @@ namespace FormWind;
 /// A single row of chips (or any controls, in <c>Controls</c> order, at their preferred size) that scrolls sideways without a
 /// scroll bar: the mouse wheel over the strip or a chip moves it, ← → move it while it has focus, and the ‹ › buttons appear
 /// at the ends only while chips are hidden there. Styled like a <see cref="TwPanel"/>; <see cref="PreviousButton"/> and
-/// <see cref="NextButton"/> take their own classes.
+/// <see cref="NextButton"/> take their own classes. With <c>AutoSize</c> the strip is as wide as its chips (within
+/// <c>MaximumSize</c>, past which it scrolls) and as tall as the tallest; hidden chips take no room.
 /// <code>
 /// var strip = new TwChipStrip { Dock = DockStyle.Top, Height = 40 };
 /// foreach (var line in lines) strip.Controls.Add(new TwChip { Text = line.Name });
@@ -28,6 +29,7 @@ public class TwChipStrip : TwPanel
     private int _offset;
     private int _contentWidth;
     private bool _arranging;
+    private TwAlign _chipAlignment = TwAlign.Center;
 
     public TwChipStrip()
     {
@@ -107,8 +109,41 @@ public class TwChipStrip : TwPanel
 
     private int Scale(int pixels) => (int)Math.Round(pixels * TwDpi.DeviceDpi(this) / 96f);
 
-    private Rectangle Area => Rectangle.FromLTRB(DisplayRectangle.Left + Padding.Left, DisplayRectangle.Top + Padding.Top,
-        DisplayRectangle.Right - Padding.Right, DisplayRectangle.Bottom - Padding.Bottom);
+    // DisplayRectangle already leaves out the padding (ScrollableControl) and the border (TwPanel).
+    private Rectangle Area => DisplayRectangle;
+
+    /// <summary>
+    /// The chips that take part in the layout: hidden ones take no room. Before the strip is shown every child reports
+    /// <c>Visible = false</c>, so then all count.
+    /// </summary>
+    private Control[] LaidOutChips => Chips.Where(c => c.Visible || !Visible).ToArray();
+
+    private static Size ChipSize(Control chip) => chip.AutoSize ? chip.GetPreferredSize(Size.Empty) : chip.Size;
+
+    private int ContentWidthOf(Control[] chips) =>
+        chips.Length == 0 ? 0 : chips.Sum(c => ChipSize(c).Width) + Scale(_gap) * (chips.Length - 1);
+
+    /// <summary>Width: the chips side by side plus padding and border (kept within <c>MaximumSize</c>, where the strip scrolls); height: the tallest chip.</summary>
+    public override Size GetPreferredSize(Size proposedSize)
+    {
+        var chips = LaidOutChips;
+        var border = BorderInsets();
+        int height = chips.Length == 0 ? 0 : chips.Max(c => ChipSize(c).Height);
+        return new Size(ContentWidthOf(chips) + Padding.Horizontal + border.Horizontal, height + Padding.Vertical + border.Vertical);
+    }
+
+    /// <summary>Where the chips sit in the strip's height (<see cref="TwAlign.Stretch"/> = as tall as the strip).</summary>
+    [Category("Layout"), DefaultValue(TwAlign.Center)]
+    public TwAlign ChipAlignment
+    {
+        get => _chipAlignment;
+        set
+        {
+            if (_chipAlignment == value) return;
+            _chipAlignment = value;
+            PerformLayout();
+        }
+    }
 
     // Çiplerin görünen kısmı: taşma varsa uçlardaki düğmelerin arası.
     private Rectangle Viewport
@@ -126,7 +161,7 @@ public class TwChipStrip : TwPanel
     private int ContentLeft(Control chip)
     {
         int x = 0, gap = Scale(_gap);
-        foreach (var c in Chips)
+        foreach (var c in LaidOutChips)
         {
             if (c == chip) return x;
             x += c.Width + gap;
@@ -189,10 +224,10 @@ public class TwChipStrip : TwPanel
         try
         {
             var area = Area;
-            var chips = Chips;
+            var chips = LaidOutChips;
             int gap = Scale(_gap);
-            var sizes = chips.Select(c => c.AutoSize ? c.GetPreferredSize(Size.Empty) : c.Size).ToArray();
-            _contentWidth = chips.Length == 0 ? 0 : sizes.Sum(s => s.Width) + gap * (chips.Length - 1);
+            var sizes = chips.Select(ChipSize).ToArray();
+            _contentWidth = ContentWidthOf(chips);
             _offset = Math.Max(0, Math.Min(MaxScrollOffset, _offset));
 
             var view = Viewport;
@@ -201,9 +236,10 @@ public class TwChipStrip : TwPanel
             int x = view.Left - _offset;
             for (int i = 0; i < chips.Length; i++)
             {
-                var size = new Size(sizes[i].Width, Math.Min(sizes[i].Height, Math.Max(1, area.Height)));
+                var size = sizes[i];
+                if (_chipAlignment == TwAlign.Stretch) size.Height = Math.Max(1, area.Height);
                 int left = rtl ? view.Left + view.Right - x - size.Width : x;
-                chips[i].SetBounds(left, area.Top + (area.Height - size.Height) / 2, size.Width, size.Height);
+                chips[i].SetBounds(left, ChipTop(area, size.Height), size.Width, size.Height);
                 x += size.Width + gap;
             }
 
@@ -216,6 +252,19 @@ public class TwChipStrip : TwPanel
         {
             _arranging = false;
         }
+    }
+
+    // A chip taller than the strip keeps its size and starts at the top: the strip clips the rest.
+    private int ChipTop(Rectangle area, int height)
+    {
+        int free = area.Height - height;
+        if (free <= 0) return area.Top;
+        return _chipAlignment switch
+        {
+            TwAlign.End => area.Top + free,
+            TwAlign.Center => area.Top + free / 2,
+            _ => area.Top,
+        };
     }
 
     private static void PlaceButton(TwButton button, Rectangle area, bool atLeft, bool show)

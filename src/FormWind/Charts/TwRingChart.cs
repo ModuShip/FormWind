@@ -88,6 +88,15 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
 
     protected override Size DefaultSize => new Size(160, 160);
 
+    /// <summary>
+    /// Smallest arc that is drawn (degrees). GDI+ DrawArc throws OutOfMemoryException for some sweeps around
+    /// 0.0007°–0.0025° (round caps, anti-aliasing), which WinForms rethrows from painting; such arcs are invisible anyway.
+    /// </summary>
+    private const float MinimumSweepDegrees = 0.01f;
+
+    /// <summary>Whether an arc of <paramref name="sweep"/> degrees is drawn (false for NaN, too).</summary>
+    private static bool IsDrawableSweep(float sweep) => sweep >= MinimumSweepDegrees;
+
     /// <summary>A score ring: a track and an arc of <paramref name="fraction"/> (0–1) with a short text in the middle.</summary>
     internal static void DrawScore(Graphics g, Rectangle box, double fraction, Color color, Color track, string? text, Font font, Color textColor, float scale)
     {
@@ -99,7 +108,7 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
         g.SmoothingMode = SmoothingMode.AntiAlias;
         using (var pen = new Pen(track, width)) g.DrawEllipse(pen, ring);
         float sweep = (float)(Math.Max(0, Math.Min(1, double.IsNaN(fraction) ? 0 : fraction)) * 360);
-        if (sweep > 0)
+        if (IsDrawableSweep(sweep))
         {
             using var bar = new Pen(color, width) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             if (sweep >= 359.9f) g.DrawEllipse(bar, ring);
@@ -353,7 +362,7 @@ public class TwRingChart : Control, ITwChartControl, ITwChartItems
             var box = new RectangleF(center.X - r, center.Y - r, r * 2, r * 2);
             using (var pen = new Pen(track, w)) g.DrawEllipse(pen, box);
             float sweep = ShownFraction(i) * 360;
-            if (sweep <= 0) continue;
+            if (!IsDrawableSweep(sweep)) continue;
             var color = GetRingColor(i);
             if (!Enabled) color = TwCharts.Blend(color, surface, 0.5f);
             else if (_hover >= 0 && _hover != i) color = TwCharts.Blend(color, surface, 0.35f);

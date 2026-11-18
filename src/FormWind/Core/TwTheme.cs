@@ -483,6 +483,12 @@ public sealed class TwTheme
     }
 
     /// <summary>Adds or overrides a palette color. When <paramref name="shade"/> is empty the color is used without a shade (<c>bg-brand</c>).</summary>
+    /// <remarks>
+    /// A color name starts with a lowercase letter and holds only <c>a-z</c> and <c>0-9</c>: no hyphen, since <c>-</c> separates
+    /// the shade (<c>bg-uicard-500</c>), so write <c>uicard</c>, not <c>ui-card</c>. Names that start like a border side
+    /// (<c>line</c>, <c>top</c>, <c>left</c>) are fine: <c>border-line</c> is the border color, not a side width.
+    /// </remarks>
+    /// <exception cref="ArgumentException"><paramref name="name"/> breaks the naming rule.</exception>
     public void SetColor(string name, string shade, Color color)
     {
         if (name is null || !ColorNameRx.IsMatch(name))
@@ -500,9 +506,11 @@ public sealed class TwTheme
     /// <c>dark:</c> class for the same property still wins, as with any other color. The dark value's alpha is not used.
     /// <code>
     /// theme.SetColor("menu", light: ColorTranslator.FromHtml("#F8F8FA"), dark: ColorTranslator.FromHtml("#2C2C2F"));
-    /// theme.SetComponent("menu", "bg-menu border-menu-line item:hover:bg-accent");
+    /// theme.SetComponent("menu", "bg-menu item:hover:bg-accent");
     /// </code>
     /// </summary>
+    /// <remarks>The name follows the rule of <see cref="SetColor(string, string, Color)"/>: <c>a-z</c> and <c>0-9</c>, no hyphen.</remarks>
+    /// <exception cref="ArgumentException"><paramref name="name"/> breaks the naming rule.</exception>
     public void SetColor(string name, Color light, Color dark)
     {
         SetColor(name, "", light);
