@@ -5,6 +5,8 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.10-preview.2] - 2026-11-18
+
 ### Added
 
 - `TwChipStrip.ChipAlignment` (`Start`, `Center`, `End`, `Stretch`) places the chips in the strip's height.
@@ -783,7 +785,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.1...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.2...HEAD
+[0.1.10-preview.2]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.1...v0.1.10-preview.2
 [0.1.10-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.9-preview.1...v0.1.10-preview.1
 [0.1.9-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.8-preview.1...v0.1.9-preview.1
 [0.1.8-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.7-preview.1...v0.1.8-preview.1

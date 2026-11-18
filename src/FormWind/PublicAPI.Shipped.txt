@@ -3123,3 +3123,8 @@ FormWind.TwPlaceholder
 static FormWind.TwPlaceholder.Set(System.Windows.Forms.TextBox! box, string? text) -> void
 static FormWind.TwPlaceholder.Get(System.Windows.Forms.TextBox! box) -> string!
 override FormWind.TwInfoTip.IsInputKey(System.Windows.Forms.Keys keyData) -> bool
+FormWind.TwChipStrip.ChipAlignment.get -> FormWind.TwAlign
+FormWind.TwChipStrip.ChipAlignment.set -> void
+override FormWind.TwChipStrip.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+FormWind.TwInfoTip.ClickOpensCard.get -> bool
+FormWind.TwInfoTip.ClickOpensCard.set -> void
