@@ -5,6 +5,34 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwChipStrip.ChipAlignment` (`Start`, `Center`, `End`, `Stretch`) places the chips in the strip's height.
+- `TwInfoTip.ClickOpensCard = false` makes a click and Enter raise `Click` only (to open a glossary page, say) and
+  close an open card; hovering still shows the card and Space toggles it.
+
+### Fixed
+
+- An `AutoSize` `TwChipStrip` sized itself 0×0: it now prefers the width of its chips plus gaps, padding and border
+  (scrolling past `MaximumSize`) and the height of the tallest chip. Hidden chips take no room.
+- `TwChipStrip` counted its padding twice (the top one moved chips down, the bottom one twice up) and shrank chips
+  taller than the strip; chips are now centered inside the padding and a tall chip is clipped, not shrunk.
+- `TwSelectColumn` / `TwTextColumn` `Validate` ran only on rows the user had visited: a shared row's index matched the
+  missing new row (`NewRowIndex = -1` with `AllowUserToAddRows = false`). Every drawn row is checked now, empty values
+  (`DBNull`) as `null`.
+- `TwSelectColumn` opened its list (click, Space, F4, Alt+↓) and typed into rows whose `CellBeginEdit` was canceled.
+  It now raises `CellBeginEdit` first and stays closed when a handler cancels; `CellEndEdit` follows when the list closes.
+- `TwSelectColumn.ItemsFor`, the select and text cells' errors and the grid's row error tooltip skip rows the grid keeps
+  for a moment after `DataView.RowFilter` changes (one row more than the list), which made an `ItemsFor` reading the
+  data row throw while painting.
+- Font classes of a menu item (`SetClasses(ToolStripItem)`, `menu-header`) started from Segoe UI when the item was given
+  classes before joining its menu; they now start from the menu's font and follow it when it changes.
+
+### Documentation
+
+- `TwTheme.SetColor`: the color name rule (`a-z`, `0-9`, no hyphen) and that names like `line` or `top` are colors.
+- `TwSelectColumn`: lock rows with `CellBeginEdit`, not `ReadOnly` set in `DataBindingComplete`.
+
 ## [0.1.10-preview.1] - 2026-11-17
 
 ### Added

@@ -1,1 +1,6 @@
 #nullable enable
+FormWind.TwChipStrip.ChipAlignment.get -> FormWind.TwAlign
+FormWind.TwChipStrip.ChipAlignment.set -> void
+override FormWind.TwChipStrip.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
+FormWind.TwInfoTip.ClickOpensCard.get -> bool
+FormWind.TwInfoTip.ClickOpensCard.set -> void

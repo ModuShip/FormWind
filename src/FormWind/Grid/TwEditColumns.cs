@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Windows.Forms;
 
 namespace FormWind;
@@ -74,7 +76,8 @@ public class TwTextCell : DataGridViewTextBoxCell
         DataGridView is null || rowIndex < 0 || rowIndex >= DataGridView.Rows.Count ? null : GetValue(rowIndex);
 
     /// <summary>The error of the value in <paramref name="rowIndex"/>: the cell's <c>ErrorText</c>, else the column's <see cref="TwTextColumn.Validate"/>.</summary>
-    public string? GetError(int rowIndex) => TwInputCell.Error(this, rowIndex, base.GetErrorText(rowIndex), ValueAt(rowIndex), Column?.Validate);
+    public string? GetError(int rowIndex) =>
+        TwInputCell.HasRow(DataGridView, rowIndex) ? TwInputCell.Error(this, rowIndex, base.GetErrorText(rowIndex), ValueAt(rowIndex), Column?.Validate) : null;
 
     protected override string GetErrorText(int rowIndex) => GetError(rowIndex) ?? "";
 
@@ -137,7 +140,10 @@ public class TwTextCell : DataGridViewTextBoxCell
 /// Editable choice column: cells look like a <see cref="TwSelect"/> (input box, the choice's text, a down arrow; the
 /// <see cref="Placeholder"/> when empty). Clicking the cell, Space, F4 or Alt+↓ opens the list as a menu on the cell;
 /// typing a letter picks the next item starting with it. The value stored is the item (or its <see cref="ValueMember"/>);
-/// the text shown is its <see cref="DisplayMember"/> (or <c>ToString()</c>).
+/// the text shown is its <see cref="DisplayMember"/> (or <c>ToString()</c>). Opening the list and typing raise the grid's
+/// <c>CellBeginEdit</c> first (and <c>CellEndEdit</c> after), so <c>e.Cancel = true</c> there locks the row as it does for a
+/// text cell; no need to set the cell's <c>ReadOnly</c> (doing that inside <c>DataBindingComplete</c> unshares rows and can
+/// break the grid's painting).
 /// <code>
 /// grid.Columns.Add(new TwSelectColumn { DataPropertyName = "Cause", HeaderText = "Neden", Placeholder = "Seçin",
 ///     Items = { "Arıza", "Ayar", "Malzeme yok" } });
@@ -169,7 +175,11 @@ public class TwSelectColumn : DataGridViewColumn
     [Category("FormWind"), DefaultValue("")]
     public string Classes { get; set; } = "";
 
-    /// <summary>Error text for a value (<c>null</c> = valid), shown as the <c>invalid:</c> look.</summary>
+    /// <summary>
+    /// Error text for a value (<c>null</c> = valid), shown as the <c>invalid:</c> look (the theme's <c>input</c> component
+    /// draws it as a red border). Checked for every row as it is drawn, visited or not, with <c>null</c> for an empty value
+    /// (<c>DBNull</c>); not for the new row.
+    /// </summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<object?, string?>? Validate { get; set; }
 
@@ -188,7 +198,11 @@ public class TwSelectColumn : DataGridViewColumn
     public bool CommitOnSelect { get; set; }
 
     /// <summary>The choices of the row at <paramref name="rowIndex"/> (<see cref="ItemsFor"/>, else <see cref="Items"/>).</summary>
-    public IList<object> ItemsAt(int rowIndex) => (rowIndex >= 0 ? ItemsFor?.Invoke(rowIndex) : null) ?? Items;
+    /// <remarks>
+    /// <see cref="ItemsFor"/> gets only rows the grid and its data source agree on: <c>-1</c> (a shared row) and, while the grid
+    /// catches up with a changed <c>DataView.RowFilter</c>, rows past the end of the list get <see cref="Items"/> instead.
+    /// </remarks>
+    public IList<object> ItemsAt(int rowIndex) => (TwInputCell.HasRow(DataGridView, rowIndex) ? ItemsFor?.Invoke(rowIndex) : null) ?? Items;
 
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override DataGridViewCell CellTemplate
@@ -254,8 +268,44 @@ public class TwSelectCell : DataGridViewTextBoxCell
 
     private TwSelectColumn? Column => OwningColumn as TwSelectColumn;
 
-    private object? ValueAt(int rowIndex) =>
-        DataGridView is null || rowIndex < 0 || rowIndex >= DataGridView.Rows.Count ? null : GetValue(rowIndex);
+    private static readonly MethodInfo? RaiseCellBeginEdit = typeof(DataGridView).GetMethod("OnCellBeginEdit",
+        BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(DataGridViewCellCancelEventArgs) }, null);
+
+    private static readonly MethodInfo? RaiseCellEndEdit = typeof(DataGridView).GetMethod("OnCellEndEdit",
+        BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(DataGridViewCellEventArgs) }, null);
+
+    private object? ValueAt(int rowIndex) => TwInputCell.HasRow(DataGridView, rowIndex) ? GetValue(rowIndex) : null;
+
+    /// <summary>
+    /// Raises the grid's <c>CellBeginEdit</c> as a text cell would before editing, so row rights checked there also lock the
+    /// list; <c>false</c> when a handler cancels.
+    /// </summary>
+    private bool BeginEdit(DataGridView grid, int rowIndex)
+    {
+        var e = new DataGridViewCellCancelEventArgs(ColumnIndex, rowIndex);
+        Raise(RaiseCellBeginEdit, grid, e);
+        return !e.Cancel;
+    }
+
+    private void EndEdit(DataGridView grid, int rowIndex)
+    {
+        if (grid.IsDisposed || rowIndex >= grid.Rows.Count || ColumnIndex < 0) return;
+        Raise(RaiseCellEndEdit, grid, new DataGridViewCellEventArgs(ColumnIndex, rowIndex));
+    }
+
+    // A handler's exception surfaces as itself, not wrapped in TargetInvocationException.
+    private static void Raise(MethodInfo? method, DataGridView grid, EventArgs e)
+    {
+        if (method is null) return;
+        try
+        {
+            method.Invoke(grid, new object[] { e });
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+        }
+    }
 
     public override Type ValueType => typeof(object);
 
@@ -267,7 +317,8 @@ public class TwSelectCell : DataGridViewTextBoxCell
     /// <summary>The list open on a select cell (opened by <see cref="ShowDropDown(int)"/>), while it is open.</summary>
     public static ContextMenuStrip? OpenMenu { get; private set; }
 
-    public string? GetError(int rowIndex) => TwInputCell.Error(this, rowIndex, base.GetErrorText(rowIndex), ValueAt(rowIndex), Column?.Validate);
+    public string? GetError(int rowIndex) =>
+        TwInputCell.HasRow(DataGridView, rowIndex) ? TwInputCell.Error(this, rowIndex, base.GetErrorText(rowIndex), ValueAt(rowIndex), Column?.Validate) : null;
 
     protected override string GetErrorText(int rowIndex) => GetError(rowIndex) ?? "";
 
@@ -323,13 +374,28 @@ public class TwSelectCell : DataGridViewTextBoxCell
         if (column is null || DataGridView is null || ReadOnlyAt(rowIndex) || char.IsControl(e.KeyChar) || e.KeyChar == ' ') return;
 
         // Yazarak seçme (TwSelect gibi): 1 sn içindeki harfler birikir; aynı harf tekrar o harfle başlayan sonrakine geçer.
+        e.Handled = true;
+        var grid = DataGridView;
+        if (!BeginEdit(grid, rowIndex)) return;
+        try
+        {
+            TypeAhead(grid, column, rowIndex, e.KeyChar);
+        }
+        finally
+        {
+            EndEdit(grid, rowIndex);
+        }
+    }
+
+    private void TypeAhead(DataGridView grid, TwSelectColumn column, int rowIndex, char key)
+    {
         var now = DateTime.UtcNow;
         if ((now - _typeAheadTime).TotalMilliseconds > 1000) _typeAhead = "";
         _typeAheadTime = now;
-        bool repeat = _typeAhead.Length == 1 && char.ToUpper(_typeAhead[0], CultureInfo.CurrentCulture) == char.ToUpper(e.KeyChar, CultureInfo.CurrentCulture);
-        if (!repeat) _typeAhead += e.KeyChar;
+        bool repeat = _typeAhead.Length == 1 && char.ToUpper(_typeAhead[0], CultureInfo.CurrentCulture) == char.ToUpper(key, CultureInfo.CurrentCulture);
+        if (!repeat) _typeAhead += key;
         var items = column.ItemsAt(rowIndex);
-        var currentItem = column.ItemOf(DataGridView.Rows[rowIndex].Cells[ColumnIndex].Value, rowIndex);
+        var currentItem = column.ItemOf(grid.Rows[rowIndex].Cells[ColumnIndex].Value, rowIndex);
         int current = currentItem is null ? -1 : items.IndexOf(currentItem);
         int start = repeat ? current + 1 : Math.Max(0, current);
         for (int n = 0; n < items.Count; n++)
@@ -341,7 +407,6 @@ public class TwSelectCell : DataGridViewTextBoxCell
                 break;
             }
         }
-        e.Handled = true;
     }
 
     private bool ReadOnlyAt(int rowIndex) =>
@@ -357,7 +422,7 @@ public class TwSelectCell : DataGridViewTextBoxCell
         if (items.Count == 0) return;
         OpenMenu?.Close();
         var cellBounds = grid.GetCellDisplayRectangle(ColumnIndex, rowIndex, false);
-        if (cellBounds.IsEmpty) return;
+        if (cellBounds.IsEmpty || !BeginEdit(grid, rowIndex)) return;
         float s = TwCellPainting.Scale(grid);
         var box = TwInputCell.BoxBounds(cellBounds, s);
         var current = column.ItemOf(grid.Rows[rowIndex].Cells[ColumnIndex].Value, rowIndex);
@@ -373,6 +438,7 @@ public class TwSelectCell : DataGridViewTextBoxCell
         menu.Closed += (_, _) =>
         {
             if (OpenMenu == menu) OpenMenu = null;
+            EndEdit(grid, rowIndex);
             TwInputCell.Post(grid, menu.Dispose);
         };
         OpenMenu = menu;
@@ -495,12 +561,24 @@ internal static class TwInputCell
         return new InputColors(back, fore, border, hint, style.RingColor, style.RingWidth ?? 0, style.Radius ?? 6, arrowBack);
     }
 
+    /// <summary>
+    /// Whether <paramref name="rowIndex"/> is a row of <paramref name="grid"/> that its data source also has (or the new row).
+    /// Right after <c>DataView.RowFilter</c> changes the grid can briefly keep one row more than the list.
+    /// </summary>
+    public static bool HasRow(DataGridView? grid, int rowIndex)
+    {
+        if (grid is null || rowIndex < 0 || rowIndex >= grid.Rows.Count) return false;
+        if (grid.DataSource is null || grid.BindingContext is null) return true;
+        var manager = grid.BindingContext[grid.DataSource, grid.DataMember];
+        return rowIndex < manager.Count || rowIndex == grid.NewRowIndex;
+    }
+
     public static string? Error(DataGridViewCell cell, int rowIndex, string? own, object? value, Func<object?, string?>? validate)
     {
         var grid = cell.DataGridView;
-        if (grid is null || rowIndex < 0 || rowIndex >= grid.Rows.Count) return null;
+        if (grid is null || !HasRow(grid, rowIndex)) return null;
         if (!string.IsNullOrEmpty(own)) return own;
-        if (validate is null || grid.Rows.SharedRow(rowIndex).IsNewRow) return null;
+        if (validate is null || rowIndex == grid.NewRowIndex) return null;
         var text = validate(value is DBNull ? null : value);
         return string.IsNullOrEmpty(text) ? null : text;
     }

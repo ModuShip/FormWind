@@ -7,7 +7,8 @@ namespace FormWind;
 
 /// <summary>
 /// A small info icon next to a term ("OEE", "MTBF") that opens a definition card: hovering shows it without taking the focus
-/// and it stays while the pointer is in the card; a click, Enter or Space opens and closes it. The card has a bold
+/// and it stays while the pointer is in the card; a click, Enter or Space opens and closes it (with
+/// <see cref="ClickOpensCard"/> = <c>false</c> a click and Enter raise <c>Click</c> instead). The card has a bold
 /// <see cref="Title"/> and the wrapped <see cref="Description"/>, in the colors around the icon (dark on a dark page) until
 /// <see cref="Card"/> is given classes or colors of its own.
 /// <code>
@@ -205,10 +206,18 @@ public class TwInfoTip : Control
         Invalidate();
     }
 
+    /// <summary>
+    /// Whether a click and Enter open and close the card (default). <c>false</c> = they raise <see cref="Control.Click"/> only
+    /// (e.g. to open a glossary page) and close an open card; the card still opens on hover and Space toggles it for the keyboard.
+    /// </summary>
+    [Category("Behavior"), DefaultValue(true)]
+    public bool ClickOpensCard { get; set; } = true;
+
     protected override void OnClick(EventArgs e)
     {
         base.OnClick(e);
-        Toggle();
+        if (ClickOpensCard) Toggle();
+        else HideCard();
     }
 
     // Enter formun AcceptButton'una, Esc CancelButton'una gitmeden ikona gelir (Esc yalnızca kart açıkken).
@@ -218,7 +227,12 @@ public class TwInfoTip : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.KeyCode is Keys.Enter or Keys.Space)
+        if (e.KeyCode == Keys.Enter && !ClickOpensCard)
+        {
+            OnClick(EventArgs.Empty);
+            e.Handled = true;
+        }
+        else if (e.KeyCode is Keys.Enter or Keys.Space)
         {
             Toggle();
             e.Handled = true;

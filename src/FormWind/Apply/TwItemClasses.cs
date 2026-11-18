@@ -19,6 +19,9 @@ internal static class TwItemClasses
 
         // Font sınıflardan geldiyse sınıflar değişince/kalkınca öğe sahibinin fontuna döner; uygulamanın verdiği font korunur.
         public bool SetFont { get; set; }
+
+        // The menu whose font the item's font classes start from; followed so a later menu font (font-sans) reaches the item.
+        public ToolStrip? Owner { get; set; }
     }
 
     private static readonly ConditionalWeakTable<ToolStripItem, Entry> Entries = new ConditionalWeakTable<ToolStripItem, Entry>();
@@ -32,11 +35,45 @@ internal static class TwItemClasses
             if (classes.Length == 0) return;
             entry = new Entry(provider);
             Entries.Add(item, entry);
+            item.OwnerChanged += OnOwnerChanged;
+            Follow(item, entry);
         }
         entry.Classes = classes;
         ApplyFont(item, entry);
-        if (classes.Length == 0) Entries.Remove(item);
+        if (classes.Length == 0)
+        {
+            item.OwnerChanged -= OnOwnerChanged;
+            Unfollow(entry);
+            Entries.Remove(item);
+        }
         item.Invalidate();
+    }
+
+    private static void OnOwnerChanged(object? sender, System.EventArgs e)
+    {
+        if (sender is not ToolStripItem item || !Entries.TryGetValue(item, out var entry)) return;
+        Follow(item, entry);
+        ApplyFont(item, entry);
+    }
+
+    private static void Follow(ToolStripItem item, Entry entry)
+    {
+        Unfollow(entry);
+        entry.Owner = item.Owner;
+        if (entry.Owner is { } owner) owner.FontChanged += OnOwnerFontChanged;
+    }
+
+    private static void Unfollow(Entry entry)
+    {
+        if (entry.Owner is { } owner) owner.FontChanged -= OnOwnerFontChanged;
+        entry.Owner = null;
+    }
+
+    private static void OnOwnerFontChanged(object? sender, System.EventArgs e)
+    {
+        if (sender is not ToolStrip owner) return;
+        foreach (ToolStripItem item in owner.Items)
+            if (Entries.TryGetValue(item, out var entry)) ApplyFont(item, entry);
     }
 
     /// <summary>The item's own style in <paramref name="state"/>; <c>null</c> when it has no classes.</summary>
