@@ -3128,3 +3128,8 @@ FormWind.TwChipStrip.ChipAlignment.set -> void
 override FormWind.TwChipStrip.GetPreferredSize(System.Drawing.Size proposedSize) -> System.Drawing.Size
 FormWind.TwInfoTip.ClickOpensCard.get -> bool
 FormWind.TwInfoTip.ClickOpensCard.set -> void
+FormWind.TwInfoTip.Footer.get -> string!
+FormWind.TwInfoTip.Footer.set -> void
+FormWind.TwSelectColumn.LockedFor.get -> System.Func<int, bool>?
+FormWind.TwSelectColumn.LockedFor.set -> void
+override FormWind.TwChipStrip.OnHandleCreated(System.EventArgs! e) -> void
