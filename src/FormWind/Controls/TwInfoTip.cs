@@ -27,10 +27,15 @@ public class TwInfoTip : Control
 
     private readonly Label _title;
     private readonly Label _description;
+    private readonly Label _footer;
     private TwPopover? _popover;
     private string _iconName = "info";
     private string _titleText = "";
     private string _descriptionText = "";
+    private string _footerText = "";
+    private Font? _footerFont;
+    private const float FooterFontScale = 0.9f;
+    private const float FooterFade = 0.6f;
     private int _maxCardWidth = DefaultCardWidth;
     private bool _hovered;
     private Font? _boldFont;
@@ -47,8 +52,10 @@ public class TwInfoTip : Control
         AccessibleRole = AccessibleRole.HelpBalloon;
         _title = new Label { AutoSize = true, Dock = DockStyle.Top, UseMnemonic = false, BackColor = Color.Transparent };
         _description = new Label { AutoSize = true, Dock = DockStyle.Top, UseMnemonic = false, BackColor = Color.Transparent };
+        _footer = new Label { AutoSize = true, Dock = DockStyle.Top, UseMnemonic = false, BackColor = Color.Transparent };
         Card = new TwPanel { CornerRadius = 8, BorderWidth = 1, Padding = new Padding(CardPadding) };
         // Dock = Top sırası: sonra eklenen üstte durur.
+        Card.Controls.Add(_footer);
         Card.Controls.Add(_description);
         Card.Controls.Add(_title);
         Card.BackColorChanged += (_, _) => _customBack |= !_assigning;
@@ -79,6 +86,17 @@ public class TwInfoTip : Control
             _descriptionText = value ?? "";
             AccessibleDescription = _descriptionText.Length > 0 ? _descriptionText : null;
         }
+    }
+
+    /// <summary>
+    /// A faint, smaller last line under the description ("Click for details" when <see cref="ClickOpensCard"/> is <c>false</c>
+    /// and a click opens a glossary page); empty = none.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(""), Localizable(true)]
+    public string Footer
+    {
+        get => _footerText;
+        set => _footerText = value ?? "";
     }
 
     /// <summary>The icon drawn (a name of the icon set); default <c>info</c>, <c>help</c> for a question mark.</summary>
@@ -172,11 +190,37 @@ public class TwInfoTip : Control
         _description.MaximumSize = new Size(width - 2 * padding, 0);
 
         int inner = width - 2 * padding;
-        var title = _title.Visible ? TextRenderer.MeasureText(_titleText, _title.Font, new Size(inner, 0), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix) : Size.Empty;
-        var text = _description.Visible ? _description.GetPreferredSize(new Size(inner, 0)) : Size.Empty;
-        int gap = _title.Visible && _description.Visible ? Scale(4) : 0;
+        var footer = PrepareFooter(inner);
+        // Visible okunmaz: kart gizli açılır pencerede dururken etiketler görünmez sayılır ve ikinci açılışta ölçülmezdi.
+        bool hasTitle = _titleText.Length > 0, hasDescription = _descriptionText.Length > 0;
+        var title = hasTitle ? TextRenderer.MeasureText(_titleText, _title.Font, new Size(inner, 0), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix) : Size.Empty;
+        var text = hasDescription ? _description.GetPreferredSize(new Size(inner, 0)) : Size.Empty;
+        int gap = hasTitle && hasDescription ? Scale(4) : 0;
         _title.Padding = new Padding(0, 0, 0, gap);
-        Card.Size = new Size(Math.Min(width, Math.Max(title.Width, text.Width) + 2 * padding), title.Height + gap + text.Height + 2 * padding);
+        int contentWidth = Math.Max(Math.Max(title.Width, text.Width), footer.Width);
+        Card.Size = new Size(Math.Min(width, contentWidth + 2 * padding), title.Height + gap + text.Height + footer.Height + 2 * padding);
+    }
+
+    // Alt satır: kartın yazı renginin soluğu, biraz küçük yazı; üstündeki metinden boşlukla ayrılır.
+    private Size PrepareFooter(int inner)
+    {
+        _footer.Text = _footerText;
+        _footer.Visible = _footerText.Length > 0;
+        if (_footerText.Length == 0) return Size.Empty;
+        float size = Math.Max(1f, Font.Size * FooterFontScale);
+        if (_footerFont is null || !_footerFont.FontFamily.Equals(Font.FontFamily) || _footerFont.Size != size)
+        {
+            var old = _footerFont;
+            _footerFont = new Font(Font.FontFamily, size, Font.Style, Font.Unit);
+            _footer.Font = _footerFont;
+            old?.Dispose();
+        }
+        _footer.ForeColor = TwMotion.Blend(Card.BackColor, Card.ForeColor, FooterFade);
+        int gap = _titleText.Length > 0 || _descriptionText.Length > 0 ? Scale(6) : 0;
+        _footer.Padding = new Padding(0, gap, 0, 0);
+        _footer.MaximumSize = new Size(inner, 0);
+        var measured = _footer.GetPreferredSize(new Size(inner, 0));
+        return measured;
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -271,6 +315,7 @@ public class TwInfoTip : Control
             if (_popover != null) _popover.Dispose();
             else Card.Dispose();
             _boldFont?.Dispose();
+            _footerFont?.Dispose();
         }
         base.Dispose(disposing);
     }

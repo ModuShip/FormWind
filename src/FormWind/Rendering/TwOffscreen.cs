@@ -50,6 +50,8 @@ public sealed class TwOffscreenOptions
 /// picture.Save("login-dark.png");
 /// </code>
 /// A form that is already visible is pictured where it is. The form's windows are created on the calling (UI) thread.
+/// Use this rather than <see cref="Control.DrawToBitmap"/> for overlapping controls too (a scroll button over chips):
+/// <c>DrawToBitmap</c> paints children in reverse z-order, so the control in front comes out behind.
 /// </summary>
 public static class TwOffscreen
 {
