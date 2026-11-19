@@ -47,7 +47,11 @@ public class TwTextColumn : DataGridViewTextBoxColumn
         set => _editOnFocus.Enabled = value;
     }
 
-    /// <summary>Error text for a value (<c>null</c> = valid); the box gets the <c>invalid:</c> look and the text is the cell's error.</summary>
+    /// <summary>
+    /// Error text for a value (<c>null</c> = valid); the box gets the <c>invalid:</c> look and the text is the cell's error.
+    /// The look comes only from <c>invalid:</c> classes: a theme that redefines <c>input</c> without them shows nothing, so
+    /// keep one there (<c>invalid:border-danger-500</c>) or in <see cref="Classes"/>.
+    /// </summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<object?, string?>? Validate { get; set; }
 
@@ -178,7 +182,8 @@ public class TwSelectColumn : DataGridViewColumn
     /// <summary>
     /// Error text for a value (<c>null</c> = valid), shown as the <c>invalid:</c> look (the theme's <c>input</c> component
     /// draws it as a red border). Checked for every row as it is drawn, visited or not, with <c>null</c> for an empty value
-    /// (<c>DBNull</c>); not for the new row.
+    /// (<c>DBNull</c>); not for the new row. The look comes only from <c>invalid:</c> classes: a theme that redefines
+    /// <c>input</c> without them shows nothing, so keep one there (<c>invalid:border-danger-500</c>) or in <see cref="Classes"/>.
     /// </summary>
     [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<object?, string?>? Validate { get; set; }
@@ -196,6 +201,20 @@ public class TwSelectColumn : DataGridViewColumn
     /// </summary>
     [Category("FormWind"), DefaultValue(false)]
     public bool CommitOnSelect { get; set; }
+
+    /// <summary>
+    /// Rows whose cell is locked (row rights): drawn as plain text like a <c>ReadOnly</c> cell, the list does not open and
+    /// typing does not choose. A row locked only by cancelling <c>CellBeginEdit</c> still shows the input box, since that event
+    /// is raised only when editing starts; give the same check here to show those rows as plain text.
+    /// <code>
+    /// column.LockedFor = row => !CanEdit(grid.Rows[row]);
+    /// </code>
+    /// </summary>
+    [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Func<int, bool>? LockedFor { get; set; }
+
+    // Yalnızca ızgara ile veri kaynağının uzlaştığı satırlar sorulur (bkz. ItemsAt).
+    internal bool IsLockedAt(int rowIndex) => TwInputCell.HasRow(DataGridView, rowIndex) && LockedFor?.Invoke(rowIndex) == true;
 
     /// <summary>The choices of the row at <paramref name="rowIndex"/> (<see cref="ItemsFor"/>, else <see cref="Items"/>).</summary>
     /// <remarks>
@@ -257,6 +276,7 @@ public class TwSelectColumn : DataGridViewColumn
         clone.Validate = Validate;
         clone.ItemsFor = ItemsFor;
         clone.CommitOnSelect = CommitOnSelect;
+        clone.LockedFor = LockedFor;
         return clone;
     }
 }
@@ -339,7 +359,7 @@ public class TwSelectCell : DataGridViewTextBoxCell
         DataGridViewElementStates cellState, object value, object formattedValue, string errorText,
         DataGridViewCellStyle cellStyle, DataGridViewAdvancedBorderStyle advancedBorderStyle, DataGridViewPaintParts paintParts)
     {
-        if (ReadOnly || DataGridView is null)
+        if (ReadOnly || DataGridView is null || Column?.IsLockedAt(rowIndex) == true)
         {
             base.Paint(graphics, clipBounds, cellBounds, rowIndex, cellState, value, formattedValue, errorText, cellStyle, advancedBorderStyle, paintParts);
             return;
@@ -410,7 +430,8 @@ public class TwSelectCell : DataGridViewTextBoxCell
     }
 
     private bool ReadOnlyAt(int rowIndex) =>
-        DataGridView is null || DataGridView.ReadOnly || OwningColumn?.ReadOnly == true || DataGridView.Rows[rowIndex].Cells[ColumnIndex].ReadOnly;
+        DataGridView is null || DataGridView.ReadOnly || OwningColumn?.ReadOnly == true || DataGridView.Rows[rowIndex].Cells[ColumnIndex].ReadOnly
+        || Column?.IsLockedAt(rowIndex) == true;
 
     /// <summary>Opens the list on the cell in <paramref name="rowIndex"/> (as a click, Space, F4 or Alt+↓ does).</summary>
     public void ShowDropDown(int rowIndex)

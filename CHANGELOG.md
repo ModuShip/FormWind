@@ -5,6 +5,40 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwSelectColumn.LockedFor`: rows whose cell is locked are drawn as plain text, the list does not open and typing does
+  not choose (rows locked only in `CellBeginEdit` still showed the input box).
+- `TwInfoTip.Footer`: a faint, smaller last line under the description ("Click for details").
+
+### Changed
+
+- `TwChipStrip`'s ‹ › buttons are square and as tall as the chip row (they were Windows' default 75×23 button) and follow
+  `ChipAlignment`. A hidden button no longer takes room: a strip that overflows starts its first chip at the start edge,
+  and a shown button is laid over the chips.
+
+### Fixed
+
+- An `AutoSize` `TwChipStrip` kept its old size when a chip's size changed after it was added (classes applied, a larger
+  font), so it scrolled and showed › for chips that fit. The strip now asks its parent to lay it out again.
+- A `TwChipStrip` scroll button removed or disposed by code that cleared `Controls` never came back; it is put back
+  (a new one when disposed).
+- A `TwInfoTip` card (any `TwPopover.ShowOnHover` anchor) did not open when the pointer moved onto it while another card,
+  menu or popover was open: WinForms swallows the mouse moves meant for other windows then. When a popover closes, the
+  hover anchor under the pointer now starts its delay.
+- A `TwInfoTip` card opened a second time was sized without its title and description (they read as hidden inside the
+  closed drop-down).
+- (0.1.10-preview.2, not noted then) `TwRingChart` skips tiny or NaN ring sweeps; GDI+ `DrawArc` threw
+  `OutOfMemoryException` for them.
+
+### Documentation
+
+- `TwChipStrip`: the scroll buttons are children too; walk `Chips`, not `Controls`, to rebuild the chips.
+- `TwSelectColumn.Validate` / `TwTextColumn.Validate`: the look comes from `invalid:` classes, which a theme that
+  redefines `input` must keep.
+- `TwOffscreen`: use it rather than `DrawToBitmap` for overlapping controls (`DrawToBitmap` paints children in reverse
+  z-order).
+
 ## [0.1.10-preview.2] - 2026-11-18
 
 ### Added

@@ -54,6 +54,10 @@ public class TwPopover : Component
     private DateTime _hoverSince, _outsideSince;
     private bool _openedByHover;
 
+    // Hover çapası olan popover'lar (iş parçacığı başına: denetimler oluşturuldukları UI iş parçacığına bağlıdır).
+    [ThreadStatic]
+    private static System.Collections.Generic.List<TwPopover>? s_hoverPopovers;
+
     public TwPopover()
     {
     }
@@ -182,6 +186,8 @@ public class TwPopover : Component
             anchor.Disposed += OnHoverAnchorDisposed;
         }
         _hoverAnchors[anchor] = Math.Max(0, delay);
+        var popovers = s_hoverPopovers ??= new System.Collections.Generic.List<TwPopover>();
+        if (!popovers.Contains(this)) popovers.Add(this);
     }
 
     /// <summary>Stops opening the popover when the pointer rests on <paramref name="anchor"/>.</summary>
@@ -191,6 +197,28 @@ public class TwPopover : Component
         anchor.MouseEnter -= OnHoverAnchorEnter;
         anchor.Disposed -= OnHoverAnchorDisposed;
         if (_hoverCandidate == anchor) _hoverCandidate = null;
+        if (_hoverAnchors.Count == 0) s_hoverPopovers?.Remove(this);
+    }
+
+    /// <summary>
+    /// After a popover closes, starts the hover delay for the hover anchor under the pointer (of any popover on this thread).
+    /// While a drop-down is open WinForms' modal menu filter swallows the mouse moves meant for other windows, so an anchor the
+    /// pointer moved onto meanwhile never got <c>MouseEnter</c>; without this its card would not open until the mouse moved again.
+    /// </summary>
+    internal static void RearmHoverUnder(Point mouse, DateTime now, TwPopover? closing)
+    {
+        if (s_hoverPopovers is not { Count: > 0 } popovers) return;
+        foreach (var popover in popovers.ToArray())
+        {
+            foreach (var anchor in popover._hoverAnchors.Keys)
+            {
+                // Az önce kapanan kartın kendi çapası yeniden açılmaz (Esc ya da dışarı tıklama ile kapatıldı).
+                if (popover == closing && anchor == closing._anchor) continue;
+                if (anchor.IsDisposed || !anchor.Visible || !anchor.IsHandleCreated || !OnScreen(anchor).Contains(mouse)) continue;
+                popover.BeginHover(anchor, now);
+                return;
+            }
+        }
     }
 
     private void OnHoverAnchorDisposed(object? sender, EventArgs e)
@@ -253,7 +281,11 @@ public class TwPopover : Component
             bool inside = anchor.IsHandleCreated && OnScreen(anchor).Contains(mouse) || _dropDown!.Bounds.Contains(mouse);
             if (inside) _outsideSince = DateTime.MinValue;
             else if (_outsideSince == DateTime.MinValue) _outsideSince = now;
-            else if ((now - _outsideSince).TotalMilliseconds >= HoverCloseDelay) Close();
+            else if ((now - _outsideSince).TotalMilliseconds >= HoverCloseDelay)
+            {
+                Close();
+                RearmHoverUnder(mouse, now, this);
+            }
         }
 
         if (_hoverCandidate is null && !(IsOpen && _openedByHover)) _hoverTimer?.Stop();
@@ -331,6 +363,7 @@ public class TwPopover : Component
             _hoverTimer?.Dispose();
             _hoverTimer = null;
             foreach (var anchor in new System.Collections.Generic.List<Control>(_hoverAnchors.Keys)) StopHover(anchor);
+            s_hoverPopovers?.Remove(this);
             _dropDown?.Dispose();
             _dropDown = null;
             _host = null;
@@ -379,6 +412,7 @@ public class TwPopover : Component
         }
         if (_restoreFocus && anchor is { CanFocus: true }) anchor.Focus();
         _restoreFocus = false;
+        RearmHoverUnder(Control.MousePosition, DateTime.UtcNow, this);
         Closed?.Invoke(this, e);
     }
 

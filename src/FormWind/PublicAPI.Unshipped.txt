@@ -1,1 +1,6 @@
 #nullable enable
+FormWind.TwInfoTip.Footer.get -> string!
+FormWind.TwInfoTip.Footer.set -> void
+FormWind.TwSelectColumn.LockedFor.get -> System.Func<int, bool>?
+FormWind.TwSelectColumn.LockedFor.set -> void
+override FormWind.TwChipStrip.OnHandleCreated(System.EventArgs! e) -> void

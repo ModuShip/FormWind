@@ -12,7 +12,11 @@ namespace FormWind;
 /// scroll bar: the mouse wheel over the strip or a chip moves it, ← → move it while it has focus, and the ‹ › buttons appear
 /// at the ends only while chips are hidden there. Styled like a <see cref="TwPanel"/>; <see cref="PreviousButton"/> and
 /// <see cref="NextButton"/> take their own classes. With <c>AutoSize</c> the strip is as wide as its chips (within
-/// <c>MaximumSize</c>, past which it scrolls) and as tall as the tallest; hidden chips take no room.
+/// <c>MaximumSize</c>, past which it scrolls) and as tall as the tallest; hidden chips take no room, and a chip whose size
+/// changes later (classes applied, text changed) resizes the strip. The ‹ › buttons are square, as tall as the chip row, follow
+/// <see cref="ChipAlignment"/> and are laid over the chips only while shown: a hidden button takes no room.
+/// <para>The scroll buttons are children too: walk <see cref="Chips"/>, not <c>Controls</c>, to rebuild the chips. A scroll
+/// button that is removed or disposed anyway is put back (a new one when disposed).</para>
 /// <code>
 /// var strip = new TwChipStrip { Dock = DockStyle.Top, Height = 40 };
 /// foreach (var line in lines) strip.Controls.Add(new TwChip { Text = line.Name });
@@ -30,17 +34,39 @@ public class TwChipStrip : TwPanel
     private int _contentWidth;
     private bool _arranging;
     private TwAlign _chipAlignment = TwAlign.Center;
+    private const int ButtonGap = 4;
+    private const int MaxButtonWidth = 32;
+    private const int ButtonCornerRadius = 6;
+    private TwButton _previousButton;
+    private TwButton _nextButton;
+    private bool _restoreButtonsQueued;
+    private bool _requestingParentLayout;
+    private Size _lastPreferredSize;
 
     public TwChipStrip()
     {
-        PreviousButton = new TwButton { IconName = "chevron-left", AutoSize = true, AccessibleName = TwTexts.Current.Previous, TabStop = false, Visible = false };
-        NextButton = new TwButton { IconName = "chevron-right", AutoSize = true, AccessibleName = TwTexts.Current.Next, TabStop = false, Visible = false };
-        PreviousButton.Click += (_, _) => ScrollBy(-PageStep);
-        NextButton.Click += (_, _) => ScrollBy(PageStep);
-        Controls.Add(PreviousButton);
-        Controls.Add(NextButton);
+        _previousButton = CreateScrollButton(previous: true);
+        _nextButton = CreateScrollButton(previous: false);
+        Controls.Add(_previousButton);
+        Controls.Add(_nextButton);
         SetStyle(ControlStyles.Selectable, true);
         TabStop = true;
+    }
+
+    // Kaydırma düğmeleri kare ve elle boyutlanır (AutoSize Button 75×23'ün altına inmez); renkleri şeritten gelir.
+    private TwButton CreateScrollButton(bool previous)
+    {
+        var button = new TwButton
+        {
+            IconName = previous ? "chevron-left" : "chevron-right",
+            AutoSize = false,
+            CornerRadius = ButtonCornerRadius,
+            AccessibleName = previous ? TwTexts.Current.Previous : TwTexts.Current.Next,
+            TabStop = false,
+            Visible = false,
+        };
+        button.Click += (_, _) => ScrollBy(previous ? -PageStep : PageStep);
+        return button;
     }
 
     protected override Size DefaultSize => new Size(480, 40);
@@ -79,17 +105,19 @@ public class TwChipStrip : TwPanel
 
     /// <summary>The largest <see cref="ScrollOffset"/>: how much wider the chips are than the strip (0 when they all fit).</summary>
     [Browsable(false)]
-    public int MaxScrollOffset => Math.Max(0, _contentWidth - Viewport.Width);
+    public int MaxScrollOffset => Math.Max(0, _contentWidth - Area.Width);
 
     /// <summary>The chips: the children other than the scroll buttons, in <c>Controls</c> order.</summary>
     [Browsable(false)]
     public Control[] Chips => Controls.Cast<Control>().Where(c => c != PreviousButton && c != NextButton).ToArray();
 
+    /// <summary>The ‹ button (square, as tall as the chip row unless it is given <c>AutoSize</c>); style it with classes.</summary>
     [Browsable(false)]
-    public TwButton PreviousButton { get; }
+    public TwButton PreviousButton => _previousButton;
 
+    /// <summary>The › button (square, as tall as the chip row unless it is given <c>AutoSize</c>); style it with classes.</summary>
     [Browsable(false)]
-    public TwButton NextButton { get; }
+    public TwButton NextButton => _nextButton;
 
     /// <summary>Scrolls by <paramref name="pixels"/> (device pixels; negative = toward the start).</summary>
     public void ScrollBy(int pixels) => ScrollOffset = _offset + pixels;
@@ -100,9 +128,12 @@ public class TwChipStrip : TwPanel
     {
         if (chip is null) throw new ArgumentNullException(nameof(chip));
         if (chip.Parent != this || chip == PreviousButton || chip == NextButton) return;
-        int left = ContentLeft(chip), right = left + chip.Width, width = Viewport.Width;
-        if (left < _offset) ScrollOffset = left;
-        else if (right > _offset + width) ScrollOffset = right - width;
+        int left = ContentLeft(chip), right = left + chip.Width;
+        var area = Area;
+        var view = Viewport;
+        // Görünen düğmeler çiplerin üstüne biner: çip düğmelerin arasında kalacak kadar kaydırılır.
+        if (left < _offset + (view.Left - area.Left)) ScrollOffset = Math.Max(0, left - ButtonReserve(PreviousButton, area));
+        else if (right > _offset + (view.Right - area.Left)) ScrollOffset = right - area.Width + ButtonReserve(NextButton, area);
     }
 
     private int PageStep => Math.Max(Scale(WheelStep), Viewport.Width * 4 / 5);
@@ -128,9 +159,10 @@ public class TwChipStrip : TwPanel
     {
         var chips = LaidOutChips;
         var border = BorderInsets();
-        int height = chips.Length == 0 ? 0 : chips.Max(c => ChipSize(c).Height);
-        return new Size(ContentWidthOf(chips) + Padding.Horizontal + border.Horizontal, height + Padding.Vertical + border.Vertical);
+        return new Size(ContentWidthOf(chips) + Padding.Horizontal + border.Horizontal, RowHeightOf(chips) + Padding.Vertical + border.Vertical);
     }
+
+    private static int RowHeightOf(Control[] chips) => chips.Length == 0 ? 0 : chips.Max(c => ChipSize(c).Height);
 
     /// <summary>Where the chips sit in the strip's height (<see cref="TwAlign.Stretch"/> = as tall as the strip).</summary>
     [Category("Layout"), DefaultValue(TwAlign.Center)]
@@ -145,16 +177,40 @@ public class TwChipStrip : TwPanel
         }
     }
 
-    // Çiplerin görünen kısmı: taşma varsa uçlardaki düğmelerin arası.
+    // Çiplerin düğmelerle örtülmeyen kısmı, içerik sırasıyla (sol = ‹ tarafı; sağdan sola düzende de aynanmaz): yalnızca
+    // görünen (o yönde gizli çip olan) düğme yer kaplar.
     private Rectangle Viewport
     {
         get
         {
             var area = Area;
-            if (_contentWidth <= area.Width) return area;
-            int prev = PreviousButton.GetPreferredSize(Size.Empty).Width, next = NextButton.GetPreferredSize(Size.Empty).Width, gap = Scale(4);
-            return Rectangle.FromLTRB(area.Left + prev + gap, area.Top, Math.Max(area.Left + prev + gap + 1, area.Right - next - gap), area.Bottom);
+            int max = MaxScrollOffset;
+            if (max == 0) return area;
+            int start = _offset > 0 ? ButtonReserve(PreviousButton, area) : 0;
+            int end = _offset < max ? ButtonReserve(NextButton, area) : 0;
+            return Rectangle.FromLTRB(area.Left + start, area.Top, Math.Max(area.Left + start + 1, area.Right - end), area.Bottom);
         }
+    }
+
+    private int ButtonReserve(TwButton button, Rectangle area) => ButtonSize(button, area).Width + Scale(ButtonGap);
+
+    // Çip satırının yüksekliği: Stretch'te şeridin, yoksa en uzun çipin yüksekliği (şeride sığdığı kadar).
+    private int RowHeight(Rectangle area)
+    {
+        int height = _chipAlignment == TwAlign.Stretch ? area.Height : RowHeightOf(LaidOutChips);
+        return Math.Max(1, Math.Min(height, area.Height));
+    }
+
+    // AutoSize verilmiş düğme kendi boyutunu alır; yoksa çip satırı kadar uzun bir kare (genişliği sınırlı).
+    private Size ButtonSize(TwButton button, Rectangle area)
+    {
+        if (button.AutoSize)
+        {
+            var preferred = button.GetPreferredSize(Size.Empty);
+            return new Size(preferred.Width, Math.Max(1, Math.Min(preferred.Height, area.Height)));
+        }
+        int height = RowHeight(area);
+        return new Size(Math.Min(height, Scale(MaxButtonWidth)), height);
     }
 
     // Çipin kaydırılmamış içerikteki başlangıcı.
@@ -182,7 +238,33 @@ public class TwChipStrip : TwPanel
     {
         base.OnControlRemoved(e);
         if (e.Control is { } chip) chip.MouseWheel -= OnChipWheel;
+        if (e.Control == _previousButton || e.Control == _nextButton) QueueRestoreButtons();
         PerformLayout();
+    }
+
+    // "Ekle düğmesi dışındaki her şeyi sil" kodu Controls'u dolaşıp kaydırma düğmelerini de silebilir. Düğmeler hemen geri
+    // eklenmez (Controls'u boşaltan bir döngü hiç bitmezdi); ileti döngüsünde sırası gelince geri konur.
+    private void QueueRestoreButtons()
+    {
+        if (_restoreButtonsQueued || IsDisposed || Disposing || !IsHandleCreated) return;   // tutamaç yoksa OnHandleCreated geri koyar
+        _restoreButtonsQueued = true;
+        BeginInvoke((Action)RestoreButtons);
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        RestoreButtons();
+    }
+
+    internal void RestoreButtons()
+    {
+        _restoreButtonsQueued = false;
+        if (IsDisposed || Disposing) return;
+        if (_previousButton.IsDisposed || _previousButton.Disposing) _previousButton = CreateScrollButton(previous: true);
+        if (_nextButton.IsDisposed || _nextButton.Disposing) _nextButton = CreateScrollButton(previous: false);
+        if (_previousButton.Parent != this) Controls.Add(_previousButton);
+        if (_nextButton.Parent != this) Controls.Add(_nextButton);
     }
 
     // Tekerlek çipin üstündeyken de şeridi kaydırır; dikey tekerlek yatay kaydırmaya çevrilir.
@@ -230,28 +312,70 @@ public class TwChipStrip : TwPanel
             _contentWidth = ContentWidthOf(chips);
             _offset = Math.Max(0, Math.Min(MaxScrollOffset, _offset));
 
-            var view = Viewport;
-            bool overflow = _contentWidth > area.Width;
+            // Çipler düğmelere yer ayırmadan dizilir; görünen düğme onların üstüne biner.
             bool rtl = TwRtl.NeedsMirroring(this);
-            int x = view.Left - _offset;
+            int x = area.Left - _offset;
             for (int i = 0; i < chips.Length; i++)
             {
                 var size = sizes[i];
                 if (_chipAlignment == TwAlign.Stretch) size.Height = Math.Max(1, area.Height);
-                int left = rtl ? view.Left + view.Right - x - size.Width : x;
+                int left = rtl ? area.Left + area.Right - x - size.Width : x;
                 chips[i].SetBounds(left, ChipTop(area, size.Height), size.Width, size.Height);
                 x += size.Width + gap;
             }
 
             // Uçlardaki düğmeler yalnızca o yönde gizli çip varken görünür.
-            bool before = overflow && _offset > 0, after = overflow && _offset < MaxScrollOffset;
-            PlaceButton(PreviousButton, area, atLeft: !rtl, show: before);
-            PlaceButton(NextButton, area, atLeft: rtl, show: after);
+            int max = MaxScrollOffset;
+            PlaceButton(PreviousButton, area, atLeft: !rtl, show: max > 0 && _offset > 0);
+            PlaceButton(NextButton, area, atLeft: rtl, show: max > 0 && _offset < max);
         }
         finally
         {
             _arranging = false;
         }
+        RequestParentLayoutIfResized();
+    }
+
+    // Bir çipin boyutu sonradan değişirse (sınıflar uygulanıp yazı büyüyünce) AutoSize şeridin üst denetimi yeniden
+    // yerleşir; WinForms'un tercih boyutu değişen AutoSize denetimler için yaptığı gibi. Tercih boyutu değişmedikçe
+    // istek yinelenmez: üst denetim o boyutu veremese de döngüye girilmez.
+    private void RequestParentLayoutIfResized()
+    {
+        if (!AutoSize || Parent is not { } parent || _requestingParentLayout) return;
+        var preferred = GetPreferredSize(Size.Empty);
+        if (preferred == _lastPreferredSize) return;
+        _lastPreferredSize = preferred;
+        if (!NeedsResize(preferred)) return;
+        var before = Size;
+        _requestingParentLayout = true;
+        try
+        {
+            parent.PerformLayout(this, "PreferredSize");
+        }
+        finally
+        {
+            _requestingParentLayout = false;
+        }
+        // Şerit kendi yerleşiminin içindeyken yeni boyutuyla yerleşmesi ertelenir (WinForms); çipler ve düğmeler hemen dizilir.
+        if (Size != before) Arrange();
+    }
+
+    private bool NeedsResize(Size preferred)
+    {
+        var target = Constrain(preferred);
+        bool width = Dock is not (DockStyle.Top or DockStyle.Bottom or DockStyle.Fill);
+        bool height = Dock is not (DockStyle.Left or DockStyle.Right or DockStyle.Fill);
+        bool growOnly = AutoSizeMode == AutoSizeMode.GrowOnly;
+        return width && (growOnly ? target.Width > Width : target.Width != Width)
+            || height && (growOnly ? target.Height > Height : target.Height != Height);
+    }
+
+    private Size Constrain(Size size)
+    {
+        int width = Math.Max(size.Width, MinimumSize.Width), height = Math.Max(size.Height, MinimumSize.Height);
+        if (MaximumSize.Width > 0) width = Math.Min(width, MaximumSize.Width);
+        if (MaximumSize.Height > 0) height = Math.Min(height, MaximumSize.Height);
+        return new Size(width, height);
     }
 
     // A chip taller than the strip keeps its size and starts at the top: the strip clips the rest.
@@ -267,11 +391,13 @@ public class TwChipStrip : TwPanel
         };
     }
 
-    private static void PlaceButton(TwButton button, Rectangle area, bool atLeft, bool show)
+    // Düğme çip satırıyla aynı hizada durur (ChipAlignment); Stretch'te satır şerit kadar uzundur.
+    private void PlaceButton(TwButton button, Rectangle area, bool atLeft, bool show)
     {
-        var size = button.GetPreferredSize(Size.Empty);
-        size.Height = Math.Min(size.Height, Math.Max(1, area.Height));
-        button.SetBounds(atLeft ? area.Left : area.Right - size.Width, area.Top + (area.Height - size.Height) / 2, size.Width, size.Height);
+        var size = ButtonSize(button, area);
+        int rowHeight = RowHeight(area);
+        int top = ChipTop(area, rowHeight) + (rowHeight - size.Height) / 2;
+        button.SetBounds(atLeft ? area.Left : area.Right - size.Width, top, size.Width, size.Height);
         if (button.Visible != show) button.Visible = show;
         // Düğme kaydırılan çiplerin üstünde kalır.
         if (show && button.Parent is { } parent && parent.Controls.GetChildIndex(button) > 1) button.BringToFront();
