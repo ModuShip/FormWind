@@ -92,7 +92,7 @@ public class TwTextCell : DataGridViewTextBoxCell
         DataGridViewElementStates cellState, object value, object formattedValue, string errorText,
         DataGridViewCellStyle cellStyle, DataGridViewAdvancedBorderStyle advancedBorderStyle, DataGridViewPaintParts paintParts)
     {
-        if (ReadOnly || DataGridView is null)
+        if (ReadOnly || DataGridView is null || TwRowLock.IsLocked(DataGridView, rowIndex))
         {
             base.Paint(graphics, clipBounds, cellBounds, rowIndex, cellState, value, formattedValue, errorText, cellStyle, advancedBorderStyle, paintParts);
             return;
@@ -205,7 +205,8 @@ public class TwSelectColumn : DataGridViewColumn
     /// <summary>
     /// Rows whose cell is locked (row rights): drawn as plain text like a <c>ReadOnly</c> cell, the list does not open and
     /// typing does not choose. A row locked only by cancelling <c>CellBeginEdit</c> still shows the input box, since that event
-    /// is raised only when editing starts; give the same check here to show those rows as plain text.
+    /// is raised only when editing starts; give the same check here to show those rows as plain text. To lock whole rows across
+    /// all columns with one check, use <see cref="TwGrid.SetRowLock"/> instead.
     /// <code>
     /// column.LockedFor = row => !CanEdit(grid.Rows[row]);
     /// </code>
@@ -214,7 +215,8 @@ public class TwSelectColumn : DataGridViewColumn
     public Func<int, bool>? LockedFor { get; set; }
 
     // Yalnızca ızgara ile veri kaynağının uzlaştığı satırlar sorulur (bkz. ItemsAt).
-    internal bool IsLockedAt(int rowIndex) => TwInputCell.HasRow(DataGridView, rowIndex) && LockedFor?.Invoke(rowIndex) == true;
+    internal bool IsLockedAt(int rowIndex) =>
+        TwInputCell.HasRow(DataGridView, rowIndex) && LockedFor?.Invoke(rowIndex) == true || TwRowLock.IsLocked(DataGridView, rowIndex);
 
     /// <summary>The choices of the row at <paramref name="rowIndex"/> (<see cref="ItemsFor"/>, else <see cref="Items"/>).</summary>
     /// <remarks>

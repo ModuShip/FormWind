@@ -58,6 +58,9 @@ public class TwPopover : Component
     [ThreadStatic]
     private static System.Collections.Generic.List<TwPopover>? s_hoverPopovers;
 
+    /// <summary>Where the hover delay reads the pointer (screen coordinates); tests swap it to drive hover without a real mouse.</summary>
+    internal static Func<Point> PointerSource { get; set; } = () => Control.MousePosition;
+
     public TwPopover()
     {
     }
@@ -245,7 +248,7 @@ public class TwPopover : Component
         if (_hoverTimer is null)
         {
             _hoverTimer = new Timer { Interval = 50 };
-            _hoverTimer.Tick += (_, _) => HoverTick(Control.MousePosition, DateTime.UtcNow);
+            _hoverTimer.Tick += (_, _) => HoverTick(PointerSource(), DateTime.UtcNow);
         }
         return _hoverTimer;
     }
@@ -412,7 +415,7 @@ public class TwPopover : Component
         }
         if (_restoreFocus && anchor is { CanFocus: true }) anchor.Focus();
         _restoreFocus = false;
-        RearmHoverUnder(Control.MousePosition, DateTime.UtcNow, this);
+        RearmHoverUnder(PointerSource(), DateTime.UtcNow, this);
         Closed?.Invoke(this, e);
     }
 

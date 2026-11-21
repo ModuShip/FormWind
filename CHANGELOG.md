@@ -5,6 +5,24 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `TwGrid.SetRowLock(grid, row => …)` / `GetRowLock`: one check locks whole rows. In a locked row `TwTextColumn` and
+  `TwSelectColumn` cells are drawn as plain text, the list does not open and editing any cell is cancelled (FormWind
+  cancels `CellBeginEdit`), so the same rule no longer goes into both `LockedFor` and a `CellBeginEdit` handler.
+- `TwChipStrip.ScrollFade`: a 20 px edge next to a shown ‹ › button where the chips fade into the strip's background,
+  instead of a hard cut ("Durum: Muh›"). Clicks and the wheel there still reach the chip.
+
+### Changed
+
+- `TwChipStrip`'s ‹ › buttons are square in every `ChipAlignment`: with `Stretch` they were 32 px wide however tall the
+  row was. A row taller than 48 px gets a 48 px square in its middle.
+
+### Fixed
+
+- (0.1.10-preview.3, not noted then) A `TwChip` in a `TwChipStrip` keeps its `h-*` height; it was laid out at its text
+  height, so a size fixed by hand for preview.2 (`AutoSize = false`, `Size = (…, 26)`) can go.
+
 ## [0.1.10-preview.3] - 2026-11-19
 
 ### Added

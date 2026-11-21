@@ -13,7 +13,7 @@ namespace FormWind;
 /// at the ends only while chips are hidden there. Styled like a <see cref="TwPanel"/>; <see cref="PreviousButton"/> and
 /// <see cref="NextButton"/> take their own classes. With <c>AutoSize</c> the strip is as wide as its chips (within
 /// <c>MaximumSize</c>, past which it scrolls) and as tall as the tallest; hidden chips take no room, and a chip whose size
-/// changes later (classes applied, text changed) resizes the strip. The ‹ › buttons are square, as tall as the chip row, follow
+/// changes later (classes applied, text changed) resizes the strip. The ‹ › buttons are square in every alignment, as tall as the chip row (up to 48 px), follow
 /// <see cref="ChipAlignment"/> and are laid over the chips only while shown: a hidden button takes no room.
 /// <para>The scroll buttons are children too: walk <see cref="Chips"/>, not <c>Controls</c>, to rebuild the chips. A scroll
 /// button that is removed or disposed anyway is put back (a new one when disposed).</para>
@@ -35,8 +35,12 @@ public class TwChipStrip : TwPanel
     private bool _arranging;
     private TwAlign _chipAlignment = TwAlign.Center;
     private const int ButtonGap = 4;
-    private const int MaxButtonWidth = 32;
+    private const int MaxButtonSide = 48;
     private const int ButtonCornerRadius = 6;
+    private const int FadeWidth = 20;
+    private TwScrollFade? _previousFade;
+    private TwScrollFade? _nextFade;
+    private bool _scrollFade;
     private TwButton _previousButton;
     private TwButton _nextButton;
     private bool _restoreButtonsQueued;
@@ -109,7 +113,27 @@ public class TwChipStrip : TwPanel
 
     /// <summary>The chips: the children other than the scroll buttons, in <c>Controls</c> order.</summary>
     [Browsable(false)]
-    public Control[] Chips => Controls.Cast<Control>().Where(c => c != PreviousButton && c != NextButton).ToArray();
+    public Control[] Chips => Controls.Cast<Control>().Where(c => !IsStripChrome(c)).ToArray();
+
+    private bool IsStripChrome(Control control) => control == PreviousButton || control == NextButton || control is TwScrollFade;
+
+    /// <summary>
+    /// Softens the chip cut by a shown ‹ › button: a 20 px edge next to the button where the chips fade into the strip's
+    /// background. Clicks and the wheel there still reach the chip.
+    /// </summary>
+    [Category("Appearance"), DefaultValue(false)]
+    public bool ScrollFade
+    {
+        get => _scrollFade;
+        set
+        {
+            if (_scrollFade == value) return;
+            _scrollFade = value;
+            if (value) RestoreFades();
+            else RemoveFades();
+            PerformLayout();
+        }
+    }
 
     /// <summary>The ‹ button (square, as tall as the chip row unless it is given <c>AutoSize</c>); style it with classes.</summary>
     [Browsable(false)]
@@ -201,7 +225,8 @@ public class TwChipStrip : TwPanel
         return Math.Max(1, Math.Min(height, area.Height));
     }
 
-    // AutoSize verilmiş düğme kendi boyutunu alır; yoksa çip satırı kadar uzun bir kare (genişliği sınırlı).
+    // AutoSize verilmiş düğme kendi boyutunu alır; yoksa çip satırı kadar uzun bir kare (her hizada, Stretch dahil).
+    // Çok uzun satırda kare MaxButtonSide'da durur ve satırın ortasına oturur.
     private Size ButtonSize(TwButton button, Rectangle area)
     {
         if (button.AutoSize)
@@ -209,8 +234,8 @@ public class TwChipStrip : TwPanel
             var preferred = button.GetPreferredSize(Size.Empty);
             return new Size(preferred.Width, Math.Max(1, Math.Min(preferred.Height, area.Height)));
         }
-        int height = RowHeight(area);
-        return new Size(Math.Min(height, Scale(MaxButtonWidth)), height);
+        int side = Math.Min(RowHeight(area), Scale(MaxButtonSide));
+        return new Size(side, side);
     }
 
     // Çipin kaydırılmamış içerikteki başlangıcı.
@@ -230,7 +255,7 @@ public class TwChipStrip : TwPanel
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
-        if (e.Control is { } chip && chip != PreviousButton && chip != NextButton) chip.MouseWheel += OnChipWheel;
+        if (e.Control is { } chip && !IsStripChrome(chip)) chip.MouseWheel += OnChipWheel;
         PerformLayout();
     }
 
@@ -238,7 +263,7 @@ public class TwChipStrip : TwPanel
     {
         base.OnControlRemoved(e);
         if (e.Control is { } chip) chip.MouseWheel -= OnChipWheel;
-        if (e.Control == _previousButton || e.Control == _nextButton) QueueRestoreButtons();
+        if (e.Control == _previousButton || e.Control == _nextButton || _scrollFade && e.Control is TwScrollFade) QueueRestoreButtons();
         PerformLayout();
     }
 
@@ -265,6 +290,29 @@ public class TwChipStrip : TwPanel
         if (_nextButton.IsDisposed || _nextButton.Disposing) _nextButton = CreateScrollButton(previous: false);
         if (_previousButton.Parent != this) Controls.Add(_previousButton);
         if (_nextButton.Parent != this) Controls.Add(_nextButton);
+        if (_scrollFade) RestoreFades();
+    }
+
+    private void RestoreFades()
+    {
+        if (IsDisposed || Disposing) return;
+        if (_previousFade is null || _previousFade.IsDisposed) _previousFade = new TwScrollFade();
+        if (_nextFade is null || _nextFade.IsDisposed) _nextFade = new TwScrollFade();
+        if (_previousFade.Parent != this) Controls.Add(_previousFade);
+        if (_nextFade.Parent != this) Controls.Add(_nextFade);
+    }
+
+    private void RemoveFades()
+    {
+        // Önce alan sıfırlanır: OnControlRemoved geri koymaya çalışmasın.
+        var fades = new[] { _previousFade, _nextFade };
+        _previousFade = _nextFade = null;
+        foreach (var fade in fades)
+        {
+            if (fade is null) continue;
+            Controls.Remove(fade);
+            fade.Dispose();
+        }
     }
 
     // Tekerlek çipin üstündeyken de şeridi kaydırır; dikey tekerlek yatay kaydırmaya çevrilir.
@@ -326,8 +374,11 @@ public class TwChipStrip : TwPanel
 
             // Uçlardaki düğmeler yalnızca o yönde gizli çip varken görünür.
             int max = MaxScrollOffset;
-            PlaceButton(PreviousButton, area, atLeft: !rtl, show: max > 0 && _offset > 0);
-            PlaceButton(NextButton, area, atLeft: rtl, show: max > 0 && _offset < max);
+            bool showPrevious = max > 0 && _offset > 0, showNext = max > 0 && _offset < max;
+            PlaceFade(_previousFade, PreviousButton, area, atLeft: !rtl, show: showPrevious);
+            PlaceFade(_nextFade, NextButton, area, atLeft: rtl, show: showNext);
+            PlaceButton(PreviousButton, area, atLeft: !rtl, show: showPrevious);
+            PlaceButton(NextButton, area, atLeft: rtl, show: showNext);
         }
         finally
         {
@@ -400,7 +451,26 @@ public class TwChipStrip : TwPanel
         button.SetBounds(atLeft ? area.Left : area.Right - size.Width, top, size.Width, size.Height);
         if (button.Visible != show) button.Visible = show;
         // Düğme kaydırılan çiplerin üstünde kalır.
-        if (show && button.Parent is { } parent && parent.Controls.GetChildIndex(button) > 1) button.BringToFront();
+        if (show && button.Parent is { } parent && parent.Controls.GetChildIndex(button) > (_scrollFade ? 3 : 1)) button.BringToFront();
+    }
+
+    // Solma, düğmenin çiplere bakan yanında, çip satırı yüksekliğinde durur; çiplerin üstünde, düğmenin altında.
+    private void PlaceFade(TwScrollFade? fade, TwButton button, Rectangle area, bool atLeft, bool show)
+    {
+        if (fade is null) return;
+        show &= _scrollFade;
+        if (show)
+        {
+            int buttonWidth = ButtonSize(button, area).Width;
+            int width = Math.Max(0, Math.Min(Scale(FadeWidth), area.Width - buttonWidth));
+            int rowHeight = RowHeight(area);
+            int left = atLeft ? area.Left + buttonWidth : area.Right - buttonWidth - width;
+            fade.OpaqueAtLeft = atLeft;
+            fade.SetBounds(left, ChipTop(area, rowHeight), width, rowHeight);
+            if (fade.Parent is { } parent && parent.Controls.GetChildIndex(fade) > 3) fade.BringToFront();
+            fade.Invalidate();
+        }
+        if (fade.Visible != show) fade.Visible = show;
     }
 
     private sealed class ChipLayout : LayoutEngine

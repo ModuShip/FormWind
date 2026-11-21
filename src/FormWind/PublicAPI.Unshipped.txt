@@ -1,1 +1,5 @@
 #nullable enable
+FormWind.TwChipStrip.ScrollFade.get -> bool
+FormWind.TwChipStrip.ScrollFade.set -> void
+static FormWind.TwGrid.GetRowLock(System.Windows.Forms.DataGridView! grid) -> System.Func<int, bool>?
+static FormWind.TwGrid.SetRowLock(System.Windows.Forms.DataGridView! grid, System.Func<int, bool>? locked) -> void
