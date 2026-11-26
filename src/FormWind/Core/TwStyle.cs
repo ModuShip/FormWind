@@ -87,7 +87,7 @@ public sealed class TwStyle
     public int? MaxHeight { get; set; }
     public TwTextAlign? TextAlign { get; set; }
 
-    /// <summary><c>whitespace-nowrap</c> = true. Currently used for DataGridView cells (WrapMode).</summary>
+    /// <summary><c>whitespace-nowrap</c> = true. Used for DataGridView cells (WrapMode) and TwButton.WordWrap.</summary>
     public bool? NoWrap { get; set; }
 
     /// <summary><c>truncate</c>: text that does not fit is shortened with "…" (Label.AutoEllipsis).</summary>

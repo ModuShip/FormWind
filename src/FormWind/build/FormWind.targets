@@ -3,7 +3,7 @@
   <!--
     Embeds the project's theme file (tw.config.json) into the assembly, so that the Designer (also the out-of-process .NET 8+
     Designer) previews the forms with the project's colors and components. The application keeps loading the file at run time
-    (TwTheme.LoadIfExists); the embedded copy is only read by the Designer.
+    (TwTheme.LoadIfExists), which falls back to the embedded copy when the file is missing next to the application.
 
     The theme file is also copied to the output and publish folders as tw.config.json, unless the project already copies it
     (a None or Content item for the file with CopyToOutputDirectory).
@@ -57,7 +57,8 @@
     </ItemGroup>
     <ItemGroup Condition="'@(_FormWindThemeCopied)' == ''">
       <None Remove="$(FormWindThemeFile)" />
-      <None Include="$(FormWindThemeFile)" Link="tw.config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" Visible="false" />
+      <!-- Content, not None: ClickOnce publishes only Content files, and an installed application then had no theme file. -->
+      <Content Include="$(FormWindThemeFile)" Link="tw.config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" Visible="false" />
     </ItemGroup>
   </Target>
 
