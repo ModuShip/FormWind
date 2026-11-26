@@ -5,21 +5,41 @@ All notable changes to FormWind are documented in this file. The format follows
 
 ## [Unreleased]
 
+## [0.1.10-preview.4] - 2026-11-26
+
 ### Added
 
 - `TwGrid.SetRowLock(grid, row => …)` / `GetRowLock`: one check locks whole rows. In a locked row `TwTextColumn` and
   `TwSelectColumn` cells are drawn as plain text, the list does not open and editing any cell is cancelled (FormWind
   cancels `CellBeginEdit`), so the same rule no longer goes into both `LockedFor` and a `CellBeginEdit` handler.
+- `TailwindProvider.PreserveLayout`: leaves out the classes that change a control's size or position (`w-*`, `h-*`,
+  padding and margin, `flex`, `grid`, `gap-*`, font sizes such as `text-sm`, `leading-*`, also in parts like `row:h-10`),
+  so the Designer's bounds stay while colors, borders, corners and fonts apply.
+- `TwButton.WordWrap` (set by `whitespace-normal`, cleared by `whitespace-nowrap`) wraps the text instead of shortening it
+  with "…"; a text with a line break (`\n`) is drawn on several lines either way.
 - `TwChipStrip.ScrollFade`: a 20 px edge next to a shown ‹ › button where the chips fade into the strip's background,
   instead of a hard cut ("Durum: Muh›"). Clicks and the wheel there still reach the chip.
 
 ### Changed
 
+- A `Label` with `rounded-*` (a pill or badge) is drawn with anti-aliased corners in its parent's color instead of being
+  clipped with a jagged `Region`; a gradient is drawn on it too. Other standard controls still use a `Region`.
+- `TwTheme.LoadIfExists` falls back to the theme FormWind's build embeds in the application when the file is missing, and
+  writes a `Trace` warning when there is neither. The build adds the theme file as `Content` (was `None`), so ClickOnce
+  publishes it.
 - `TwChipStrip`'s ‹ › buttons are square in every `ChipAlignment`: with `Stretch` they were 32 px wide however tall the
   row was. A row taller than 48 px gets a 48 px square in its middle.
 
 ### Fixed
 
+- A `DataGridView`'s `BorderStyle`, `CellBorderStyle` and `GridColor` set by the application after its classes were put
+  back on every refresh (focus leaving the grid, a theme change); they are now kept as the grid's own values.
+- A control whose state changed on a worker thread (`Enabled` set by a `BackgroundWorker`) was restyled on that thread,
+  where its transition never ran: a button stayed in its disabled colors until hovered. The refresh now runs on the UI thread.
+- A `ToolStripItem`'s `ForeColor` set in code (a green/red connection status in a `StatusStrip`) was replaced by the
+  menu's text color; it now wins over the menu's color, and the item's own classes win over both.
+- Font classes on a form or container with `AutoScaleMode.Font` make WinForms rescale it and its children; FormWind now
+  writes a `Trace` warning the first time.
 - (0.1.10-preview.3, not noted then) A `TwChip` in a `TwChipStrip` keeps its `h-*` height; it was laid out at its text
   height, so a size fixed by hand for preview.2 (`AutoSize = false`, `Size = (…, 26)`) can go.
 
@@ -839,7 +859,8 @@ First public preview.
 - The multi-line `Classes` editor window ("…") is available only in the .NET Framework Designer; in the .NET 8+
   Designer, `Classes` is a drop-down with free text, and the smart tag and class builder work as usual.
 
-[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.3...HEAD
+[Unreleased]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.4...HEAD
+[0.1.10-preview.4]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.3...v0.1.10-preview.4
 [0.1.10-preview.3]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.2...v0.1.10-preview.3
 [0.1.10-preview.2]: https://github.com/ModuShip/FormWind/compare/v0.1.10-preview.1...v0.1.10-preview.2
 [0.1.10-preview.1]: https://github.com/ModuShip/FormWind/compare/v0.1.9-preview.1...v0.1.10-preview.1

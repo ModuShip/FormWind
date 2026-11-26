@@ -3133,3 +3133,11 @@ FormWind.TwInfoTip.Footer.set -> void
 FormWind.TwSelectColumn.LockedFor.get -> System.Func<int, bool>?
 FormWind.TwSelectColumn.LockedFor.set -> void
 override FormWind.TwChipStrip.OnHandleCreated(System.EventArgs! e) -> void
+FormWind.TwChipStrip.ScrollFade.get -> bool
+FormWind.TwChipStrip.ScrollFade.set -> void
+static FormWind.TwGrid.GetRowLock(System.Windows.Forms.DataGridView! grid) -> System.Func<int, bool>?
+static FormWind.TwGrid.SetRowLock(System.Windows.Forms.DataGridView! grid, System.Func<int, bool>? locked) -> void
+FormWind.TwButton.WordWrap.get -> bool
+FormWind.TwButton.WordWrap.set -> void
+FormWind.TailwindProvider.PreserveLayout.get -> bool
+FormWind.TailwindProvider.PreserveLayout.set -> void
