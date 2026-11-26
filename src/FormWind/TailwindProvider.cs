@@ -282,6 +282,27 @@ public class TailwindProvider : Component, IExtenderProvider, ISupportInitialize
         }
     }
 
+    private bool _preserveLayout;
+
+    /// <summary>
+    /// Leaves out the classes that change a control's size or position (<c>w-* h-* size-*</c>, padding and margin,
+    /// <c>flex</c>, <c>grid</c>, <c>gap-*</c>, font sizes such as <c>text-sm</c>, <c>leading-*</c>), also in parts and variants
+    /// (<c>row:h-10</c>), so the bounds laid out in the Designer stay as they are while colors, borders, corners and fonts
+    /// apply. Set it before the classes (bounds already changed are not put back).
+    /// </summary>
+    [Category("FormWind"), DefaultValue(false), Description("Ignores size, spacing, layout and font size classes, keeping the Designer's bounds.")]
+    public bool PreserveLayout
+    {
+        get => _preserveLayout;
+        set
+        {
+            if (_preserveLayout == value) return;
+            _preserveLayout = value;
+            ReparseAll();
+            RefreshAll();
+        }
+    }
+
     /// <summary>
     /// With <see cref="AutoStyle"/>, controls whose background is their parent's background set explicitly are left to inherit
     /// it before they are styled (see <see cref="InheritCopiedBackColors"/>). Theme engines of existing applications often copy

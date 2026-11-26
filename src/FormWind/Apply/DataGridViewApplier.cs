@@ -31,6 +31,7 @@ internal class DataGridViewApplier : WinFormsApplier
         // base.Apply'dan önce: grid.Font değişince DataGridView bunu varsayılan hücre stillerine de yayar.
         var original = Originals.GetValue(grid, GridOriginal.Capture);
         original.Restoring = context.Parsed.Classes.Length == 0;
+        original.AdoptApplicationChanges(grid);
 
         base.Apply(control, style, context);
         TwGridState.SetDark(grid, (context.State & TwState.Dark) != 0);
@@ -52,6 +53,7 @@ internal class DataGridViewApplier : WinFormsApplier
         Set(grid.BackgroundColor, background, v => grid.BackgroundColor = v);
         var borderStyle = style.BorderWidth.HasValue ? BorderStyle.None : original.BorderStyle;
         if (grid.BorderStyle != borderStyle) grid.BorderStyle = borderStyle;
+        original.AppliedBorderStyle = borderStyle;
         // DataGridView'de çift tampon varsayılan kapalı ve korumalıdır: veri dolarken tablo satır satır boyanır.
         SetDoubleBuffered(grid, original.Restoring ? original.DoubleBuffered : true);
 
@@ -61,6 +63,8 @@ internal class DataGridViewApplier : WinFormsApplier
             ? ToCellBorderStyle(style.DivideX ?? false, style.DivideY ?? false)
             : original.CellBorderStyle;
         if (grid.CellBorderStyle != cellBorder) grid.CellBorderStyle = cellBorder;
+        original.AppliedGridColor = grid.GridColor;
+        original.AppliedCellBorderStyle = cellBorder;
 
         // Hücreler: temel metin rengi, arka plan ve font hücrelere de uygulanır; cell: bunları ezer.
         var cells = new TwStyle();
@@ -303,6 +307,23 @@ internal class DataGridViewApplier : WinFormsApplier
         public BorderStyle BorderStyle;
         public Color GridColor;
         public DataGridViewCellBorderStyle CellBorderStyle;
+
+        /// <summary>The frame and line values FormWind set last; a grid holding other values was changed by the application.</summary>
+        public BorderStyle? AppliedBorderStyle;
+        public Color? AppliedGridColor;
+        public DataGridViewCellBorderStyle? AppliedCellBorderStyle;
+
+        /// <summary>
+        /// Takes the frame and lines the application set after the classes as the values to keep: they were put back on
+        /// every refresh (focus leaving the grid, a theme change), so a grid made flat in code got its lines back.
+        /// </summary>
+        public void AdoptApplicationChanges(DataGridView grid)
+        {
+            if (AppliedBorderStyle is BorderStyle border && grid.BorderStyle != border) BorderStyle = grid.BorderStyle;
+            if (AppliedGridColor is Color color && grid.GridColor.ToArgb() != color.ToArgb()) GridColor = grid.GridColor;
+            if (AppliedCellBorderStyle is DataGridViewCellBorderStyle cells && grid.CellBorderStyle != cells) CellBorderStyle = grid.CellBorderStyle;
+        }
+
         public bool EnableHeadersVisualStyles;
         public DataGridViewHeaderBorderStyle ColumnHeadersBorderStyle;
         public DataGridViewColumnHeadersHeightSizeMode ColumnHeadersHeightSizeMode;

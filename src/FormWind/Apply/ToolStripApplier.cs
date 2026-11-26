@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -86,11 +87,17 @@ internal class TwToolStripRenderer : ToolStripRenderer
         bool highlighted = IsHighlighted(e.Item);
         // Öğenin kendi sınıfları (ör. tehlikeli öğe için text-red-600) menünün rengini ezer; boyarken çözüldüğü için tema
         // değişince ayrıca bir şey yapmak gerekmez.
-        var own = TwItemClasses.Resolve(e.Item, Colors.State | (highlighted ? TwState.Hover : TwState.None))?.ForeColor;
+        var own = TwItemClasses.Resolve(e.Item, Colors.State | (highlighted ? TwState.Hover : TwState.None))?.ForeColor
+            ?? ExplicitForeColor(e.Item);
         e.TextColor = !e.Item.Enabled ? Color.FromArgb(128, own ?? Colors.Fore)
             : own ?? (highlighted ? Colors.ItemHoverFore : Colors.Fore);
         base.OnRenderItemText(e);
     }
+
+    // A color the application gave the item (a green/red connection status) wins over the menu's text color; an item
+    // without one inherits its strip's ForeColor, which FormWind itself sets.
+    private static Color? ExplicitForeColor(ToolStripItem item) =>
+        TypeDescriptor.GetProperties(item)[nameof(ToolStripItem.ForeColor)]?.ShouldSerializeValue(item) == true ? item.ForeColor : null;
 
     protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
     {

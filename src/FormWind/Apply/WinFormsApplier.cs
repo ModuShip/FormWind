@@ -142,6 +142,7 @@ public class WinFormsApplier : IStyleApplier
             if (label.AutoEllipsis && !context.DesignMode) TwTruncationTip.Attach(label, context.Theme, (context.State & TwState.Dark) != 0);
             else TwTruncationTip.Detach(label);
         }
+        if (control is TwButton twButton && style.NoWrap is bool noWrap) twButton.WordWrap = !noWrap;
         if (control is TwSelect select)
         {
             var colors = ToolStripApplier.BuildColors(style, context);
@@ -650,6 +651,20 @@ public class WinFormsApplier : IStyleApplier
     internal static Font ScaleFont(Font font, float factor) =>
         System.Math.Abs(factor - 1f) < 0.01f ? font : TwFonts.Get(font.FontFamily.Name, font.SizeInPoints * factor, font.Style);
 
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, object> FontRescaleWarned =
+        new System.Runtime.CompilerServices.ConditionalWeakTable<Control, object>();
+
+    // WinForms scales an AutoScaleMode.Font container and all its children to the new font: the Designer's sizes change and
+    // a ListBox with IntegralHeight snaps to another height. Font classes on such a container are worth a warning (once).
+    private static void WarnFontRescales(Control control)
+    {
+        if (control is not ContainerControl { AutoScaleMode: AutoScaleMode.Font } || FontRescaleWarned.TryGetValue(control, out _)) return;
+        FontRescaleWarned.Add(control, new object());
+        System.Diagnostics.Trace.TraceWarning(
+            $"FormWind: font classes on '{control.Name}' ({control.GetType().Name}, AutoScaleMode.Font) make WinForms rescale it and its "
+            + "children. Use AutoScaleMode.Dpi, or give the font classes to the children instead.");
+    }
+
     private static void ApplyFont(Control control, TwStyle style, TwOriginal original, Applied applied, TwTheme theme)
     {
         if (style.HasFont)
@@ -661,7 +676,11 @@ public class WinFormsApplier : IStyleApplier
             var baseFont = original.Font is Font own ? ScaleFont(own, TwDpi.DeviceDpi(control) / (float)original.FontDpi)
                 : control.Parent?.Font ?? ScaleFont(Control.DefaultFont, TwDpi.FontScale(control));
             var font = TwFonts.Create(style, baseFont, theme, TwDpi.FontScale(control));
-            if (!control.Font.Equals(font)) control.Font = font;
+            if (!control.Font.Equals(font))
+            {
+                WarnFontRescales(control);
+                control.Font = font;
+            }
             applied.Font = true;
         }
         else if (applied.Font)

@@ -46,6 +46,25 @@ public class TwButton : Button, ITwChrome
             true);
     }
 
+    private bool _wordWrap;
+
+    /// <summary>
+    /// Wraps the text at word boundaries onto more lines instead of shortening it with "…" (the <c>whitespace-normal</c> class
+    /// sets it, <c>whitespace-nowrap</c> clears it). A text with a line break (<c>\n</c>) is drawn on several lines either way.
+    /// With an icon the text stays on one line.
+    /// </summary>
+    [Category("FormWind"), DefaultValue(false), Description("Wraps the text onto more lines instead of shortening it with \"…\".")]
+    public bool WordWrap
+    {
+        get => _wordWrap;
+        set
+        {
+            if (_wordWrap == value) return;
+            _wordWrap = value;
+            Invalidate();
+        }
+    }
+
     [Category("FormWind"), DefaultValue(0f), Description("Corner radius (pixels). The value from Classes wins when set.")]
     public float CornerRadius
     {
@@ -197,6 +216,8 @@ public class TwButton : Button, ITwChrome
             Math.Max(0, Height - Padding.Vertical));
 
         var flags = TwPainter.ToTextFormatFlags(TextAlign);
+        if (!HasGlyph && (WordWrap || Text.IndexOf('\n') >= 0))
+            flags = (flags & ~(TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis)) | TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl;
         if (TwRtl.NeedsMirroring(this)) flags = TwRtl.Mirror(flags);
         if (!UseMnemonic) flags |= TextFormatFlags.NoPrefix;
         else if (!ShowKeyboardCues) flags |= TextFormatFlags.HidePrefix;

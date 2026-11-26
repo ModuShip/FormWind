@@ -606,8 +606,35 @@ public sealed class TwTheme
         return theme;
     }
 
-    /// <summary>Loads the file if it exists (throws if it is invalid), otherwise returns the default theme.</summary>
-    public static TwTheme LoadIfExists(string path) => File.Exists(path) ? Load(path) : new TwTheme();
+    /// <summary>
+    /// Loads the file if it exists (throws if it is invalid). Otherwise the copy of the project's <c>tw.config.json</c> that
+    /// FormWind's build embeds in the application is used (an installer that left the file out still gets the theme), and
+    /// without that the default theme, with a warning written to <see cref="System.Diagnostics.Trace"/>.
+    /// </summary>
+    public static TwTheme LoadIfExists(string path)
+    {
+        if (File.Exists(path)) return Load(path);
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        var embedded = ReadEmbeddedTheme(System.Reflection.Assembly.GetEntryAssembly());
+        if (embedded != null)
+        {
+            var theme = new TwTheme();
+            theme.ApplyJson(embedded, directory);
+            return theme;
+        }
+        System.Diagnostics.Trace.TraceWarning(
+            $"FormWind: theme file '{Path.GetFullPath(path)}' was not found and the application has no embedded theme; the default theme is used.");
+        return new TwTheme();
+    }
+
+    // The copy build/FormWind.targets embeds; null when the assembly has none.
+    internal static string? ReadEmbeddedTheme(System.Reflection.Assembly? assembly)
+    {
+        using var stream = assembly?.GetManifestResourceStream(FormWind.Design.TwDesignTheme.ResourceName);
+        if (stream is null) return null;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
 
     /// <summary>Applies settings in the <c>tw.config.json</c> format on top of this theme.</summary>
     /// <param name="json">Theme content.</param>

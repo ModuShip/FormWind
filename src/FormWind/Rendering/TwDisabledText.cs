@@ -55,8 +55,15 @@ internal sealed class TwDisabledText
         group.FlatStyle != FlatStyle.System && Application.RenderWithVisualStyles && group.Width >= 10 && group.Height >= 10
         && !string.IsNullOrEmpty(group.Text);
 
-    internal static bool CanRepaintLabel(Label label) => label is not LinkLabel && label is not ITwChrome && label.Image is null
+    // A label with smooth corners draws its disabled text itself (TwDecorator); a repaint here would cover the corners.
+    internal static bool CanRepaintLabel(Label label) => IsTextOnly(label) && !TwDecorator.PaintsSmoothCorners(label);
+
+    internal static bool IsTextOnly(Label label) => label is not LinkLabel && label is not ITwChrome && label.Image is null
         && (label.ImageList is null || label.ImageIndex < 0 && string.IsNullOrEmpty(label.ImageKey));
+
+    /// <summary>The flags a native label draws its text with.</summary>
+    internal static TextFormatFlags LabelFlags(Label label) =>
+        NativeFlags(label, label.TextAlign, label.AutoEllipsis, label.UseMnemonic);
 
     // Yalnızca yerleşimi güvenle bilinen durum: işaret solda ya da sağda, düz görünüm, resim yok.
     internal static bool CanRepaintCheck(ButtonBase button)

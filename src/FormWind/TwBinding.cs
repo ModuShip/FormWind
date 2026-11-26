@@ -106,7 +106,7 @@ internal sealed class TwBinding
 
     public void Reparse(TwTheme theme)
     {
-        _parsed = theme.Parse(Classes);
+        _parsed = theme.Parse(_owner.PreserveLayout ? TwLayoutClasses.Strip(Classes) : Classes);
         if (_parsed.Unknown.Count > 0) _owner.ReportUnknown(_control, _parsed);
         // Bilinmeyen ikon adı hiçbir şey çizmez; sessiz kalmasın diye StyleError'a bildirilir.
         if (TwIcons.UnknownIconOf(_control, theme) is string icon)
@@ -124,6 +124,15 @@ internal sealed class TwBinding
     public void Refresh(bool force = false)
     {
         if (_control.IsDisposed || !_owner.ShouldApply) return;
+
+        // A state change raised on a worker thread (Enabled set by a BackgroundWorker) would start the transition there,
+        // where no frame clock runs; the control stayed in its old colors until the next hover.
+        if (_control.InvokeRequired)
+        {
+            if (_control.IsHandleCreated)
+                _control.BeginInvoke((Action)(() => Refresh(force)));
+            return;
+        }
 
         // Bazı özellikler (TextBox.TextAlign, BorderStyle) handle'ı yeniden oluşturur; bu sırada odak olayları yenileme
         // ister. Stil iç içe uygulanırsa, yok edilmekte olan pencere için ikinci bir yeniden oluşturma başlar ve WinForms
